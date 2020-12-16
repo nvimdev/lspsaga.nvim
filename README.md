@@ -21,3 +21,7 @@ A light-weight lsp plugin based on neovim built-in lsp with highly performance U
 - Jump Diagnostic
 
 ![diagnostic](https://user-images.githubusercontent.com/41671631/102290042-21786e00-3f7b-11eb-8026-d467bc256ba8.gif)
+
+- Shadow Float Terminal
+
+![shadow-terminal](https://user-images.githubusercontent.com/41671631/102290256-a06da680-3f7b-11eb-9c5d-1a1f093c4324.png)
