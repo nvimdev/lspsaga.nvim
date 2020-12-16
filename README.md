@@ -2,7 +2,11 @@
 
 A light-weight lsp plugin based on neovim built-in lsp with highly performance UI.
 
+## Status
+
 **Not stable**
+
+**Some code need cleanup**
 
 
 ## Performance
