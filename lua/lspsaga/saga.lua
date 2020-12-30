@@ -1,7 +1,6 @@
 local lib = require 'lspsaga.libs'
 local global = require 'domain.global'
 local syntax = require 'lspsaga.syntax'
-local server = require 'lspsaga.serverconf'
 local handlers = require 'lspsaga.handlers'
 local autocmd = require 'internal.event'
 local action = require 'lspsaga.action'
@@ -112,15 +111,7 @@ local function buffer_find_root_dir(bufnr, is_root_path)
   end
 end
 
-local lspsaga = {}
-
-local function load_completion()
-    if not vim.o.runtimepath:find('completion-nvim') then
-      vim.o.runtimepath = vim.o.runtimepath ..','.. global.cache_dir ..'dein/repos/github.com/nvim-lua/completion-nvim.lua'
-    end
-    require('completion').on_attach()
-end
-
+local server = {}
 
 local init_server_map = function()
   if vim.tbl_isempty(server) then return end
@@ -133,8 +124,17 @@ local init_server_map = function()
   end
 end
 
+local attach_fn = {}
+
+function server.register_on_attach(fn)
+  if type(fn) ~= 'function' then
+    print('fn must be a function type')
+  end
+  table.insert(attach_fn,fn)
+end
+
 -- Start Lsp server
-function lspsaga.start_lsp_server()
+function server.start_lsp_server()
   local client_id = nil
   local bufnr = api.nvim_get_current_buf()
   local buf_filetype = vim.bo.filetype
@@ -172,8 +172,6 @@ function lspsaga.start_lsp_server()
     return
   end
 
-  -- If the current file root dir in cache,we just attach it
-  -- also the completion already in runtimepath just to call it
   if lsp_store[root_dir] ~= nil then
     client_id = lsp_store[root_dir]
     vim.lsp.buf_attach_client(bufnr, client_id)
@@ -181,7 +179,10 @@ function lspsaga.start_lsp_server()
   end
 
   local on_attach = function(client,buf_nr)
-    load_completion()
+    for _,fn in ipairs(attach_fn) do
+      fn(client,buf_nr)
+    end
+
     local lsp_event = {}
 
     if client.resolved_capabilities.document_formatting then
@@ -195,8 +196,9 @@ function lspsaga.start_lsp_server()
   end
 
   -- config the server config on_attach
-  server_setup.on_attach= on_attach
-    -- build a new server config
+  server_setup.on_attach = on_attach
+
+  -- build a new server config
   local new_config = vim.tbl_extend("keep",add_options(server_setup), {
     root_dir = root_dir;
   })
@@ -219,7 +221,7 @@ function lspsaga.start_lsp_server()
   end
 end
 
-function lspsaga.create_saga_augroup()
+function server.create_saga_augroup()
   if next(filetype_server_map) == nil then
     init_server_map()
   end
@@ -231,4 +233,4 @@ function lspsaga.create_saga_augroup()
   vim.api.nvim_command('augroup END')
 end
 
-return lspsaga
+return server
