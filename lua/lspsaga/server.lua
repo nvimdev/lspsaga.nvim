@@ -1,10 +1,10 @@
 local lib = require 'lspsaga.libs'
-local global = require 'domain.global'
 local syntax = require 'lspsaga.syntax'
 local handlers = require 'lspsaga.handlers'
 local autocmd = require 'internal.event'
 local action = require 'lspsaga.action'
 local vim,api= vim,vim.api
+local server = {}
 
 -- A table to store our root_dir to client_id lookup. We want one LSP per
 -- root directory, and this is how we assert that.
@@ -111,7 +111,17 @@ local function buffer_find_root_dir(bufnr, is_root_path)
   end
 end
 
-local server = {}
+-- check file exists
+local command_exists =  function (file)
+  local ok, _, code = os.rename(file, file)
+  if not ok then
+    if code == 13 then
+      -- Permission denied, but it exists
+      return true
+    end
+  end
+  return ok
+end
 
 local init_server_map = function()
   if vim.tbl_isempty(server) then return end
@@ -124,23 +134,16 @@ local init_server_map = function()
   end
 end
 
-local attach_fn = {}
-
-function server.register_on_attach(fn)
-  if type(fn) ~= 'function' then
-    print('fn must be a function type')
-  end
-  table.insert(attach_fn,fn)
-end
-
--- Start Lsp server
+-- Start Lspserver
 function server.start_lsp_server()
   local client_id = nil
   local bufnr = api.nvim_get_current_buf()
   local buf_filetype = vim.bo.filetype
+
   if next(filetype_server_map) == nil then
     init_server_map()
   end
+
   -- Filter which files we are considering.
   if not lib.has_key(filetype_server_map,buf_filetype) then
     return
@@ -179,10 +182,6 @@ function server.start_lsp_server()
   end
 
   local on_attach = function(client,buf_nr)
-    for _,fn in ipairs(attach_fn) do
-      fn(client,buf_nr)
-    end
-
     local lsp_event = {}
 
     if client.resolved_capabilities.document_formatting then
@@ -228,7 +227,7 @@ function server.create_saga_augroup()
   vim.api.nvim_command('augroup lsp_saga_event')
   vim.api.nvim_command('autocmd!')
   for ft, _ in pairs(filetype_server_map) do
-    vim.api.nvim_command(string.format('autocmd FileType %s lua require("lspsaga.saga").start_lsp_server()',ft))
+    vim.api.nvim_command(string.format('autocmd FileType %s lua require("lspsaga.server").start_lsp_server()',ft))
   end
   vim.api.nvim_command('augroup END')
 end
