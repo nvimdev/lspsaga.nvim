@@ -1,9 +1,9 @@
-local M = {}
+local wrap = {}
 
 -- If the content too long.
 -- auto wrap according width
-function M.wrap_line(text,width)
-  local line = ''
+-- fill the space with wrap text
+function wrap.wrap_text(text,width,fill)
   local ret = {}
   -- if text width < width just return it
   if #text < width then
@@ -11,32 +11,39 @@ function M.wrap_line(text,width)
     return ret
   end
 
-  local content = vim.fn.split(text)
-  for idx,word in pairs(content) do
-    if #line + #word + 1 > width then
-      local pos = width - #line -1
-      line = line .. word:sub(1,pos)
-      table.insert(ret,line)
-      line = word:sub(pos+1,#word)..' '
-    else
-      line = line ..word .. ' '
-    end
+  local stra = text:sub(1,width)
+  local strb = text:sub(width+1,#text)
 
-    if #line + #word + 1 == width then
-      table.insert(ret,line)
-      line = ''
-    end
-
-    if idx == #content then
-      table.insert(ret,line)
-    end
-
+  table.insert(ret,stra)
+  if fill then
+    table.insert(ret,' '..strb)
+  else
+    table.insert(ret,strb)
   end
 
   return ret
 end
 
-function M.add_truncate_line(contents)
+function wrap.wrap_contents(contents,width)
+  if type(contents) ~= "table" then
+    error("Wrong params type of function wrap_contents")
+    return
+  end
+
+  for idx, text in ipairs(contents) do
+    if #text > width then
+      local tmp = wrap.wrap_text(text,width,true)
+      for i,j in ipairs(tmp) do
+        table.insert(contents,idx+i-1,j)
+      end
+      table.remove(contents,idx+#tmp)
+    end
+  end
+
+  return contents
+end
+
+function wrap.add_truncate_line(contents)
   local line_widths = {}
   local width = 0
   local truncate_line = '─'
@@ -53,5 +60,5 @@ function M.add_truncate_line(contents)
   return truncate_line
 end
 
-return M
+return wrap
 

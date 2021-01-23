@@ -239,42 +239,19 @@ function M.fancy_floating_markdown(contents, opts)
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
   local width, _ = vim.lsp.util._make_floating_popup_size(stripped, opts)
 
-  local win_width = vim.fn.winwidth(0)
-  if #stripped[1] < win_width - 25 then
+  if width > #stripped[1] then
     width = #stripped[1]
   end
 
-  -- TODO: fix bug
-  local fix_lines = {}
-  local long_line_idx = {}
-  for index,value in pairs(stripped) do
-    if #value > width then
-      table.insert(long_line_idx,index)
-      local tmp = wrap.wrap_line(value,width)
-      fix_lines[index] = tmp
-    end
-  end
-
-  for idx,v in pairs(long_line_idx) do
-    if idx == 1 then
-      table.remove(stripped,v)
-    else
-      table.remove(stripped,v+#fix_lines[long_line_idx[idx-1]])
-    end
-    for i,line in ipairs(fix_lines[v]) do
-      if i == 1 then
-        table.insert(stripped,v,line)
-      else
-        table.insert(stripped,v+i,line)
-      end
-    end
-  end
+  stripped = wrap.wrap_contents(stripped,width)
 
   local truncate_line = wrap.add_truncate_line(stripped)
   table.insert(stripped,2,truncate_line)
 
   -- Make the floating window.
   local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',1,false,opts)
+
+  api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',1,0,-1)
 
   -- Switch to the floating window to apply the syntax highlighting.
   -- This is because the syntax command doesn't accept a target.
