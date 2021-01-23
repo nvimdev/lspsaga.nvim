@@ -10,9 +10,8 @@ local definition_uri = 0
 local reference_uri = 0
 local param_length = 0
 
---TODO: set cursor
-
-local create_finder_contents =function (result,method_type,opts)
+--TODO: set cursor in lsp finder
+local create_finder_contents =function(result,method_type,opts)
   if type(result) == 'table' then
     local method_option = {
       {icon = opts.definition_icon or '',title = ':  '.. #result ..' Definitions'};
@@ -97,7 +96,7 @@ local render_finder_result= function (finder_opts)
     relative = "cursor",
     style = "minimal",
   }
-  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',2,true,true,opts)
+  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',2,true,opts)
   api.nvim_win_set_cursor(M.contens_buf,{3,1})
 
   for i=1,definition_uri,1 do
@@ -120,11 +119,19 @@ local render_finder_result= function (finder_opts)
 end
 
 function M.apply_float_map(contents_bufnr)
-  api.nvim_buf_set_keymap(contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>",{noremap = true,silent = true})
-  api.nvim_buf_set_keymap(contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>",{noremap = true,silent = true})
-  api.nvim_buf_set_keymap(contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>",{noremap = true,silent = true})
-  api.nvim_buf_set_keymap(contents_bufnr,'n',"<TAB>",":lua require'lspsaga.provider'.insert_preview()<CR>",{noremap = true,silent = true})
-  api.nvim_buf_set_keymap(contents_bufnr,'n',"q",":lua require'lspsaga.provider'.quit_float_window()<CR>",{noremap = true,silent = true})
+  local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
+  local lhs = {
+    noremap = true,
+    silent = true
+  }
+  local keymaps = {
+    {contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>"},
+    {contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>"},
+    {contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>"},
+    {contents_bufnr,'n',"<TAB>",":lua require'lspsaga.provider'.insert_preview()<CR>"},
+    {contents_bufnr,'n',"q",":lua require'lspsaga.provider'.quit_float_window()<CR>"}
+  }
+  nvim_create_keymap(keymaps,lhs)
 end
 
 -- action 1 mean enter
@@ -133,7 +140,7 @@ end
 function M.open_link(action_type)
   local action = {"edit ","vsplit ","split "}
   local current_line = vim.fn.line('.')
-  print(current_line)
+
   if short_link[current_line] ~= nil then
     api.nvim_win_close(M.contents_win,true)
     api.nvim_win_close(M.border_win,true)
@@ -145,6 +152,7 @@ function M.open_link(action_type)
 end
 
 function M.insert_preview()
+  api.nvim_buf_set_option(M.contents_bufnr,'modifiable',true)
   local current_line = vim.fn.line('.')
   if short_link[current_line] ~= nil and short_link[current_line].preview_data.status ~= 1  then
     short_link[current_line].preview_data.status = 1
@@ -162,6 +170,7 @@ function M.insert_preview()
   elseif short_link[current_line] == nil then
     return
   end
+  api.nvim_buf_set_option(M.contents_bufnr,'modifiable',true)
 end
 
 function M.quit_float_window()
@@ -173,43 +182,37 @@ function M.quit_float_window()
   end
 end
 
-local send_request = function(timeout)
+local send_request = coroutine.create(function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
   local params = lsp.util.make_position_params()
   local results = {}
-  local response_a = lsp.buf_request_sync(0, method[1], params, timeout or 1000)
-  local response_b = lsp.buf_request_sync(0, method[2], params, timeout or 1000)
-  if not vim.tbl_isempty(response_a) then
-    table.insert(results,response_a)
+  local def_response = lsp.buf_request_sync(0, method[1], params, timeout or 1000)
+  local ref_response = lsp.buf_request_sync(0, method[2], params, timeout or 1000)
+  if not vim.tbl_isempty(def_response) then
+    table.insert(results,def_response)
   end
-  if not vim.tbl_isempty(response_b) then
-    table.insert(results,response_b)
+  if not vim.tbl_isempty(ref_response) then
+    table.insert(results,ref_response)
   end
 
   for i,v in ipairs(results) do
-    if v[1].result == nil or vim.tbl_isempty(v[1].result) then
-      print("No Location found:",method[i])
-      -- if no References we doesn't popup window so need clean contents
-      contents = {}
-      return
+    if v[1].result ~= nil and not vim.tbl_isempty(v[1].result) then
+      coroutine.yield(v[1].result,i)
     end
-    coroutine.yield(v[1].result,i)
   end
-end
+end)
 
 function M.lsp_finder(opts)
-  local request_instance = coroutine.create(send_request)
   while true do
-    local _,result,method_type = coroutine.resume(request_instance)
+    local _,result,method_type = coroutine.resume(send_request)
     create_finder_contents(result,method_type,opts)
 
-    if coroutine.status(request_instance) == 'dead' then
+    if coroutine.status(send_request) == 'dead' then
       break
     end
   end
   render_finder_result(opts)
 end
-
 
 function M.preview_definiton(timeout_ms)
   local method = "textDocument/definition"
@@ -237,31 +240,13 @@ function M.preview_definiton(timeout_ms)
       relative = "cursor",
       style = "minimal",
     }
-    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,1,false,false,opts)
+    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,1,false,opts)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
                                         border_winid)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
                                         contents_winid)
     vim.api.nvim_buf_add_highlight(contents_buf,-1,"DefinitionPreviewTitle",0,0,-1)
   end
-end
-
--- TODO: codeAction
-function M.code_action(timeout_ms)
-  local method = "textDocument/codeAction"
-  local params = lsp.util.make_position_params()
-  local response = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
-  if vim.tbl_isempty(response) then
-    print("No code actions available")
-    return
-  end
-  local data = {'Code Action:'}
-  for _,action in ipairs(response[1].result) do
-    local title = action.title:gsub('\r\n', '\\r\\n')
-    title = title:gsub('\n','\\n')
-    table.insert(data,title)
-  end
-  window.create_float_window(data,'plaintext',1,true,false)
 end
 
 return M
