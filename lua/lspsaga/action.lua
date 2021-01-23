@@ -1,29 +1,17 @@
+local lib = require 'lspsaga.libs'
 local lsp = vim.lsp
 local M = {}
 
-function M.lsp_before_save(filetypes)
-  local lsp_beforesave = {}
-
-  local extensions = {
-    go = '*.go',
-    rust = '*.rs',
-    zig  = '*.zig',
-
-    typescript = '*.ts',
-    javascript = '*.js',
-  }
-
-  for _,ft in pairs(filetypes) do
-    if extensions[ft] ~= nil then
-      local tmp =  {"BufWritePre", extensions[ft] ,"lua vim.lsp.buf.formatting_sync(nil,1000)"}
-      table.insert(lsp_beforesave,tmp)
-    end
-    if ft == 'go' then
-      local tmp = {"BufWritePre","*.go","lua require('lspsaga.action').go_organize_imports_sync(1000)"}
-      table.insert(lsp_beforesave,tmp)
-    end
+function M.lsp_before_save()
+  local defs = {}
+  local ext = vim.fn.expand('%:e')
+  table.insert(defs,{"BufWritePre", '*.'..ext ,
+                    "lua vim.lsp.buf.formatting_sync(nil,1000)"})
+  if ext == 'go' then
+    table.insert(defs,{"BufWritePre","*.go",
+            "lua require('lspsaga.action').go_organize_imports_sync(1000)"})
   end
-  return lsp_beforesave
+  lib.nvim_create_augroup('lsp_before_save',defs)
 end
 
 -- Synchronously organise (Go) imports. Taken from
@@ -37,7 +25,7 @@ function M.go_organize_imports_sync(timeout_ms)
   -- See the implementation of the textDocument/codeAction callback
   -- (lua/vim/lsp/handler.lua) for how to do this properly.
   local result = lsp.buf_request_sync(0, "textDocument/codeAction", params, timeout_ms)
-  if not result then return end
+  if not result or next(result) == nil then return end
   local actions = result[1].result
   if not actions then return end
   local action = actions[1]

@@ -139,7 +139,7 @@ local function create_float_boder(contents,border,opts)
   return border_bufnr,border_winid
 end
 
-function M.create_float_contents(contents, filetype,enter,modifiable,opts)
+function M.create_float_contents(contents,filetype,enter,opts)
   -- create contents buffer
   local contents_bufnr = api.nvim_create_buf(false, true)
   -- buffer settings for contents buffer
@@ -151,7 +151,7 @@ function M.create_float_contents(contents, filetype,enter,modifiable,opts)
   end
 
   api.nvim_buf_set_lines(contents_bufnr,0,-1,true,content)
-  api.nvim_buf_set_option(contents_bufnr, 'modifiable', modifiable)
+  api.nvim_buf_set_option(contents_bufnr, 'modifiable', false)
   local contents_winid = api.nvim_open_win(contents_bufnr, enter, opts)
   if filetype == 'markdown' then
     api.nvim_win_set_option(contents_winid, 'conceallevel', 2)
@@ -161,7 +161,7 @@ function M.create_float_contents(contents, filetype,enter,modifiable,opts)
   return contents_bufnr, contents_winid
 end
 
-function M.create_float_window(contents,filetype,border,enter,modifiable,opts)
+function M.create_float_window(contents,filetype,border,enter,opts)
   local _,_,border_option = make_border_option(contents,opts)
   local contents_option= border_option
   contents_option.width = border_option.width - 2
@@ -174,19 +174,19 @@ function M.create_float_window(contents,filetype,border,enter,modifiable,opts)
   contents_option.col = border_option.col + 1
 
   if not enter then
-    local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,modifiable,contents_option)
+    local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,contents_option)
     local border_bufnr,border_winid = create_float_boder(contents,border,opts)
     return contents_bufnr,contents_winid,border_bufnr,border_winid
   end
 
   local border_bufnr,border_winid = create_float_boder(contents,border,opts)
-  local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,modifiable,border_option)
+  local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,border_option)
   return contents_bufnr,contents_winid,border_bufnr,border_winid
 end
 
-function M.open_shadow_float_win(contents,filetype,enter,modifiable,opts)
+function M.open_shadow_float_win(contents,filetype,enter,opts)
   local shadow_bufnr,shadow_winid =  open_shadow_win()
-  local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,modifiable,opts)
+  local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,opts)
   return contents_bufnr,contents_winid,shadow_bufnr,shadow_winid
 end
 
@@ -274,7 +274,7 @@ function M.fancy_floating_markdown(contents, opts)
   table.insert(stripped,2,truncate_line)
 
   -- Make the floating window.
-  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',1,false,false,opts)
+  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',1,false,opts)
 
   -- Switch to the floating window to apply the syntax highlighting.
   -- This is because the syntax command doesn't accept a target.
