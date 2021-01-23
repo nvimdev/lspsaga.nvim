@@ -26,6 +26,8 @@ function M.add_highlight()
   api.nvim_command("hi DiagnosticFloatWarn guifg=#d8a657")
   api.nvim_command("hi DiagnosticFloatInfo guifg=#6699cc")
   api.nvim_command("hi DiagnosticFloatHint guifg=#56b6c2")
+
+  api.nvim_command("hi LspSagaDocTruncateLine guifg=black")
 end
 
 return M
