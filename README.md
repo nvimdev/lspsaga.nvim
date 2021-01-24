@@ -26,6 +26,10 @@ local opts = {
 
 saga.init_lsp_saga(opts)
 
+-- code action
+nnoremap <silent><leader>ca <cmd>lua
+require('lspsaga.codeaction').code_action()<CR>
+
 -- show hover doc
 nnoremap <silent> K <cmd>lua vim.lsp.buf.hover()<CR>
 
@@ -42,4 +46,4 @@ nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_ne
 -- float terminal also you can pass the cli command in open_float_terminal function
 nnoremap <silent> <A-d> <cmd>lua require('lspsaga.floaterm').open_float_terminal()<CR> -- or open_float_terminal('lazygit')<CR>
 tnoremap <silent> <A-d> <C-\><C-n>:lua require('lspsaga.floaterm').close_float_terminal()<CR>
-``
+```
