@@ -2,8 +2,6 @@
 
 A light-weight lsp plugin based on neovim built-in lsp with highly performance UI.
 
-**Not stable**
-
 ## Install
 
 * vim-plug
