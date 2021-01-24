@@ -2,6 +2,7 @@ local window = require 'lspsaga.window'
 local vim,api,lsp = vim,vim.api,vim.lsp
 local short_link = {}
 local root_dir = lsp.buf_get_clients()[1].config.root_dir or ''
+local wrap = require('lspsaga.wrap')
 local M = {}
 
 local contents = {}
@@ -71,33 +72,67 @@ local lsp_finder_highlight = function(opts)
   api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetWord",3+definition_uri,#ref_icon,param_length+#ref_icon+3)
   api.nvim_buf_add_highlight(M.contents_buf,-1,"ReferencesIcon",3+definition_uri,1,#ref_icon+4)
   api.nvim_buf_add_highlight(M.contents_buf,-1,"ReferencesCount",3+definition_uri,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpTitle",definition_uri+reference_uri+15,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpItem",definition_uri+reference_uri+17,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpItem",definition_uri+reference_uri+18,0,-1)
+  api.nvim_buf_add_highlight(M.contents_buf,-1,"ProviderTruncateLine",definition_uri+reference_uri+6,0,-1)
+  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpItem",definition_uri+reference_uri+7,0,-1)
+  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpItem",definition_uri+reference_uri+8,0,-1)
+end
+
+function M.set_cursor()
+  local current_line = vim.fn.line('.')
+  local column = 2
+
+  local first_def_uri_lnum = 3
+  local last_def_uri_lnum = 3 + definition_uri - 1
+  local first_ref_uri_lnum = 3 + definition_uri + 3
+  local last_ref_uri_lnum = 3 + definition_uri + 2 + reference_uri
+
+  if current_line == 1 then
+    vim.fn.cursor(first_def_uri_lnum,column)
+  elseif current_line == last_def_uri_lnum + 1 then
+    vim.fn.cursor(first_ref_uri_lnum,column)
+  elseif current_line == last_ref_uri_lnum + 1 then
+    vim.fn.cursor(first_def_uri_lnum, column)
+  elseif current_line == first_ref_uri_lnum - 1 then
+    vim.fn.cursor(last_def_uri_lnum,column)
+  elseif current_line == first_def_uri_lnum - 1 then
+    vim.fn.cursor(last_ref_uri_lnum,column)
+  end
+end
+
+local clear_contents = function()
+  -- clear contents
+  contents = {}
+  target_line_count = 0
+  definition_uri = 0
+  reference_uri = 0
+  param_length = 0
 end
 
 local render_finder_result= function (finder_opts)
   if next(contents) == nil then return end
 
-  for _ =1,10,1 do
-    table.insert(contents,' ')
-  end
+  table.insert(contents,' ')
+
   local help = {
-    "  Help: ",
-    " ",
     "[TAB] : Preview     [o] : Open File     [s] : Vsplit";
     "[i]   : Split       [q] : Exit";
   }
+
+  local truncate_line = wrap.add_truncate_line(help)
+  table.insert(contents,truncate_line)
+
   for _,v in ipairs(help) do
     table.insert(contents,v)
   end
+
 
   local opts = {
     relative = "cursor",
     style = "minimal",
   }
   M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',2,true,opts)
-  api.nvim_win_set_cursor(M.contens_buf,{3,1})
+--   api.nvim_win_set_cursor(M.contens_buf,{2,1})
+  api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
 
   for i=1,definition_uri,1 do
     api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetFileName",1+i,0,-1)
@@ -109,13 +144,6 @@ local render_finder_result= function (finder_opts)
   -- load float window map
   M.apply_float_map(M.contents_buf)
   lsp_finder_highlight(finder_opts)
-
-  -- clear contents
-  contents = {}
-  target_line_count = 0
-  definition_uri = 0
-  reference_uri = 0
-  param_length = 0
 end
 
 function M.apply_float_map(contents_bufnr)
@@ -141,14 +169,16 @@ function M.open_link(action_type)
   local action = {"edit ","vsplit ","split "}
   local current_line = vim.fn.line('.')
 
-  if short_link[current_line] ~= nil then
-    api.nvim_win_close(M.contents_win,true)
-    api.nvim_win_close(M.border_win,true)
-    api.nvim_command(action[action_type]..short_link[current_line].link)
-    vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
-  else
+  if short_link[current_line] == nil then
+    error('[LspSaga] target file uri not exist')
     return
   end
+
+  clear_contents()
+  api.nvim_win_close(M.contents_win,true)
+  api.nvim_win_close(M.border_win,true)
+  api.nvim_command(action[action_type]..short_link[current_line].link)
+  vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
 end
 
 function M.insert_preview()
@@ -175,14 +205,13 @@ end
 
 function M.quit_float_window()
   if M.contents_buf ~= nil and M.contents_win ~= nil and M.border_win ~= nil then
+    clear_contents()
     api.nvim_win_close(M.contents_win,true)
     api.nvim_win_close(M.border_win,true)
-  else
-    return
   end
 end
 
-local send_request = coroutine.create(function(timeout)
+local send_request = function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
   local params = lsp.util.make_position_params()
   local results = {}
@@ -200,14 +229,15 @@ local send_request = coroutine.create(function(timeout)
       coroutine.yield(v[1].result,i)
     end
   end
-end)
+end
 
 function M.lsp_finder(opts)
+  local request_intance = coroutine.create(send_request)
   while true do
-    local _,result,method_type = coroutine.resume(send_request)
+    local _,result,method_type = coroutine.resume(request_intance)
     create_finder_contents(result,method_type,opts)
 
-    if coroutine.status(send_request) == 'dead' then
+    if coroutine.status(request_intance) == 'dead' then
       break
     end
   end

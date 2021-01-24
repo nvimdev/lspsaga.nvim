@@ -182,23 +182,23 @@ function M.lsp_jump_diagnostic_next()
 end
 
 function M.lsp_diagnostic_sign(opts)
-  opts = opts or {}
+  opts = opts
   local group = {
     err_group = {
       highlight = 'LspDiagnosticsSignError',
-      sign =opts.error_sign or ''
+      sign =opts.error_sign
     },
     warn_group = {
       highlight = 'LspDiagnosticsSignWarning',
-      sign =opts.warn_sign or ''
+      sign =opts.warn_sign
     },
     hint_group = {
       highlight = 'LspDiagnosticsSignHint',
-      sign =opts.hint_sign or ''
+      sign =opts.hint_sign
     },
     infor_group = {
       highlight = 'LspDiagnosticsSignInformation',
-      sign =opts.infor_sign or ''
+      sign =opts.infor_sign
     },
   }
 
