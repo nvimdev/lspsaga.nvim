@@ -118,7 +118,20 @@ local render_finder_result= function (finder_opts)
     "[i]   : Split       [q] : Exit";
   }
 
-  local truncate_line = wrap.add_truncate_line(help)
+  local max_idx= 1
+  for i=1,#contents-1,1 do
+    if #contents[i] > #contents[max_idx] then
+      max_idx = i
+    end
+  end
+
+  local truncate_line
+  if #contents[max_idx] > #help[1] then
+    truncate_line = wrap.add_truncate_line(contents)
+  else
+    truncate_line = wrap.add_truncate_line(help)
+  end
+
   table.insert(contents,truncate_line)
 
   for _,v in ipairs(help) do
