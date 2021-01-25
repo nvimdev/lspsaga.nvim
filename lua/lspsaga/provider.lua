@@ -307,7 +307,7 @@ function M.lsp_finder()
   render_finder_result()
 end
 
-function M.preview_definiton(timeout_ms)
+function M.preview_definition(timeout_ms)
   local method = "textDocument/definition"
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
