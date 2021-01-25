@@ -190,20 +190,26 @@ local close_auto_preview_win = function()
 end
 
 function M.auto_open_preview()
-  close_auto_preview_win()
   local current_line = vim.fn.line('.')
-  local opts = {
-    relative = 'editor',
-    row = win_current_line - 8,
-    col = win_current_column + 6 ,
-    width = 50
-  }
   local content = short_link[current_line].preview or {}
   if next(content) ~= nil then
+    local opts = window.make_floating_popup_options(50,#content)
+    opts.relative = "editor"
+    print(window.get_float_window_anchor())
+    if window.get_float_window_anchor() == 'SW' then
+      opts.anchor = 'SW'
+      opts.row  = win_current_line + 10
+    elseif window.get_float_window_anchor() == 'NW' then
+      opts.anchor = 'NW'
+      opts.row  = win_current_line - 10
+    end
+    opts.col = win_current_column + 10
+    print(vim.inspect(opts))
     vim.defer_fn(function ()
+      close_auto_preview_win()
       local _,cw,_,bw = window.create_float_window(content,buf_filetype,3,false,opts)
       api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
-    end,150)
+    end,10)
   end
 end
 
@@ -281,6 +287,7 @@ end
 function M.lsp_finder()
   win_current_line = vim.fn.getpos('.')[2]
   win_current_column = vim.fn.getpos('.')[3]
+
   local request_intance = coroutine.create(send_request)
   buf_filetype = api.nvim_buf_get_option(0,'filetype')
   while true do
