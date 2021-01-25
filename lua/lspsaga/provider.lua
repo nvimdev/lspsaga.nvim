@@ -181,25 +181,6 @@ function M.apply_float_map(contents_bufnr)
   nvim_create_keymap(keymaps,lhs)
 end
 
--- action 1 mean enter
--- action 2 mean vsplit
--- action 3 mean split
-function M.open_link(action_type)
-  local action = {"edit ","vsplit ","split "}
-  local current_line = vim.fn.line('.')
-
-  if short_link[current_line] == nil then
-    error('[LspSaga] target file uri not exist')
-    return
-  end
-
-  clear_contents()
-  api.nvim_win_close(M.contents_win,true)
-  api.nvim_win_close(M.border_win,true)
-  api.nvim_command(action[action_type]..short_link[current_line].link)
-  vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
-end
-
 local close_auto_preview_win = function()
   local has_var,winid = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
   if has_var and api.nvim_win_is_valid(winid[1]) and api.nvim_win_is_valid(winid[2]) then
@@ -213,8 +194,8 @@ function M.auto_open_preview()
   local current_line = vim.fn.line('.')
   local opts = {
     relative = 'editor',
-    row = win_current_line + 3,
-    col = win_current_column + 18,
+    row = win_current_line - 8,
+    col = win_current_column + 6 ,
     width = 50
   }
   local content = short_link[current_line].preview or {}
@@ -226,10 +207,28 @@ function M.auto_open_preview()
   end
 end
 
+-- action 1 mean enter
+-- action 2 mean vsplit
+-- action 3 mean split
+function M.open_link(action_type)
+  local action = {"edit ","vsplit ","split "}
+  local current_line = vim.fn.line('.')
+
+  if short_link[current_line] == nil then
+    error('[LspSaga] target file uri not exist')
+    return
+  end
+
+  close_auto_preview_win()
+  clear_contents()
+  api.nvim_win_close(M.contents_win,true)
+  api.nvim_win_close(M.border_win,true)
+  api.nvim_command(action[action_type]..short_link[current_line].link)
+  vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
+end
+
 function M.insert_preview()
   api.nvim_buf_set_option(M.contents_bufnr,'modifiable',true)
-  win_current_line = vim.fn.getpos('.')[2]
-  win_current_column = vim.fn.getpos('.')[3]
   local current_line = vim.fn.line('.')
   if short_link[current_line] ~= nil and short_link[current_line].preview_data.status ~= 1  then
     short_link[current_line].preview_data.status = 1
@@ -252,11 +251,13 @@ end
 
 function M.quit_float_window()
   if M.contents_buf ~= nil and M.contents_win ~= nil and M.border_win ~= nil then
-    clear_contents()
     close_auto_preview_win()
     api.nvim_win_close(M.contents_win,true)
     api.nvim_win_close(M.border_win,true)
   end
+  vim.defer_fn(function()
+    clear_contents()
+  end,150)
 end
 
 local send_request = function(timeout)
@@ -280,6 +281,8 @@ local send_request = function(timeout)
 end
 
 function M.lsp_finder()
+  win_current_line = vim.fn.getpos('.')[2]
+  win_current_column = vim.fn.getpos('.')[3]
   local request_intance = coroutine.create(send_request)
   buf_filetype = api.nvim_buf_get_option(0,'filetype')
   while true do
