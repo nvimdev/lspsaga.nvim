@@ -84,7 +84,7 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 
 ```lua
 -- jump diagnostic
-nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
+nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
 ```
 <div align='center'>
