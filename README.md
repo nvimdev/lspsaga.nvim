@@ -13,13 +13,22 @@ Plug 'glepnir/lspsaga.nvim'
 ## Usage
 
 ```lua
+
 local saga = require 'lspsaga'
 
+-- add your config value here
+-- default value
+-- error_sign = '',
+-- warn_sign = '',
+-- hint_sign = '',
+-- infor_sign = '',
+-- code_action_icon = ' ',
+-- finder_definition_icon = '  ',
+-- finder_reference_icon = '  ',
+-- definition_preview_icon = '  '
+
 local opts = {
-  error_sign = 'your sign',
-  warn_sign = 'warn sign',
-  hint_sign = 'hint sign',
-  infor_sign = 'info sign'
+  error_sign = 'xxx'
 }
 
 saga.init_lsp_saga(opts)
@@ -35,7 +44,7 @@ nnoremap <silent> K <cmd>lua vim.lsp.buf.hover()<CR>
 nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definiton()<CR>
 
 -- lsp provider to find the currsor word definition and reference
-nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder({definition_icon='  ',reference_icon = '  '})<CR>
+nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
 
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
