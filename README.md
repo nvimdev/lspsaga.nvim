@@ -26,7 +26,6 @@ local saga = require 'lspsaga'
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
 -- definition_preview_icon = '  '
--- max_hover_width = 0 (using the length of selected symbol)
 -- 1: thin border | 2: rounded border | 3: thick border
 -- border_style = 1
 
