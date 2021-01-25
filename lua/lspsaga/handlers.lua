@@ -3,7 +3,7 @@ local window = require('lspsaga.window')
 local handlers = {}
 
 -- Add I custom handlers function in lsp server config
-function handlers.overwrite_default()
+function handlers.overwrite_default(opts)
   -- diagnostic callback
   lsp.handlers['textDocument/hover'] = function(_, method, result)
     vim.lsp.util.focusable_float(method, function()
@@ -12,7 +12,11 @@ function handlers.overwrite_default()
         markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
         if vim.tbl_isempty(markdown_lines) then return end
 
-        local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines)
+        local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines, {
+          max_width = opts.max_hover_width,
+          border_style = opts.border_style,
+        })
+
         lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden", "InsertCharPre"}, contents_winid)
         lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden", "InsertCharPre"}, border_winid)
         return bufnr,contents_winid

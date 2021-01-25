@@ -243,13 +243,16 @@ function M.fancy_floating_markdown(contents, opts)
     width = #stripped[1]
   end
 
+  if opts.max_width ~= 0 then
+    width = opts.max_width
+  end
   stripped = wrap.wrap_contents(stripped,width)
 
   local truncate_line = wrap.add_truncate_line(stripped)
   table.insert(stripped,2,truncate_line)
 
   -- Make the floating window.
-  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',1,false,opts)
+  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',opts.border_style,false,opts)
 
   api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',1,0,-1)
 

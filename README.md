@@ -26,6 +26,9 @@ local saga = require 'lspsaga'
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
 -- definition_preview_icon = '  '
+-- max_hover_width = 0 (using the length of selected symbol)
+-- 1: thin border | 2: rounded border | 3: thick border
+-- border_style = 1
 
 local opts = {
   error_sign = 'xxx'
@@ -34,7 +37,7 @@ local opts = {
 saga.init_lsp_saga(opts)
 ```
 
-### Lsp Finder 
+### Lsp Finder
 
 ```lua
 -- lsp provider to find the currsor word definition and reference
