@@ -13,6 +13,7 @@ function handlers.overwrite_default(opts)
         if vim.tbl_isempty(markdown_lines) then return end
 
         local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines, {
+          max_hover_width = opts.max_hover_width,
           border_style = opts.border_style,
         })
 

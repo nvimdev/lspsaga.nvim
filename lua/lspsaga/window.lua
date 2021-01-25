@@ -243,6 +243,9 @@ function M.fancy_floating_markdown(contents, opts)
     width = #stripped[1]
   end
 
+  if opts.max_hover_width > 1 then
+    width = opts.max_hover_width
+  end
   stripped = wrap.wrap_contents(stripped,width)
 
   local truncate_line = wrap.add_truncate_line(stripped)
