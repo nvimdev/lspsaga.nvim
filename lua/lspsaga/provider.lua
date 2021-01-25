@@ -152,6 +152,7 @@ local render_finder_result= function ()
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
+  api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.provider').close_lsp_finder_window()")
 
   for i=1,definition_uri,1 do
     api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetFileName",1+i,0,-1)
@@ -262,6 +263,11 @@ function M.quit_float_window()
     api.nvim_win_close(M.border_win,true)
   end
   clear_contents()
+end
+
+function M.close_lsp_finder_window()
+  M.quit_float_window()
+  close_auto_preview_win()
 end
 
 local send_request = function(timeout)
