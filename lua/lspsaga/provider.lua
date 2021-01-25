@@ -255,9 +255,7 @@ function M.quit_float_window()
     api.nvim_win_close(M.contents_win,true)
     api.nvim_win_close(M.border_win,true)
   end
-  vim.defer_fn(function()
-    clear_contents()
-  end,150)
+  clear_contents()
 end
 
 local send_request = function(timeout)
