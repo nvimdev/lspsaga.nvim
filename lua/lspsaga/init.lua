@@ -10,7 +10,10 @@ saga.config_values = {
   code_action_icon = ' ',
   finder_definition_icon = '  ',
   finder_reference_icon = '  ',
-  definition_preview_icon = '  '
+  definition_preview_icon = '  ',
+  max_hover_width = 0,
+  -- 1: thin border | 2: rounded border | 3: thick border
+  border_style = 1
 }
 
 function saga.extend_config(opts)
@@ -31,7 +34,7 @@ function saga.init_lsp_saga(opts)
   local handlers = require 'lspsaga.handlers'
   local syntax = require 'lspsaga.syntax'
 
-  handlers.overwrite_default()
+  handlers.overwrite_default(saga.config_values)
   diagnostic.lsp_diagnostic_sign(saga.config_values)
   syntax.add_highlight()
 end
