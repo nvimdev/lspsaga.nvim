@@ -51,7 +51,6 @@ end
 local set_cursor = function()
   local column = 2
   local current_line = vim.fn.line('.')
-  print(current_line)
 
   if current_line == 1 then
     vim.fn.cursor(3,column)
