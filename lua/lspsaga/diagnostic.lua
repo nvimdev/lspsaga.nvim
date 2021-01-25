@@ -182,7 +182,6 @@ function M.lsp_jump_diagnostic_next()
 end
 
 function M.lsp_diagnostic_sign(opts)
-  opts = opts
   local group = {
     err_group = {
       highlight = 'LspDiagnosticsSignError',

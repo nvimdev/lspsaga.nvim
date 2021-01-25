@@ -3,29 +3,29 @@ local vim,api,lsp = vim,vim.api,vim.lsp
 local short_link = {}
 local root_dir = lsp.buf_get_clients()[1].config.root_dir or ''
 local wrap = require('lspsaga.wrap')
+local config = require('lspsaga').config_values
 local M = {}
 
 local contents = {}
-local target_line_count = 0
 local definition_uri = 0
 local reference_uri = 0
 local param_length = 0
 
---TODO: set cursor in lsp finder
-local create_finder_contents =function(result,method_type,opts)
+local create_finder_contents =function(result,method_type)
+  local target_lnum = 0
   if type(result) == 'table' then
     local method_option = {
-      {icon = opts.definition_icon or '',title = ':  '.. #result ..' Definitions'};
-      {icon = opts.reference_icon or '',title = ':  '.. #result ..' References',};
+      {icon = config.finder_definition_icon,title = ':  '.. #result ..' Definitions'};
+      {icon = config.finder_reference_icon,title = ':  '.. #result ..' References',};
     }
     local params = vim.fn.expand("<cword>")
     param_length = #params
     local title = method_option[method_type].icon.. params ..method_option[method_type].title
     if method_type == 1 then
       table.insert(contents,title)
-      target_line_count = 2
+      target_lnum = 2
     else
-      target_line_count = target_line_count + 3
+      target_lnum = target_lnum + definition_uri + 5
       table.insert(contents," ")
       table.insert(contents,title)
     end
@@ -53,18 +53,18 @@ local create_finder_contents =function(result,method_type,opts)
         table.insert(contents,' ')
       end
       table.insert(contents,target_line)
-      target_line_count = target_line_count + index
+      target_lnum = target_lnum + 1
       local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+5,false)
-      short_link[target_line_count] = {link=link,preview=lines,row=range.start.line+1,col=range.start.character+1}
-      short_link[target_line_count].preview_data = {}
-      short_link[target_line_count].preview_data.status = 0
+      short_link[target_lnum] = {link=link,preview=lines,row=range.start.line+1,col=range.start.character+1}
+      short_link[target_lnum].preview_data = {}
+      short_link[target_lnum].preview_data.status = 0
     end
   end
 end
 
-local lsp_finder_highlight = function(opts)
-  local def_icon = opts.definition_icon or ''
-  local ref_icon = opts.reference_icon or ''
+local lsp_finder_highlight = function()
+  local def_icon = config.finder_definition_icon or ''
+  local ref_icon = config.finder_reference_icon or ''
   -- add syntax
   api.nvim_buf_add_highlight(M.contents_buf,-1,"DefinitionIcon",0,1,#def_icon-1)
   api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetWord",0,#def_icon,param_length+#def_icon+3)
@@ -102,13 +102,12 @@ end
 local clear_contents = function()
   -- clear contents
   contents = {}
-  target_line_count = 0
   definition_uri = 0
   reference_uri = 0
   param_length = 0
 end
 
-local render_finder_result= function (finder_opts)
+local render_finder_result= function ()
   if next(contents) == nil then return end
 
   table.insert(contents,' ')
@@ -156,7 +155,7 @@ local render_finder_result= function (finder_opts)
   end
   -- load float window map
   M.apply_float_map(M.contents_buf)
-  lsp_finder_highlight(finder_opts)
+  lsp_finder_highlight()
 end
 
 function M.apply_float_map(contents_bufnr)
@@ -244,17 +243,17 @@ local send_request = function(timeout)
   end
 end
 
-function M.lsp_finder(opts)
+function M.lsp_finder()
   local request_intance = coroutine.create(send_request)
   while true do
     local _,result,method_type = coroutine.resume(request_intance)
-    create_finder_contents(result,method_type,opts)
+    create_finder_contents(result,method_type)
 
     if coroutine.status(request_intance) == 'dead' then
       break
     end
   end
-  render_finder_result(opts)
+  render_finder_result()
 end
 
 function M.preview_definiton(timeout_ms)
@@ -276,7 +275,7 @@ function M.preview_definiton(timeout_ms)
     local content =
         vim.api.nvim_buf_get_lines(bufnr, range.start.line, range["end"].line + 1 +
         10, false)
-    content = vim.list_extend({"什 Definition Preview 什",""},content)
+    content = vim.list_extend({config.definition_preview_icon.."Definition Preview",""},content)
     local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
 
     local opts = {
