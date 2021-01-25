@@ -10,6 +10,9 @@ local contents = {}
 local definition_uri = 0
 local reference_uri = 0
 local param_length = 0
+local buf_filetype = ''
+local win_current_line = 0
+local win_current_column = 0
 
 local create_finder_contents =function(result,method_type)
   local target_lnum = 0
@@ -100,11 +103,14 @@ function M.set_cursor()
 end
 
 local clear_contents = function()
-  -- clear contents
+  -- clear
   contents = {}
   definition_uri = 0
   reference_uri = 0
   param_length = 0
+  buf_filetype = ''
+  win_current_line = 0
+  win_current_column = 0
 end
 
 local render_finder_result= function ()
@@ -145,6 +151,7 @@ local render_finder_result= function ()
   M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',2,true,opts)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
+  api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
 
   for i=1,definition_uri,1 do
     api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetFileName",1+i,0,-1)
@@ -193,8 +200,36 @@ function M.open_link(action_type)
   vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
 end
 
+local close_auto_preview_win = function()
+  local has_var,winid = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
+  if has_var and api.nvim_win_is_valid(winid[1]) and api.nvim_win_is_valid(winid[2]) then
+    api.nvim_win_close(winid[1],true)
+    api.nvim_win_close(winid[2],true)
+  end
+end
+
+function M.auto_open_preview()
+  close_auto_preview_win()
+  local current_line = vim.fn.line('.')
+  local opts = {
+    relative = 'editor',
+    row = win_current_line + 3,
+    col = win_current_column + 18,
+    width = 50
+  }
+  local content = short_link[current_line].preview or {}
+  if next(content) ~= nil then
+    vim.defer_fn(function ()
+      local _,cw,_,bw = window.create_float_window(content,buf_filetype,3,false,opts)
+      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
+    end,150)
+  end
+end
+
 function M.insert_preview()
   api.nvim_buf_set_option(M.contents_bufnr,'modifiable',true)
+  win_current_line = vim.fn.getpos('.')[2]
+  win_current_column = vim.fn.getpos('.')[3]
   local current_line = vim.fn.line('.')
   if short_link[current_line] ~= nil and short_link[current_line].preview_data.status ~= 1  then
     short_link[current_line].preview_data.status = 1
@@ -218,6 +253,7 @@ end
 function M.quit_float_window()
   if M.contents_buf ~= nil and M.contents_win ~= nil and M.border_win ~= nil then
     clear_contents()
+    close_auto_preview_win()
     api.nvim_win_close(M.contents_win,true)
     api.nvim_win_close(M.border_win,true)
   end
@@ -245,6 +281,7 @@ end
 
 function M.lsp_finder()
   local request_intance = coroutine.create(send_request)
+  buf_filetype = api.nvim_buf_get_option(0,'filetype')
   while true do
     local _,result,method_type = coroutine.resume(request_intance)
     create_finder_contents(result,method_type)
