@@ -272,10 +272,12 @@ end
 
 local send_request = function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
-  local params = lsp.util.make_position_params()
+  local def_params = lsp.util.make_position_params()
+  local ref_params = lsp.util.make_position_params()
+  ref_params.context = {includeDeclaration = true;}
   local results = {}
-  local def_response = lsp.buf_request_sync(0, method[1], params, timeout or 1000)
-  local ref_response = lsp.buf_request_sync(0, method[2], params, timeout or 1000)
+  local def_response = lsp.buf_request_sync(0, method[1], def_params, timeout or 1000)
+  local ref_response = lsp.buf_request_sync(0, method[2], ref_params, timeout or 1000)
   if not vim.tbl_isempty(def_response) then
     table.insert(results,def_response)
   end
