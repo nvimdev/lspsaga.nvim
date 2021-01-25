@@ -134,7 +134,7 @@ local function jump_to_entry(entry)
   local header = severity_icon[entry.severity] ..' '..'['.. server_source..']'
   table.insert(diagnostic_message,header)
 
-  local wrap_message = wrap.wrap_line(entry.message,50)
+  local wrap_message = wrap.wrap_text(entry.message,50)
   local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(diagnostic_message,truncate_line)
   for _,v in pairs(wrap_message) do
@@ -143,7 +143,7 @@ local function jump_to_entry(entry)
 
   -- set curosr
   api.nvim_win_set_cursor(0, {entry_line, entry_character})
-  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',1,false,false)
+  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',1,false)
 
   -- use a variable to control diagnostic floatwidnow
   api.nvim_buf_set_var(0,"diagnostic_float_window",{fw,bw})
@@ -210,3 +210,4 @@ function M.lsp_diagnostic_sign(opts)
 end
 
 return M
+
