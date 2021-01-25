@@ -210,4 +210,3 @@ function M.lsp_diagnostic_sign(opts)
 end
 
 return M
-
