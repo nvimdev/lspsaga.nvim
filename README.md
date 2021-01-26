@@ -56,6 +56,7 @@ src="https://user-images.githubusercontent.com/41671631/105656835-11e73000-5efe-
 ```lua
 -- code action
 nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
+vnoremap <silent><leader>ca <cmd>'<,'>lua require('lspsaga.codeaction').code_action()<CR>
 ```
 <div align='center'>
 <img
