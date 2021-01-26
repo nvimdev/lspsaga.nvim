@@ -1,6 +1,6 @@
 local api= vim.api
 local window = require('lspsaga.window')
-local saga = require('lspsaga').config
+local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 
 local code_actions = {}
@@ -16,6 +16,7 @@ local function code_action(context)
   local contents = {}
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
+  if vim.tbl_isempty(response) or response[1].result == nil then return end
 
   for index,action in pairs(response[1].result) do
     local action_title = '['..index..']' ..' '.. action.title
