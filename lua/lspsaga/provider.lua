@@ -197,7 +197,6 @@ function M.auto_open_preview()
   if next(content) ~= nil then
     local opts = window.make_floating_popup_options(50,#content)
     opts.relative = "editor"
-    print(window.get_float_window_anchor())
     if window.get_float_window_anchor() == 'SW' then
       opts.anchor = 'SW'
       opts.row  = win_current_line + 10
@@ -206,7 +205,6 @@ function M.auto_open_preview()
       opts.row  = win_current_line - 10
     end
     opts.col = win_current_column + 10
-    print(vim.inspect(opts))
     vim.defer_fn(function ()
       close_auto_preview_win()
       local _,cw,_,bw = window.create_float_window(content,buf_filetype,config.border_style,false,opts)
