@@ -34,6 +34,9 @@ local saga = require 'lspsaga'
 saga.init_lsp_saga {
   your custom option here
 }
+
+or --use default config
+saga.init_lsp_saga()
 ```
 
 ### Lsp Finder
