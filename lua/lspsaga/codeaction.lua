@@ -28,6 +28,8 @@ local render_code_action_window = function (response)
     table.insert(actions,action)
   end
 
+  if #contents == 1 then return end
+
   -- insert blank line
   local truncate_line = wrap.add_truncate_line(contents)
   table.insert(contents,2,truncate_line)
