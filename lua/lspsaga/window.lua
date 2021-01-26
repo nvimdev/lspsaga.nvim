@@ -11,8 +11,6 @@ local border_style = {
   {top_left = "┏",top_mid = "━",top_right = "┓",mid = "┃",bottom_left = "┗",bottom_right = "┛"};
 }
 
-local anchor = ''
-
 function M.get_max_contents_width(contents)
   local max_length = 0
   for i=1,#contents-1,1 do
@@ -148,10 +146,7 @@ function M.create_float_contents(contents,filetype,enter,opts)
   -- Clean up input: trim empty lines from the end, pad
   local content = vim.lsp.util._trim_and_pad(contents,{pad_left=0,pad_right=0})
 
-  if filetype then
-    api.nvim_buf_set_option(contents_bufnr, 'filetype', filetype)
-  end
-
+  api.nvim_buf_set_option(contents_bufnr, 'filetype', filetype)
   api.nvim_buf_set_lines(contents_bufnr,0,-1,true,content)
   api.nvim_buf_set_option(contents_bufnr, 'modifiable', false)
   local contents_winid = api.nvim_open_win(contents_bufnr, enter, opts)
@@ -163,13 +158,8 @@ function M.create_float_contents(contents,filetype,enter,opts)
   return contents_bufnr, contents_winid
 end
 
-function M.get_float_window_anchor()
-  return anchor
-end
-
 function M.create_float_window(contents,filetype,border,enter,opts)
   local _,_,border_option = make_border_option(contents,opts)
-  anchor = border_option.anchor
   local contents_option= border_option
   contents_option.width = border_option.width - 2
   contents_option.height = border_option.height - 2
@@ -294,6 +284,36 @@ function M.fancy_floating_markdown(contents, opts)
 
   vim.api.nvim_set_current_win(cwin)
   return contents_bufnr, contents_winid,border_bufnr,border_winid
+end
+
+function M.nvim_close_valid_window(winid)
+  local close_win = function(win_id)
+    if win_id == 0 then return end
+    if vim.api.nvim_win_is_valid(win_id) then
+      api.nvim_win_close(win_id,true)
+    end
+  end
+
+  local _switch = {
+    ["table"] = function()
+      for _,id in ipairs(winid) do
+        close_win(id)
+      end
+    end,
+    ["number"] = function()
+      close_win(winid)
+    end
+  }
+
+  local _switch_metatable = {
+    __index = function(_,_)
+      error(string.format('Wrong type of winid'))
+    end
+  }
+
+  setmetatable(_switch,_switch_metatable)
+
+  _switch[type(winid)]()
 end
 
 return M
