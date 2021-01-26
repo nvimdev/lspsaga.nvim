@@ -23,7 +23,7 @@ function handlers.overwrite_default(opts)
     end)
     end
 
-  if opts.use_saga_diagnostic_handler == 1 then
+  if opts.use_saga_diagnostic_handler then
     lsp.handlers['textDocument/publishDiagnostics'] = vim.lsp.with(
       vim.lsp.diagnostic.on_publish_diagnostics, {
           -- Enable underline, use default values

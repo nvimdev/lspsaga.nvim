@@ -18,8 +18,8 @@ local saga = require 'lspsaga'
 
 -- add your config value here
 -- default value
--- use_saga_diagnostic_handler = 1 // disable the lspsaga diagnostic handler
--- use_saga_diagnostic_sign = 1 // disable the lspsaga diagnostic sign
+-- use_saga_diagnostic_handler = true
+-- use_saga_diagnostic_sign = true
 -- error_sign = '',
 -- warn_sign = '',
 -- hint_sign = '',
