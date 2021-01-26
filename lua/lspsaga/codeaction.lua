@@ -48,6 +48,8 @@ end
 local function code_action(context)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
+  -- if exist diagnostic float window close it
+  require('lspsaga.diagnostic').close_preview()
 
   bufnr = vim.fn.bufnr()
   vim.validate { context = { context, 't', true } }
