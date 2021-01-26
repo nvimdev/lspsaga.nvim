@@ -43,7 +43,7 @@ saga.init_lsp_saga()
 ### Lsp Finder
 
 ```lua
--- lsp provider to find the currsor word definition and reference
+-- lsp provider to find the cursor word definition and reference
 nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
 ```
 <div align='center'>
