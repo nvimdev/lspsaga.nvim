@@ -55,10 +55,10 @@ local create_finder_contents =function(result,method_type)
       local short_name
 
       -- reduce filename length by root_dir or home dir
-      if link:find(root_dir,1) then
-        short_name = link:gsub(root_dir..'/','',1)
-      elseif link:find(home,1) then
-        short_name = link:gsub(home..'/','',1)
+      if link:find(root_dir, 1, true) then
+        short_name = link:sub(root_dir:len() + 2)
+      elseif link:find(home, 1, true) then
+        short_name = link:sub(home:len() + 2)
       end
 
       local target_line = '['..index..']'..' '..short_name
