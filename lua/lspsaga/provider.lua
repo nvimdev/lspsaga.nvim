@@ -148,10 +148,11 @@ local render_finder_result= function ()
     relative = "cursor",
     style = "minimal",
   }
-  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',2,true,opts)
+  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',config.border_style,true,opts)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
+  api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.provider').close_lsp_finder_window()")
 
   for i=1,definition_uri,1 do
     api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetFileName",1+i,0,-1)
@@ -190,20 +191,26 @@ local close_auto_preview_win = function()
 end
 
 function M.auto_open_preview()
-  close_auto_preview_win()
   local current_line = vim.fn.line('.')
-  local opts = {
-    relative = 'editor',
-    row = win_current_line - 8,
-    col = win_current_column + 6 ,
-    width = 50
-  }
   local content = short_link[current_line].preview or {}
   if next(content) ~= nil then
+    local opts = window.make_floating_popup_options(50,#content)
+    opts.relative = "editor"
+    print(window.get_float_window_anchor())
+    if window.get_float_window_anchor() == 'SW' then
+      opts.anchor = 'SW'
+      opts.row  = win_current_line + 10
+    elseif window.get_float_window_anchor() == 'NW' then
+      opts.anchor = 'NW'
+      opts.row  = win_current_line - 10
+    end
+    opts.col = win_current_column + 10
+    print(vim.inspect(opts))
     vim.defer_fn(function ()
-      local _,cw,_,bw = window.create_float_window(content,buf_filetype,3,false,opts)
+      close_auto_preview_win()
+      local _,cw,_,bw = window.create_float_window(content,buf_filetype,config.border_style,false,opts)
       api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
-    end,150)
+    end,10)
   end
 end
 
@@ -258,12 +265,19 @@ function M.quit_float_window()
   clear_contents()
 end
 
+function M.close_lsp_finder_window()
+  M.quit_float_window()
+  close_auto_preview_win()
+end
+
 local send_request = function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
-  local params = lsp.util.make_position_params()
+  local def_params = lsp.util.make_position_params()
+  local ref_params = lsp.util.make_position_params()
+  ref_params.context = {includeDeclaration = true;}
   local results = {}
-  local def_response = lsp.buf_request_sync(0, method[1], params, timeout or 1000)
-  local ref_response = lsp.buf_request_sync(0, method[2], params, timeout or 1000)
+  local def_response = lsp.buf_request_sync(0, method[1], def_params, timeout or 1000)
+  local ref_response = lsp.buf_request_sync(0, method[2], ref_params, timeout or 1000)
   if not vim.tbl_isempty(def_response) then
     table.insert(results,def_response)
   end
@@ -281,6 +295,7 @@ end
 function M.lsp_finder()
   win_current_line = vim.fn.getpos('.')[2]
   win_current_column = vim.fn.getpos('.')[3]
+
   local request_intance = coroutine.create(send_request)
   buf_filetype = api.nvim_buf_get_option(0,'filetype')
   while true do
@@ -294,7 +309,7 @@ function M.lsp_finder()
   render_finder_result()
 end
 
-function M.preview_definiton(timeout_ms)
+function M.preview_definition(timeout_ms)
   local method = "textDocument/definition"
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
@@ -320,7 +335,7 @@ function M.preview_definiton(timeout_ms)
       relative = "cursor",
       style = "minimal",
     }
-    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,1,false,opts)
+    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,config.border_style,false,opts)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
                                         border_winid)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},

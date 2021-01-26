@@ -1,6 +1,6 @@
 local api= vim.api
 local window = require('lspsaga.window')
-local saga = require('lspsaga')
+local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 
 local code_actions = {}
@@ -14,8 +14,9 @@ local function code_action(context)
   local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
 
   local contents = {}
-  local title = saga.config_values['code_action_icon'] .. 'CodeActions:'
+  local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
+  if vim.tbl_isempty(response) or response[1].result == nil then return end
 
   for index,action in pairs(response[1].result) do
     local action_title = '['..index..']' ..' '.. action.title
@@ -27,7 +28,7 @@ local function code_action(context)
   local truncate_line = wrap.add_truncate_line(contents)
   table.insert(contents,2,truncate_line)
 
-  contents_bufnr,contents_winid,_,border_winid = window.create_float_window(contents,'LspSagaCodeAction',1,true)
+  contents_bufnr,contents_winid,_,border_winid = window.create_float_window(contents,'LspSagaCodeAction',config.border_style,true)
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
 
   api.nvim_buf_add_highlight(contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)

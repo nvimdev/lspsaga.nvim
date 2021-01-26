@@ -11,6 +11,8 @@ local border_style = {
   {top_left = "┏",top_mid = "━",top_right = "┓",mid = "┃",bottom_left = "┗",bottom_right = "┛"};
 }
 
+local anchor = ''
+
 function M.get_max_contents_width(contents)
   local max_length = 0
   for i=1,#contents-1,1 do
@@ -161,8 +163,13 @@ function M.create_float_contents(contents,filetype,enter,opts)
   return contents_bufnr, contents_winid
 end
 
+function M.get_float_window_anchor()
+  return anchor
+end
+
 function M.create_float_window(contents,filetype,border,enter,opts)
   local _,_,border_option = make_border_option(contents,opts)
+  anchor = border_option.anchor
   local contents_option= border_option
   contents_option.width = border_option.width - 2
   contents_option.height = border_option.height - 2

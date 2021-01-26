@@ -18,6 +18,8 @@ local saga = require 'lspsaga'
 
 -- add your config value here
 -- default value
+-- use_saga_diagnostic_handler = 1 // disable the lspsaga diagnostic handler
+-- use_saga_diagnostic_sign = 1 // disable the lspsaga diagnostic sign
 -- error_sign = '',
 -- warn_sign = '',
 -- hint_sign = '',
@@ -30,11 +32,9 @@ local saga = require 'lspsaga'
 -- border_style = 1
 -- max_hover_width = 0 (automatically adjust to the width of current symbol)
 
-local opts = {
-  error_sign = 'xxx'
+saga.init_lsp_saga {
+  your custom option here
 }
-
-saga.init_lsp_saga(opts)
 ```
 
 ### Lsp Finder
@@ -74,7 +74,7 @@ src="https://user-images.githubusercontent.com/41671631/105657800-29bfb380-5f00-
 
 ```lua
 -- preview definition
-nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definiton()<CR>
+nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
 ```
 <div align='center'>
 <img
