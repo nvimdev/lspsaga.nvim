@@ -13,10 +13,9 @@ local definition_uri = 0
 local reference_uri = 0
 local param_length = 0
 local buf_filetype = ''
-local win_current_lnum = 0
-local current_top_lnum = 0
-local current_bottom_lnum = 0
-local win_current_column = 0
+local lines_above = 0
+local lines_below = 0
+local win_col = 0
 
 local create_finder_contents =function(result,method_type)
   local target_lnum = 0
@@ -121,10 +120,9 @@ local clear_data = function()
   reference_uri = 0
   param_length = 0
   buf_filetype = ''
-  win_current_lnum = 0
-  win_current_column = 0
-  current_top_lnum = 0
-  current_bottom_lnum = 0
+  lines_above = 0
+  lines_below = 0
+  win_col = 0
   M.contents_buf = 0
   M.contents_win = 0
   M.border_bufnr = 0
@@ -207,7 +205,7 @@ local close_auto_preview_win = function()
   end
 end
 
--- TODO: better window position
+-- Not sure this work well in any win size
 function M.auto_open_preview()
   local current_line = vim.fn.line('.')
   if not short_link[current_line] then return end
@@ -218,20 +216,23 @@ function M.auto_open_preview()
     opts.relative = "editor"
     opts.pad_top = 0
     opts.pad_bottom = 0
-    opts.col = win_current_column + 18
+    opts.col = win_col
+    opts.anchor = 'NW'
 
     -- lsp_finder window below the cursor line
-    if current_bottom_lnum - 12 - definition_uri - reference_uri > 3 then
-      if win_current_lnum - current_top_lnum < opts.height + 5 then
-        opts.anchor = "NW"
-        opts.row = win_current_lnum * 0.6
+    if lines_above < lines_below then
+      if lines_above < opts.height + 4 then
+        opts.row = lines_above * 3
       else
-        opts.anchor = "NW"
-        opts.row = win_current_lnum * 0.3
+        opts.row = lines_above * 0.5
       end
     else
-      opts.anchor = "NW"
-      opts.row = win_current_lnum * 0.15
+      if lines_above < 12 + definition_uri + reference_uri + opts.height + 2 then
+        print('here')
+        opts.row = lines_above * 2
+      else
+        opts.row = lines_above * 0.35
+      end
     end
 
     vim.defer_fn(function ()
@@ -322,10 +323,10 @@ end
 function M.lsp_finder()
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
-  win_current_lnum = vim.fn.getpos('.')[2]
-  win_current_column = vim.fn.getpos('.')[3]
-  current_top_lnum = vim.fn.line('w0')
-  current_bottom_lnum = vim.fn.line('w$')
+
+  lines_above = vim.fn.winline() - 1
+  lines_below = vim.fn.winheight(0) - lines_above
+  win_col = vim.fn.wincol()
 
   local request_intance = coroutine.create(send_request)
   buf_filetype = api.nvim_buf_get_option(0,'filetype')
