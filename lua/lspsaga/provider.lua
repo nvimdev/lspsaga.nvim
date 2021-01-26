@@ -6,13 +6,16 @@ local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local M = {}
+local home = os.getenv("HOME")
 
 local contents = {}
 local definition_uri = 0
 local reference_uri = 0
 local param_length = 0
 local buf_filetype = ''
-local win_current_line = 0
+local win_current_lnum = 0
+local current_top_lnum = 0
+local current_bottom_lnum = 0
 local win_current_column = 0
 
 local create_finder_contents =function(result,method_type)
@@ -50,7 +53,15 @@ local create_finder_contents =function(result,method_type)
         vim.fn.bufload(bufnr)
       end
       local link = vim.uri_to_fname(uri)
-      local short_name = vim.fn.substitute(link,root_dir..'/','','')
+      local short_name
+
+      -- reduce filename length by root_dir or home dir
+      if link:find(root_dir,1) then
+        short_name = link:gsub(root_dir..'/','',1)
+      elseif link:find(home,1) then
+        short_name = link:gsub(home..'/','',1)
+      end
+
       local target_line = '['..index..']'..' '..short_name
       local range = result[index].targetRange or result[index].range
       if index == 1  then
@@ -103,15 +114,21 @@ function M.set_cursor()
   end
 end
 
-local clear_contents = function()
+local clear_data = function()
   -- clear
   contents = {}
   definition_uri = 0
   reference_uri = 0
   param_length = 0
   buf_filetype = ''
-  win_current_line = 0
+  win_current_lnum = 0
   win_current_column = 0
+  current_top_lnum = 0
+  current_bottom_lnum = 0
+  M.contents_buf = 0
+  M.contents_win = 0
+  M.border_bufnr = 0
+  M.border_win = 0
 end
 
 local render_finder_result= function ()
@@ -185,28 +202,38 @@ end
 
 local close_auto_preview_win = function()
   local has_var,winid = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
-  if has_var and api.nvim_win_is_valid(winid[1]) and api.nvim_win_is_valid(winid[2]) then
-    api.nvim_win_close(winid[1],true)
-    api.nvim_win_close(winid[2],true)
+  if has_var then
+    window.nvim_close_valid_window(winid)
   end
 end
 
+-- TODO: better window position
 function M.auto_open_preview()
   local current_line = vim.fn.line('.')
+  if not short_link[current_line] then return end
   local content = short_link[current_line].preview or {}
   if next(content) ~= nil then
-    local opts = window.make_floating_popup_options(50,#content)
+    local opts = window.make_floating_popup_options(50,#contents)
+    opts.height = #content
     opts.relative = "editor"
-    print(window.get_float_window_anchor())
-    if window.get_float_window_anchor() == 'SW' then
-      opts.anchor = 'SW'
-      opts.row  = win_current_line + 10
-    elseif window.get_float_window_anchor() == 'NW' then
-      opts.anchor = 'NW'
-      opts.row  = win_current_line - 10
+    opts.pad_top = 0
+    opts.pad_bottom = 0
+    opts.col = win_current_column + 18
+
+    -- lsp_finder window below the cursor line
+    if current_bottom_lnum - 12 - definition_uri - reference_uri > 3 then
+      if win_current_lnum - current_top_lnum < opts.height + 5 then
+        opts.anchor = "NW"
+        opts.row = win_current_lnum * 0.6
+      else
+        opts.anchor = "NW"
+        opts.row = win_current_lnum * 0.3
+      end
+    else
+      opts.anchor = "NW"
+      opts.row = win_current_lnum * 0.15
     end
-    opts.col = win_current_column + 10
-    print(vim.inspect(opts))
+
     vim.defer_fn(function ()
       close_auto_preview_win()
       local _,cw,_,bw = window.create_float_window(content,buf_filetype,config.border_style,false,opts)
@@ -228,11 +255,11 @@ function M.open_link(action_type)
   end
 
   close_auto_preview_win()
-  clear_contents()
   api.nvim_win_close(M.contents_win,true)
   api.nvim_win_close(M.border_win,true)
   api.nvim_command(action[action_type]..short_link[current_line].link)
   vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
+  clear_data()
 end
 
 function M.insert_preview()
@@ -258,17 +285,16 @@ function M.insert_preview()
 end
 
 function M.quit_float_window()
-  if M.contents_buf ~= nil and M.contents_win ~= nil and M.border_win ~= nil then
-    close_auto_preview_win()
-    api.nvim_win_close(M.contents_win,true)
-    api.nvim_win_close(M.border_win,true)
+  close_auto_preview_win()
+  if M.contents_win ~= 0 and M.border_win ~= 0 then
+    window.nvim_close_valid_window(M.contents_win)
+    window.nvim_close_valid_window(M.border_win)
   end
-  clear_contents()
+  clear_data()
 end
 
 function M.close_lsp_finder_window()
   M.quit_float_window()
-  close_auto_preview_win()
 end
 
 local send_request = function(timeout)
@@ -296,9 +322,10 @@ end
 function M.lsp_finder()
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
-
-  win_current_line = vim.fn.getpos('.')[2]
+  win_current_lnum = vim.fn.getpos('.')[2]
   win_current_column = vim.fn.getpos('.')[3]
+  current_top_lnum = vim.fn.line('w0')
+  current_bottom_lnum = vim.fn.line('w$')
 
   local request_intance = coroutine.create(send_request)
   buf_filetype = api.nvim_buf_get_option(0,'filetype')

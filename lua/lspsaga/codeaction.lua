@@ -74,12 +74,7 @@ end
 
 local quit_action_window = function()
   if contents_winid == 0 and border_winid == 0 then return end
-  if api.nvim_win_is_valid(contents_winid) then
-    api.nvim_win_close(contents_winid, true)
-  end
-  if api.nvim_win_is_valid(border_winid) then
-    api.nvim_win_close(border_winid, true)
-  end
+  window.nvim_close_valid_window({contents_winid,border_winid})
   clear_data()
 end
 

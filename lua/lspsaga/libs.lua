@@ -46,5 +46,5 @@ return {
   has_key = has_key,
   nvim_create_augroup = nvim_create_augroup,
   nvim_create_keymap = nvim_create_keymap,
-  check_lsp_active = check_lsp_active
+  check_lsp_active = check_lsp_active,
 }
