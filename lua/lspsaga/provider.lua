@@ -148,7 +148,7 @@ local render_finder_result= function ()
     relative = "cursor",
     style = "minimal",
   }
-  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',2,true,opts)
+  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',config.border_style,true,opts)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
@@ -208,7 +208,7 @@ function M.auto_open_preview()
     print(vim.inspect(opts))
     vim.defer_fn(function ()
       close_auto_preview_win()
-      local _,cw,_,bw = window.create_float_window(content,buf_filetype,3,false,opts)
+      local _,cw,_,bw = window.create_float_window(content,buf_filetype,config.border_style,false,opts)
       api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
     end,10)
   end
@@ -335,7 +335,7 @@ function M.preview_definition(timeout_ms)
       relative = "cursor",
       style = "minimal",
     }
-    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,1,false,opts)
+    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,config.border_style,false,opts)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
                                         border_winid)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
