@@ -12,7 +12,7 @@ saga.config_values = {
   finder_reference_icon = '  ',
   definition_preview_icon = '  ',
   -- 1: thin border | 2: rounded border | 3: thick border
-  border_style = 1
+  border_style = 1,
   use_saga_diagnostic_handler = 1
 }
 
