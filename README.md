@@ -18,6 +18,8 @@ local saga = require 'lspsaga'
 
 -- add your config value here
 -- default value
+-- use_saga_diagnostic_handler = 1 // disable the lspsaga diagnostic handler
+-- use_saga_diagnostic_sign = 1 // disable the lspsaga diagnostic sign
 -- error_sign = '',
 -- warn_sign = '',
 -- hint_sign = '',
@@ -28,7 +30,6 @@ local saga = require 'lspsaga'
 -- definition_preview_icon = '  '
 -- 1: thin border | 2: rounded border | 3: thick border
 -- border_style = 1
--- use_saga_diagnostic_handler = 1 // disable the lspsaga diagnostic handler
 
 local opts = {
   error_sign = 'xxx'
