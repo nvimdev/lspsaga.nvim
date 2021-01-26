@@ -17,18 +17,7 @@ local clear_data = function()
   bufnr = 0
 end
 
-local function code_action(context)
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
-
-  bufnr = vim.fn.bufnr()
-  vim.validate { context = { context, 't', true } }
-  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
-  local params = vim.lsp.util.make_range_params()
-  params.context = context
-  local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
-  if vim.tbl_isempty(response) or response[1].result == nil then return end
-
+local render_code_action_window = function (response)
   local contents = {}
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
@@ -52,8 +41,35 @@ local function code_action(context)
     api.nvim_buf_add_highlight(contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
   end
 
-  api.nvim_command('nnoremap <buffer><cr> <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
+  api.nvim_command('nnoremap <buffer><nowait><silent><cr> <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
   api.nvim_command('nnoremap <buffer><nowait><silent>q <cmd>lua require("lspsaga.codeaction").quit_action_window()<CR>')
+end
+
+local function code_action(context)
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
+  bufnr = vim.fn.bufnr()
+  vim.validate { context = { context, 't', true } }
+  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
+  local params = vim.lsp.util.make_range_params()
+  params.context = context
+  local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
+  if vim.tbl_isempty(response) or response[1].result == nil then return end
+  render_code_action_window(response)
+end
+
+local function range_code_action(context, start_pos, end_pos)
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
+  bufnr = vim.fn.bufnr()
+  vim.validate { context = { context, 't', true } }
+  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
+  local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
+  params.context = context
+  local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
+  render_code_action_window(response)
 end
 
 local quit_action_window = function()
@@ -106,4 +122,5 @@ return {
   do_code_action = do_code_action,
   quit_action_window = quit_action_window,
   set_cursor = set_cursor,
+  range_code_action = range_code_action
 }
