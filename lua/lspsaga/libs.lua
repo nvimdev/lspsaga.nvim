@@ -32,10 +32,19 @@ local function nvim_create_keymap(definitions,lhs)
   end
 end
 
+local function check_lsp_active()
+  local active_clients = vim.lsp.get_active_clients()
+  if vim.tbl_isempty(active_clients) then
+    return false,'[lspsaga] No lsp client available'
+  end
+  return true,nil
+end
+
 return {
   is_windows = is_windows,
   path_sep = path_sep,
   has_key = has_key,
   nvim_create_augroup = nvim_create_augroup,
-  nvim_create_keymap = nvim_create_keymap
+  nvim_create_keymap = nvim_create_keymap,
+  check_lsp_active = check_lsp_active
 }

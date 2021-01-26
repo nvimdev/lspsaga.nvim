@@ -4,6 +4,7 @@ local short_link = {}
 local root_dir = lsp.buf_get_clients()[1].config.root_dir or ''
 local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
+local libs = require('lspsaga.libs')
 local M = {}
 
 local contents = {}
@@ -293,6 +294,9 @@ local send_request = function(timeout)
 end
 
 function M.lsp_finder()
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
   win_current_line = vim.fn.getpos('.')[2]
   win_current_column = vim.fn.getpos('.')[3]
 
@@ -310,6 +314,9 @@ function M.lsp_finder()
 end
 
 function M.preview_definition(timeout_ms)
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
   local method = "textDocument/definition"
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
