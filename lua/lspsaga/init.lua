@@ -36,7 +36,7 @@ function saga.init_lsp_saga(opts)
   local syntax = require 'lspsaga.syntax'
 
   handlers.overwrite_default(saga.config_values)
-  if saga.config_values.use_saga_diagnostic_sign then
+  if saga.config_values.use_saga_diagnostic_sign == 1 then
     diagnostic.lsp_diagnostic_sign(saga.config_values)
   end
   syntax.add_highlight()

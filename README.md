@@ -31,11 +31,9 @@ local saga = require 'lspsaga'
 -- 1: thin border | 2: rounded border | 3: thick border
 -- border_style = 1
 
-local opts = {
-  error_sign = 'xxx'
+saga.init_lsp_saga {
+  your custom option here
 }
-
-saga.init_lsp_saga(opts)
 ```
 
 ### Lsp Finder
