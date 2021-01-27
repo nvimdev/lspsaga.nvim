@@ -34,10 +34,26 @@ end
 
 local function check_lsp_active()
   local active_clients = vim.lsp.get_active_clients()
-  if vim.tbl_isempty(active_clients) then
+  if next(active_clients) == nil then
     return false,'[lspsaga] No lsp client available'
   end
   return true,nil
+end
+
+local function result_isempty(res)
+  if type(res) ~= "table" then
+    assert(type(res) == 'table', string.format("Expected table, got %s", type(res)))
+    return
+  end
+  for _,v in ipairs(res) do
+    if not v.result then
+      return true
+    end
+    if next(v.result) == nil then
+      return true
+    end
+  end
+  return false
 end
 
 return {
@@ -47,4 +63,5 @@ return {
   nvim_create_augroup = nvim_create_augroup,
   nvim_create_keymap = nvim_create_keymap,
   check_lsp_active = check_lsp_active,
+  result_isempty = result_isempty
 }
