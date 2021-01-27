@@ -143,8 +143,9 @@ local function jump_to_entry(entry)
   end
 
   -- set curosr
+  local border_opts = { border = config.border_style }
   api.nvim_win_set_cursor(0, {entry_line, entry_character})
-  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',config.border_style,false)
+  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',border_opts,false)
 
   -- use a variable to control diagnostic floatwidnow
   api.nvim_buf_set_var(0,"diagnostic_float_window",{fw,bw})
