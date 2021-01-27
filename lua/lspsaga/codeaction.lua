@@ -36,7 +36,8 @@ local render_code_action_window = function (response)
   local truncate_line = wrap.add_truncate_line(contents)
   table.insert(contents,2,truncate_line)
 
-  contents_bufnr,contents_winid,_,border_winid = window.create_float_window(contents,'LspSagaCodeAction',config.border_style,true)
+  local border_opts = { border = config.border_style }
+  contents_bufnr,contents_winid,_,border_winid = window.create_float_window(contents,'LspSagaCodeAction',border_opts,true)
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
 
   api.nvim_buf_add_highlight(contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)

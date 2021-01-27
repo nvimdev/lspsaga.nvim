@@ -3,6 +3,7 @@ local api = vim.api
 
 function M.add_highlight()
   api.nvim_command("hi LspFloatWinBorder guifg=black")
+  api.nvim_command("hi LspSagaBorderTitle guifg=orange gui=bold")
   api.nvim_command("hi def link TargetWord Error")
   api.nvim_command("hi def link ReferencesCount Title")
   api.nvim_command("hi def link DefinitionCount Title")

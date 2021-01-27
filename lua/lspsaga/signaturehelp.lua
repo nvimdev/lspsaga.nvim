@@ -58,7 +58,8 @@ local function focusable_preview(unique_name, fn)
       local truncate_line = wrap.add_truncate_line(contents)
       table.insert(contents,2,truncate_line)
     end
-    local cb,cw,_,bw = window.create_float_window(contents,filetype,config.border_style,false)
+    local border_opts = { border = config.border_style }
+    local cb,cw,_,bw = window.create_float_window(contents,filetype,border_opts,false)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
     return cb,cw
