@@ -45,6 +45,8 @@ saga.init_lsp_saga()
 ```lua
 -- lsp provider to find the cursor word definition and reference
 nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
+-- or use command LspSagaFinder
+nnoremap <silent> gh :LspSagaFinder<CR>
 ```
 <div align='center'>
 <img
@@ -57,6 +59,9 @@ src="https://user-images.githubusercontent.com/41671631/105656835-11e73000-5efe-
 -- code action
 nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
 vnoremap <silent><leader>ca <cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>
+-- or use command
+nnoremap <silent><leader>ca :LspSagaCodeAction<CR>
+vnoremap <silent><leader>ca :LspSagaRangeCodeAction<CR>
 ```
 <div align='center'>
 <img
@@ -79,6 +84,8 @@ src="https://user-images.githubusercontent.com/41671631/105657800-29bfb380-5f00-
 ```lua
 -- preview definition
 nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
+-- or use command
+nnoremap <silent> gd :LspSagaDefPreview<CR>
 ```
 <div align='center'>
 <img
@@ -91,6 +98,9 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
+-- or use command
+nnoremap <silent> [e :LspSagaDiagJumpPrev<CR>
+nnoremap <silent> ]e :LspSagaDiagJumpNext<CR>
 ```
 <div align='center'>
 <img
@@ -103,6 +113,9 @@ src="https://user-images.githubusercontent.com/41671631/102290042-21786e00-3f7b-
 -- float terminal also you can pass the cli command in open_float_terminal function
 nnoremap <silent> <A-d> <cmd>lua require('lspsaga.floaterm').open_float_terminal()<CR> -- or open_float_terminal('lazygit')<CR>
 tnoremap <silent> <A-d> <C-\><C-n>:lua require('lspsaga.floaterm').close_float_terminal()<CR>
+-- or use command
+nnoremap <silent> <A-d> :LspSagaOpenFloaterm<CR>
+tnoremap <silent> <A-d> <C-\><C-n>:LspSagaOpenFloaterm<CR>
 ```
 <div align='center'>
 <img
