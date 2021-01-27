@@ -207,7 +207,7 @@ local close_auto_preview_win = function()
   end
 end
 
--- Not sure this work well in any win size
+-- TODO: Better window arrangement
 function M.auto_open_preview()
   local current_line = vim.fn.line('.')
   if not short_link[current_line] then return end
