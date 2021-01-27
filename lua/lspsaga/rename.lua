@@ -34,6 +34,8 @@ local rename = function()
   api.nvim_command('startinsert')
   api.nvim_win_set_var(0,unique_name,{cw,bw})
   api.nvim_command('inoremap <buffer><silent><cr> <cmd>lua require("lspsaga.rename").do_rename()<CR>')
+  api.nvim_command('nnoremap <buffer><silent>q <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
+  api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.rename').close_rename_win()")
 end
 
 local do_rename = function()
@@ -51,6 +53,7 @@ end
 
 return {
   rename = rename,
-  do_rename = do_rename
+  do_rename = do_rename,
+  close_rename_win = close_rename_win
 }
 
