@@ -14,6 +14,7 @@ let g:loaded_lspsaga = 1
 
 command! -range -bar LspSagaFinder lua require("lspsaga.provider").lspsaga_finder()
 command! -range -bar LspSagaDefPreview lua require("lspsaga.provider").preview_definition()
+command! -range -bar LspSagaRename lua require("lspsaga.rename").rename()
 command! -range -bar LspSagaDiagJumpNext lua require("lspsaga.diagnostic").lsp_jump_diagnostic_next()
 command! -range -bar LspSagaDiagJumpPrev lua require("lspsaga.diagnostic").lsp_jump_diagnostic_prev()
 command! -range -bar LspSagaCodeAction lua require("lspsaga.codeaction").code_action()
