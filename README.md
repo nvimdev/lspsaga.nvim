@@ -95,6 +95,8 @@ src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-
 ```lua
 -- rename
 nnoremap <silent>gr <cmd>lua require('lspsaga.rename').rename()<CR>
+-- or command
+nnoremap <silent>gr :LspRename<CR>
 ```
 <div align="center">
 <img
