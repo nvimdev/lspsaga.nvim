@@ -4,6 +4,7 @@ local api = vim.api
 local lsp = vim.lsp
 local window = require 'lspsaga.window'
 local wrap = require 'lspsaga.wrap'
+local config = require('lspsaga')
 local M = {}
 
 -- lsp severity icon
@@ -143,7 +144,7 @@ local function jump_to_entry(entry)
 
   -- set curosr
   api.nvim_win_set_cursor(0, {entry_line, entry_character})
-  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',1,false)
+  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',config.border_style,false)
 
   -- use a variable to control diagnostic floatwidnow
   api.nvim_buf_set_var(0,"diagnostic_float_window",{fw,bw})

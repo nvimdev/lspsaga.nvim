@@ -79,6 +79,17 @@ nnoremap <silent> K <cmd>lua vim.lsp.buf.hover()<CR>
 src="https://user-images.githubusercontent.com/41671631/105657800-29bfb380-5f00-11eb-85e7-8d6735dd5d58.gif" width=500 height=500/>
 </div>
 
+### SignatureHelp
+
+```lua
+-- show signature help
+nnoremap <silent> K <cmd>lua require('lspsaga.signaturehelp').signature_help = signature_help()<CR>
+```
+<div align='center'>
+<img
+src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
+</div>
+
 ### Preview Definition
 
 ```lua
