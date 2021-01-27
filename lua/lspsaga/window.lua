@@ -129,8 +129,9 @@ local function create_float_boder(contents,border,opts)
   -- buffer settings for border buffer
   api.nvim_buf_set_lines(border_bufnr, 0, -1, true, lines)
   api.nvim_buf_set_option(border_bufnr, 'buftype', 'nofile')
-  api.nvim_buf_set_option(border_bufnr, 'filetype', 'lspwinborder')
+--   api.nvim_buf_set_option(border_bufnr, 'filetype', 'lspwinborder')
   api.nvim_buf_set_option(border_bufnr, 'modifiable', false)
+  api.nvim_buf_set_option(border_bufnr, 'bufhidden', 'wipe')
 
   -- create border
   local border_winid = api.nvim_open_win(border_bufnr, false, border_option)
@@ -146,9 +147,13 @@ function M.create_float_contents(contents,filetype,enter,opts)
   -- Clean up input: trim empty lines from the end, pad
   local content = vim.lsp.util._trim_and_pad(contents,{pad_left=0,pad_right=0})
 
-  api.nvim_buf_set_option(contents_bufnr, 'filetype', filetype)
+  if filetype then
+    api.nvim_buf_set_option(contents_bufnr, 'filetype', filetype)
+  end
+
   api.nvim_buf_set_lines(contents_bufnr,0,-1,true,content)
   api.nvim_buf_set_option(contents_bufnr, 'modifiable', false)
+  api.nvim_buf_set_option(contents_bufnr, 'bufhidden', 'wipe')
 
   local contents_winid = api.nvim_open_win(contents_bufnr, enter, opts)
   if filetype == 'markdown' then
