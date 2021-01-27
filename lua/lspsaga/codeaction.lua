@@ -22,10 +22,12 @@ local render_code_action_window = function (response)
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
 
-  for index,action in pairs(response[1].result) do
-    local action_title = '['..index..']' ..' '.. action.title
-    table.insert(contents,action_title)
-    table.insert(actions,action)
+  for _,languageServerAnswer in pairs(response) do
+    for index,action in pairs(languageServerAnswer.result) do
+      local action_title = '['..index..']' ..' '.. action.title
+      table.insert(contents,action_title)
+      table.insert(actions,action)
+    end
   end
 
   if #contents == 1 then return end
