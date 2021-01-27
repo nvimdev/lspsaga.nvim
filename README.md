@@ -83,7 +83,7 @@ src="https://user-images.githubusercontent.com/41671631/105657800-29bfb380-5f00-
 
 ```lua
 -- show signature help
-nnoremap <silent> K <cmd>lua require('lspsaga.signaturehelp').signature_help = signature_help()<CR>
+nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
 ```
 <div align='center'>
 <img
