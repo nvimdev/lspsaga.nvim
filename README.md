@@ -90,6 +90,17 @@ nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<
 src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
 </div>
 
+### Reanme
+
+```lua
+-- rename
+nnoremap <silent>gr <cmd>lua require('lspsaga.rename').rename()<CR>
+```
+<div align="center">
+<img
+src="https://user-images.githubusercontent.com/41671631/105995632-3ac91a00-60e4-11eb-84b4-70b180196cc3.gif" />
+</div>
+
 ### Preview Definition
 
 ```lua
