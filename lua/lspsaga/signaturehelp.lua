@@ -35,7 +35,9 @@ end
 
 local function focusable_preview(unique_name, fn)
   return focusable_float(unique_name, function()
-    local contents,filetype = fn()
+    local contents,_ = fn()
+    -- TODO: not sure this is better
+    local filetype = api.nvim_buf_get_option(0,'filetype')
     vim.validate {
       contents = { contents, 't' };
       filetype = { filetype, 's', true };
