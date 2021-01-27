@@ -247,8 +247,11 @@ function M.fancy_floating_markdown(contents, opts)
   end
   stripped = wrap.wrap_contents(stripped,width)
 
-  local truncate_line = wrap.add_truncate_line(stripped)
-  table.insert(stripped,2,truncate_line)
+  -- if only has one line do not insert truncate line
+  if #stripped ~= 1 then
+    local truncate_line = wrap.add_truncate_line(stripped)
+    table.insert(stripped,2,truncate_line)
+  end
 
   -- Make the floating window.
   local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',opts.border_style,false,opts)
