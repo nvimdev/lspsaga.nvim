@@ -59,6 +59,8 @@ local create_finder_contents =function(result,method_type)
         short_name = link:sub(root_dir:len() + 2)
       elseif link:find(home, 1, true) then
         short_name = link:sub(home:len() + 2)
+      else
+        short_name = libs.split_by_pathsep(link,4)
       end
 
       local target_line = '['..index..']'..' '..short_name

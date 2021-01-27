@@ -56,6 +56,23 @@ local function result_isempty(res)
   return false
 end
 
+local function split_by_pathsep(text,start_pos)
+  local pattern = is_windows and path_sep or '/'..path_sep
+  local short_text = ''
+  local split_table = {}
+  for word in text:gmatch('[^'..pattern..']+') do
+    table.insert(split_table,word)
+  end
+
+  for i = start_pos,#split_table,1 do
+    short_text = short_text .. split_table[i]
+    if i ~= #split_table then
+      short_text = short_text .. path_sep
+    end
+  end
+  return short_text
+end
+
 return {
   is_windows = is_windows,
   path_sep = path_sep,
@@ -63,5 +80,6 @@ return {
   nvim_create_augroup = nvim_create_augroup,
   nvim_create_keymap = nvim_create_keymap,
   check_lsp_active = check_lsp_active,
-  result_isempty = result_isempty
+  result_isempty = result_isempty,
+  split_by_pathsep = split_by_pathsep
 }
