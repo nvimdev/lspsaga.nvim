@@ -20,7 +20,7 @@ local rename = function()
   close_rename_win()
   pos[1],pos[2] = vim.fn.getpos('.')[2],vim.fn.getpos('.')[3]
   local opts = {
-    height = 2,
+    height = config.rename_row,
     width = 20,
     border_text = ''
   }
