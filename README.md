@@ -101,7 +101,7 @@ nnoremap <silent>gr :LspRename<CR>
 ```
 <div align="center">
 <img
-src="https://user-images.githubusercontent.com/41671631/105995632-3ac91a00-60e4-11eb-84b4-70b180196cc3.gif" />
+src="https://user-images.githubusercontent.com/41671631/106115648-f6915480-618b-11eb-9818-003cfb15c8ac.gif" />
 </div>
 
 ### Preview Definition
