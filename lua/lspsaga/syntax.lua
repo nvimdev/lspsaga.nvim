@@ -33,6 +33,8 @@ function M.add_highlight()
   api.nvim_command("hi LspSagaCodeActionTruncateLine guifg=black")
 
   api.nvim_command("hi LspSagaCodeActionContent guifg=#98be65 gui=bold")
+
+  api.nvim_command("hi LspSagaRenamePromptPrefix guifg=#98be65")
 end
 
 return M
