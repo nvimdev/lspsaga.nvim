@@ -13,9 +13,8 @@ local definition_uri = 0
 local reference_uri = 0
 local param_length = 0
 local buf_filetype = ''
-local lines_above = 0
-local lines_below = 0
-local win_col = 0
+local WIN_WIDTH = 0
+local WIN_HEIGHT = 0
 
 local create_finder_contents =function(result,method_type)
   local target_lnum = 0
@@ -72,8 +71,6 @@ local create_finder_contents =function(result,method_type)
       target_lnum = target_lnum + 1
       local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+5,false)
       short_link[target_lnum] = {link=link,preview=lines,row=range.start.line+1,col=range.start.character+1}
-      short_link[target_lnum].preview_data = {}
-      short_link[target_lnum].preview_data.status = 0
     end
   end
 end
@@ -122,9 +119,8 @@ local clear_data = function()
   reference_uri = 0
   param_length = 0
   buf_filetype = ''
-  lines_above = 0
-  lines_below = 0
-  win_col = 0
+  WIN_WIDTH = 0
+  WIN_HEIGHT = 0
   M.contents_buf = 0
   M.contents_win = 0
   M.border_bufnr = 0
@@ -137,7 +133,7 @@ local render_finder_result= function ()
   table.insert(contents,' ')
 
   local help = {
-    "[TAB] : Preview     [o] : Open File     [s] : Vsplit";
+    "[o] : Open File     [s] : Vsplit";
     "[i]   : Split       [q] : Exit";
   }
 
@@ -161,16 +157,30 @@ local render_finder_result= function ()
     table.insert(contents,v)
   end
 
+  -- get dimensions
+  local width = api.nvim_get_option("columns")
+  local height = api.nvim_get_option("lines")
 
+  -- calculate our floating window size
+  local win_height = math.ceil(height * 0.8)
+  local win_width = math.ceil(width * 0.8)
+
+  -- and its starting position
+  local row = math.ceil((height - win_height) * 0.7)
+  local col = math.ceil((width - win_width))
   local opts = {
-    relative = "cursor",
     style = "minimal",
+    relative = "editor",
+    row = row,
+    col = col,
   }
+
   local border_opts = {
     border = config.border_style,
     highlight = 'LspSagaLspFinderBorder'
   }
   M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',border_opts,true,opts)
+  api.nvim_win_set_var(M.conents_win,'lsp_finder_win_opts',opts)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
@@ -211,33 +221,31 @@ local close_auto_preview_win = function()
   end
 end
 
--- TODO: Better window arrangement
 function M.auto_open_preview()
   local current_line = vim.fn.line('.')
   if not short_link[current_line] then return end
   local content = short_link[current_line].preview or {}
   if next(content) ~= nil then
-    local opts = window.make_floating_popup_options(50,#contents)
-    opts.height = #content
-    opts.relative = "editor"
-    opts.pad_top = 0
-    opts.pad_bottom = 0
-    opts.col = win_col
-    opts.anchor = 'NW'
+    local has_var,finder_win_opts = pcall(api.nvim_win_get_var,0,'lsp_finder_win_opts')
+    if not has_var then print('get finder window options wrong') return end
+    local width = vim.fn.winwidth(0)
+    local height = vim.fn.winheight(0)
+    local opts = {
+      relative = 'win',
+    }
 
-    -- lsp_finder window below the cursor line
-    if lines_above < lines_below then
-      if lines_above < opts.height + 4 then
-        opts.row = lines_above * 3
-      else
-        opts.row = lines_above * 0.5
-      end
-    else
-      if lines_above < 12 + definition_uri + reference_uri + opts.height + 2 then
-        print('here')
-        opts.row = lines_above * 2
-      else
-        opts.row = lines_above * 0.35
+    local min_width = 45
+    local pad_right = WIN_WIDTH - width - 20 - min_width
+
+    opts.width = min_width
+    if pad_right > 5 then
+      opts.col = finder_win_opts.col+width+2
+      opts.row = finder_win_opts.row
+    elseif pad_right < 0 then
+      opts.row = finder_win_opts.row + height + 2
+      opts.col = finder_win_opts.col
+      if WIN_HEIGHT - height - opts.row - #content - 2 < 2 then
+        return
       end
     end
 
@@ -271,28 +279,6 @@ function M.open_link(action_type)
   api.nvim_command(action[action_type]..short_link[current_line].link)
   vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
   clear_data()
-end
-
-function M.insert_preview()
-  api.nvim_buf_set_option(M.contents_bufnr,'modifiable',true)
-  local current_line = vim.fn.line('.')
-  if short_link[current_line] ~= nil and short_link[current_line].preview_data.status ~= 1  then
-    short_link[current_line].preview_data.status = 1
-    short_link[current_line].preview_data.stridx = current_line
-    short_link[current_line].preview_data.endidx = current_line + #short_link[current_line].preview
-    local code_preview = vim.lsp.util._trim_and_pad(short_link[current_line].preview)
-    vim.fn.append(current_line,code_preview)
-  elseif short_link[current_line] ~= nil and short_link[current_line].preview_data.status == 1 then
-    local stridx = short_link[current_line].preview_data.stridx
-    local endidx = short_link[current_line].preview_data.endidx
-    api.nvim_buf_set_lines(M.contents_buf,stridx,endidx,true,{})
-    short_link[current_line].preview_data.status = 0
-    short_link[current_line].preview_data.stridx = 0
-    short_link[current_line].preview_data.endidx = 0
-  elseif short_link[current_line] == nil then
-    return
-  end
-  api.nvim_buf_set_option(M.contents_bufnr,'modifiable',true)
 end
 
 function M.quit_float_window()
@@ -333,10 +319,8 @@ end
 function M.lsp_finder()
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
-
-  lines_above = vim.fn.winline() - 1
-  lines_below = vim.fn.winheight(0) - lines_above
-  win_col = vim.fn.wincol()
+  WIN_WIDTH = vim.fn.winwidth(0)
+  WIN_HEIGHT = vim.fn.winheight(0)
 
   local request_intance = coroutine.create(send_request)
   buf_filetype = api.nvim_buf_get_option(0,'filetype')
