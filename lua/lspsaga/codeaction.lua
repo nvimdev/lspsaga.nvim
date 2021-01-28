@@ -79,6 +79,7 @@ local function range_code_action(context, start_pos, end_pos)
   local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
   params.context = context
   local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
+  if libs.result_isempty(response) then return end
   render_code_action_window(response)
 end
 
@@ -114,7 +115,7 @@ local do_code_action = function()
       vim.lsp.util.apply_workspace_edit(action.edit)
     end
     if type(action.command) == "table" then
-      vim.lsp.buf.execute_command(action.command)
+      execute_command(bufnr,action.command)
     end
   else
     execute_command(bufnr,action)
