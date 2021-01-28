@@ -6,11 +6,17 @@ local libs = require('lspsaga.libs')
 local unique_name = 'textDocument-rename'
 local pos = {}
 
+local get_prompt_prefix = function()
+  return config.rename_prompt_prefix..' '
+end
+
 local close_rename_win = function()
+  if vim.fn.mode() == 'i' then
+    vim.cmd [[stopinsert]]
+  end
   local has,winids = pcall(api.nvim_win_get_var,0,unique_name)
   if has then
     window.nvim_close_valid_window(winids)
-    api.nvim_command('stopinsert')
     api.nvim_win_set_cursor(0,pos)
     pos = {}
   end
@@ -23,7 +29,7 @@ local rename = function()
   close_rename_win()
   pos[1],pos[2] = vim.fn.getpos('.')[2],vim.fn.getpos('.')[3]
   local opts = {
-    height = config.rename_row,
+    height = 1,
     width = 20,
     border_text = ''
   }
@@ -32,17 +38,22 @@ local rename = function()
     title = 'New name'
   }
   local cb,cw,_,bw = window.create_float_window({},'',border_opts,true,opts)
-
+  local saga_rename_prompt_prefix = api.nvim_create_namespace('lspsaga_rename_prompt_prefix')
   api.nvim_buf_set_option(cb,'modifiable',true)
-  api.nvim_command('startinsert')
+  local prompt_prefix = get_prompt_prefix()
+  api.nvim_buf_set_option(cb,'buftype','prompt')
+  vim.fn.prompt_setprompt(cb, prompt_prefix)
+  api.nvim_buf_add_highlight(cb, saga_rename_prompt_prefix, 'LspSagaRenamePromptPrefix', 0, 0, #prompt_prefix)
+  vim.cmd [[startinsert!]]
   api.nvim_win_set_var(0,unique_name,{cw,bw})
   api.nvim_command('inoremap <buffer><silent><cr> <cmd>lua require("lspsaga.rename").do_rename()<CR>')
   api.nvim_command('nnoremap <buffer><silent>q <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
-  api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.rename').close_rename_win()")
+  api.nvim_command("autocmd QuitPre <buffer> ++nested ++once :silent lua require('lspsaga.rename').close_rename_win()")
 end
 
 local do_rename = function()
-  local new_name = vim.fn.getline('.')
+  local prompt_prefix = get_prompt_prefix()
+  local new_name = vim.trim(vim.fn.getline('.'):sub(#prompt_prefix+1,-1))
   close_rename_win()
   local params = util.make_position_params()
   local current_name = vim.fn.expand('<cword>')
@@ -53,10 +64,8 @@ local do_rename = function()
   lsp.buf_request(0,'textDocument/rename', params)
 end
 
-
 return {
   rename = rename,
   do_rename = do_rename,
   close_rename_win = close_rename_win
 }
-
