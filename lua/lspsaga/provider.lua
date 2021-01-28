@@ -180,6 +180,7 @@ local render_finder_result= function ()
     highlight = 'LspSagaLspFinderBorder'
   }
   M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',border_opts,true,opts)
+  api.nvim_buf_set_option(M.contents_buf,'buflisted',false)
   api.nvim_win_set_var(M.conents_win,'lsp_finder_win_opts',opts)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
