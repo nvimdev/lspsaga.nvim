@@ -1,6 +1,5 @@
 local window = require 'lspsaga.window'
-local vim,api,lsp = vim,vim.api,vim.lsp
-local short_link = {}
+local vim,api,lsp,vfn = vim,vim.api,vim.lsp,vim.fn
 local root_dir = lsp.buf_get_clients()[1].config.root_dir or ''
 local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
@@ -8,6 +7,7 @@ local libs = require('lspsaga.libs')
 local M = {}
 local home = os.getenv("HOME")
 
+local short_link = {}
 local contents = {}
 local definition_uri = 0
 local reference_uri = 0
@@ -15,6 +15,8 @@ local param_length = 0
 local buf_filetype = ''
 local WIN_WIDTH = 0
 local WIN_HEIGHT = 0
+local cursor_line_bg  = ''
+local cursor_line_fg  = ''
 
 local create_finder_contents =function(result,method_type)
   local target_lnum = 0
@@ -182,6 +184,10 @@ local render_finder_result= function ()
   M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',border_opts,true,opts)
   api.nvim_buf_set_option(M.contents_buf,'buflisted',false)
   api.nvim_win_set_var(M.conents_win,'lsp_finder_win_opts',opts)
+  api.nvim_win_set_option(M.conents_win,'cursorline',true)
+  cursor_line_bg = vfn.synIDattr(vfn.hlID("cursorline"),"bg")
+  cursor_line_fg = vfn.synIDattr(vfn.hlID("cursorline"),"bg")
+  api.nvim_command('hi cursorline guifg='..config.selected_fg .. ' guibg='..config.selected_bg)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
@@ -209,7 +215,6 @@ function M.apply_float_map(contents_bufnr)
     {contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>"},
     {contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>"},
     {contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {contents_bufnr,'n',"<TAB>",":lua require'lspsaga.provider'.insert_preview()<CR>"},
     {contents_bufnr,'n',"q",":lua require'lspsaga.provider'.quit_float_window()<CR>"}
   }
   nvim_create_keymap(keymaps,lhs)
@@ -290,6 +295,7 @@ function M.quit_float_window()
     window.nvim_close_valid_window(M.border_win)
   end
   clear_data()
+  api.nvim_command("hi cursorline guifg="..cursor_line_fg .. ' guibg='..cursor_line_bg)
 end
 
 function M.close_lsp_finder_window()

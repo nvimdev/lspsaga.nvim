@@ -32,6 +32,8 @@ local saga = require 'lspsaga'
 -- border_style = 1
 -- max_hover_width = 0 (automatically adjust to the width of current symbol)
 -- rename_prompt_prefix = '➤',
+-- selected_fg = '#1c1f24',
+-- selected_bg = '#b3deef'
 
 saga.init_lsp_saga {
   your custom option here
