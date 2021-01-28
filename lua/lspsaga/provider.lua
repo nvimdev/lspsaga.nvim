@@ -255,7 +255,8 @@ function M.auto_open_preview()
     }
     vim.defer_fn(function ()
       close_auto_preview_win()
-      local _,cw,_,bw = window.create_float_window(content,buf_filetype,border_opts,false,opts)
+      local cb,cw,_,bw = window.create_float_window(content,buf_filetype,border_opts,false,opts)
+      api.nvim_buf_set_option(cb,'buflisted',false)
       api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
     end,10)
   end
