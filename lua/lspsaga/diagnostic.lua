@@ -110,8 +110,6 @@ function M.close_preview()
         api.nvim_win_close(prev_win[2],true)
         api.nvim_buf_set_var(0,"diagnostic_float_window",nil)
         api.nvim_buf_set_var(0,"diagnostic_prev_position",nil)
-        -- restore the hilight
-        api.nvim_command("hi! link LspFloatWinBorder LspFloatWinBorder")
         api.nvim_command("hi! link DiagnosticTruncateLine DiagnosticTruncateLine")
       end
     end
@@ -128,7 +126,7 @@ local function jump_to_entry(entry)
   local diagnostic_message = {}
   local entry_line = get_line(entry) + 1
   local entry_character = get_character(entry)
-  local hiname ={"DiagnosticError","DiagnosticWarning","DiagnosticInformation","DiagnosticHint"}
+  local hiname ={"LspDiagErrorBorder","LspDiagWarnBorder","LspDiagInforBorder","LspDiagHintBorder"}
 
   -- add server source in diagnostic float window
   local server_source = entry.source
@@ -136,14 +134,24 @@ local function jump_to_entry(entry)
   table.insert(diagnostic_message,header)
 
   local wrap_message = wrap.wrap_text(entry.message,50)
-  local truncate_line = wrap.add_truncate_line(wrap_message)
+
+  local truncate_line = ''
+  if #header > 50 then
+    truncate_line = wrap.add_truncate_line(diagnostic_message)
+  else
+    truncate_line = wrap.add_truncate_line(wrap_message)
+  end
+
   table.insert(diagnostic_message,truncate_line)
   for _,v in pairs(wrap_message) do
     table.insert(diagnostic_message,v)
   end
 
   -- set curosr
-  local border_opts = { border = config.border_style }
+  local border_opts = {
+    border = config.border_style,
+    highlight = hiname[entry.severity]
+  }
   api.nvim_win_set_cursor(0, {entry_line, entry_character})
   local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',border_opts,false)
 
@@ -157,8 +165,6 @@ local function jump_to_entry(entry)
   --add highlight
   api.nvim_buf_add_highlight(fb,-1,hiname[entry.severity],0,0,-1)
   api.nvim_buf_add_highlight(fb,-1,"DiagnosticTruncateLine",1,0,-1)
-  -- match current diagnostic syntax
-  api.nvim_command("hi! link LspFloatWinBorder ".. hiname[entry.severity])
   api.nvim_command("hi! link DiagnosticTruncateLine "..hiname[entry.severity])
 end
 

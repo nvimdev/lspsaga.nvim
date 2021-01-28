@@ -103,7 +103,6 @@ local function open_shadow_win()
   local shadow_winid = api.nvim_open_win(shadow_bufnr,true,opts)
   api.nvim_win_set_option(shadow_winid,'winhl',shadow_winhl)
   api.nvim_win_set_option(shadow_winid,'winblend',10)
-  api.nvim_command('hi SagaShadow guibg=#000000')
   return shadow_bufnr,shadow_winid
 end
 
@@ -111,6 +110,7 @@ local function create_float_boder(contents,border_opts,opts)
   local win_width,win_height,border_option = make_border_option(contents,opts)
   local border = border_opts.border or 1
   local title = border_opts.title or ''
+  local highlight = border_opts.highlight or 'LspFloatWinBorder'
 
   local top_left = border_style[border].top_left
   local top_mid  = border_style[border].top_mid
@@ -141,7 +141,7 @@ local function create_float_boder(contents,border_opts,opts)
 
   -- create border
   local border_winid = api.nvim_open_win(border_bufnr, false, border_option)
-  api.nvim_win_set_option(border_winid,"winhl","Normal:LspFloatWinBorder")
+  api.nvim_win_set_option(border_winid,"winhl","Normal:"..highlight)
   api.nvim_win_set_option(border_winid,"cursorcolumn",false)
   return border_bufnr,border_winid
 end
@@ -265,7 +265,8 @@ function M.fancy_floating_markdown(contents, opts)
   end
 
   local border_opts = {
-    border = opts.border_style
+    border = opts.border_style,
+    highlight = 'LspSagaHoverBorder'
   }
 
   -- Make the floating window.
