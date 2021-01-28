@@ -1,6 +1,7 @@
 local lsp,util,api = vim.lsp,vim.lsp.util,vim.api
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
+local libs = require('lspsaga.libs')
 
 local unique_name = 'textDocument-rename'
 local pos = {}
@@ -16,6 +17,8 @@ local close_rename_win = function()
 end
 
 local rename = function()
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
   -- if exist a rename float win close it.
   close_rename_win()
   pos[1],pos[2] = vim.fn.getpos('.')[2],vim.fn.getpos('.')[3]
