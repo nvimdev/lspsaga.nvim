@@ -22,11 +22,10 @@ function M.add_highlight()
 
   api.nvim_command("hi def link DefinitionPreviewTitle Title")
 
-  api.nvim_command("hi DiagnosticBufferTitle guifg=#c594c5 gui=bold")
-  api.nvim_command("hi DiagnosticFloatError guifg=#EC5f67")
-  api.nvim_command("hi DiagnosticFloatWarn guifg=#d8a657")
-  api.nvim_command("hi DiagnosticFloatInfo guifg=#6699cc")
-  api.nvim_command("hi DiagnosticFloatHint guifg=#56b6c2")
+  api.nvim_command("hi LspDiagErrorBorder guifg=#EC5f67")
+  api.nvim_command("hi LspDiagWarnBorder guifg=#d8a657")
+  api.nvim_command("hi LspDiagInforBorder guifg=#6699cc")
+  api.nvim_command("hi LspDiagHintBorder guifg=#56b6c2")
 
   api.nvim_command("hi LspSagaDocTruncateLine guifg=black")
   api.nvim_command("hi LspSagaCodeActionTitle guifg=#da8548 gui=bold")
@@ -35,6 +34,15 @@ function M.add_highlight()
   api.nvim_command("hi LspSagaCodeActionContent guifg=#98be65 gui=bold")
 
   api.nvim_command("hi LspSagaRenamePromptPrefix guifg=#98be65")
+  api.nvim_command('hi SagaShadow guibg=#000000')
+
+  api.nvim_command('hi LspSagaRenameBorder guifg=#3bb6c4')
+  api.nvim_command('hi LspSagaHoverBorder guifg=#80A0C2')
+  api.nvim_command('hi LspSagaSignatureHelpBorder guifg=#98be65')
+  api.nvim_command('hi LspSagaLspFinderBorder guifg=#51afef')
+  api.nvim_command('hi LspSagaCodeActionBorder guifg=#b3deef')
+  api.nvim_command('hi LspSagaAutoPreview guifg=#ECBE7B')
+  api.nvim_command('hi LspSagaDefPreviewBorder guifg=#b3deef')
 end
 
 return M

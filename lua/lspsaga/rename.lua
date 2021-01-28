@@ -35,7 +35,8 @@ local rename = function()
   }
   local border_opts = {
     border = config.border_style,
-    title = 'New name'
+    title = 'New name',
+    highlight = 'LspSagaRenameBorder'
   }
   local cb,cw,_,bw = window.create_float_window({},'',border_opts,true,opts)
   local saga_rename_prompt_prefix = api.nvim_create_namespace('lspsaga_rename_prompt_prefix')
