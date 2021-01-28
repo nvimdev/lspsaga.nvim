@@ -119,17 +119,16 @@ local function create_float_boder(contents,border_opts,opts)
   local bottom_left= border_style[border].bottom_left
   local bottom_right = border_style[border].bottom_right
   -- set border
-  local top = top_left .. title .. vim.fn["repeat"](top_mid, win_width-2-#title) ..top_right
-  local mid = mid_line .. vim.fn["repeat"](" ", win_width-2) .. mid_line
-  local bot = bottom_left .. vim.fn["repeat"](top_mid, win_width-2) .. bottom_right
-  local lines = {top}
-  for _,v in pairs(vim.fn["repeat"]({mid},win_height)) do
-    table.insert(lines,v)
+  local border_lines = {top_left .. title .. string.rep(top_mid, win_width-2-#title) ..top_right}
+  local middle_line = mid_line .. string.rep(" ", win_width-2) .. mid_line
+  local bottom_line = bottom_left .. string.rep(top_mid, win_width-2) .. bottom_right
+  for _=1, win_height do
+    table.insert(border_lines, middle_line)
   end
-  table.insert(lines,bot)
+  table.insert(border_lines,bottom_line)
   local border_bufnr = vim.api.nvim_create_buf(false, true)
   -- buffer settings for border buffer
-  api.nvim_buf_set_lines(border_bufnr, 0, -1, true, lines)
+  api.nvim_buf_set_lines(border_bufnr, 0, -1, false, border_lines)
   api.nvim_buf_set_option(border_bufnr, 'buftype', 'nofile')
 --   api.nvim_buf_set_option(border_bufnr, 'filetype', 'lspwinborder')
   api.nvim_buf_set_option(border_bufnr, 'modifiable', false)
