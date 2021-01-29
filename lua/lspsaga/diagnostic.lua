@@ -250,8 +250,12 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     highlight = 'LspLinesDiagBorder'
   }
 
+  local wrap_message = wrap.wrap_contents(lines,50)
+  local truncate_line = wrap.add_truncate_line(lines)
+  table.insert(wrap_message,2,truncate_line)
+
   local content_opts = {
-    contents = lines,
+    contents = wrap_message,
     filetype = 'plaintext',
   }
 
@@ -259,8 +263,9 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)
     -- Start highlight after the prefix
-    api.nvim_buf_add_highlight(cb, -1, hiname, i-1, 3, -1)
+    api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
   end
+  api.nvim_buf_add_highlight(cb,-1,'LineDiagTuncateLine',1,0,-1)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
   api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
