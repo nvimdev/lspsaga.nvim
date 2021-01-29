@@ -62,7 +62,13 @@ local function focusable_preview(unique_name, fn)
       border = config.border_style,
       highlight = 'LspSagaSignatureHelpBorder'
     }
-    local cb,cw,_,bw = window.create_float_window(contents,filetype,border_opts,false)
+
+    local content_opts = {
+      contents = contents,
+      filetype = filetype,
+    }
+
+    local cb,cw,_,bw = window.create_float_window(content_opts,border_opts)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
     return cb,cw

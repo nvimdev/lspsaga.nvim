@@ -107,6 +107,11 @@ local function open_shadow_win()
 end
 
 local function create_float_boder(contents,border_opts,opts)
+  vim.validate{
+    contents = {contents,'t'},
+    border_opts = {border_opts,'t'},
+    opts = {opts,'t',true}
+  }
   local win_width,win_height,border_option = make_border_option(contents,opts)
   local border = border_opts.border or 1
   local title = border_opts.title or ''
@@ -145,7 +150,14 @@ local function create_float_boder(contents,border_opts,opts)
   return border_bufnr,border_winid
 end
 
-function M.create_float_contents(contents,filetype,enter,opts)
+function M.create_float_contents(content_opts,opts)
+  vim.validate{
+    content_opts = {content_opts,'t'},
+    contents = {content_opts.content,'t',true},
+    opts = {opts,'t',true}
+  }
+
+  local contents,filetype,enter = content_opts.contents,content_opts.filetype,content_opts.enter
   -- create contents buffer
   local contents_bufnr = api.nvim_create_buf(false, true)
   -- buffer settings for contents buffer
@@ -164,13 +176,21 @@ function M.create_float_contents(contents,filetype,enter,opts)
   if filetype == 'markdown' then
     api.nvim_win_set_option(contents_winid, 'conceallevel', 2)
   end
-  api.nvim_win_set_option(contents_winid,"winhl","Normal:"..filetype)
+
+  api.nvim_win_set_option(contents_winid,"winhl","Normal:LspSagaContent")
   api.nvim_win_set_option(contents_winid,'winblend',0)
   api.nvim_win_set_option(contents_winid, 'foldlevel', 100)
   return contents_bufnr, contents_winid
 end
 
-function M.create_float_window(contents,filetype,border_opts,enter,opts)
+function M.create_float_window(content_opts,border_opts,opts)
+  vim.validate{
+    content_opts = {content_opts,'t'},
+    border_opts = {border_opts,'t'},
+  }
+  content_opts.enter = content_opts.enter or false
+
+  local contents,enter = content_opts.contents,content_opts.enter
   local _,_,border_option = make_border_option(contents,opts)
   local contents_option= border_option
   contents_option.width = border_option.width - 2
@@ -183,19 +203,19 @@ function M.create_float_window(contents,filetype,border_opts,enter,opts)
   contents_option.col = border_option.col + 1
 
   if not enter then
-    local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,contents_option)
+    local contents_bufnr,contents_winid = M.create_float_contents(content_opts,contents_option)
     local border_bufnr,border_winid = create_float_boder(contents,border_opts,opts)
     return contents_bufnr,contents_winid,border_bufnr,border_winid
   end
 
   local border_bufnr,border_winid = create_float_boder(contents,border_opts,opts)
-  local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,border_option)
+  local contents_bufnr,contents_winid = M.create_float_contents(content_opts,border_option)
   return contents_bufnr,contents_winid,border_bufnr,border_winid
 end
 
-function M.open_shadow_float_win(contents,filetype,enter,opts)
+function M.open_shadow_float_win(content_opts,opts)
   local shadow_bufnr,shadow_winid =  open_shadow_win()
-  local contents_bufnr,contents_winid = M.create_float_contents(contents,filetype,enter,opts)
+  local contents_bufnr,contents_winid = M.create_float_contents(content_opts,opts)
   return contents_bufnr,contents_winid,shadow_bufnr,shadow_winid
 end
 
@@ -268,8 +288,13 @@ function M.fancy_floating_markdown(contents, opts)
     highlight = 'LspSagaHoverBorder'
   }
 
+  local content_opts = {
+    contents = stripped,
+    filetype = 'sagahover'
+  }
+
   -- Make the floating window.
-  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(stripped,'sagahover',border_opts,false,opts)
+  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(content_opts,border_opts,opts)
 
   api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',1,0,-1)
 

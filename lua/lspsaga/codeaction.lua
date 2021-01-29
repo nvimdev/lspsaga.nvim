@@ -41,7 +41,14 @@ function Action:render_code_action_window(response)
     border = config.border_style,
     highlight = 'LspSagaCodeActionBorder'
   }
-  self.contents_bufnr,self.contents_winid,_,self.border_winid = window.create_float_window(contents,'LspSagaCodeAction',border_opts,true)
+
+  local content_opts = {
+    contents = contents,
+    filetype = 'LspSagaCodeActionTitle',
+    enter = true
+  }
+
+  self.contents_bufnr,self.contents_winid,_,self.border_winid = window.create_float_window(content_opts,border_opts)
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
 
   api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)

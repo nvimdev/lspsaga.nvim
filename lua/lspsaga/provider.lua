@@ -173,7 +173,13 @@ function Finder:render_finder_result()
     border = config.border_style,
     highlight = 'LspSagaLspFinderBorder'
   }
-  self.contents_buf,self.contents_win,self.border_bufnr,self.border_win = window.create_float_window(self.contents,'plaintext',border_opts,true,opts)
+
+  local content_opts = {
+    contents = self.contents,
+    filetype = 'plaintext',
+    enter = true
+  }
+  self.contents_buf,self.contents_win,self.border_bufnr,self.border_win = window.create_float_window(content_opts,border_opts,opts)
   api.nvim_buf_set_option(self.contents_buf,'buflisted',false)
   api.nvim_win_set_var(self.conents_win,'lsp_finder_win_opts',opts)
   api.nvim_win_set_option(self.conents_win,'cursorline',true)
@@ -291,9 +297,15 @@ function Finder:auto_open_preview()
       border = config.border_style,
       highlight = 'LspSagaAutoPreview'
     }
+
+    local content_opts = {
+      contents = content,
+      filetype = self.buf_filetype,
+    }
+
     vim.defer_fn(function ()
       self:close_auto_preview_win()
-      local cb,cw,_,bw = window.create_float_window(content,self.buf_filetype,border_opts,false,opts)
+      local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
       api.nvim_buf_set_option(cb,'buflisted',false)
       api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
     end,10)
@@ -402,11 +414,18 @@ function lspfinder.preview_definition(timeout_ms)
       relative = "cursor",
       style = "minimal",
     }
+
     local border_opts = {
       border = config.border_style,
       highlight = 'LspSagaDefPreviewBorder'
     }
-    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content,filetype,border_opts,false,opts)
+
+    local content_opts = {
+      contents = content,
+      filetype = filetype,
+    }
+
+    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content_opts,border_opts,opts)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
                                         border_winid)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
