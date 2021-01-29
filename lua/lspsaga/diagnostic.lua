@@ -300,4 +300,13 @@ function M.lsp_diagnostic_sign(opts)
   end
 end
 
+function M.lsp_diagnostic_header(opts)
+  severity_icon = {
+    opts.error_header,
+    opts.warn_header,
+    opts.infor_header,
+    opts.hint_header
+  }
+end
+
 return M

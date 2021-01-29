@@ -8,6 +8,11 @@ saga.config_values = {
   warn_sign = '',
   hint_sign = '',
   infor_sign = '',
+  -- jump diagnostic header
+  error_header = "  Error",
+  warn_header = "  Warn",
+  hint_header = "  Hint",
+  infor_header = "  Infor",
   -- code action title icon
   code_action_icon = ' ',
   finder_definition_icon = '  ',
@@ -38,6 +43,7 @@ function saga.init_lsp_saga(opts)
   local syntax = require 'lspsaga.syntax'
 
   handlers.overwrite_default(saga.config_values)
+  diagnostic.lsp_diagnostic_header(saga.config_values)
   if saga.config_values.use_saga_diagnostic_sign then
     diagnostic.lsp_diagnostic_sign(saga.config_values)
   end
