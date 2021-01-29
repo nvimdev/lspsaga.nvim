@@ -17,6 +17,8 @@ saga.config_values = {
   border_style = 1,
   max_hover_width = 0,
   rename_prompt_prefix = '➤',
+  selected_fg = '#1c1f24',
+  selected_bg = '#b3deef'
 }
 
 function saga.extend_config(opts)
