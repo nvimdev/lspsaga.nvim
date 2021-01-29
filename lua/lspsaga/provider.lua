@@ -282,7 +282,7 @@ function Finder:auto_open_preview()
     elseif pad_right < 0 then
       opts.row = finder_win_opts.row + height + 2
       opts.col = finder_win_opts.col
-      if self.WIN_HEIGHT - height - opts.row - #content - 2 < 2 then
+      if self.WIN_HEIGHT - height - opts.row - #content + 6 < 2 then
         return
       end
     end
