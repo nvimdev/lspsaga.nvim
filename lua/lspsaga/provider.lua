@@ -187,7 +187,7 @@ function Finder:render_finder_result()
   if not self.cursor_line_bg and not self.cursor_line_fg then
     self:get_cursorline_highlight()
   end
-  api.nvim_command('hi CursorLine guifg='..config.selected_fg .. ' guibg='..config.selected_bg)
+  api.nvim_command('highlight! link CursorLine LspSagaFinderSelection')
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
