@@ -1,10 +1,9 @@
 -- lsp dianostic
-local vim = vim
-local api = vim.api
-local lsp = vim.lsp
+local vim,api,lsp,util = vim,vim.api,vim.lsp,vim.lsp.util
 local window = require 'lspsaga.window'
 local wrap = require 'lspsaga.wrap'
 local config = require('lspsaga')
+local if_nil = vim.F.if_nil
 local M = {}
 
 -- lsp severity icon
@@ -106,8 +105,7 @@ function M.close_preview()
     local has_lineinfo,lines = pcall(api.nvim_buf_get_var,0,"diagnostic_prev_position")
     if has_lineinfo then
       if lines[1] ~= current_position[2] or lines[2] ~= current_position[3]-1 then
-        api.nvim_win_close(prev_win[1],true)
-        api.nvim_win_close(prev_win[2],true)
+        window.nvim_close_valid_window(prev_win)
         api.nvim_buf_set_var(0,"diagnostic_float_window",nil)
         api.nvim_buf_set_var(0,"diagnostic_prev_position",nil)
         api.nvim_command("hi! link DiagnosticTruncateLine DiagnosticTruncateLine")
@@ -187,6 +185,54 @@ end
 
 function M.lsp_jump_diagnostic_next()
   jump_one_times(get_below_entry)
+end
+
+function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+  opts = opts or {}
+  opts.severity_sort = if_nil(opts.severity_sort, true)
+
+  local show_header = if_nil(opts.show_header, true)
+
+  bufnr = bufnr or 0
+  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+
+  local lines = {}
+  local highlights = {}
+  if show_header then
+    table.insert(lines, "Diagnostics:")
+    table.insert(highlights, {0, "Bold"})
+  end
+
+  local line_diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
+  if vim.tbl_isempty(line_diagnostics) then return end
+
+  for i, diagnostic in ipairs(line_diagnostics) do
+    local prefix = string.format("%d. ", i)
+    local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
+    assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
+
+    local message_lines = vim.split(diagnostic.message, '\n', true)
+    table.insert(lines, prefix..message_lines[1])
+    table.insert(highlights, {#prefix + 1, hiname})
+    for j = 2, #message_lines do
+      table.insert(lines, message_lines[j])
+      table.insert(highlights, {0, hiname})
+    end
+  end
+  local border_opts = {
+    border = config.border_style,
+    highlight = 'LspLinesDiagBorder'
+  }
+
+  local cb,cw,bb,bw = window.create_float_window(lines, 'plaintext',border_opts,false,opts)
+  for i, hi in ipairs(highlights) do
+    local _, hiname = unpack(hi)
+    -- Start highlight after the prefix
+    api.nvim_buf_add_highlight(cb, -1, hiname, i-1, 3, -1)
+  end
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
+  return cb, cw,bb,bw
 end
 
 function M.lsp_diagnostic_sign(opts)
