@@ -64,7 +64,7 @@ nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()
 vnoremap <silent><leader>ca <cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>
 -- or use command
 nnoremap <silent><leader>ca :LspSagaCodeAction<CR>
-vnoremap <silent><leader>ca :LspSagaRangeCodeAction<CR>
+vnoremap <silent><leader>ca :'<,'>LspSagaRangeCodeAction<CR>
 ```
 <div align='center'>
 <img

@@ -1,6 +1,7 @@
 local api = vim.api
 local is_windows = vim.loop.os_uname().sysname == "Windows"
 local path_sep = is_windows and '\\' or '/'
+local home = os.getenv("HOME")
 
 -- check index in table
 local function has_key (tab,idx)
@@ -81,5 +82,6 @@ return {
   nvim_create_keymap = nvim_create_keymap,
   check_lsp_active = check_lsp_active,
   result_isempty = result_isempty,
-  split_by_pathsep = split_by_pathsep
+  split_by_pathsep = split_by_pathsep,
+  home = home
 }
