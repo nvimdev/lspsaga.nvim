@@ -34,7 +34,6 @@ function M.add_highlight()
   api.nvim_command("hi LspSagaCodeActionContent guifg=#98be65 gui=bold")
 
   api.nvim_command("hi LspSagaRenamePromptPrefix guifg=#98be65")
-  api.nvim_command('hi SagaShadow guibg=#000000')
 
   api.nvim_command('hi LspSagaRenameBorder guifg=#3bb6c4')
   api.nvim_command('hi LspSagaHoverBorder guifg=#80A0C2')

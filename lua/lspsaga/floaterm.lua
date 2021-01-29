@@ -26,7 +26,13 @@ local function open_float_terminal(command)
     col = col,
   }
 
-  local contents_bufnr,contents_winid,_,shadow_winid = window.open_shadow_float_win({},'Floaterm',true,opts)
+  local content_opts = {
+    contents = {},
+    filetype = 'Floaterm',
+    enter = true
+  }
+
+  local contents_bufnr,contents_winid,_,shadow_winid = window.open_shadow_float_win(content_opts,opts)
   api.nvim_command('hi Floaterm guibg=#282c34')
   api.nvim_command('terminal '..cmd)
   api.nvim_command('setlocal nobuflisted')

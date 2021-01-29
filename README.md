@@ -73,7 +73,9 @@ src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-
 
 ```lua
 -- show hover doc
-nnoremap <silent> K <cmd>lua vim.lsp.buf.hover()<CR>
+nnoremap <silent> K <cmd>lua require('lspsaga.hover').render_hover_doc()<CR>
+-- or use command
+nnoremap <silent>K :LspSagaHoverDoc<CR>
 ```
 <div align='center'>
 <img
