@@ -352,8 +352,8 @@ function M.nvim_close_valid_window(winid)
   }
 
   local _switch_metatable = {
-    __index = function(_,_)
-      error(string.format('Wrong type of winid'))
+    __index = function(_,t)
+      error(string.format('Wrong type %s of winid',t))
     end
   }
 

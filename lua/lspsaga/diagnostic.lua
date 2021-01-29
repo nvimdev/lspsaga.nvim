@@ -117,12 +117,16 @@ end
 
 local function jump_to_entry(entry)
   local has_value,prev_fw = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
-  if has_value then
-    window.nvim_close_valid_window(prev_fw)
+  if has_value and prev_fw ~= nil then
+    if api.nvim_win_is_valid(prev_fw[1]) and api.nvim_win_is_valid(prev_fw[2]) then
+      api.nvim_win_close(prev_fw[1], true)
+      api.nvim_win_close(prev_fw[2], true)
+    end
   end
-  local has_var,show_line_diag_winids = pcall(api.nvim_buf_get_var,0,"show_line_diag_winids")
-  if has_var then
-    window.nvim_close_valid_window(show_line_diag_winids)
+
+  local has_var,line_diag_winids = pcall(api.nvim_win_get_var,0,"show_line_diag_winids")
+  if has_var and line_diag_winids ~= nil then
+    window.nvim_close_valid_window(line_diag_winids)
   end
 
   local diagnostic_message = {}
@@ -201,10 +205,13 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
 
-  -- if there has a diagnostic float window we need close it
-  local has_var, diag_float_winid = pcall(api.nvim_win_get_var,0,"diagnostic_float_window")
-  if has_var then
-    window.nvim_close_valid_window(diag_float_winid)
+  -- if there already has diagnostic float window did not show show lines
+  -- diagnostic window
+  local has_var, diag_float_winid = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
+  if has_var and diag_float_winid ~= nil then
+    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
+      return
+    end
   end
 
   opts = opts or {}
