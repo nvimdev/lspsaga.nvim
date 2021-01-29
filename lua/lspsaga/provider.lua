@@ -127,8 +127,8 @@ function Finder:render_finder_result()
   table.insert(self.contents,' ')
 
   local help = {
-    "[o] : Open File     [s] : Vsplit";
-    "[i]   : Split       [q] : Exit";
+    "[o]  : Open File     [s] : Vsplit";
+    "[i]  : Split         [q] : Exit";
   }
 
   local max_idx= 1
