@@ -53,7 +53,7 @@ nnoremap <silent> gh :LspSagaFinder<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/105656835-11e73000-5efe-11eb-868f-54c99a770dc8.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/106226191-9ea52d00-6221-11eb-8802-2b5899889bdb.gif" width=500 height=500/>
 </div>
 
 ### Code Action
