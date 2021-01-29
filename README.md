@@ -32,8 +32,6 @@ local saga = require 'lspsaga'
 -- border_style = 1
 -- max_hover_width = 0 (automatically adjust to the width of current symbol)
 -- rename_prompt_prefix = '➤',
--- selected_fg = '#1c1f24',
--- selected_bg = '#b3deef'
 
 saga.init_lsp_saga {
   your custom option here
@@ -154,3 +152,20 @@ tnoremap <silent> <A-d> <C-\><C-n>:LspSagaOpenFloaterm<CR>
 src="https://user-images.githubusercontent.com/41671631/105658287-2c6ed880-5f01-11eb-8af6-daa6fd23576c.gif" width=500 height=500/>
 </div>
 
+## Customize Appearance	
+
+### Colors
+
+Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
+
+```vim
+highlight link LspSagaFinderSelection Search
+" or
+highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
+```
+
+The available highlight groups are:
+
+| Group Name               | Description                                                      |
+| :----------------------- | :----------------------------------------------------------------|
+| `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
