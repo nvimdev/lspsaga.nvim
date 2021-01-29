@@ -28,17 +28,26 @@ local rename = function()
   -- if exist a rename float win close it.
   close_rename_win()
   pos[1],pos[2] = vim.fn.getpos('.')[2],vim.fn.getpos('.')[3]
+
   local opts = {
     height = 1,
     width = 20,
     border_text = ''
   }
+
   local border_opts = {
     border = config.border_style,
     title = 'New name',
     highlight = 'LspSagaRenameBorder'
   }
-  local cb,cw,_,bw = window.create_float_window({},'',border_opts,true,opts)
+
+  local content_opts = {
+    contents = {},
+    filetype = '',
+    enter = true
+  }
+
+  local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
   local saga_rename_prompt_prefix = api.nvim_create_namespace('lspsaga_rename_prompt_prefix')
   api.nvim_buf_set_option(cb,'modifiable',true)
   local prompt_prefix = get_prompt_prefix()

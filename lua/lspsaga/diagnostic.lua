@@ -150,8 +150,14 @@ local function jump_to_entry(entry)
     border = config.border_style,
     highlight = hiname[entry.severity]
   }
+
+  local content_opts = {
+    contents = diagnostic_message,
+    filetype = 'markdown',
+  }
+
   api.nvim_win_set_cursor(0, {entry_line, entry_character})
-  local fb,fw,_,bw = window.create_float_window(diagnostic_message,'markdown',border_opts,false)
+  local fb,fw,_,bw = window.create_float_window(content_opts,border_opts)
 
   -- use a variable to control diagnostic floatwidnow
   api.nvim_buf_set_var(0,"diagnostic_float_window",{fw,bw})
@@ -224,7 +230,12 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     highlight = 'LspLinesDiagBorder'
   }
 
-  local cb,cw,bb,bw = window.create_float_window(lines, 'plaintext',border_opts,false,opts)
+  local content_opts = {
+    contents = lines,
+    filetype = 'plaintext',
+  }
+
+  local cb,cw,bb,bw = window.create_float_window(content_opts,border_opts,opts)
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)
     -- Start highlight after the prefix
