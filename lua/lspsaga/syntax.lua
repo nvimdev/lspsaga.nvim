@@ -43,6 +43,7 @@ function M.add_highlight()
   api.nvim_command('hi LspSagaCodeActionBorder guifg=#b3deef')
   api.nvim_command('hi LspSagaAutoPreview guifg=#ECBE7B')
   api.nvim_command('hi LspSagaDefPreviewBorder guifg=#b3deef')
+  api.nvim_command('hi LspLinesDiagBorder guifg=#ff6c6b')
 end
 
 return M
