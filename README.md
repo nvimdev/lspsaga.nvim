@@ -119,9 +119,14 @@ nnoremap <silent> gd :LspSagaDefPreview<CR>
 src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-11eb-8b39-4d3b1433cb75.gif" width=500 height=500/>
 </div>
 
-### Jump Diagnostic
+### Jump Diagnostic and Show Diagnostics
 
 ```lua
+-- show
+nnoremap <silent><leader>cd <cmd>lua
+require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
+
+nnoremap <silent> <leader>cd :LspSagaShowLineDiags<CR>
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
