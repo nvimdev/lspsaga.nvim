@@ -334,10 +334,6 @@ function Finder:quit_float_window()
     window.nvim_close_valid_window(self.border_win)
   end
   self:clear_tmp_data()
-  api.nvim_command('hi! CursorLine  guibg='..self.cursor_line_bg)
-  if self.cursor_line_fg == '' then
-    api.nvim_command('hi! CursorLine  guifg=NONE')
-  end
 end
 
 function Finder:clear_tmp_data()
@@ -349,6 +345,10 @@ function Finder:clear_tmp_data()
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
+  api.nvim_command('hi! CursorLine  guibg='..self.cursor_line_bg)
+  if self.cursor_line_fg == '' then
+    api.nvim_command('hi! CursorLine  guifg=NONE')
+  end
 end
 
 local lspfinder = {}
