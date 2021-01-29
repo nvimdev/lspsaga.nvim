@@ -4,29 +4,30 @@ local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 
-local actions = {}
-local contents_bufnr = 0
-local contents_winid = 0
-local border_winid = 0
-local bufnr = 0
+local Action = {}
 
-local clear_data = function()
-  actions = {}
-  contents_winid = 0
-  border_winid = 0
-  bufnr = 0
+function Action:register_clearn_fn(fn)
+  self._clear_fn = {}
+  table.insert(self._clear_fn,fn)
 end
 
-local render_code_action_window = function (response)
+function Action:clear_tmp_data()
+  for _,fn in ipairs(self._clear_fn) do
+    fn()
+  end
+end
+
+function Action:render_code_action_window(response)
   local contents = {}
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
+  self.actions = {}
 
   for _,languageServerAnswer in pairs(response) do
     for index,action in pairs(languageServerAnswer.result) do
       local action_title = '['..index..']' ..' '.. action.title
       table.insert(contents,action_title)
-      table.insert(actions,action)
+      table.insert(self.actions,action)
     end
   end
 
@@ -40,93 +41,117 @@ local render_code_action_window = function (response)
     border = config.border_style,
     highlight = 'LspSagaCodeActionBorder'
   }
-  contents_bufnr,contents_winid,_,border_winid = window.create_float_window(contents,'LspSagaCodeAction',border_opts,true)
+  self.contents_bufnr,self.contents_winid,_,self.border_winid = window.create_float_window(contents,'LspSagaCodeAction',border_opts,true)
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
 
-  api.nvim_buf_add_highlight(contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
-  api.nvim_buf_add_highlight(contents_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
+  api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
+  api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
   for i=1,#contents-2,1 do
-    api.nvim_buf_add_highlight(contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
+    api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
   end
 
   api.nvim_command('nnoremap <buffer><nowait><silent><cr> <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
   api.nvim_command('nnoremap <buffer><nowait><silent>q <cmd>lua require("lspsaga.codeaction").quit_action_window()<CR>')
 end
 
-local function code_action(context)
+function Action:code_action(context)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   -- if exist diagnostic float window close it
   require('lspsaga.diagnostic').close_preview()
 
-  bufnr = vim.fn.bufnr()
+  self.bufnr = vim.fn.bufnr()
   vim.validate { context = { context, 't', true } }
   context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
   local params = vim.lsp.util.make_range_params()
   params.context = context
   local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
   if libs.result_isempty(response) then return end
-  render_code_action_window(response)
+  self:render_code_action_window(response)
 end
 
-local function range_code_action(context, start_pos, end_pos)
+function Action:range_code_action(context, start_pos, end_pos)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
 
-  bufnr = vim.fn.bufnr()
+  self.bufnr = vim.fn.bufnr()
   vim.validate { context = { context, 't', true } }
   context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
   local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
   params.context = context
   local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
   if libs.result_isempty(response) then return end
-  render_code_action_window(response)
+  self:render_code_action_window(response)
 end
 
-local quit_action_window = function()
-  if contents_winid == 0 and border_winid == 0 then return end
-  window.nvim_close_valid_window({contents_winid,border_winid})
-  clear_data()
-end
-
-local set_cursor = function()
+function Action:set_cursor ()
   local column = 2
   local current_line = vim.fn.line('.')
 
   if current_line == 1 then
     vim.fn.cursor(3,column)
   elseif current_line == 2 then
-    vim.fn.cursor(2+#actions,column)
-  elseif current_line == #actions + 3 then
+    vim.fn.cursor(2+#self.actions,column)
+  elseif current_line == #self.actions + 3 then
     vim.fn.cursor(3,column)
   end
 end
 
-local function execute_command(bn,command)
+local function lsp_execute_command(bn,command)
   vim.lsp.buf_request(bn,'workspace/executeCommand', command)
 end
 
-local do_code_action = function()
+function Action:do_code_action()
   local number = tonumber(vim.fn.expand("<cword>"))
-  local action = actions[number]
+  local action = self.actions[number]
 
   if action.edit or type(action.command) == "table" then
     if action.edit then
       vim.lsp.util.apply_workspace_edit(action.edit)
     end
     if type(action.command) == "table" then
-      execute_command(bufnr,action.command)
+      lsp_execute_command(self.bufnr,action.command)
     end
   else
-    execute_command(bufnr,action)
+    lsp_execute_command(self.bufnr,action)
   end
-  quit_action_window()
+  self:quit_action_window()
 end
 
-return {
-  code_action = code_action,
-  do_code_action = do_code_action,
-  quit_action_window = quit_action_window,
-  set_cursor = set_cursor,
-  range_code_action = range_code_action
-}
+function Action:clear_tmp_data()
+  self.actions = {}
+  self.bufnr = 0
+  self.contents_bufnr = 0
+  self.contents_winid = 0
+  self.border_winid = 0
+end
+
+function Action:quit_action_window ()
+  if self.contents_winid == 0 and self.border_winid == 0 then return end
+  window.nvim_close_valid_window({self.contents_winid,self.border_winid})
+  self:clear_tmp_data()
+end
+
+local lspaction = {}
+
+lspaction.code_action = function()
+  Action:code_action()
+end
+
+lspaction.do_code_action = function ()
+  Action:do_code_action()
+end
+
+lspaction.quit_action_window = function()
+  Action:quit_action_window()
+end
+
+lspaction.range_code_action = function ()
+  Action:range_code_action()
+end
+
+lspaction.set_cursor = function ()
+  Action:set_cursor()
+end
+
+return lspaction

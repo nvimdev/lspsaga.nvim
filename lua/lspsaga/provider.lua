@@ -4,21 +4,58 @@ local root_dir = lsp.buf_get_clients()[1].config.root_dir or ''
 local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
-local M = {}
-local home = os.getenv("HOME")
 
-local short_link = {}
-local contents = {}
-local definition_uri = 0
-local reference_uri = 0
-local param_length = 0
-local buf_filetype = ''
-local WIN_WIDTH = 0
-local WIN_HEIGHT = 0
-local cursor_line_bg  = ''
-local cursor_line_fg  = ''
+local send_request = function(timeout)
+  local method = {"textDocument/definition","textDocument/references"}
+  local def_params = lsp.util.make_position_params()
+  local ref_params = lsp.util.make_position_params()
+  ref_params.context = {includeDeclaration = true;}
+  local def_response = lsp.buf_request_sync(0, method[1], def_params, timeout or 1000)
+  local ref_response = lsp.buf_request_sync(0, method[2], ref_params, timeout or 1000)
 
-local create_finder_contents =function(result,method_type)
+  local responses = {}
+  if not vim.tbl_isempty(def_response) then
+    table.insert(responses,def_response)
+  end
+  if not vim.tbl_isempty(ref_response) then
+    table.insert(responses,ref_response)
+  end
+
+  for i,response in ipairs(responses) do
+    if type(response) == "table" then
+      for _,res in pairs(response) do
+        if res.result and next(res.result) ~= nil then
+          coroutine.yield(res.result,i)
+        end
+      end
+    end
+  end
+end
+
+local Finder = {}
+
+function Finder:lsp_finder_request()
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+  self.WIN_WIDTH = vim.fn.winwidth(0)
+  self.WIN_HEIGHT = vim.fn.winheight(0)
+  self.contents = {}
+  self.short_link = {}
+
+  local request_intance = coroutine.create(send_request)
+  self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
+  while true do
+    local _,result,method_type = coroutine.resume(request_intance)
+    self:create_finder_contents(result,method_type)
+
+    if coroutine.status(request_intance) == 'dead' then
+      break
+    end
+  end
+  self:render_finder_result()
+end
+
+function Finder:create_finder_contents(result,method_type)
   local target_lnum = 0
   if type(result) == 'table' then
     local method_option = {
@@ -26,21 +63,22 @@ local create_finder_contents =function(result,method_type)
       {icon = config.finder_reference_icon,title = ':  '.. #result ..' References',};
     }
     local params = vim.fn.expand("<cword>")
-    param_length = #params
+    self.param_length = #params
     local title = method_option[method_type].icon.. params ..method_option[method_type].title
+
     if method_type == 1 then
-      table.insert(contents,title)
+      table.insert(self.contents,title)
       target_lnum = 2
     else
-      target_lnum = target_lnum + definition_uri + 5
-      table.insert(contents," ")
-      table.insert(contents,title)
+      target_lnum = target_lnum + self.definition_uri + 5
+      table.insert(self.contents," ")
+      table.insert(self.contents,title)
     end
 
     if method_type == 1 then
-      definition_uri = #result
+      self.definition_uri = #result
     else
-      reference_uri  = #result
+      self.reference_uri  = #result
     end
 
     for index,_ in ipairs(result) do
@@ -58,8 +96,8 @@ local create_finder_contents =function(result,method_type)
       -- reduce filename length by root_dir or home dir
       if link:find(root_dir, 1, true) then
         short_name = link:sub(root_dir:len() + 2)
-      elseif link:find(home, 1, true) then
-        short_name = link:sub(home:len() + 2)
+      elseif link:find(libs.home, 1, true) then
+        short_name = link:sub(libs.home:len() + 2)
       else
         short_name = libs.split_by_pathsep(link,4)
       end
@@ -67,72 +105,26 @@ local create_finder_contents =function(result,method_type)
       local target_line = '['..index..']'..' '..short_name
       local range = result[index].targetRange or result[index].range
       if index == 1  then
-        table.insert(contents,' ')
+        table.insert(self.contents,' ')
       end
-      table.insert(contents,target_line)
+      table.insert(self.contents,target_line)
       target_lnum = target_lnum + 1
       local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+5,false)
-      short_link[target_lnum] = {link=link,preview=lines,row=range.start.line+1,col=range.start.character+1}
+
+      self.short_link[target_lnum] = {
+        link=link,
+        preview=lines,
+        row=range.start.line+1,
+        col=range.start.character+1
+      }
     end
   end
 end
 
-local lsp_finder_highlight = function()
-  local def_icon = config.finder_definition_icon or ''
-  local ref_icon = config.finder_reference_icon or ''
-  -- add syntax
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"DefinitionIcon",0,1,#def_icon-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetWord",0,#def_icon,param_length+#def_icon+3)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"DefinitionCount",0,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetWord",3+definition_uri,#ref_icon,param_length+#ref_icon+3)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"ReferencesIcon",3+definition_uri,1,#ref_icon+4)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"ReferencesCount",3+definition_uri,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"ProviderTruncateLine",definition_uri+reference_uri+6,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpItem",definition_uri+reference_uri+7,0,-1)
-  api.nvim_buf_add_highlight(M.contents_buf,-1,"HelpItem",definition_uri+reference_uri+8,0,-1)
-end
+function Finder:render_finder_result()
+  if next(self.contents) == nil then return end
 
-function M.set_cursor()
-  local current_line = vim.fn.line('.')
-  local column = 2
-
-  local first_def_uri_lnum = 3
-  local last_def_uri_lnum = 3 + definition_uri - 1
-  local first_ref_uri_lnum = 3 + definition_uri + 3
-  local last_ref_uri_lnum = 3 + definition_uri + 2 + reference_uri
-
-  if current_line == 1 then
-    vim.fn.cursor(first_def_uri_lnum,column)
-  elseif current_line == last_def_uri_lnum + 1 then
-    vim.fn.cursor(first_ref_uri_lnum,column)
-  elseif current_line == last_ref_uri_lnum + 1 then
-    vim.fn.cursor(first_def_uri_lnum, column)
-  elseif current_line == first_ref_uri_lnum - 1 then
-    vim.fn.cursor(last_def_uri_lnum,column)
-  elseif current_line == first_def_uri_lnum - 1 then
-    vim.fn.cursor(last_ref_uri_lnum,column)
-  end
-end
-
-local clear_data = function()
-  -- clear
-  contents = {}
-  definition_uri = 0
-  reference_uri = 0
-  param_length = 0
-  buf_filetype = ''
-  WIN_WIDTH = 0
-  WIN_HEIGHT = 0
-  M.contents_buf = 0
-  M.contents_win = 0
-  M.border_bufnr = 0
-  M.border_win = 0
-end
-
-local render_finder_result= function ()
-  if next(contents) == nil then return end
-
-  table.insert(contents,' ')
+  table.insert(self.contents,' ')
 
   local help = {
     "[o] : Open File     [s] : Vsplit";
@@ -140,23 +132,23 @@ local render_finder_result= function ()
   }
 
   local max_idx= 1
-  for i=1,#contents-1,1 do
-    if #contents[i] > #contents[max_idx] then
+  for i=1,#self.contents-1,1 do
+    if #self.contents[i] > #self.contents[max_idx] then
       max_idx = i
     end
   end
 
   local truncate_line
-  if #contents[max_idx] > #help[1] then
-    truncate_line = wrap.add_truncate_line(contents)
+  if #self.contents[max_idx] > #help[1] then
+    truncate_line = wrap.add_truncate_line(self.contents)
   else
     truncate_line = wrap.add_truncate_line(help)
   end
 
-  table.insert(contents,truncate_line)
+  table.insert(self.contents,truncate_line)
 
   for _,v in ipairs(help) do
-    table.insert(contents,v)
+    table.insert(self.contents,v)
   end
 
   -- get dimensions
@@ -181,56 +173,96 @@ local render_finder_result= function ()
     border = config.border_style,
     highlight = 'LspSagaLspFinderBorder'
   }
-  M.contents_buf,M.contents_win,M.border_bufnr,M.border_win = window.create_float_window(contents,'plaintext',border_opts,true,opts)
-  api.nvim_buf_set_option(M.contents_buf,'buflisted',false)
-  api.nvim_win_set_var(M.conents_win,'lsp_finder_win_opts',opts)
-  api.nvim_win_set_option(M.conents_win,'cursorline',true)
-  cursor_line_bg = vfn.synIDattr(vfn.hlID("cursorline"),"bg")
-  cursor_line_fg = vfn.synIDattr(vfn.hlID("cursorline"),"bg")
-  api.nvim_command('hi cursorline guifg='..config.selected_fg .. ' guibg='..config.selected_bg)
+  self.contents_buf,self.contents_win,self.border_bufnr,self.border_win = window.create_float_window(self.contents,'plaintext',border_opts,true,opts)
+  api.nvim_buf_set_option(self.contents_buf,'buflisted',false)
+  api.nvim_win_set_var(self.conents_win,'lsp_finder_win_opts',opts)
+  api.nvim_win_set_option(self.conents_win,'cursorline',true)
+
+  if not self.cursor_line_bg and not self.cursor_line_fg then
+    self:get_cursorline_highlight()
+  end
+  api.nvim_command('hi CursorLine guifg='..config.selected_fg .. ' guibg='..config.selected_bg)
 --   api.nvim_win_set_cursor(M.contens_buf,{2,1})
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").set_cursor()')
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.provider").auto_open_preview()')
   api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.provider').close_lsp_finder_window()")
 
-  for i=1,definition_uri,1 do
-    api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetFileName",1+i,0,-1)
+  for i=1,self.definition_uri,1 do
+    api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetFileName",1+i,0,-1)
   end
 
-  for i=1,reference_uri,1 do
-    api.nvim_buf_add_highlight(M.contents_buf,-1,"TargetFileName",i+definition_uri+4,0,-1)
+  for i=1,self.reference_uri,1 do
+    api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetFileName",i+self.definition_uri+4,0,-1)
   end
   -- load float window map
-  M.apply_float_map(M.contents_buf)
-  lsp_finder_highlight()
+  self:apply_float_map()
+  self:lsp_finder_highlight()
 end
 
-function M.apply_float_map(contents_bufnr)
+function Finder:apply_float_map()
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local lhs = {
     noremap = true,
     silent = true
   }
   local keymaps = {
-    {contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>"},
-    {contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>"},
-    {contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {contents_bufnr,'n',"q",":lua require'lspsaga.provider'.quit_float_window()<CR>"}
+    {self.contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>"},
+    {self.contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>"},
+    {self.contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>"},
+    {self.contents_bufnr,'n',"q",":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
   }
   nvim_create_keymap(keymaps,lhs)
 end
 
-local close_auto_preview_win = function()
-  local has_var,winid = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
-  if has_var then
-    window.nvim_close_valid_window(winid)
+function Finder:lsp_finder_highlight ()
+  local def_icon = config.finder_definition_icon or ''
+  local ref_icon = config.finder_reference_icon or ''
+  local def_uri_count = self.definition_uri
+  local ref_uri_count = self.reference_uri
+  -- add syntax
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"DefinitionIcon",0,1,#def_icon-1)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetWord",0,#def_icon,self.param_length+#def_icon+3)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"DefinitionCount",0,0,-1)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetWord",3+def_uri_count,#ref_icon,self.param_length+#ref_icon+3)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesCount",3+def_uri_count,0,-1)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"ProviderTruncateLine",def_uri_count+ref_uri_count+6,0,-1)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"HelpItem",def_uri_count+ref_uri_count+7,0,-1)
+  api.nvim_buf_add_highlight(self.contents_buf,-1,"HelpItem",def_uri_count+ref_uri_count+8,0,-1)
+end
+
+function Finder:set_cursor()
+  local current_line = vim.fn.line('.')
+  local column = 2
+
+  local first_def_uri_lnum = 3
+  local last_def_uri_lnum = 3 + self.definition_uri - 1
+  local first_ref_uri_lnum = 3 + self.definition_uri + 3
+  local last_ref_uri_lnum = 3 + self.definition_uri + 2 + self.reference_uri
+
+  if current_line == 1 then
+    vim.fn.cursor(first_def_uri_lnum,column)
+  elseif current_line == last_def_uri_lnum + 1 then
+    vim.fn.cursor(first_ref_uri_lnum,column)
+  elseif current_line == last_ref_uri_lnum + 1 then
+    vim.fn.cursor(first_def_uri_lnum, column)
+  elseif current_line == first_ref_uri_lnum - 1 then
+    vim.fn.cursor(last_def_uri_lnum,column)
+  elseif current_line == first_def_uri_lnum - 1 then
+    vim.fn.cursor(last_ref_uri_lnum,column)
   end
 end
 
-function M.auto_open_preview()
+function Finder:get_cursorline_highlight()
+  self.cursor_line_bg = vfn.synIDattr(vfn.hlID("cursorline"),"bg")
+  self.cursor_line_fg = vfn.synIDattr(vfn.hlID("cursorline"),"fg")
+end
+
+function Finder:auto_open_preview()
   local current_line = vim.fn.line('.')
-  if not short_link[current_line] then return end
-  local content = short_link[current_line].preview or {}
+  if not self.short_link[current_line] then return end
+  local content = self.short_link[current_line].preview or {}
+
   if next(content) ~= nil then
     local has_var,finder_win_opts = pcall(api.nvim_win_get_var,0,'lsp_finder_win_opts')
     if not has_var then print('get finder window options wrong') return end
@@ -241,7 +273,7 @@ function M.auto_open_preview()
     }
 
     local min_width = 45
-    local pad_right = WIN_WIDTH - width - 20 - min_width
+    local pad_right = self.WIN_WIDTH - width - 20 - min_width
 
     opts.width = min_width
     if pad_right > 5 then
@@ -250,7 +282,7 @@ function M.auto_open_preview()
     elseif pad_right < 0 then
       opts.row = finder_win_opts.row + height + 2
       opts.col = finder_win_opts.col
-      if WIN_HEIGHT - height - opts.row - #content - 2 < 2 then
+      if self.WIN_HEIGHT - height - opts.row - #content - 2 < 2 then
         return
       end
     end
@@ -260,90 +292,88 @@ function M.auto_open_preview()
       highlight = 'LspSagaAutoPreview'
     }
     vim.defer_fn(function ()
-      close_auto_preview_win()
-      local cb,cw,_,bw = window.create_float_window(content,buf_filetype,border_opts,false,opts)
+      self:close_auto_preview_win()
+      local cb,cw,_,bw = window.create_float_window(content,self.buf_filetype,border_opts,false,opts)
       api.nvim_buf_set_option(cb,'buflisted',false)
       api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
     end,10)
   end
 end
 
+function Finder:close_auto_preview_win()
+  local has_var,winid = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
+  if has_var then
+    window.nvim_close_valid_window(winid)
+  end
+end
+
 -- action 1 mean enter
 -- action 2 mean vsplit
 -- action 3 mean split
-function M.open_link(action_type)
+function Finder:open_link(action_type)
   local action = {"edit ","vsplit ","split "}
   local current_line = vim.fn.line('.')
 
-  if short_link[current_line] == nil then
+  if self.short_link[current_line] == nil then
     error('[LspSaga] target file uri not exist')
     return
   end
 
-  close_auto_preview_win()
-  api.nvim_win_close(M.contents_win,true)
-  api.nvim_win_close(M.border_win,true)
-  api.nvim_command(action[action_type]..short_link[current_line].link)
-  vim.fn.cursor(short_link[current_line].row,short_link[current_line].col)
-  clear_data()
+  self:close_auto_preview_win()
+  api.nvim_win_close(self.contents_win,true)
+  api.nvim_win_close(self.border_win,true)
+  api.nvim_command(action[action_type]..self.short_link[current_line].link)
+  vim.fn.cursor(self.short_link[current_line].row,self.short_link[current_line].col)
+  self:clear_tmp_data()
 end
 
-function M.quit_float_window()
-  close_auto_preview_win()
-  if M.contents_win ~= 0 and M.border_win ~= 0 then
-    window.nvim_close_valid_window(M.contents_win)
-    window.nvim_close_valid_window(M.border_win)
+function Finder:quit_float_window()
+  self:close_auto_preview_win()
+  if self.contents_win ~= 0 and self.border_win ~= 0 then
+    window.nvim_close_valid_window(self.contents_win)
+    window.nvim_close_valid_window(self.border_win)
   end
-  clear_data()
-  api.nvim_command("hi cursorline guifg="..cursor_line_fg .. ' guibg='..cursor_line_bg)
-end
-
-function M.close_lsp_finder_window()
-  M.quit_float_window()
-end
-
-local send_request = function(timeout)
-  local method = {"textDocument/definition","textDocument/references"}
-  local def_params = lsp.util.make_position_params()
-  local ref_params = lsp.util.make_position_params()
-  ref_params.context = {includeDeclaration = true;}
-  local results = {}
-  local def_response = lsp.buf_request_sync(0, method[1], def_params, timeout or 1000)
-  local ref_response = lsp.buf_request_sync(0, method[2], ref_params, timeout or 1000)
-  if not vim.tbl_isempty(def_response) then
-    table.insert(results,def_response)
-  end
-  if not vim.tbl_isempty(ref_response) then
-    table.insert(results,ref_response)
-  end
-
-  for i,v in ipairs(results) do
-    if v[1].result ~= nil and not vim.tbl_isempty(v[1].result) then
-      coroutine.yield(v[1].result,i)
-    end
+  self:clear_tmp_data()
+  api.nvim_command('hi! CursorLine  guibg='..self.cursor_line_bg)
+  if self.cursor_line_fg == '' then
+    api.nvim_command('hi! CursorLine  guifg=NONE')
   end
 end
 
-function M.lsp_finder()
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
-  WIN_WIDTH = vim.fn.winwidth(0)
-  WIN_HEIGHT = vim.fn.winheight(0)
-
-  local request_intance = coroutine.create(send_request)
-  buf_filetype = api.nvim_buf_get_option(0,'filetype')
-  while true do
-    local _,result,method_type = coroutine.resume(request_intance)
-    create_finder_contents(result,method_type)
-
-    if coroutine.status(request_intance) == 'dead' then
-      break
-    end
-  end
-  render_finder_result()
+function Finder:clear_tmp_data()
+  self.short_link = {}
+  self.contents = {}
+  self.definition_uri = 0
+  self.reference_uri = 0
+  self.param_length = 0
+  self.buf_filetype = ''
+  self.WIN_HEIGHT = 0
+  self.WIN_WIDTH = 0
 end
 
-function M.preview_definition(timeout_ms)
+local lspfinder = {}
+
+function lspfinder.lsp_finder()
+  Finder:lsp_finder_request()
+end
+
+function lspfinder.close_lsp_finder_window()
+  Finder:quit_float_window()
+end
+
+function lspfinder:auto_open_preview()
+  Finder:auto_open_preview()
+end
+
+function lspfinder:set_cursor()
+  Finder:set_cursor()
+end
+
+function lspfinder.open_link(action_type)
+  Finder:open_link(action_type)
+end
+
+function lspfinder.preview_definition(timeout_ms)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
 
@@ -385,4 +415,4 @@ function M.preview_definition(timeout_ms)
   end
 end
 
-return M
+return lspfinder
