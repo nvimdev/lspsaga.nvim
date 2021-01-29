@@ -1,6 +1,7 @@
 -- lsp dianostic
 local vim,api,lsp,util = vim,vim.api,vim.lsp,vim.lsp.util
 local window = require 'lspsaga.window'
+local libs = require('lspsaga.libs')
 local wrap = require 'lspsaga.wrap'
 local config = require('lspsaga')
 local if_nil = vim.F.if_nil
@@ -116,9 +117,12 @@ end
 
 local function jump_to_entry(entry)
   local has_value,prev_fw = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
-  if has_value and prev_fw ~=nil and api.nvim_win_is_valid(prev_fw[1]) then
-    api.nvim_win_close(prev_fw[1],true)
-    api.nvim_win_close(prev_fw[2],true)
+  if has_value then
+    window.nvim_close_valid_window(prev_fw)
+  end
+  local has_var,show_line_diag_winids = pcall(api.nvim_buf_get_var,0,"show_line_diag_winids")
+  if has_var then
+    window.nvim_close_valid_window(show_line_diag_winids)
   end
 
   local diagnostic_message = {}
@@ -194,6 +198,15 @@ function M.lsp_jump_diagnostic_next()
 end
 
 function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
+  -- if there has a diagnostic float window we need close it
+  local has_var, diag_float_winid = pcall(api.nvim_win_get_var,0,"diagnostic_float_window")
+  if has_var then
+    window.nvim_close_valid_window(diag_float_winid)
+  end
+
   opts = opts or {}
   opts.severity_sort = if_nil(opts.severity_sort, true)
 
@@ -243,7 +256,8 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   end
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
-  return cb, cw,bb,bw
+  api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
+  return cb,cw,bb,bw
 end
 
 function M.lsp_diagnostic_sign(opts)
