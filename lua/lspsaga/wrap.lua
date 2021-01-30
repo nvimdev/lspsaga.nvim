@@ -61,4 +61,3 @@ function wrap.add_truncate_line(contents)
 end
 
 return wrap
-
