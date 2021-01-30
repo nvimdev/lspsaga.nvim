@@ -3,7 +3,7 @@ local vim,api,lsp,util = vim,vim.api,vim.lsp,vim.lsp.util
 local window = require 'lspsaga.window'
 local libs = require('lspsaga.libs')
 local wrap = require 'lspsaga.wrap'
-local config = require('lspsaga')
+local config = require('lspsaga').config_values
 local if_nil = vim.F.if_nil
 local M = {}
 
@@ -139,7 +139,7 @@ local function jump_to_entry(entry)
   local header = severity_icon[entry.severity] ..' '..'['.. server_source..']'
   table.insert(diagnostic_message,header)
 
-  local wrap_message = wrap.wrap_text(entry.message,50)
+  local wrap_message = wrap.wrap_text(entry.message,config.max_diag_msg_width)
 
   local truncate_line = ''
   if #header > 50 then
@@ -250,7 +250,7 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     highlight = 'LspLinesDiagBorder'
   }
 
-  local wrap_message = wrap.wrap_contents(lines,50)
+  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width)
   local truncate_line = wrap.add_truncate_line(lines)
   table.insert(wrap_message,2,truncate_line)
 
