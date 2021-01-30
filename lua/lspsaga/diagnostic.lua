@@ -10,10 +10,10 @@ local M = {}
 -- lsp severity icon
 -- 1:Error 2:Warning 3:Information 4:Hint
 local severity_icon = {
-  "  Error",
-  "  Warn",
-  "  Infor",
-  "  Hint"
+  config.config_values.error_header,
+  config.config_values.warn_header,
+  config.config_values.infor_header,
+  config.config_values.hint_header,
 }
 
 local function get_line(diagnostic_entry)
@@ -298,15 +298,6 @@ function M.lsp_diagnostic_sign(opts)
     {text=g.sign,texthl=g.highlight,linehl='',numhl=''}
     )
   end
-end
-
-function M.lsp_diagnostic_header(opts)
-  severity_icon = {
-    opts.error_header,
-    opts.warn_header,
-    opts.infor_header,
-    opts.hint_header
-  }
 end
 
 return M
