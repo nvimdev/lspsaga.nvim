@@ -3,17 +3,17 @@ local vim,api,lsp,util = vim,vim.api,vim.lsp,vim.lsp.util
 local window = require 'lspsaga.window'
 local libs = require('lspsaga.libs')
 local wrap = require 'lspsaga.wrap'
-local config = require('lspsaga')
+local config = require('lspsaga').config_values
 local if_nil = vim.F.if_nil
 local M = {}
 
 -- lsp severity icon
 -- 1:Error 2:Warning 3:Information 4:Hint
 local severity_icon = {
-  config.config_values.error_header,
-  config.config_values.warn_header,
-  config.config_values.infor_header,
-  config.config_values.hint_header,
+  config.error_header,
+  config.warn_header,
+  config.infor_header,
+  config.hint_header,
 }
 
 local function get_line(diagnostic_entry)
