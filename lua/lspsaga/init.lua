@@ -1,9 +1,15 @@
 local saga = {}
 
 saga.config_values = {
-  use_saga_diagnostic_handler = true,
-  use_saga_diagnostic_sign = true,
-  -- diagnostic sign
+  diagnostic_opts = {
+    underline = true,
+    virtual_text = true,
+    signs = {
+      enable = true,
+      priority = 20
+    },
+    update_in_insert = false,
+  },
   error_sign = '',
   warn_sign = '',
   hint_sign = '',
@@ -20,28 +26,27 @@ saga.config_values = {
   rename_prompt_prefix = '➤',
 }
 
-function saga.extend_config(opts)
+function saga:extend_config(opts)
   opts = opts or {}
   if next(opts) == nil then return  end
   for key,value in pairs(opts) do
-    if saga.config_values[key] == nil then
+    if self.config_values[key] == nil then
       error(string.format('[LspSaga] Key %s not exist in config values',key))
       return
     end
-    saga.config_values[key] = value
+    if type(self.config_values[key]) == 'table' then
+      vim.tbl_extend('keep',self.config_values[key],value)
+    else
+      self.config_values[key] = value
+    end
   end
 end
 
 function saga.init_lsp_saga(opts)
-  saga.extend_config(opts)
-  local diagnostic = require 'lspsaga.diagnostic'
-  local handlers = require 'lspsaga.handlers'
+  saga:extend_config(opts)
+  local diag = require ('lspsaga.diagnostic')
   local syntax = require 'lspsaga.syntax'
-
-  handlers.overwrite_default(saga.config_values)
-  if saga.config_values.use_saga_diagnostic_sign then
-    diagnostic.lsp_diagnostic_sign(saga.config_values)
-  end
+  diag.saga_diagnostic_handler()
   syntax.add_highlight()
 end
 

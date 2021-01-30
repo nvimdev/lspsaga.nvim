@@ -45,8 +45,7 @@ local function compare_diagnostics_entries(entry_a, entry_b)
 end
 
 local function get_sorted_diagnostics()
-  local active_clients = lsp.get_active_clients()
-
+--   local active_clients = lsp.get_active_clients()
   local buffer_number = api.nvim_get_current_buf()
   -- If no client id there will be get all diagnostics
   local diagnostics = lsp.diagnostic.get(buffer_number)
@@ -275,23 +274,27 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   return cb,cw,bb,bw
 end
 
-function M.lsp_diagnostic_sign(opts)
+function M.saga_diagnostic_handler()
+  local opts = config.diagnostic_opts
+  lsp.handlers['textDocument/publishDiagnostics'] = vim.lsp.with(
+    vim.lsp.diagnostic.on_publish_diagnostics, opts)
+
   local group = {
     err_group = {
       highlight = 'LspDiagnosticsSignError',
-      sign =opts.error_sign
+      sign =config.error_sign
     },
     warn_group = {
       highlight = 'LspDiagnosticsSignWarning',
-      sign =opts.warn_sign
+      sign =config.warn_sign
     },
     hint_group = {
       highlight = 'LspDiagnosticsSignHint',
-      sign =opts.hint_sign
+      sign =config.hint_sign
     },
     infor_group = {
       highlight = 'LspDiagnosticsSignInformation',
-      sign =opts.infor_sign
+      sign =config.infor_sign
     },
   }
 

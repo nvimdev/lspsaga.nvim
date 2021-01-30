@@ -18,6 +18,16 @@ local saga = require 'lspsaga'
 
 -- add your config value here
 -- default value
+-- this is an options that pass to lsp.handlers['textDocument/publishDiagnostics']
+-- diagnostic_opts = {
+--   underline = true,
+--   virtual_text = true,
+--   signs = {
+--     enable = true,
+--     priority = 20
+--   },
+--   update_in_insert = false,
+-- },
 -- use_saga_diagnostic_handler = true
 -- use_saga_diagnostic_sign = true
 -- error_sign = '',
