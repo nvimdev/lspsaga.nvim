@@ -138,11 +138,14 @@ local function jump_to_entry(entry)
   local server_source = entry.source
   local header = severity_icon[entry.severity] ..' '..'['.. server_source..']'
   table.insert(diagnostic_message,header)
+  if entry.message:find('\n') then
+    entry.message = entry.message:gsub("[\n\r]", " ")
+  end
 
   local wrap_message = wrap.wrap_text(entry.message,config.max_diag_msg_width)
 
   local truncate_line = ''
-  if #header > 50 then
+  if #header > config.max_diag_msg_width then
     truncate_line = wrap.add_truncate_line(diagnostic_message)
   else
     truncate_line = wrap.add_truncate_line(wrap_message)
