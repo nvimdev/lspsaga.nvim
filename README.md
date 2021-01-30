@@ -28,6 +28,7 @@ local saga = require 'lspsaga'
 -- warn_header = "  Warn",
 -- hint_header = "  Hint",
 -- infor_header = "  Infor",
+-- max_diag_msg_width = 50,
 -- code_action_icon = ' ',
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
