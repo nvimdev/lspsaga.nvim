@@ -8,6 +8,11 @@ saga.config_values = {
   warn_sign = '',
   hint_sign = '',
   infor_sign = '',
+  -- jump diagnostic header
+  error_header = "  Error",
+  warn_header = "  Warn",
+  hint_header = "  Hint",
+  infor_header = "  Infor",
   max_diag_msg_width = 50,
   -- code action title icon
   code_action_icon = ' ',

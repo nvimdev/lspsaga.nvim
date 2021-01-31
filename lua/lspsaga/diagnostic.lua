@@ -10,10 +10,10 @@ local M = {}
 -- lsp severity icon
 -- 1:Error 2:Warning 3:Information 4:Hint
 local severity_icon = {
-  "  Error",
-  "  Warn",
-  "  Infor",
-  "  Hint"
+  config.error_header,
+  config.warn_header,
+  config.infor_header,
+  config.hint_header,
 }
 
 local function get_line(diagnostic_entry)
