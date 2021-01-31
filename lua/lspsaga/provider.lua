@@ -1,6 +1,5 @@
 local window = require 'lspsaga.window'
 local vim,api,lsp,vfn = vim,vim.api,vim.lsp,vim.fn
-local root_dir = lsp.buf_get_clients()[1].config.root_dir or ''
 local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
@@ -42,11 +41,17 @@ function Finder:lsp_finder_request()
   self.contents = {}
   self.short_link = {}
 
+  local root_dir = libs.get_lsp_root_dir()
+  if string.len(root_dir) == 0 then
+    print('[LspSaga] get root dir failed')
+    return
+  end
+
   local request_intance = coroutine.create(send_request)
   self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
   while true do
     local _,result,method_type = coroutine.resume(request_intance)
-    self:create_finder_contents(result,method_type)
+    self:create_finder_contents(result,method_type,root_dir)
 
     if coroutine.status(request_intance) == 'dead' then
       break
@@ -55,7 +60,7 @@ function Finder:lsp_finder_request()
   self:render_finder_result()
 end
 
-function Finder:create_finder_contents(result,method_type)
+function Finder:create_finder_contents(result,method_type,root_dir)
   local target_lnum = 0
   if type(result) == 'table' then
     local method_option = {

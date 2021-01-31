@@ -13,6 +13,15 @@ local function has_key (tab,idx)
   return false
 end
 
+local function has_value(tbl,val)
+  for _,v in pairs(tbl)do
+    if v == val then
+      return true
+    end
+  end
+  return false
+end
+
 local function nvim_create_augroup(group_name,definitions)
   vim.api.nvim_command('augroup '..group_name)
   vim.api.nvim_command('autocmd!')
@@ -74,6 +83,20 @@ local function split_by_pathsep(text,start_pos)
   return short_text
 end
 
+local function get_lsp_root_dir()
+  local active,msg = check_lsp_active()
+  if not active then print(msg) return end
+  local clients = vim.lsp.get_active_clients()
+  for _,client in pairs(clients) do
+    if client.config.root_dir then
+      if has_value(client.config.filetypes,vim.bo.filetype) then
+        return client.config.root_dir
+      end
+    end
+  end
+  return ''
+end
+
 return {
   is_windows = is_windows,
   path_sep = path_sep,
@@ -83,5 +106,6 @@ return {
   check_lsp_active = check_lsp_active,
   result_isempty = result_isempty,
   split_by_pathsep = split_by_pathsep,
-  home = home
+  home = home,
+  get_lsp_root_dir = get_lsp_root_dir
 }
