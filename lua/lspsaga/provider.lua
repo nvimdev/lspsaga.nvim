@@ -34,14 +34,12 @@ end
 local Finder = {}
 
 function Finder:lsp_finder_request()
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  local root_dir = libs.get_lsp_root_dir()
   self.WIN_WIDTH = vim.fn.winwidth(0)
   self.WIN_HEIGHT = vim.fn.winheight(0)
   self.contents = {}
   self.short_link = {}
 
-  local root_dir = libs.get_lsp_root_dir()
   if string.len(root_dir) == 0 then
     print('[LspSaga] get root dir failed')
     return

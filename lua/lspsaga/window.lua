@@ -268,19 +268,42 @@ function M.fancy_floating_markdown(contents, opts)
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
   local width, _ = vim.lsp.util._make_floating_popup_size(stripped, opts)
 
-  if width > #stripped[1] then
+  -- record the first line
+  local firstline = stripped[1]
+
+  if #stripped[1] > width then
     width = #stripped[1]
   end
 
-  if opts.max_hover_width > 1 then
-    width = opts.max_hover_width
+-- current window width
+  local WIN_WIDTH = vim.fn.winwidth(0)
+-- current window height
+  local WIN_HEIGHT = vim.fn.winheight(0)
+
+-- the max width of doc float window keep has 20 pad
+  local max_width = WIN_WIDTH * 0.7
+  if width > max_width then
+    width = max_width
   end
+
+  local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
+
+  if #stripped + 4 > max_height then
+    opts.height = max_height
+  end
+
+--   if opts.max_hover_width > 1 then
+--     width = opts.max_hover_width
+--   end
+
   stripped = wrap.wrap_contents(stripped,width)
+
+  local wraped_index = #wrap.wrap_text(firstline,width)
 
   -- if only has one line do not insert truncate line
   if #stripped ~= 1 then
     local truncate_line = wrap.add_truncate_line(stripped)
-    table.insert(stripped,2,truncate_line)
+    table.insert(stripped,wraped_index+1,truncate_line)
   end
 
   local border_opts = {
@@ -296,7 +319,7 @@ function M.fancy_floating_markdown(contents, opts)
   -- Make the floating window.
   local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(content_opts,border_opts,opts)
 
-  api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',1,0,-1)
+  api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',wraped_index,0,-1)
 
   -- Switch to the floating window to apply the syntax highlighting.
   -- This is because the syntax command doesn't accept a target.

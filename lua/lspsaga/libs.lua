@@ -2,9 +2,10 @@ local api = vim.api
 local is_windows = vim.loop.os_uname().sysname == "Windows"
 local path_sep = is_windows and '\\' or '/'
 local home = os.getenv("HOME")
+local libs = {}
 
 -- check index in table
-local function has_key (tab,idx)
+function libs.has_key (tab,idx)
   for index,_ in pairs(tab) do
     if index == idx then
       return true
@@ -13,7 +14,7 @@ local function has_key (tab,idx)
   return false
 end
 
-local function has_value(tbl,val)
+function libs.has_value(tbl,val)
   for _,v in pairs(tbl)do
     if v == val then
       return true
@@ -22,7 +23,7 @@ local function has_value(tbl,val)
   return false
 end
 
-local function nvim_create_augroup(group_name,definitions)
+function libs.nvim_create_augroup(group_name,definitions)
   vim.api.nvim_command('augroup '..group_name)
   vim.api.nvim_command('autocmd!')
   for _, def in ipairs(definitions) do
@@ -32,7 +33,7 @@ local function nvim_create_augroup(group_name,definitions)
   vim.api.nvim_command('augroup END')
 end
 
-local function nvim_create_keymap(definitions,lhs)
+function libs.nvim_create_keymap(definitions,lhs)
   for _, def in pairs(definitions) do
     local bufnr = def[1]
     local mode = def[2]
@@ -42,7 +43,7 @@ local function nvim_create_keymap(definitions,lhs)
   end
 end
 
-local function check_lsp_active()
+function libs.check_lsp_active()
   local active_clients = vim.lsp.get_active_clients()
   if next(active_clients) == nil then
     return false,'[lspsaga] No lsp client available'
@@ -50,7 +51,7 @@ local function check_lsp_active()
   return true,nil
 end
 
-local function result_isempty(res)
+function libs.result_isempty(res)
   if type(res) ~= "table" then
     assert(type(res) == 'table', string.format("Expected table, got %s", type(res)))
     return
@@ -66,7 +67,7 @@ local function result_isempty(res)
   return false
 end
 
-local function split_by_pathsep(text,start_pos)
+function libs.split_by_pathsep(text,start_pos)
   local pattern = is_windows and path_sep or '/'..path_sep
   local short_text = ''
   local split_table = {}
@@ -83,13 +84,13 @@ local function split_by_pathsep(text,start_pos)
   return short_text
 end
 
-local function get_lsp_root_dir()
-  local active,msg = check_lsp_active()
+function libs.get_lsp_root_dir()
+  local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
     if client.config.root_dir then
-      if has_value(client.config.filetypes,vim.bo.filetype) then
+      if libs.has_value(client.config.filetypes,vim.bo.filetype) then
         return client.config.root_dir
       end
     end
@@ -97,15 +98,4 @@ local function get_lsp_root_dir()
   return ''
 end
 
-return {
-  is_windows = is_windows,
-  path_sep = path_sep,
-  has_key = has_key,
-  nvim_create_augroup = nvim_create_augroup,
-  nvim_create_keymap = nvim_create_keymap,
-  check_lsp_active = check_lsp_active,
-  result_isempty = result_isempty,
-  split_by_pathsep = split_by_pathsep,
-  home = home,
-  get_lsp_root_dir = get_lsp_root_dir
-}
+return libs
