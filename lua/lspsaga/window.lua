@@ -318,6 +318,7 @@ function M.fancy_floating_markdown(contents, opts)
 
   -- Make the floating window.
   local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(content_opts,border_opts,opts)
+  api.nvim_win_set_var(0,'lspsaga_hover_win',{contents_winid,opts.height,#stripped})
 
   api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',wraped_index,0,-1)
 

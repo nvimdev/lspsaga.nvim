@@ -1,4 +1,4 @@
-local lsp,util = vim.lsp,vim.lsp.util
+local api,lsp,util = vim.api,vim.lsp,vim.lsp.util
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local hover = {}
@@ -24,6 +24,18 @@ end
 function hover.render_hover_doc()
   local params = util.make_position_params()
   vim.lsp.buf_request(0,'textDocument/hover', params,call_back)
+end
+
+function hover.scroll_in_hover()
+  local has_hover_win,hover_data = pcall(api.nvim_win_get_var,0,'lspsaga_hover_win')
+  if not has_hover_win then return end
+  local hover_win,current_win_lnum,last_lnum = hover_data[1],hover_data[2],hover_data[3]
+  current_win_lnum = current_win_lnum + 5
+  if current_win_lnum >= last_lnum then
+    current_win_lnum = last_lnum
+  end
+  api.nvim_win_set_cursor(hover_win,{current_win_lnum,0})
+  api.nvim_win_set_var(0,'lspsaga_hover_win',{hover_win,current_win_lnum,last_lnum})
 end
 
 return hover
