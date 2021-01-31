@@ -1,7 +1,6 @@
 local saga = {}
 
 saga.config_values = {
-  use_saga_diagnostic_handler = true,
   use_saga_diagnostic_sign = true,
   -- diagnostic sign
   error_sign = '',
