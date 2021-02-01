@@ -23,7 +23,6 @@ saga.config_values = {
   definition_preview_icon = '  ',
   -- 1: thin border | 2: rounded border | 3: thick border
   border_style = 1,
-  max_hover_width = 0,
   rename_prompt_prefix = '➤',
 }
 

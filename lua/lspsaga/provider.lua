@@ -145,7 +145,7 @@ function Finder:render_finder_result()
     col = col,
   }
 
-  local max_height = math.ceil((vim.fn.winwidth(0) - 4) * 0.3)
+  local max_height = math.ceil((height - 4) * 0.5)
   if #self.contents > max_height then
     opts.height = max_height
   end
