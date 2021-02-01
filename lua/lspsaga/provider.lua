@@ -215,8 +215,6 @@ function Finder:lsp_finder_highlight ()
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesCount",3+def_uri_count,0,-1)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ProviderTruncateLine",def_uri_count+ref_uri_count+6,0,-1)
-  api.nvim_buf_add_highlight(self.contents_buf,-1,"HelpItem",def_uri_count+ref_uri_count+7,0,-1)
-  api.nvim_buf_add_highlight(self.contents_buf,-1,"HelpItem",def_uri_count+ref_uri_count+8,0,-1)
 end
 
 function Finder:set_cursor()
