@@ -11,6 +11,13 @@ local border_style = {
   {top_left = "┏",top_mid = "━",top_right = "┓",mid = "┃",bottom_left = "┗",bottom_right = "┛"};
 }
 
+local _pos_map = {
+  topleft="NW",
+  topright="NE",
+  botleft="SW",
+  botright="SE",
+}
+
 function M.get_max_contents_width(contents)
   local max_length = 0
   for i=1,#contents-1,1 do
@@ -150,12 +157,24 @@ local function create_float_boder(contents,border_opts,opts)
   return border_bufnr,border_winid
 end
 
-function M.create_float_contents(content_opts,opts)
+function M.create_float_contents(content_opts,border_option)
   vim.validate{
     content_opts = {content_opts,'t'},
     contents = {content_opts.content,'t',true},
-    opts = {opts,'t',true}
+    border_option = {border_option,'t'}
   }
+
+  local opts= border_option
+  opts.width = border_option.width - 2
+  opts.height = border_option.height - 2
+  if opts.row ~= 0 then
+    opts.row = border_option.row + 1
+  else
+    opts.row = border_option.row - 1
+  end
+  if opts.anchor == "NE" then
+    opts.col = border_option.col - 1
+  end
 
   local contents,filetype,enter = content_opts.contents,content_opts.filetype,content_opts.enter
   -- create contents buffer
@@ -192,18 +211,9 @@ function M.create_float_window(content_opts,border_opts,opts)
 
   local contents,enter = content_opts.contents,content_opts.enter
   local _,_,border_option = make_border_option(contents,opts)
-  local contents_option= border_option
-  contents_option.width = border_option.width - 2
-  contents_option.height = border_option.height - 2
-  if border_option.row ~= 0 then
-    contents_option.row = border_option.row + 1
-  else
-    contents_option.row = border_option.row - 1
-  end
-  contents_option.col = border_option.col + 1
 
   if not enter then
-    local contents_bufnr,contents_winid = M.create_float_contents(content_opts,contents_option)
+    local contents_bufnr,contents_winid = M.create_float_contents(content_opts,border_option)
     local border_bufnr,border_winid = create_float_boder(contents,border_opts,opts)
     return contents_bufnr,contents_winid,border_bufnr,border_winid
   end
@@ -319,7 +329,7 @@ function M.fancy_floating_markdown(contents, opts)
   -- Make the floating window.
   local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(content_opts,border_opts,opts)
   local height = opts.height or #stripped
-  api.nvim_win_set_var(0,'lspsaga_hover_win',{contents_winid,height,#stripped})
+  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{contents_winid,height,height,#stripped})
 
   api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',wraped_index,0,-1)
 

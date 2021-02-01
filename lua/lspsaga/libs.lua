@@ -1,8 +1,11 @@
 local api = vim.api
 local is_windows = vim.loop.os_uname().sysname == "Windows"
 local path_sep = is_windows and '\\' or '/'
-local home = os.getenv("HOME")
 local libs = {}
+
+function libs.get_home_dir()
+  return os.getenv("HOME")
+end
 
 -- check index in table
 function libs.has_key (tab,idx)

@@ -3,6 +3,7 @@ local vim,api,lsp,vfn = vim,vim.api,vim.lsp,vim.fn
 local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
+local home_dir = libs.get_home_dir()
 
 local send_request = function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
@@ -99,8 +100,8 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       -- reduce filename length by root_dir or home dir
       if link:find(root_dir, 1, true) then
         short_name = link:sub(root_dir:len() + 2)
-      elseif link:find(libs.home, 1, true) then
-        short_name = link:sub(libs.home:len() + 2)
+      elseif link:find(home_dir, 1, true) then
+        short_name = link:sub(home_dir:len() + 2)
       else
         short_name = libs.split_by_pathsep(link,4)
       end
