@@ -10,7 +10,6 @@ function M.add_highlight()
   api.nvim_command("hi def link TargetFileName  Comment")
   api.nvim_command("hi def link DefinitionIcon Special")
   api.nvim_command("hi def link ReferencesIcon Special")
-  api.nvim_command("hi def link HelpItem Comment")
   api.nvim_command("hi ProviderTruncateLine guifg=black")
   api.nvim_command('hi SagaShadow guibg=#000000')
 

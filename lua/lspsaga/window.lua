@@ -150,12 +150,29 @@ local function create_float_boder(contents,border_opts,opts)
   return border_bufnr,border_winid
 end
 
-function M.create_float_contents(content_opts,opts)
+function M.create_float_contents(content_opts,border_option)
   vim.validate{
     content_opts = {content_opts,'t'},
     contents = {content_opts.content,'t',true},
-    opts = {opts,'t',true}
+    border_option = {border_option,'t'}
   }
+
+  local opts= border_option
+  opts.width = border_option.width - 2
+  opts.height = border_option.height - 2
+  if opts.row ~= 0 then
+    opts.row = border_option.row + 1
+  else
+    opts.row = border_option.row - 1
+  end
+
+  if opts.anchor == "NE" then
+    opts.col = border_option.col - 1
+  elseif opts.anchor == "NW" then
+    opts.col = border_option.col + 1
+  else
+    opts.col = border_option.col + 1
+  end
 
   local contents,filetype,enter = content_opts.contents,content_opts.filetype,content_opts.enter
   -- create contents buffer
@@ -192,18 +209,9 @@ function M.create_float_window(content_opts,border_opts,opts)
 
   local contents,enter = content_opts.contents,content_opts.enter
   local _,_,border_option = make_border_option(contents,opts)
-  local contents_option= border_option
-  contents_option.width = border_option.width - 2
-  contents_option.height = border_option.height - 2
-  if border_option.row ~= 0 then
-    contents_option.row = border_option.row + 1
-  else
-    contents_option.row = border_option.row - 1
-  end
-  contents_option.col = border_option.col + 1
 
   if not enter then
-    local contents_bufnr,contents_winid = M.create_float_contents(content_opts,contents_option)
+    local contents_bufnr,contents_winid = M.create_float_contents(content_opts,border_option)
     local border_bufnr,border_winid = create_float_boder(contents,border_opts,opts)
     return contents_bufnr,contents_winid,border_bufnr,border_winid
   end
@@ -268,19 +276,42 @@ function M.fancy_floating_markdown(contents, opts)
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
   local width, _ = vim.lsp.util._make_floating_popup_size(stripped, opts)
 
-  if width > #stripped[1] then
+  -- record the first line
+  local firstline = stripped[1]
+
+  if #stripped[1] > width then
     width = #stripped[1]
   end
 
-  if opts.max_hover_width > 1 then
-    width = opts.max_hover_width
+-- current window width
+  local WIN_WIDTH = vim.fn.winwidth(0)
+-- current window height
+  local WIN_HEIGHT = vim.fn.winheight(0)
+
+-- the max width of doc float window keep has 20 pad
+  local max_width = WIN_WIDTH * 0.7
+  if width > max_width then
+    width = max_width
   end
+
+  local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
+
+  if #stripped + 4 > max_height then
+    opts.height = max_height
+  end
+
+--   if opts.max_hover_width > 1 then
+--     width = opts.max_hover_width
+--   end
+
   stripped = wrap.wrap_contents(stripped,width)
+
+  local wraped_index = #wrap.wrap_text(firstline,width)
 
   -- if only has one line do not insert truncate line
   if #stripped ~= 1 then
     local truncate_line = wrap.add_truncate_line(stripped)
-    table.insert(stripped,2,truncate_line)
+    table.insert(stripped,wraped_index+1,truncate_line)
   end
 
   local border_opts = {
@@ -295,8 +326,10 @@ function M.fancy_floating_markdown(contents, opts)
 
   -- Make the floating window.
   local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(content_opts,border_opts,opts)
+  local height = opts.height or #stripped
+  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{contents_winid,height,height,#stripped})
 
-  api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',1,0,-1)
+  api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',wraped_index,0,-1)
 
   -- Switch to the floating window to apply the syntax highlighting.
   -- This is because the syntax command doesn't accept a target.
