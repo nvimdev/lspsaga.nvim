@@ -1,8 +1,8 @@
 local window = require 'lspsaga.window'
 local vim,api,lsp,vfn = vim,vim.api,vim.lsp,vim.fn
-local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
+local home_dir = libs.get_home_dir()
 
 local send_request = function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
@@ -34,14 +34,12 @@ end
 local Finder = {}
 
 function Finder:lsp_finder_request()
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  local root_dir = libs.get_lsp_root_dir()
   self.WIN_WIDTH = vim.fn.winwidth(0)
   self.WIN_HEIGHT = vim.fn.winheight(0)
   self.contents = {}
   self.short_link = {}
 
-  local root_dir = libs.get_lsp_root_dir()
   if string.len(root_dir) == 0 then
     print('[LspSaga] get root dir failed')
     return
@@ -101,8 +99,8 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       -- reduce filename length by root_dir or home dir
       if link:find(root_dir, 1, true) then
         short_name = link:sub(root_dir:len() + 2)
-      elseif link:find(libs.home, 1, true) then
-        short_name = link:sub(libs.home:len() + 2)
+      elseif link:find(home_dir, 1, true) then
+        short_name = link:sub(home_dir:len() + 2)
       else
         short_name = libs.split_by_pathsep(link,4)
       end
@@ -128,34 +126,7 @@ end
 
 function Finder:render_finder_result()
   if next(self.contents) == nil then return end
-
   table.insert(self.contents,' ')
-
-  local help = {
-    "[o]  : Open File     [s] : Vsplit";
-    "[i]  : Split         [q] : Exit";
-  }
-
-  local max_idx= 1
-  for i=1,#self.contents-1,1 do
-    if #self.contents[i] > #self.contents[max_idx] then
-      max_idx = i
-    end
-  end
-
-  local truncate_line
-  if #self.contents[max_idx] > #help[1] then
-    truncate_line = wrap.add_truncate_line(self.contents)
-  else
-    truncate_line = wrap.add_truncate_line(help)
-  end
-
-  table.insert(self.contents,truncate_line)
-
-  for _,v in ipairs(help) do
-    table.insert(self.contents,v)
-  end
-
   -- get dimensions
   local width = api.nvim_get_option("columns")
   local height = api.nvim_get_option("lines")
@@ -174,6 +145,11 @@ function Finder:render_finder_result()
     col = col,
   }
 
+  local max_height = math.ceil((height - 4) * 0.5)
+  if #self.contents > max_height then
+    opts.height = max_height
+  end
+
   local border_opts = {
     border = config.border_style,
     highlight = 'LspSagaLspFinderBorder'
@@ -181,7 +157,7 @@ function Finder:render_finder_result()
 
   local content_opts = {
     contents = self.contents,
-    filetype = 'plaintext',
+    filetype = 'lspsagafinder',
     enter = true
   }
   self.contents_buf,self.contents_win,self.border_bufnr,self.border_win = window.create_float_window(content_opts,border_opts,opts)
@@ -211,16 +187,17 @@ function Finder:render_finder_result()
 end
 
 function Finder:apply_float_map()
+  local action = config.finder_action_keys
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local lhs = {
     noremap = true,
     silent = true
   }
   local keymaps = {
-    {self.contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>"},
-    {self.contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>"},
-    {self.contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {self.contents_bufnr,'n',"q",":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
+    {self.contents_bufnr,'n',action.open,":lua require'lspsaga.provider'.open_link(1)<CR>"},
+    {self.contents_bufnr,'n',action.vsplit,":lua require'lspsaga.provider'.open_link(2)<CR>"},
+    {self.contents_bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
+    {self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
   }
   nvim_create_keymap(keymaps,lhs)
 end
@@ -238,8 +215,6 @@ function Finder:lsp_finder_highlight ()
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesCount",3+def_uri_count,0,-1)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ProviderTruncateLine",def_uri_count+ref_uri_count+6,0,-1)
-  api.nvim_buf_add_highlight(self.contents_buf,-1,"HelpItem",def_uri_count+ref_uri_count+7,0,-1)
-  api.nvim_buf_add_highlight(self.contents_buf,-1,"HelpItem",def_uri_count+ref_uri_count+8,0,-1)
 end
 
 function Finder:set_cursor()
@@ -283,7 +258,7 @@ function Finder:auto_open_preview()
       relative = 'win',
     }
 
-    local min_width = 45
+    local min_width = 42
     local pad_right = self.WIN_WIDTH - width - 20 - min_width
 
     if pad_right > 10 then
