@@ -29,6 +29,7 @@ end
 function hover.has_saga_hover()
   local has_hover_win,_ = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
   if has_hover_win then return true end
+  return false
 end
 
 -- 1 mean down -1 mean up
