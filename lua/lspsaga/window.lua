@@ -11,13 +11,6 @@ local border_style = {
   {top_left = "┏",top_mid = "━",top_right = "┓",mid = "┃",bottom_left = "┗",bottom_right = "┛"};
 }
 
-local _pos_map = {
-  topleft="NW",
-  topright="NE",
-  botleft="SW",
-  botright="SE",
-}
-
 function M.get_max_contents_width(contents)
   local max_length = 0
   for i=1,#contents-1,1 do
@@ -176,6 +169,8 @@ function M.create_float_contents(content_opts,border_option)
   if opts.anchor == "NE" then
     opts.col = border_option.col - 1
   elseif opts.anchor == "NW" then
+    opts.col = border_option.col + 1
+  else
     opts.col = border_option.col + 1
   end
 

@@ -17,6 +17,9 @@ saga.config_values = {
   code_action_icon = ' ',
   finder_definition_icon = '  ',
   finder_reference_icon = '  ',
+  finder_action_keys = {
+    open = 'o', vsplit = 's',split = 'i',quit = 'q'
+  },
   definition_preview_icon = '  ',
   -- 1: thin border | 2: rounded border | 3: thick border
   border_style = 1,

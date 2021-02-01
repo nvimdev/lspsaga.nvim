@@ -24,7 +24,7 @@ command! -range -bar LspSagaRangeCodeAction lua require("lspsaga.codeaction").ra
 command! -range -bar LspSagaOpenFloaterm lua require("lspsaga.floaterm").open_float_terminal()
 command! -range -bar LspSagaCloseFloaterm lua require("lspsaga.floaterm").close_float_terminal()
 
-highlight default LspSagaFinderSelection guifg='#1c1f24' guibg='#b3deef'
+highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

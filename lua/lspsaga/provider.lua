@@ -1,6 +1,5 @@
 local window = require 'lspsaga.window'
 local vim,api,lsp,vfn = vim,vim.api,vim.lsp,vim.fn
-local wrap = require('lspsaga.wrap')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local home_dir = libs.get_home_dir()
@@ -127,34 +126,7 @@ end
 
 function Finder:render_finder_result()
   if next(self.contents) == nil then return end
-
   table.insert(self.contents,' ')
-
-  local help = {
-    "[o]  : Open File     [s] : Vsplit";
-    "[i]  : Split         [q] : Exit";
-  }
-
-  local max_idx= 1
-  for i=1,#self.contents-1,1 do
-    if #self.contents[i] > #self.contents[max_idx] then
-      max_idx = i
-    end
-  end
-
-  local truncate_line
-  if #self.contents[max_idx] > #help[1] then
-    truncate_line = wrap.add_truncate_line(self.contents)
-  else
-    truncate_line = wrap.add_truncate_line(help)
-  end
-
-  table.insert(self.contents,truncate_line)
-
-  for _,v in ipairs(help) do
-    table.insert(self.contents,v)
-  end
-
   -- get dimensions
   local width = api.nvim_get_option("columns")
   local height = api.nvim_get_option("lines")
@@ -173,6 +145,11 @@ function Finder:render_finder_result()
     col = col,
   }
 
+  local max_height = math.ceil((vim.fn.winwidth(0) - 4) * 0.3)
+  if #self.contents > max_height then
+    opts.height = max_height
+  end
+
   local border_opts = {
     border = config.border_style,
     highlight = 'LspSagaLspFinderBorder'
@@ -180,7 +157,7 @@ function Finder:render_finder_result()
 
   local content_opts = {
     contents = self.contents,
-    filetype = 'plaintext',
+    filetype = 'lspsagafinder',
     enter = true
   }
   self.contents_buf,self.contents_win,self.border_bufnr,self.border_win = window.create_float_window(content_opts,border_opts,opts)
@@ -210,16 +187,17 @@ function Finder:render_finder_result()
 end
 
 function Finder:apply_float_map()
+  local action = config.finder_action_keys
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local lhs = {
     noremap = true,
     silent = true
   }
   local keymaps = {
-    {self.contents_bufnr,'n',"o",":lua require'lspsaga.provider'.open_link(1)<CR>"},
-    {self.contents_bufnr,'n',"s",":lua require'lspsaga.provider'.open_link(2)<CR>"},
-    {self.contents_bufnr,'n',"i",":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {self.contents_bufnr,'n',"q",":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
+    {self.contents_bufnr,'n',action.open,":lua require'lspsaga.provider'.open_link(1)<CR>"},
+    {self.contents_bufnr,'n',action.vsplit,":lua require'lspsaga.provider'.open_link(2)<CR>"},
+    {self.contents_bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
+    {self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
   }
   nvim_create_keymap(keymaps,lhs)
 end
@@ -282,7 +260,7 @@ function Finder:auto_open_preview()
       relative = 'win',
     }
 
-    local min_width = 45
+    local min_width = 42
     local pad_right = self.WIN_WIDTH - width - 20 - min_width
 
     if pad_right > 10 then
