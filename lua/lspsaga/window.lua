@@ -172,8 +172,11 @@ function M.create_float_contents(content_opts,border_option)
   else
     opts.row = border_option.row - 1
   end
+
   if opts.anchor == "NE" then
     opts.col = border_option.col - 1
+  elseif opts.anchor == "NW" then
+    opts.col = border_option.col + 1
   end
 
   local contents,filetype,enter = content_opts.contents,content_opts.filetype,content_opts.enter
