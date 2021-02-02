@@ -57,7 +57,7 @@ local function focusable_preview(unique_name, fn)
     local WIN_WIDTH = vim.fn.winwidth(0)
     local max_width = WIN_WIDTH * 0.7
 
-    if width > max_width or width < max_width  then
+    if width ~= max_width  then
       width = max_width
     end
 
