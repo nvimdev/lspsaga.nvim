@@ -27,6 +27,7 @@ function M.add_highlight()
   api.nvim_command("hi LspDiagInforBorder guifg=#6699cc")
   api.nvim_command("hi LspDiagHintBorder guifg=#56b6c2")
 
+  api.nvim_command("hi LspSagaShTruncateLine guifg=black")
   api.nvim_command("hi LspSagaDocTruncateLine guifg=black")
   api.nvim_command("hi LineDiagTuncateLine guifg=#ff6c6b")
   api.nvim_command("hi LspSagaCodeActionTitle guifg=#da8548 gui=bold")

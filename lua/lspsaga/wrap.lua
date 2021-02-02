@@ -6,7 +6,7 @@ local wrap = {}
 function wrap.wrap_text(text,width,fill)
   local ret = {}
   -- if text width < width just return it
-  if #text < width then
+  if #text <= width then
     table.insert(ret,text)
     return ret
   end
