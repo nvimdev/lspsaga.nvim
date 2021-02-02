@@ -49,7 +49,7 @@ or --use default config
 saga.init_lsp_saga()
 ```
 
-### Lsp Finder
+### Async Lsp Finder
 
 ```lua
 -- lsp provider to find the cursor word definition and reference
@@ -59,7 +59,7 @@ nnoremap <silent> gh :Lspsaga lsp_finder<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/106226191-9ea52d00-6221-11eb-8802-2b5899889bdb.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/106566917-f3bba880-656b-11eb-83cf-75df87bd98ca.gif" width=500 height=500/>
 </div>
 
 ### Code Action
