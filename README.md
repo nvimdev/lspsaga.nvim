@@ -12,6 +12,8 @@ Plug 'glepnir/lspsaga.nvim'
 
 ## Usage
 
+Lspsaga support use command `lspsaga` with completion or use lua function
+
 ```lua
 
 local saga = require 'lspsaga'
@@ -53,7 +55,7 @@ saga.init_lsp_saga()
 -- lsp provider to find the cursor word definition and reference
 nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
 -- or use command LspSagaFinder
-nnoremap <silent> gh :LspSagaFinder<CR>
+nnoremap <silent> gh :Lspsaga lsp_finder<CR>
 ```
 <div align='center'>
 <img
@@ -67,8 +69,8 @@ src="https://user-images.githubusercontent.com/41671631/106226191-9ea52d00-6221-
 nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
 vnoremap <silent><leader>ca <cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>
 -- or use command
-nnoremap <silent><leader>ca :LspSagaCodeAction<CR>
-vnoremap <silent><leader>ca :'<,'>LspSagaRangeCodeAction<CR>
+nnoremap <silent><leader>ca :Lspsaga code_action<CR>
+vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 ```
 <div align='center'>
 <img
@@ -81,7 +83,7 @@ src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-
 -- show hover doc
 nnoremap <silent> K <cmd>lua require('lspsaga.hover').render_hover_doc()<CR>
 -- or use command
-nnoremap <silent>K :LspSagaHoverDoc<CR>
+nnoremap <silent>K :Lspsaga hover_doc<CR>
 ```
 <div align='center'>
 <img
@@ -93,6 +95,8 @@ src="https://user-images.githubusercontent.com/41671631/105657800-29bfb380-5f00-
 ```lua
 -- show signature help
 nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
+-- or command
+nnoremap <silent> gs :Lspsaga signature_help<CR>
 ```
 <div align='center'>
 <img
@@ -105,7 +109,7 @@ src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-
 -- rename
 nnoremap <silent>gr <cmd>lua require('lspsaga.rename').rename()<CR>
 -- or command
-nnoremap <silent>gr :LspSagaRename<CR>
+nnoremap <silent>gr :Lspsaga rename<CR>
 ```
 <div align="center">
 <img
@@ -118,7 +122,7 @@ src="https://user-images.githubusercontent.com/41671631/106115648-f6915480-618b-
 -- preview definition
 nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
 -- or use command
-nnoremap <silent> gd :LspSagaDefPreview<CR>
+nnoremap <silent> gd :Lspsaga preview_definition<CR>
 ```
 <div align='center'>
 <img
@@ -132,13 +136,13 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 nnoremap <silent><leader>cd <cmd>lua
 require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
 
-nnoremap <silent> <leader>cd :LspSagaShowLineDiags<CR>
+nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
 -- or use command
-nnoremap <silent> [e :LspSagaDiagJumpPrev<CR>
-nnoremap <silent> ]e :LspSagaDiagJumpNext<CR>
+nnoremap <silent> [e :Lspsaga lsp_jump_diagnostic_next<CR>
+nnoremap <silent> ]e :Lspsaga lsp_jump_diagnostic_prev<CR>
 ```
 <div align='center'>
 <img
@@ -152,8 +156,8 @@ src="https://user-images.githubusercontent.com/41671631/102290042-21786e00-3f7b-
 nnoremap <silent> <A-d> <cmd>lua require('lspsaga.floaterm').open_float_terminal()<CR> -- or open_float_terminal('lazygit')<CR>
 tnoremap <silent> <A-d> <C-\><C-n>:lua require('lspsaga.floaterm').close_float_terminal()<CR>
 -- or use command
-nnoremap <silent> <A-d> :LspSagaOpenFloaterm<CR>
-tnoremap <silent> <A-d> <C-\><C-n>:LspSagaOpenFloaterm<CR>
+nnoremap <silent> <A-d> :Lspsaga open_float_terminal<CR>
+tnoremap <silent> <A-d> <C-\><C-n>:Lspsaga close_float_terminal<CR>
 ```
 <div align='center'>
 <img
