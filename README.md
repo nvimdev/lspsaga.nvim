@@ -108,7 +108,7 @@ nnoremap <silent> gs :Lspsaga signature_help<CR>
 src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
 </div>
 
-### Reanme
+### Rename
 
 ```lua
 -- rename
