@@ -12,7 +12,7 @@ Plug 'glepnir/lspsaga.nvim'
 
 ## Usage
 
-Lspsaga support use command `lspsaga` with completion or use lua function
+Lspsaga support use command `Lspsaga` with completion or use lua function
 
 ```lua
 
