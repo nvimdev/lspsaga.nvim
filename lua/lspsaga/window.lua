@@ -269,6 +269,8 @@ function M.fancy_floating_markdown(contents, opts)
       end
     end
   end
+  -- Clean up and add padding
+  stripped = vim.lsp.util._trim_and_pad(stripped, {pad_left=0})
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
@@ -305,6 +307,14 @@ function M.fancy_floating_markdown(contents, opts)
   -- if only has one line do not insert truncate line
   if #stripped ~= 1 then
     local truncate_line = wrap.add_truncate_line(stripped)
+    if stripped[1]:find('{%s$') then
+      for idx,text in ipairs(stripped) do
+        if text:find('}',1,true) then
+          wraped_index = idx + 1
+          break
+        end
+      end
+    end
     table.insert(stripped,wraped_index+1,truncate_line)
   end
 
