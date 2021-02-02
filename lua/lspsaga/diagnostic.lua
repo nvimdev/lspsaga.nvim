@@ -45,8 +45,7 @@ local function compare_diagnostics_entries(entry_a, entry_b)
 end
 
 local function get_sorted_diagnostics()
-  local active_clients = lsp.get_active_clients()
-
+--   local active_clients = lsp.get_active_clients()
   local buffer_number = api.nvim_get_current_buf()
   -- If no client id there will be get all diagnostics
   local diagnostics = lsp.diagnostic.get(buffer_number)
