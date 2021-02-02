@@ -388,7 +388,7 @@ function lspfinder.preview_definition(timeout_ms)
       return nil
   end
   if vim.tbl_islist(result) and not vim.tbl_isempty(result[1]) then
-    local uri = result[1].result[1].uri or {}
+    local uri = result[1].result[1].uri or result[1].result[1].targetUri
     if #uri == 0 then return end
     local bufnr = vim.uri_to_bufnr(uri)
     if not vim.api.nvim_buf_is_loaded(bufnr) then
