@@ -92,7 +92,7 @@ nnoremap <silent> <C-b> <cmd>lua require('lspsaga.hover').smart_scroll_hover(-1)
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/105657800-29bfb380-5f00-11eb-85e7-8d6735dd5d58.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/106566308-1dc09b00-656b-11eb-85e2-2ab5b23599c9.gif" width=500 height=500/>
 </div>
 
 ### SignatureHelp
