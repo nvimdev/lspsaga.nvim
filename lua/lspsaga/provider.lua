@@ -23,7 +23,7 @@ local send_request = function(timeout)
   for i,response in ipairs(responses) do
     if type(response) == "table" then
       for _,res in pairs(response) do
-        if res.result and next(res.result) ~= nil then
+        if res.result then
           coroutine.yield(res.result,i)
         end
       end
@@ -33,29 +33,32 @@ end
 
 local Finder = {}
 
+local uv = vim.loop
+
 function Finder:lsp_finder_request()
-  local root_dir = libs.get_lsp_root_dir()
-  self.WIN_WIDTH = vim.fn.winwidth(0)
-  self.WIN_HEIGHT = vim.fn.winheight(0)
-  self.contents = {}
-  self.short_link = {}
-
-  if string.len(root_dir) == 0 then
-    print('[LspSaga] get root dir failed')
-    return
-  end
-
-  local request_intance = coroutine.create(send_request)
-  self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
-  while true do
-    local _,result,method_type = coroutine.resume(request_intance)
-    self:create_finder_contents(result,method_type,root_dir)
-
-    if coroutine.status(request_intance) == 'dead' then
-      break
+  return uv.new_async(vim.schedule_wrap(function()
+    local root_dir = libs.get_lsp_root_dir()
+    if string.len(root_dir) == 0 then
+      print('[LspSaga] get root dir failed')
+      return
     end
-  end
-  self:render_finder_result()
+    self.WIN_WIDTH = vim.fn.winwidth(0)
+    self.WIN_HEIGHT = vim.fn.winheight(0)
+    self.contents = {}
+    self.short_link = {}
+
+    local request_intance = coroutine.create(send_request)
+    self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
+    while true do
+      local _,result,method_type = coroutine.resume(request_intance)
+      self:create_finder_contents(result,method_type,root_dir)
+
+      if coroutine.status(request_intance) == 'dead' then
+        break
+      end
+    end
+    self:render_finder_result()
+  end))
 end
 
 function Finder:create_finder_contents(result,method_type,root_dir)
@@ -70,19 +73,17 @@ function Finder:create_finder_contents(result,method_type,root_dir)
     local title = method_option[method_type].icon.. params ..method_option[method_type].title
 
     if method_type == 1 then
+      self.definition_uri = #result
       table.insert(self.contents,title)
       target_lnum = 2
     else
+      self.reference_uri = # result
       target_lnum = target_lnum + self.definition_uri + 5
       table.insert(self.contents," ")
       table.insert(self.contents,title)
     end
 
-    if method_type == 1 then
-      self.definition_uri = #result
-    else
-      self.reference_uri  = #result
-    end
+    if next(result) == nil then return end
 
     for index,_ in ipairs(result) do
       local uri = result[index].targetUri or result[index].uri
@@ -179,7 +180,8 @@ function Finder:render_finder_result()
   end
 
   for i=1,self.reference_uri,1 do
-    api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetFileName",i+self.definition_uri+4,0,-1)
+    local def_count = self.definition_uri ~= 0 and self.definition_uri or -1
+    api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetFileName",i+def_count+4,0,-1)
   end
   -- load float window map
   self:apply_float_map()
@@ -205,8 +207,7 @@ end
 function Finder:lsp_finder_highlight ()
   local def_icon = config.finder_definition_icon or ''
   local ref_icon = config.finder_reference_icon or ''
-  local def_uri_count = self.definition_uri
-  local ref_uri_count = self.reference_uri
+  local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
   -- add syntax
   api.nvim_buf_add_highlight(self.contents_buf,-1,"DefinitionIcon",0,1,#def_icon-1)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetWord",0,#def_icon,self.param_length+#def_icon+3)
@@ -214,17 +215,17 @@ function Finder:lsp_finder_highlight ()
   api.nvim_buf_add_highlight(self.contents_buf,-1,"TargetWord",3+def_uri_count,#ref_icon,self.param_length+#ref_icon+3)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.contents_buf,-1,"ReferencesCount",3+def_uri_count,0,-1)
-  api.nvim_buf_add_highlight(self.contents_buf,-1,"ProviderTruncateLine",def_uri_count+ref_uri_count+6,0,-1)
 end
 
 function Finder:set_cursor()
   local current_line = vim.fn.line('.')
   local column = 2
 
-  local first_def_uri_lnum = 3
+  local first_def_uri_lnum = self.definition_uri ~= 0 and 3 or 5
   local last_def_uri_lnum = 3 + self.definition_uri - 1
   local first_ref_uri_lnum = 3 + self.definition_uri + 3
-  local last_ref_uri_lnum = 3 + self.definition_uri + 2 + self.reference_uri
+  local count = self.definition_uri == 0 and 1 or 2
+  local last_ref_uri_lnum = 3 + self.definition_uri + count + self.reference_uri
 
   if current_line == 1 then
     vim.fn.cursor(first_def_uri_lnum,column)
@@ -233,7 +234,11 @@ function Finder:set_cursor()
   elseif current_line == last_ref_uri_lnum + 1 then
     vim.fn.cursor(first_def_uri_lnum, column)
   elseif current_line == first_ref_uri_lnum - 1 then
-    vim.fn.cursor(last_def_uri_lnum,column)
+    if self.definition_uri == 0 then
+      vim.fn.cursor(first_def_uri_lnum,column)
+    else
+      vim.fn.cursor(last_def_uri_lnum,column)
+    end
   elseif current_line == first_def_uri_lnum - 1 then
     vim.fn.cursor(last_ref_uri_lnum,column)
   end
@@ -351,7 +356,8 @@ end
 local lspfinder = {}
 
 function lspfinder.lsp_finder()
-  Finder:lsp_finder_request()
+  local async_finder = Finder:lsp_finder_request()
+  async_finder:send()
 end
 
 function lspfinder.close_lsp_finder_window()
