@@ -300,10 +300,6 @@ function M.fancy_floating_markdown(contents, opts)
     opts.height = max_height
   end
 
---   if opts.max_hover_width > 1 then
---     width = opts.max_hover_width
---   end
-
   stripped = wrap.wrap_contents(stripped,width)
 
   local wraped_index = #wrap.wrap_text(firstline,width)
