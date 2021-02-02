@@ -48,6 +48,8 @@ local function focusable_preview(unique_name, fn)
     -- Compute size of float needed to show (wrapped) lines
     opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
     local width, _ = util._make_floating_popup_size(contents, opts)
+    local first_line = contents[1]
+
     if width > #contents[1] then
       width = #contents[1]
     end
@@ -60,9 +62,10 @@ local function focusable_preview(unique_name, fn)
 
     contents = wrap.wrap_contents(contents,width)
 
+    local wrap_index = #wrap.wrap_text(first_line,width)
     if #contents ~= 1 then
       local truncate_line = wrap.add_truncate_line(contents)
-      table.insert(contents,2,truncate_line)
+      table.insert(contents,wrap_index + 1,truncate_line)
     end
     local border_opts = {
       border = config.border_style,
@@ -77,6 +80,7 @@ local function focusable_preview(unique_name, fn)
     local cb,cw,_,bw = window.create_float_window(content_opts,border_opts)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
+    api.nvim_buf_add_highlight(cb,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
     return cb,cw
   end)
 end
