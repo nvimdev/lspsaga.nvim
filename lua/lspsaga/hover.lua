@@ -11,7 +11,6 @@ local call_back = function (_,method,result)
         if vim.tbl_isempty(markdown_lines) then return end
 
         local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines, {
-          max_hover_width = config.max_hover_width,
           border_style = config.border_style,
         })
 
@@ -26,9 +25,12 @@ function hover.render_hover_doc()
   vim.lsp.buf_request(0,'textDocument/hover', params,call_back)
 end
 
-function hover.has_saga_hover()
-  local has_hover_win,_ = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
-  if has_hover_win then return true end
+local function has_saga_hover()
+  local has_hover_win,datas = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
+  if not has_hover_win then return false end
+  if api.nvim_win_is_valid(datas[1]) then
+    return true
+  end
   return false
 end
 
@@ -52,6 +54,16 @@ function hover.scroll_in_hover(direction)
   end
   api.nvim_win_set_cursor(hover_win,{current_win_lnum,0})
   api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_win,height,current_win_lnum,last_lnum})
+end
+
+-- direction must 1 or -1
+function hover.smart_scroll_hover(direction)
+  if has_saga_hover() then
+    hover.scroll_in_hover(direction)
+  else
+    local key = api.nvim_replace_termcodes("<C-f>",true,false,true)
+    vim.fn.nvim_feedkeys(key,'n',true)
+  end
 end
 
 return hover

@@ -84,6 +84,11 @@ src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-
 nnoremap <silent> K <cmd>lua require('lspsaga.hover').render_hover_doc()<CR>
 -- or use command
 nnoremap <silent>K :Lspsaga hover_doc<CR>
+
+-- scroll down hover doc
+nnoremap <silent> <C-f> <cmd>lua require('lspsaga.hover').smart_scroll_hover(1)<CR>
+-- scroll up hover doc
+nnoremap <silent> <C-b> <cmd>lua require('lspsaga.hover').smart_scroll_hover(-1)<CR>
 ```
 <div align='center'>
 <img
