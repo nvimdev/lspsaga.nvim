@@ -2,6 +2,7 @@ local api = vim.api
 local is_windows = vim.loop.os_uname().sysname == "Windows"
 local path_sep = is_windows and '\\' or '/'
 local libs = {}
+local server_filetype_map = require('lspsaga').config_values.server_filetype_map
 
 function libs.get_home_dir()
   return os.getenv("HOME")
@@ -93,15 +94,24 @@ function libs.get_lsp_root_dir()
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
     if client.config.root_dir then
-      if type(client.config.filetypes) == "table" then
-        if libs.has_value(client.config.filetypes,vim.bo.filetype) then
-          return client.config.root_dir
-        end
-      elseif type(client.config.filetypes) == "string" then
-        if client.config.filetypes == vim.bo.filetype then
-          return client.config.root_dir
+      if next(server_filetype_map) == nil then
+        if type(client.config.filetypes) == "table" then
+          if libs.has_value(client.config.filetypes,vim.bo.filetype) then
+            return client.config.root_dir
+          end
+        elseif type(client.config.filetypes) == "string" then
+          if client.config.filetypes == vim.bo.filetype then
+            return client.config.root_dir
+          end
+        else
+          return ''
         end
       else
+        for ft,cmd in pairs(server_filetype_map) do
+          if client.config.cmd[1] == cmd and ft == vim.bo.filetype then
+            return client.config.root_dir
+          end
+        end
         return ''
       end
     end
