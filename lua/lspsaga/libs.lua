@@ -102,7 +102,7 @@ function libs.get_lsp_root_dir()
           return client.config.root_dir
         end
       else
-        assert(type(client.config.root_dir) == 'table', string.format("Expected table or string, got %s", type(client.config.root_dir)))
+        assert(string.format("Expected table or string, got %s", type(client.config.root_dir)))
         return
       end
     end
