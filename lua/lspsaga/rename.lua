@@ -31,7 +31,7 @@ local rename = function()
 
   local opts = {
     height = 1,
-    width = 20,
+    width = 30,
     border_text = ''
   }
 
@@ -49,6 +49,8 @@ local rename = function()
 
   local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
   local saga_rename_prompt_prefix = api.nvim_create_namespace('lspsaga_rename_prompt_prefix')
+  api.nvim_win_set_option(cw,'scrolloff',-1)
+  api.nvim_win_set_option(cw,'sidescrolloff',-1)
   api.nvim_buf_set_option(cb,'modifiable',true)
   local prompt_prefix = get_prompt_prefix()
   api.nvim_buf_set_option(cb,'buftype','prompt')
