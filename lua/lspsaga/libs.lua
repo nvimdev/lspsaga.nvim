@@ -93,8 +93,17 @@ function libs.get_lsp_root_dir()
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
     if client.config.root_dir then
-      if libs.has_value(client.config.filetypes,vim.bo.filetype) then
-        return client.config.root_dir
+      if type(client.config.root_dir) == "table" then
+        if libs.has_value(client.config.filetypes,vim.bo.filetype) then
+          return client.config.root_dir
+        end
+      elseif type(client.config.root_dir) == "string" then
+        if client.config.filetypes == vim.bo.filetype then
+          return client.config.root_dir
+        end
+      else
+        assert(type(client.config.root_dir) == 'table', string.format("Expected table or string, got %s", type(client.config.root_dir)))
+        return
       end
     end
   end
