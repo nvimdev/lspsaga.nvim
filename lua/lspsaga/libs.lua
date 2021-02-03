@@ -93,22 +93,22 @@ function libs.get_lsp_root_dir()
   if not active then print(msg) return end
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
-    if client.config.root_dir then
-      if client.config.filetypes then
-        if type(client.config.filetypes) == "table" then
-          if libs.has_value(client.config.filetypes,vim.bo.filetype) then
-            return client.config.root_dir
-          end
-        elseif type(client.config.filetypes) == "string" then
-          if client.config.filetypes == vim.bo.filetype then
-            return client.config.root_dir
-          end
+    if (client.config.filetypes and client.config.root_dir) then
+      if type(client.config.filetypes) == "table" then
+        if libs.has_value(client.config.filetypes,vim.bo.filetype) then
+          return client.config.root_dir
+        end
+      elseif type(client.config.filetypes) == "string" then
+        if client.config.filetypes == vim.bo.filetype then
+          return client.config.root_dir
         end
       end
     else
-      for ft,cmd in pairs(server_filetype_map) do
-        if ft == vim.bo.filetype and client.config.cmd[1] == cmd then
-          return client.config.root_dir
+      for name,fts in pairs(server_filetype_map) do
+        for _, ft in pairs(fts) do
+          if (ft == vim.bo.filetype and client.config.name == name and client.config.root_dir) then
+            return client.config.root_dir
+          end
         end
       end
     end
