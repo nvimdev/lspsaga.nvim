@@ -27,12 +27,11 @@ local rename = function()
   if not active then print(msg) return end
   -- if exist a rename float win close it.
   close_rename_win()
-  pos[1],pos[2] = vim.fn.getpos('.')[2],vim.fn.getpos('.')[3]
+  pos[1],pos[2] = vim.fn.line('.'),vim.fn.col('.')
 
   local opts = {
     height = 1,
     width = 30,
-    border_text = ''
   }
 
   local border_opts = {
