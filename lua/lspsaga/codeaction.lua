@@ -5,6 +5,7 @@ local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 
 local Action = {}
+Action.__index = Action
 
 function Action:register_clearn_fn(fn)
   self._clear_fn = {}
