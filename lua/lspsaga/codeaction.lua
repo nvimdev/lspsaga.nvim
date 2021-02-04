@@ -74,7 +74,7 @@ function Action:code_action(context)
   local params = vim.lsp.util.make_range_params()
   params.context = context
   local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
-  if libs.result_isempty(response) then return end
+  if libs.result_isempty(response) or next(response) == nil then return end
   self:render_code_action_window(response)
 end
 
