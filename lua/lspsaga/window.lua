@@ -398,4 +398,11 @@ function M.nvim_close_valid_window(winid)
   _switch[type(winid)]()
 end
 
+function M.nvim_win_try_close()
+  local has_var,line_diag_winids = pcall(api.nvim_win_get_var,0,"show_line_diag_winids")
+  if has_var and line_diag_winids ~= nil then
+    M.nvim_close_valid_window(line_diag_winids)
+  end
+end
+
 return M
