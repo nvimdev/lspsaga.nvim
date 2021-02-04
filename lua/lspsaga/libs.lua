@@ -60,7 +60,7 @@ function libs.result_isempty(res)
     assert(type(res) == 'table', string.format("Expected table, got %s", type(res)))
     return
   end
-  for _,v in ipairs(res) do
+  for _,v in pairs(res) do
     if next(v) == nil then
       return true
     end
