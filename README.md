@@ -151,8 +151,8 @@ nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
 -- or use command
-nnoremap <silent> [e :Lspsaga lsp_jump_diagnostic_next<CR>
-nnoremap <silent> ]e :Lspsaga lsp_jump_diagnostic_prev<CR>
+nnoremap <silent> [e :Lspsaga diagnostic_jump_next<CR>
+nnoremap <silent> ]e :Lspsaga diagnostic_jump_prev<CR>
 ```
 <div align='center'>
 <img
@@ -166,8 +166,8 @@ src="https://user-images.githubusercontent.com/41671631/102290042-21786e00-3f7b-
 nnoremap <silent> <A-d> <cmd>lua require('lspsaga.floaterm').open_float_terminal()<CR> -- or open_float_terminal('lazygit')<CR>
 tnoremap <silent> <A-d> <C-\><C-n>:lua require('lspsaga.floaterm').close_float_terminal()<CR>
 -- or use command
-nnoremap <silent> <A-d> :Lspsaga open_float_terminal<CR>
-tnoremap <silent> <A-d> <C-\><C-n>:Lspsaga close_float_terminal<CR>
+nnoremap <silent> <A-d> :Lspsaga open_floaterm<CR>
+tnoremap <silent> <A-d> <C-\><C-n>:Lspsaga close_floaterm<CR>
 ```
 <div align='center'>
 <img
