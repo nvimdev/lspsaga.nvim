@@ -61,6 +61,9 @@ function libs.result_isempty(res)
     return
   end
   for _,v in ipairs(res) do
+    if next(v) == nil then
+      return true
+    end
     if not v.result then
       return true
     end
