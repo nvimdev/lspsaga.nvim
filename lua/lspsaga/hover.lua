@@ -9,7 +9,7 @@ local call_back = function (_,method,result)
         local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
         markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
         if vim.tbl_isempty(markdown_lines) then return end
-
+        window.nvim_win_try_close()
         local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines, {
           border_style = config.border_style,
         })

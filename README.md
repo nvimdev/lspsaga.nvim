@@ -1,6 +1,6 @@
 # lspsaga.nvim
 
-A light-weight lsp plugin based on neovim built-in lsp with highly performance UI.
+A light-weight lsp plugin based on neovim built-in lsp with highly a performant UI.
 
 ## Install
 
@@ -40,9 +40,9 @@ local saga = require 'lspsaga'
 -- 1: thin border | 2: rounded border | 3: thick border
 -- border_style = 1
 -- rename_prompt_prefix = '➤',
--- if you don't use nvim-lspconfig you must pass your filetype and server
--- command into this table
--- like server_filetype_map.scala = 'metals'
+-- if you don't use nvim-lspconfig you must pass your server name and
+-- the related filetypes into this table
+-- like server_filetype_map = {metals = {'sbt', 'scala'}}
 -- server_filetype_map = {}
 
 saga.init_lsp_saga {
