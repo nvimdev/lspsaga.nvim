@@ -31,6 +31,7 @@ local saga = require 'lspsaga'
 -- infor_header = "  Infor",
 -- max_diag_msg_width = 50,
 -- code_action_icon = ' ',
+-- code_action_keys = { quit = 'q',exec = '<CR>' }
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
 -- finder_action_keys = {
