@@ -53,6 +53,9 @@ function hover.scroll_in_hover(direction)
       current_win_lnum = 1
     end
   end
+  if current_win_lnum <= 0 then
+    current_win_lnum = 1
+  end
   api.nvim_win_set_cursor(hover_win,{current_win_lnum,0})
   api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_win,height,current_win_lnum,last_lnum})
 end
