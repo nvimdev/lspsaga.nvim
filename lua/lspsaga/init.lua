@@ -21,6 +21,9 @@ saga.config_values = {
   finder_action_keys = {
     open = 'o', vsplit = 's',split = 'i',quit = 'q'
   },
+  code_action_keys = {
+    quit = 'q',exec = '<CR>'
+  },
   definition_preview_icon = '  ',
   -- 1: thin border | 2: rounded border | 3: thick border
   border_style = 1,

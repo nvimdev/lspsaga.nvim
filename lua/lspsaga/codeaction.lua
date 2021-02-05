@@ -57,10 +57,10 @@ function Action:render_code_action_window(response)
   for i=1,#contents-2,1 do
     api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
   end
-
+  self:apply_action_keys()
 end
 
-function Action:appely_action_keys()
+function Action:apply_action_keys()
   local quit_key = config.code_action_keys.quit
   local exec_key = config.code_action_keys.exec
   api.nvim_command('nnoremap <buffer><nowait><silent>'..exec_key..' <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
