@@ -57,7 +57,7 @@ end
 
 function libs.result_isempty(res)
   if type(res) ~= "table" then
-    assert(type(res) == 'table', string.format("Expected table, got %s", type(res)))
+    print('[Lspsaga] Server return wrong response')
     return
   end
   for _,v in pairs(res) do
