@@ -58,8 +58,13 @@ function Action:render_code_action_window(response)
     api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
   end
 
-  api.nvim_command('nnoremap <buffer><nowait><silent><cr> <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
-  api.nvim_command('nnoremap <buffer><nowait><silent>q <cmd>lua require("lspsaga.codeaction").quit_action_window()<CR>')
+end
+
+function Action:appely_action_keys()
+  local quit_key = config.code_action_keys.quit
+  local exec_key = config.code_action_keys.exec
+  api.nvim_command('nnoremap <buffer><nowait><silent>'..exec_key..' <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
+  api.nvim_command('nnoremap <buffer><nowait><silent>'..quit_key..' <cmd>lua require("lspsaga.codeaction").quit_action_window()<CR>')
 end
 
 function Action:code_action(context)
