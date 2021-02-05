@@ -42,7 +42,7 @@ function hover.scroll_in_hover(direction)
   if direction == 1 then
     current_win_lnum = current_win_lnum + height
     if current_win_lnum >= last_lnum then
-      current_win_lnum = last_lnum
+      current_win_lnum = last_lnum -1
     end
   elseif direction == -1 then
     if current_win_lnum <= last_lnum and current_win_lnum > 0 then

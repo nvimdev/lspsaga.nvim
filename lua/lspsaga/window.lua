@@ -310,12 +310,14 @@ function M.fancy_floating_markdown(contents, opts)
     if stripped[1]:find('{%s$') then
       for idx,text in ipairs(stripped) do
         if text:find('}',1,true) then
-          wraped_index = idx + 1
+          wraped_index = idx
           break
         end
       end
     end
-    table.insert(stripped,wraped_index+1,truncate_line)
+    if wraped_index ~= #stripped then
+      table.insert(stripped,wraped_index+1,truncate_line)
+    end
   end
 
   local border_opts = {
