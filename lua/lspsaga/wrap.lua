@@ -3,8 +3,11 @@ local wrap = {}
 -- If the content too long.
 -- auto wrap according width
 -- fill the space with wrap text
-function wrap.wrap_text(text,width,fill)
+function wrap.wrap_text(text,width,opts)
+  opts = opts or {}
   local ret = {}
+  local space = ' '
+  local pad_left = opts.pad_left or 1
   -- if text width < width just return it
   if #text <= width then
     table.insert(ret,text)
@@ -15,8 +18,11 @@ function wrap.wrap_text(text,width,fill)
   local strb = text:sub(width+1,#text)
 
   table.insert(ret,stra)
-  if fill then
-    table.insert(ret,' '..strb)
+  if opts.fill then
+    for _=1,pad_left,1 do
+      strb = space .. strb
+    end
+    table.insert(ret,strb)
   else
     table.insert(ret,strb)
   end
@@ -24,7 +30,8 @@ function wrap.wrap_text(text,width,fill)
   return ret
 end
 
-function wrap.wrap_contents(contents,width)
+function wrap.wrap_contents(contents,width,opts)
+  opts = opts or {}
   if type(contents) ~= "table" then
     error("Wrong params type of function wrap_contents")
     return
@@ -32,7 +39,7 @@ function wrap.wrap_contents(contents,width)
 
   for idx, text in ipairs(contents) do
     if #text > width then
-      local tmp = wrap.wrap_text(text,width,true)
+      local tmp = wrap.wrap_text(text,width,opts)
       for i,j in ipairs(tmp) do
         table.insert(contents,idx+i-1,j)
       end

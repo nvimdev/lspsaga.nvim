@@ -242,6 +242,9 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     local message_lines = vim.split(diagnostic.message, '\n', true)
     table.insert(lines, prefix..message_lines[1])
     table.insert(highlights, {#prefix + 1, hiname})
+    if #message_lines[1] > config.max_diag_msg_width then
+      table.insert(highlights,{#prefix + 1, hiname})
+    end
     for j = 2, #message_lines do
       table.insert(lines, message_lines[j])
       table.insert(highlights, {0, hiname})
@@ -252,7 +255,9 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     highlight = 'LspLinesDiagBorder'
   }
 
-  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width)
+  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width,{
+    fill = true, pad_left = 3
+  })
   local truncate_line = wrap.add_truncate_line(lines)
   table.insert(wrap_message,2,truncate_line)
 
