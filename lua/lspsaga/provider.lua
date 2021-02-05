@@ -201,6 +201,13 @@ function Finder:apply_float_map()
     {self.contents_bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
     {self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
   }
+  if type(action.quit) == 'table' then
+    for _,key in ipairs(action.quit) do
+      table.insert(keymaps,{self.contents_bufnr,'n',key,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"})
+    end
+  elseif type(action.quit) == 'string' then
+    table.insert(keymaps,{self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"})
+  end
   nvim_create_keymap(keymaps,lhs)
 end
 
