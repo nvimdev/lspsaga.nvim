@@ -25,7 +25,7 @@ function hover.render_hover_doc()
   vim.lsp.buf_request(0,'textDocument/hover', params,call_back)
 end
 
-local function has_saga_hover()
+function hover.has_saga_hover()
   local has_hover_win,datas = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
   if not has_hover_win then return false end
   if api.nvim_win_is_valid(datas[1]) then
@@ -39,6 +39,7 @@ function hover.scroll_in_hover(direction)
   local has_hover_win,hover_data = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
   if not has_hover_win then return end
   local hover_win,height,current_win_lnum,last_lnum = hover_data[1],hover_data[2],hover_data[3],hover_data[4]
+  if not api.nvim_win_is_valid(hover_win) then return end
   if direction == 1 then
     current_win_lnum = current_win_lnum + height
     if current_win_lnum >= last_lnum then
@@ -58,7 +59,7 @@ end
 
 -- direction must 1 or -1
 function hover.smart_scroll_hover(direction)
-  if has_saga_hover() then
+  if hover.has_saga_hover() then
     hover.scroll_in_hover(direction)
   else
     local key = api.nvim_replace_termcodes("<C-f>",true,false,true)
