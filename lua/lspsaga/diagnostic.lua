@@ -144,6 +144,10 @@ local function jump_to_entry(entry)
     max_width = 45
   end
 
+  if config.debug then
+    print(vim.inspect(entry.message))
+  end
+
   local wrap_message = wrap.wrap_text(entry.message,max_width)
 
   local truncate_line = ''
