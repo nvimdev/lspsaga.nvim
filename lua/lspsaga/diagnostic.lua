@@ -128,7 +128,6 @@ local function jump_to_entry(entry)
     window.nvim_close_valid_window(line_diag_winids)
   end
 
-  local diagnostic_message = {}
   local entry_line = get_line(entry) + 1
   local entry_character = get_character(entry)
   local hiname ={"LspDiagErrorBorder","LspDiagWarnBorder","LspDiagInforBorder","LspDiagHintBorder"}
@@ -136,7 +135,6 @@ local function jump_to_entry(entry)
   -- add server source in diagnostic float window
   local server_source = entry.source
   local header = severity_icon[entry.severity] ..' '..'['.. server_source..']'
-  table.insert(diagnostic_message,header)
   if entry.message:find('\n') then
     entry.message = entry.message:gsub("[\n\r]", " ")
   end
@@ -145,15 +143,12 @@ local function jump_to_entry(entry)
 
   local truncate_line = ''
   if #header > config.max_diag_msg_width then
-    truncate_line = wrap.add_truncate_line(diagnostic_message)
+    truncate_line = wrap.add_truncate_line({header})
   else
     truncate_line = wrap.add_truncate_line(wrap_message)
   end
-
-  table.insert(diagnostic_message,truncate_line)
-  for _,v in pairs(wrap_message) do
-    table.insert(diagnostic_message,v)
-  end
+  table.insert(wrap_message,1,header)
+  table.insert(wrap_message,2,truncate_line)
 
   -- set curosr
   local border_opts = {
@@ -162,7 +157,7 @@ local function jump_to_entry(entry)
   }
 
   local content_opts = {
-    contents = diagnostic_message,
+    contents = wrap_message,
     filetype = 'markdown',
   }
 
