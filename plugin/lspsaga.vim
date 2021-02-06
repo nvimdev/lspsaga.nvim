@@ -14,6 +14,52 @@ let g:loaded_lspsaga = 1
 
 highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 
+highlight default LspFloatWinBorder guifg=black guibg=NONE
+highlight default LspSagaBorderTitle guifg=orange guibg=NONE gui=bold
+
+highlight default link TargetWord Error
+highlight default link ReferencesCount Title
+highlight default link DefinitionCount Title
+highlight default link TargetFileName  Comment
+highlight default link DefinitionIcon Special
+highlight default link ReferencesIcon Special
+highlight default ProviderTruncateLine guifg=black guibg=NONE
+highlight default SagaShadow guifg=#000000 guibg=NONE
+
+highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
+
+highlight default DiagnosticTruncateLine guifg=#6699cc guibg=NONE gui=bold
+highlight default link DiagnosticError Error
+highlight default link DiagnosticWarning WarningMsg
+highlight default DiagnosticInformation guifg=#6699cc guibg=NONE gui=bold
+highlight default DiagnosticHint guifg=#56b6c2 guibg=NONE gui=bold
+
+highlight default link DefinitionPreviewTitle Title
+
+highlight default LspDiagErrorBorder guifg=#EC5f67 guibg=NONE
+highlight default LspDiagWarnBorder guifg=#d8a657 guibg=NONE
+highlight default LspDiagInforBorder guifg=#6699cc guibg=NONE
+highlight default LspDiagHintBorder guifg=#56b6c2 guibg=NONE
+
+highlight default LspSagaShTruncateLine guifg=black guibg=NONE
+highlight default LspSagaDocTruncateLine guifg=black guibg=NONE
+highlight default LineDiagTuncateLine guifg=#ff6c6b guibg=NONE
+highlight default LspSagaCodeActionTitle guifg=#da8548 guibg=NONE gui=bold
+highlight default LspSagaCodeActionTruncateLine guifg=black guibg=NONE
+
+highlight default LspSagaCodeActionContent guifg=#98be65 guibg=NONE gui=bold
+
+highlight default LspSagaRenamePromptPrefix guifg=#98be65 guibg=NONE
+
+highlight default LspSagaRenameBorder guifg=#3bb6c4 guibg=NONE
+highlight default LspSagaHoverBorder guifg=#80A0C2 guibg=NONE
+highlight default LspSagaSignatureHelpBorder guifg=#98be65 guibg=NONE
+highlight default LspSagaLspFinderBorder guifg=#51afef guibg=NONE
+highlight default LspSagaCodeActionBorder guifg=#b3deef guibg=NONE
+highlight default LspSagaAutoPreview guifg=#ECBE7B guibg=NONE
+highlight default LspSagaDefPreviewBorder guifg=#b3deef guibg=NONE
+highlight default LspLinesDiagBorder guifg=#ff6c6b guibg=NONE
+
 function! s:lspsaga_complete(...)
   return join(luaeval('require("lspsaga.command").command_list()'),"\n")
 endfunction

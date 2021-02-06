@@ -175,7 +175,7 @@ tnoremap <silent> <A-d> <C-\><C-n>:Lspsaga close_floaterm<CR>
 src="https://user-images.githubusercontent.com/41671631/105658287-2c6ed880-5f01-11eb-8af6-daa6fd23576c.gif" width=500 height=500/>
 </div>
 
-## Customize Appearance	
+## Customize Appearance
 
 ### Colors
 
@@ -192,7 +192,37 @@ The available highlight groups are:
 | Group Name               | Description                                                      |
 | :----------------------- | :----------------------------------------------------------------|
 | `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
-
+| `LspFloatWinBorder` | |
+| `LspSagaBorderTitle` | |
+| `TargetWord` | |
+| `ReferencesCount` | |
+| `DefinitionCount` | |
+| `TargetFileName` | |
+| `DefinitionIcon` | |
+| `ReferencesIcon` | |
+| `ProviderTruncateLine` | |
+| `SagaShadow` | |
+| `LspSagaFinderSelection` | |
+| `DiagnosticTruncateLine` | |
+| `DiagnosticError` | |
+| `DiagnosticWarning` | |
+| `DiagnosticInformation` | |
+| `DiagnosticHint` | |
+| `DefinitionPreviewTitle` | |
+| `LspSagaShTruncateLine` | |
+| `LspSagaDocTruncateLine` | |
+| `LineDiagTuncateLine` | |
+| `LspSagaCodeActionTitle` | |
+| `LspSagaCodeActionTruncateLine` | |
+| `LspSagaCodeActionContent` | |
+| `LspSagaRenamePromptPrefix` | |
+| `LspSagaRenameBorder` | |
+| `LspSagaHoverBorder` | |
+| `LspSagaSignatureHelpBorder` | |
+| `LspSagaCodeActionBorder` | |
+| `LspSagaAutoPreview` | |
+| `LspSagaDefPreviewBorder` | |
+| `LspLinesDiagBorder` | |
 
 # License
 
