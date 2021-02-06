@@ -139,7 +139,12 @@ local function jump_to_entry(entry)
     entry.message = entry.message:gsub("[\n\r]", " ")
   end
 
-  local wrap_message = wrap.wrap_text(entry.message,config.max_diag_msg_width)
+  local max_width = config.max_diag_msg_width
+  if vim.fn.winwidth(0) < 85 then
+    max_width = 45
+  end
+
+  local wrap_message = wrap.wrap_text(entry.message,max_width)
 
   local truncate_line = ''
   if #header > config.max_diag_msg_width then
