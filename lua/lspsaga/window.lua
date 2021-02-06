@@ -167,7 +167,8 @@ function M.create_float_contents(content_opts,border_option)
   end
 
   if opts.anchor == "NE" then
-    opts.col = border_option.col - 1
+    opts.anchor = "NW"
+    opts.col = -13
   elseif opts.anchor == "NW" then
     opts.col = border_option.col + 1
   else
