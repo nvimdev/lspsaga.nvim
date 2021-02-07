@@ -18,8 +18,10 @@ saga.config_values = {
   code_action_icon = ' ',
   finder_definition_icon = '  ',
   finder_reference_icon = '  ',
+  max_finder_preview_lins = 10,
   finder_action_keys = {
-    open = 'o', vsplit = 's',split = 'i',quit = 'q'
+    open = 'o', vsplit = 's',split = 'i',quit = 'q',
+    scroll_down = '<C-f>',scroll_up = '<C-d>'
   },
   code_action_keys = {
     quit = 'q',exec = '<CR>'
