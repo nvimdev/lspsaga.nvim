@@ -113,7 +113,9 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       end
       table.insert(self.contents,target_line)
       target_lnum = target_lnum + 1
-      local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+5,false)
+      -- max_preview_lines
+      local max_preview_lines = config.max_finder_preview_lins
+      local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+max_preview_lines,false)
 
       self.short_link[target_lnum] = {
         link=link,
@@ -199,7 +201,9 @@ function Finder:apply_float_map()
     {self.contents_bufnr,'n',action.open,":lua require'lspsaga.provider'.open_link(1)<CR>"},
     {self.contents_bufnr,'n',action.vsplit,":lua require'lspsaga.provider'.open_link(2)<CR>"},
     {self.contents_bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"}
+    {self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"},
+    {self.contents_bufnr,'n',action.scroll_down,":lua require'lspsaga.provider'.scroll_in_preview(1)<CR>"},
+    {self.contents_bufnr,'n',action.scroll_up,":lua require'lspsaga.provider'.scroll_in_preview(-1)<CR>"}
   }
   if type(action.quit) == 'table' then
     for _,key in ipairs(action.quit) do
@@ -277,15 +281,18 @@ function Finder:auto_open_preview()
       opts.col = finder_win_opts.col+width+2
       opts.row = finder_win_opts.row
       opts.width = min_width + 5
+      opts.height = self.definition_uri + self.reference_uri + 6
     elseif pad_right < 10 and pad_right > 0 then
       opts.col = finder_win_opts.col+width+2
       opts.row = finder_win_opts.row
       opts.width = min_width
+      opts.height = self.definition_uri + self.reference_uri + 6
     elseif pad_right < 0 then
       opts.row = finder_win_opts.row + height + 2
       opts.col = finder_win_opts.col
       opts.width = min_width
-      if self.WIN_HEIGHT - height - opts.row - #content + 6 < 2 then
+      opts.height = 8
+      if self.WIN_HEIGHT - height - opts.row < 4 then
         return
       end
     end
@@ -304,14 +311,15 @@ function Finder:auto_open_preview()
       self:close_auto_preview_win()
       local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
       api.nvim_buf_set_option(cb,'buflisted',false)
-      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw})
+      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw,1,config.max_finder_preview_lins+1})
     end,10)
   end
 end
 
 function Finder:close_auto_preview_win()
-  local has_var,winid = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
+  local has_var,pdata = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
   if has_var then
+    local winid = {pdata[1],pdata[2]}
     window.nvim_close_valid_window(winid)
   end
 end
@@ -334,6 +342,34 @@ function Finder:open_link(action_type)
   api.nvim_command(action[action_type]..self.short_link[current_line].link)
   vim.fn.cursor(self.short_link[current_line].row,self.short_link[current_line].col)
   self:clear_tmp_data()
+end
+
+function Finder:scroll_in_preview(direction)
+  local has_var,pdata = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
+  if not has_var then return end
+  if not api.nvim_win_is_valid(pdata[1]) then return end
+  if not api.nvim_win_is_valid(pdata[2]) then return end
+
+  local current_win_lnum,last_lnum = pdata[3],pdata[4]
+
+  if direction == 1 then
+    current_win_lnum = current_win_lnum + config.max_finder_preview_lins
+    if current_win_lnum >= last_lnum then
+      current_win_lnum = last_lnum -1
+    end
+  elseif direction == -1 then
+    if current_win_lnum <= last_lnum and current_win_lnum > 0 then
+      current_win_lnum = current_win_lnum - config.max_finder_preview_lins
+    end
+    if current_win_lnum < 0 then
+      current_win_lnum = 1
+    end
+  end
+  if current_win_lnum <= 0 then
+    current_win_lnum = 1
+  end
+  api.nvim_win_set_cursor(pdata[1],{current_win_lnum,0})
+  api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],pdata[2],current_win_lnum,last_lnum})
 end
 
 function Finder:quit_float_window()
@@ -381,6 +417,10 @@ end
 
 function lspfinder.open_link(action_type)
   Finder:open_link(action_type)
+end
+
+function lspfinder.scroll_in_preview(direction)
+  Finder:scroll_in_preview(direction)
 end
 
 function lspfinder.preview_definition(timeout_ms)
