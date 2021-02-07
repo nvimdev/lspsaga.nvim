@@ -13,12 +13,19 @@ local send_request = function(timeout)
   local ref_response = lsp.buf_request_sync(0, method[2], ref_params, timeout or 1000)
 
   local responses = {}
-  if not vim.tbl_isempty(def_response) then
-    table.insert(responses,def_response)
+  if libs.result_isempty(def_response) then
+    def_response[1] = {}
+    def_response[1].result = {}
+    def_response[1].result.saga_msg = '0 definitions found'
   end
-  if not vim.tbl_isempty(ref_response) then
-    table.insert(responses,ref_response)
+  table.insert(responses,def_response)
+
+  if libs.result_isempty(ref_response) then
+    ref_response[1] = {}
+    ref_response[1].result = {}
+    ref_response[1].result.saga_msg = '0 references found'
   end
+  table.insert(responses,ref_response)
 
   for i,response in ipairs(responses) do
     if type(response) == "table" then
@@ -73,17 +80,24 @@ function Finder:create_finder_contents(result,method_type,root_dir)
     local title = method_option[method_type].icon.. params ..method_option[method_type].title
 
     if method_type == 1 then
-      self.definition_uri = #result
+      self.definition_uri = result.saga_msg and 1 or #result
       table.insert(self.contents,title)
+      table.insert(self.contents," ")
       target_lnum = 2
+      if result.saga_msg then
+        table.insert(self.contents,'[1] ' .. result.saga_msg)
+        return
+      end
     else
-      self.reference_uri = # result
+      self.reference_uri = result.saga_msg and 1 or #result
       target_lnum = target_lnum + self.definition_uri + 5
       table.insert(self.contents," ")
       table.insert(self.contents,title)
+      if result.saga_msg then
+        table.insert(self.contents,'[1] ' .. result.saga_msg)
+        return
+      end
     end
-
-    if next(result) == nil then return end
 
     for index,_ in ipairs(result) do
       local uri = result[index].targetUri or result[index].uri
