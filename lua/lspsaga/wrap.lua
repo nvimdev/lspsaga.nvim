@@ -7,24 +7,32 @@ function wrap.wrap_text(text,width,opts)
   opts = opts or {}
   local ret = {}
   local space = ' '
-  local pad_left = opts.pad_left or 1
   -- if text width < width just return it
   if #text <= width then
     table.insert(ret,text)
     return ret
   end
 
-  local stra = text:sub(1,width)
-  local strb = text:sub(width+1,#text)
-
-  table.insert(ret,stra)
-  if opts.fill then
-    for _=1,pad_left,1 do
-      strb = space .. strb
+  local _truncate = function (t,w)
+    local tmp = t
+    local tbl = {}
+    while true do
+      if #tmp > w then
+        table.insert(tbl,tmp:sub(1,w))
+        tmp = tmp:sub(w+1)
+      else
+        table.insert(tbl,tmp)
+        break
+      end
     end
-    table.insert(ret,strb)
-  else
-    table.insert(ret,strb)
+    return tbl
+  end
+  ret = _truncate(text,width)
+
+  if opts.fill then
+    for i=2,#ret,1 do
+      ret[i] = space .. ret[i]
+    end
   end
 
   return ret
