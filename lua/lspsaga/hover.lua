@@ -1,6 +1,7 @@
 local api,lsp,util = vim.api,vim.lsp,vim.lsp.util
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
+local action = require('lspsaga.action')
 local hover = {}
 
 local call_back = function (_,method,result)
@@ -40,23 +41,7 @@ function hover.scroll_in_hover(direction)
   if not has_hover_win then return end
   local hover_win,height,current_win_lnum,last_lnum = hover_data[1],hover_data[2],hover_data[3],hover_data[4]
   if not api.nvim_win_is_valid(hover_win) then return end
-  if direction == 1 then
-    current_win_lnum = current_win_lnum + height
-    if current_win_lnum >= last_lnum then
-      current_win_lnum = last_lnum -1
-    end
-  elseif direction == -1 then
-    if current_win_lnum <= last_lnum and current_win_lnum > 0 then
-      current_win_lnum = current_win_lnum - height
-    end
-    if current_win_lnum < 0 then
-      current_win_lnum = 1
-    end
-  end
-  if current_win_lnum <= 0 then
-    current_win_lnum = 1
-  end
-  api.nvim_win_set_cursor(hover_win,{current_win_lnum,0})
+  action.scroll_in_win(hover_win,direction,current_win_lnum,last_lnum,height)
   api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_win,height,current_win_lnum,last_lnum})
 end
 
