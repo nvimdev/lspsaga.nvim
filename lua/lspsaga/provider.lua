@@ -3,6 +3,7 @@ local vim,api,lsp,vfn = vim,vim.api,vim.lsp,vim.fn
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local home_dir = libs.get_home_dir()
+local scroll_in_win = require('lspsaga.action').scroll_in_win
 
 local send_request = function(timeout)
   local method = {"textDocument/definition","textDocument/references"}
@@ -367,24 +368,7 @@ function Finder:scroll_in_preview(direction)
   if not api.nvim_win_is_valid(pdata[2]) then return end
 
   local current_win_lnum,last_lnum = pdata[3],pdata[4]
-
-  if direction == 1 then
-    current_win_lnum = current_win_lnum + config.max_finder_preview_lins
-    if current_win_lnum >= last_lnum then
-      current_win_lnum = last_lnum -1
-    end
-  elseif direction == -1 then
-    if current_win_lnum <= last_lnum and current_win_lnum > 0 then
-      current_win_lnum = current_win_lnum - config.max_finder_preview_lins
-    end
-    if current_win_lnum < 0 then
-      current_win_lnum = 1
-    end
-  end
-  if current_win_lnum <= 0 then
-    current_win_lnum = 1
-  end
-  api.nvim_win_set_cursor(pdata[1],{current_win_lnum,0})
+  scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_finder_preview_lins)
   api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],pdata[2],current_win_lnum,last_lnum})
 end
 
