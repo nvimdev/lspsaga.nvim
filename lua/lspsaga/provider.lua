@@ -92,6 +92,7 @@ function Finder:create_finder_contents(result,method_type,root_dir)
     else
       self.reference_uri = result.saga_msg and 1 or #result
       target_lnum = target_lnum + self.definition_uri + 5
+      table.insert(self.contents," ")
       table.insert(self.contents,title)
       if result.saga_msg then
         table.insert(self.contents," ")
