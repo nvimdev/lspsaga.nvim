@@ -133,7 +133,7 @@ local function jump_to_entry(entry)
   local hiname ={"LspDiagErrorBorder","LspDiagWarnBorder","LspDiagInforBorder","LspDiagHintBorder"}
 
   -- add server source in diagnostic float window
-  local server_source = entry.source
+  local server_source = entry.source or ''
   local header = severity_icon[entry.severity] ..' '..'['.. server_source..']'
   if entry.message:find('\n') then
     entry.message = entry.message:gsub("[\n\r]", " ")
