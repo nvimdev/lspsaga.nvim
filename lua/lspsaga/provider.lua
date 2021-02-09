@@ -131,7 +131,7 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       table.insert(self.contents,target_line)
       target_lnum = target_lnum + 1
       -- max_preview_lines
-      local max_preview_lines = config.max_finder_preview_lins
+      local max_preview_lines = config.max_finder_preview_lines
       local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+max_preview_lines,false)
 
       self.short_link[target_lnum] = {
@@ -332,7 +332,7 @@ function Finder:auto_open_preview()
       self:close_auto_preview_win()
       local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
       api.nvim_buf_set_option(cb,'buflisted',false)
-      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw,1,config.max_finder_preview_lins+1})
+      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw,1,config.max_finder_preview_lines+1})
     end,10)
   end
 end
@@ -372,7 +372,7 @@ function Finder:scroll_in_preview(direction)
   if not api.nvim_win_is_valid(pdata[2]) then return end
 
   local current_win_lnum,last_lnum = pdata[3],pdata[4]
-  scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_finder_preview_lins)
+  scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_finder_preview_lines)
   api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],pdata[2],current_win_lnum,last_lnum})
 end
 
