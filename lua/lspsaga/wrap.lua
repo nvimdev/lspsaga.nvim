@@ -1,3 +1,4 @@
+local config = require('lspsaga').config_values
 local wrap = {}
 
 -- If the content too long.
@@ -61,7 +62,8 @@ end
 function wrap.add_truncate_line(contents)
   local line_widths = {}
   local width = 0
-  local truncate_line = '─'
+  local char = config.border_style == 4 and '-' or '─'
+  local truncate_line = char
 
   for i,line in ipairs(contents) do
     line_widths[i] = vim.fn.strdisplaywidth(line)
@@ -69,7 +71,7 @@ function wrap.add_truncate_line(contents)
   end
 
   for _=1,width,1 do
-    truncate_line = truncate_line .. '─'
+    truncate_line = truncate_line .. char
   end
 
   return truncate_line

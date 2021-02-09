@@ -39,7 +39,7 @@ local saga = require 'lspsaga'
 --   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>'
 -- },
 -- definition_preview_icon = '  '
--- 1: thin border | 2: rounded border | 3: thick border
+-- 1: thin border | 2: rounded border | 3: thick border | 4: ascii border
 -- border_style = 1
 -- rename_prompt_prefix = '➤',
 -- if you don't use nvim-lspconfig you must pass your server name and
