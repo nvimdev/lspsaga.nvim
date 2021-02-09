@@ -33,7 +33,7 @@ saga.config_values = {
   server_filetype_map = {}
 }
 
-function saga.extend_config(opts)
+local extend_config = function(opts)
   opts = opts or {}
   if next(opts) == nil then return  end
   for key,value in pairs(opts) do
@@ -41,12 +41,18 @@ function saga.extend_config(opts)
       error(string.format('[LspSaga] Key %s not exist in config values',key))
       return
     end
-    saga.config_values[key] = value
+    if type(saga.config_values[key]) == 'table' then
+      for k,v in pairs(value) do
+        saga.config_values[key][k] = v
+      end
+    else
+      saga.config_values[key] = value
+    end
   end
 end
 
 function saga.init_lsp_saga(opts)
-  saga.extend_config(opts)
+  extend_config(opts)
   local diagnostic = require 'lspsaga.diagnostic'
 
   if saga.config_values.use_saga_diagnostic_sign then
