@@ -292,20 +292,10 @@ function Finder:auto_open_preview()
     local min_width = 42
     local pad_right = self.WIN_WIDTH - width - 20 - min_width
 
-    if pad_right > 25 then
+    if pad_right >= 0 then
       opts.col = finder_win_opts.col+width+2
       opts.row = finder_win_opts.row
-      opts.width = min_width + 20
-      opts.height = self.definition_uri + self.reference_uri + 6
-    elseif pad_right > 10 and pad_right < 25 then
-      opts.col = finder_win_opts.col+width+2
-      opts.row = finder_win_opts.row
-      opts.width = min_width + 5
-      opts.height = self.definition_uri + self.reference_uri + 6
-    elseif pad_right < 10 and pad_right > 0 then
-      opts.col = finder_win_opts.col+width+2
-      opts.row = finder_win_opts.row
-      opts.width = min_width
+      opts.width = min_width + math.max(0, math.min(math.floor((pad_right-10)/1.5), 60))
       opts.height = self.definition_uri + self.reference_uri + 6
     elseif pad_right < 0 then
       opts.row = finder_win_opts.row + height + 2
