@@ -291,7 +291,7 @@ function Finder:auto_open_preview()
 
     local min_width = 42
     local pad_right = self.WIN_WIDTH - width - 20 - min_width
-    local max_height = finder_win_opts.height
+    local max_height = finder_win_opts.height or height
 
     if pad_right >= 0 then
       opts.col = finder_win_opts.col+width+2
