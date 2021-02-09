@@ -1,10 +1,17 @@
 local api = vim.api
-local is_windows = vim.loop.os_uname().sysname == "Windows"
-local path_sep = is_windows and '\\' or '/'
 local libs = {}
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
 
+function libs.is_windows()
+  return vim.loop.os_uname().sysname:find("Windows", 1, true) and true 
+end
+
+local path_sep = libs.is_windows() and '\\' or '/'
+
 function libs.get_home_dir()
+  if libs.is_windows() then
+    return os.getenv("USERPROFILE")
+  end
   return os.getenv("HOME")
 end
 
