@@ -17,7 +17,7 @@ local function focusable_float(unique_name, fn)
   end
 end
 
-local call_back = function (_,method,result)
+hover.handler = function(_, method, result)
     focusable_float(method, function()
       if not (result and result.contents) then return end
       local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
@@ -36,7 +36,7 @@ end
 
 function hover.render_hover_doc()
   local params = util.make_position_params()
-  vim.lsp.buf_request(0,'textDocument/hover', params,call_back)
+  vim.lsp.buf_request(0,'textDocument/hover', params, hover.handler)
 end
 
 function hover.has_saga_hover()
