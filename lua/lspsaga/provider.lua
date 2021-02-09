@@ -217,7 +217,6 @@ function Finder:apply_float_map()
     {self.contents_bufnr,'n',action.open,":lua require'lspsaga.provider'.open_link(1)<CR>"},
     {self.contents_bufnr,'n',action.vsplit,":lua require'lspsaga.provider'.open_link(2)<CR>"},
     {self.contents_bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"},
     {self.contents_bufnr,'n',action.scroll_down,":lua require'lspsaga.provider'.scroll_in_preview(1)<CR>"},
     {self.contents_bufnr,'n',action.scroll_up,":lua require'lspsaga.provider'.scroll_in_preview(-1)<CR>"}
   }
