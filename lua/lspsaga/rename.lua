@@ -57,6 +57,8 @@ local rename = function()
   api.nvim_buf_add_highlight(cb, saga_rename_prompt_prefix, 'LspSagaRenamePromptPrefix', 0, 0, #prompt_prefix)
   vim.cmd [[startinsert!]]
   api.nvim_win_set_var(0,unique_name,{cw,bw})
+
+  api.nvim_command('inoremap <buffer><silent><esc> <cmdlua require("lspsaga.rename").close_rename_win()<CR>')
   api.nvim_command('inoremap <buffer><silent><cr> <cmd>lua require("lspsaga.rename").do_rename()<CR>')
   api.nvim_command('nnoremap <buffer><silent>q <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
   api.nvim_command('inoremap <buffer><silent><C-c> <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
