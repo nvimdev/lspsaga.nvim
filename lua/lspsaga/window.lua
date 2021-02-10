@@ -5,10 +5,12 @@ local wrap = require('lspsaga.wrap')
 -- 1 thin
 -- 2 radio
 -- 3 crude
+-- 4 ascii
 local border_style = {
   {top_left = "┌",top_mid = "─",top_right = "┐",mid = "│",bottom_left = "└",bottom_right= "┘" };
   {top_left = "╭",top_mid = "─",top_right = "╮",mid = "│",bottom_left = "╰",bottom_right= "╯" };
   {top_left = "┏",top_mid = "━",top_right = "┓",mid = "┃",bottom_left = "┗",bottom_right = "┛"};
+  {top_left = "+",top_mid = "-",top_right = "+",mid = "|",bottom_left = "+",bottom_right = "+"};
 }
 
 function M.get_max_contents_width(contents)
