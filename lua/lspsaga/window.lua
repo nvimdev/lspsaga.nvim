@@ -147,7 +147,7 @@ local function create_float_boder(contents,border_opts,opts)
 
   -- create border
   local border_winid = api.nvim_open_win(border_bufnr, false, border_option)
-  api.nvim_win_set_option(border_winid,"winhl","Normal:"..highlight)
+  api.nvim_win_set_option(border_winid,"winhl","Normal:"..highlight..",NormalNC:"..highlight)
   api.nvim_win_set_option(border_winid,"cursorcolumn",false)
   return border_bufnr,border_winid
 end
@@ -196,7 +196,7 @@ function M.create_float_contents(content_opts,border_option)
     api.nvim_win_set_option(contents_winid, 'conceallevel', 2)
   end
 
-  api.nvim_win_set_option(contents_winid,"winhl","Normal:LspSagaContent")
+  api.nvim_win_set_option(contents_winid,"winhl","Normal:LspSagaContent,NormalNC:LspSagaContent")
   api.nvim_win_set_option(contents_winid,'winblend',0)
   api.nvim_win_set_option(contents_winid, 'foldlevel', 100)
   return contents_bufnr, contents_winid
