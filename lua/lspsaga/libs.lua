@@ -3,7 +3,7 @@ local libs = {}
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
 
 function libs.is_windows()
-  return vim.loop.os_uname().sysname:find("Windows", 1, true) and true 
+  return vim.loop.os_uname().sysname:find("Windows", 1, true) and true
 end
 
 local path_sep = libs.is_windows() and '\\' or '/'
