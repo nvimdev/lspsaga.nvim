@@ -82,7 +82,7 @@ function libs.result_isempty(res)
 end
 
 function libs.split_by_pathsep(text,start_pos)
-  local pattern = is_windows and path_sep or '/'..path_sep
+  local pattern = libs.is_windows() and path_sep or '/'..path_sep
   local short_text = ''
   local split_table = {}
   for word in text:gmatch('[^'..pattern..']+') do
