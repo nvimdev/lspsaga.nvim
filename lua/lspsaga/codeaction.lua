@@ -18,7 +18,11 @@ function Action:clear_tmp_data()
   end
 end
 
-function Action:render_code_action_window(response)
+function Action:action_callback(response)
+  if response == nil or vim.tbl_isempty(response) then
+    print("No code actions available")
+    return
+  end
   local contents = {}
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
@@ -60,6 +64,10 @@ function Action:render_code_action_window(response)
   self:apply_action_keys()
 end
 
+local function call_back(_,_,response)
+  Action:action_callback(response)
+end
+
 function Action:apply_action_keys()
   local quit_key = config.code_action_keys.quit
   local exec_key = config.code_action_keys.exec
@@ -78,12 +86,7 @@ function Action:code_action(context)
   context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
   local params = vim.lsp.util.make_range_params()
   params.context = context
-  local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
-  if config.debug then
-    print(vim.inspect(response))
-  end
-  if libs.result_isempty(response) then return end
-  self:render_code_action_window(response)
+  vim.lsp.buf_request(0,'textDocument/codeAction', params,call_back)
 end
 
 function Action:range_code_action(context, start_pos, end_pos)
@@ -95,9 +98,7 @@ function Action:range_code_action(context, start_pos, end_pos)
   context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
   local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
   params.context = context
-  local response = vim.lsp.buf_request_sync(0,'textDocument/codeAction', params,1000)
-  if libs.result_isempty(response) then return end
-  self:render_code_action_window(response)
+  vim.lsp.buf_request(0,'textDocument/codeAction', params,call_back)
 end
 
 function Action:set_cursor ()
