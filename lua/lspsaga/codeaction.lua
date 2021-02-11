@@ -23,17 +23,15 @@ function Action:action_callback(response)
     print("No code actions available")
     return
   end
+
   local contents = {}
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents,title)
-  self.actions = {}
 
-  for _,languageServerAnswer in pairs(response) do
-    for index,action in pairs(languageServerAnswer.result) do
-      local action_title = '['..index..']' ..' '.. action.title
-      table.insert(contents,action_title)
-      table.insert(self.actions,action)
-    end
+  self.actions = response
+  for index,action in pairs(response) do
+    local action_title = '['..index..']' ..' '.. action.title
+    table.insert(contents,action_title)
   end
 
   if #contents == 1 then return end
