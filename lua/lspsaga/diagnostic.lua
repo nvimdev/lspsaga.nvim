@@ -244,6 +244,81 @@ local function jump_to_entry(entry)
   api.nvim_command("hi! link DiagnosticTruncateLine "..hiname[entry.severity])
 end
 
+function show_diagnostics(get_diagnostic, opts, bufnr, line_nr, client_id)
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
+  -- if there already has diagnostic float window did not show show lines
+  -- diagnostic window
+  local has_var, diag_float_winid = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
+  if has_var and diag_float_winid ~= nil then
+    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
+      return
+    end
+  end
+
+  opts = opts or {}
+  opts.severity_sort = if_nil(opts.severity_sort, true)
+
+  local show_header = if_nil(opts.show_header, true)
+
+  bufnr = bufnr or 0
+  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+
+  local lines = {}
+  local highlights = {}
+  if show_header then
+    table.insert(lines, "Diagnostics:")
+    table.insert(highlights, {0, "Bold"})
+  end
+
+  local diagnostics = get_diagnostic(bufnr, line_nr, opts, client_id)
+  if vim.tbl_isempty(diagnostics) then return end
+
+  for i, diagnostic in ipairs(diagnostics) do
+    local prefix = string.format("%d. ", i)
+    local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
+    assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
+
+    local message_lines = vim.split(diagnostic.message, '\n', true)
+    table.insert(lines, prefix..message_lines[1])
+    table.insert(highlights, {#prefix + 1, hiname})
+    if #message_lines[1] + 4 > config.max_diag_msg_width then
+      table.insert(highlights,{#prefix + 1, hiname})
+    end
+    for j = 2, #message_lines do
+      table.insert(lines, '   '..message_lines[j])
+      table.insert(highlights, {0, hiname})
+    end
+  end
+  local border_opts = {
+    border = config.border_style,
+    highlight = 'LspLinesDiagBorder'
+  }
+
+  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width,{
+    fill = true, pad_left = 3
+  })
+  local truncate_line = wrap.add_truncate_line(lines)
+  table.insert(wrap_message,2,truncate_line)
+
+  local content_opts = {
+    contents = wrap_message,
+    filetype = 'plaintext',
+  }
+
+  local cb,cw,bb,bw = window.create_float_window(content_opts,border_opts,opts)
+  for i, hi in ipairs(highlights) do
+    local _, hiname = unpack(hi)
+    -- Start highlight after the prefix
+    api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
+  end
+  api.nvim_buf_add_highlight(cb,-1,'LineDiagTuncateLine',1,0,-1)
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
+  api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
+  return cb,cw,bb,bw
+end
 
 local function jump_one_times(get_entry_function)
   for _ = 1, 1, -1 do
@@ -265,156 +340,12 @@ function M.lsp_jump_diagnostic_next()
   jump_one_times(get_below_entry)
 end
 
-function M.show_cursor_diagnostics()
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
-
-  -- if there already has diagnostic float window did not show show lines
-  -- diagnostic window
-  local has_var, diag_float_winid = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
-  if has_var and diag_float_winid ~= nil then
-    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
-      return
-    end
-  end
-
-  opts = opts or {}
-  opts.severity_sort = if_nil(opts.severity_sort, true)
-
-  local show_header = if_nil(opts.show_header, true)
-
-  bufnr = bufnr or 0
-  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
-
-  local lines = {}
-  local highlights = {}
-  if show_header then
-    table.insert(lines, "Diagnostics:")
-    table.insert(highlights, {0, "Bold"})
-  end
-
-  local line_diagnostics = get_cursor_entries()
-  if vim.tbl_isempty(line_diagnostics) then return end
-
-  for i, diagnostic in ipairs(line_diagnostics) do
-    local prefix = string.format("%d. ", i)
-    local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
-    assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
-
-    local message_lines = vim.split(diagnostic.message, '\n', true)
-    table.insert(lines, prefix..message_lines[1])
-    table.insert(highlights, {#prefix + 1, hiname})
-    if #message_lines[1] + 4 > config.max_diag_msg_width then
-      table.insert(highlights,{#prefix + 1, hiname})
-    end
-    for j = 2, #message_lines do
-      table.insert(lines, '   '..message_lines[j])
-      table.insert(highlights, {0, hiname})
-    end
-  end
-  local border_opts = {
-    border = config.border_style,
-    highlight = 'LspLinesDiagBorder'
-  }
-
-  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width,{
-    fill = true, pad_left = 3
-  })
-  local truncate_line = wrap.add_truncate_line(lines)
-  table.insert(wrap_message,2,truncate_line)
-
-  local content_opts = {
-    contents = wrap_message,
-    filetype = 'plaintext',
-  }
-
-  local cb,cw,bb,bw = window.create_float_window(content_opts,border_opts,opts)
-  for i, hi in ipairs(highlights) do
-    local _, hiname = unpack(hi)
-    -- Start highlight after the prefix
-    api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
-  end
-  api.nvim_buf_add_highlight(cb,-1,'LineDiagTuncateLine',1,0,-1)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
-  api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
-  return cb,cw,bb,bw
+function M.show_cursor_diagnostics(opts, bufnr, line_nr, client_id)
+  show_diagnostics(get_cursor_entries, opts, bufnr, line_nr, client_id)
 end
 
 function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
-
-  -- if there already has diagnostic float window did not show show lines
-  -- diagnostic window
-  local has_var, diag_float_winid = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
-  if has_var and diag_float_winid ~= nil then
-    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
-      return
-    end
-  end
-
-  opts = opts or {}
-  opts.severity_sort = if_nil(opts.severity_sort, true)
-
-  local show_header = if_nil(opts.show_header, true)
-
-  bufnr = bufnr or 0
-  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
-
-  local lines = {}
-  local highlights = {}
-  if show_header then
-    table.insert(lines, "Diagnostics:")
-    table.insert(highlights, {0, "Bold"})
-  end
-
-  local line_diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
-  if vim.tbl_isempty(line_diagnostics) then return end
-
-  for i, diagnostic in ipairs(line_diagnostics) do
-    local prefix = string.format("%d. ", i)
-    local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
-    assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
-
-    local message_lines = vim.split(diagnostic.message, '\n', true)
-    table.insert(lines, prefix..message_lines[1])
-    table.insert(highlights, {#prefix + 1, hiname})
-    if #message_lines[1] + 4 > config.max_diag_msg_width then
-      table.insert(highlights,{#prefix + 1, hiname})
-    end
-    for j = 2, #message_lines do
-      table.insert(lines, '   '..message_lines[j])
-      table.insert(highlights, {0, hiname})
-    end
-  end
-  local border_opts = {
-    border = config.border_style,
-    highlight = 'LspLinesDiagBorder'
-  }
-
-  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width,{
-    fill = true, pad_left = 3
-  })
-  local truncate_line = wrap.add_truncate_line(lines)
-  table.insert(wrap_message,2,truncate_line)
-
-  local content_opts = {
-    contents = wrap_message,
-    filetype = 'plaintext',
-  }
-
-  local cb,cw,bb,bw = window.create_float_window(content_opts,border_opts,opts)
-  for i, hi in ipairs(highlights) do
-    local _, hiname = unpack(hi)
-    -- Start highlight after the prefix
-    api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
-  end
-  api.nvim_buf_add_highlight(cb,-1,'LineDiagTuncateLine',1,0,-1)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
-  api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
-  return cb,cw,bb,bw
+  show_diagnostics(lsp.diagnostic.get_line_diagnostics, opts, bufnr, line_nr, client_id)
 end
 
 function M.lsp_diagnostic_sign(opts)
