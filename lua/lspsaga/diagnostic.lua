@@ -16,19 +16,19 @@ local severity_icon = {
   config.hint_header,
 }
 
-local function get_line(diagnostic_entry)
+local function get_start_line(diagnostic_entry)
   return diagnostic_entry["range"]["start"]["line"]
 end
 
-local function get_character(diagnostic_entry)
+local function get_start_character(diagnostic_entry)
   return diagnostic_entry["range"]["start"]["character"]
 end
 
-local function get_line_last(diagnostic_entry)
+local function get_end_line(diagnostic_entry)
   return diagnostic_entry["range"]["end"]["line"]
 end
 
-local function get_character_last(diagnostic_entry)
+local function get_end_character(diagnostic_entry)
   return diagnostic_entry["range"]["end"]["character"]
 end
 
@@ -67,10 +67,10 @@ local function compare_positions(line_a, line_b, character_a, character_b)
 end
 
 local function compare_diagnostics_entries(entry_a, entry_b)
-  local line_a = get_line(entry_a)
-  local line_b = get_line(entry_b)
-  local character_a = get_character(entry_a)
-  local character_b = get_character(entry_b)
+  local line_a = get_start_line(entry_a)
+  local line_b = get_start_line(entry_b)
+  local character_a = get_start_character(entry_a)
+  local character_b = get_start_character(entry_b)
   return compare_positions(line_a, line_b, character_a, character_b)
 end
 
@@ -96,8 +96,8 @@ local function get_above_entry()
 
   for i = #diagnostics, 1, -1 do
     local entry = diagnostics[i]
-    local entry_line = get_line(entry)
-    local entry_character = get_character(entry)
+    local entry_line = get_start_line(entry)
+    local entry_character = get_start_character(entry)
 
     if not compare_positions(cursor_line - 1, entry_line, cursor_character - 1, entry_character) then
         return entry
@@ -114,8 +114,8 @@ local function get_below_entry()
   local cursor_character = cursor[2]
 
   for _, entry in ipairs(diagnostics) do
-      local entry_line = get_line(entry)
-      local entry_character = get_character(entry)
+      local entry_line = get_start_line(entry)
+      local entry_character = get_start_character(entry)
 
       if compare_positions(cursor_line, entry_line, cursor_character, entry_character) then
           return entry
@@ -133,10 +133,10 @@ local function get_cursor_entries()
 
   local cursor_entries = {}
   for _, entry in ipairs(diagnostics) do
-      local entry_start_line = get_line(entry)
-      local entry_start_character = get_character(entry)
-      local entry_end_line = get_line_last(entry)
-      local entry_end_character = get_character_last(entry)
+      local entry_start_line = get_start_line(entry)
+      local entry_start_character = get_start_character(entry)
+      local entry_end_line = get_end_line(entry)
+      local entry_end_character = get_end_character(entry)
 
       if in_range(
           entry_start_line,
@@ -186,8 +186,8 @@ local function jump_to_entry(entry)
     window.nvim_close_valid_window(line_diag_winids)
   end
 
-  local entry_line = get_line(entry) + 1
-  local entry_character = get_character(entry)
+  local entry_line = get_start_line(entry) + 1
+  local entry_character = get_start_character(entry)
   local hiname ={"LspDiagErrorBorder","LspDiagWarnBorder","LspDiagInforBorder","LspDiagHintBorder"}
 
   -- add server source in diagnostic float window
