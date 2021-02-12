@@ -74,14 +74,22 @@ local function compare_diagnostics_entries(entry_a, entry_b)
   return compare_positions(line_a, line_b, character_a, character_b)
 end
 
-local function get_sorted_diagnostics()
+local function compare_diagnostic_severity_asc(entry_a, entry_b)
+  if entry_a["severity"] < entry_b["severity"] then
+    return true
+  end
+
+  return false
+end
+
+local function get_sorted_diagnostics(comp)
 --   local active_clients = lsp.get_active_clients()
   local buffer_number = api.nvim_get_current_buf()
   -- If no client id there will be get all diagnostics
   local diagnostics = lsp.diagnostic.get(buffer_number)
 
   if diagnostics ~= nil then
-      table.sort(diagnostics, compare_diagnostics_entries)
+      table.sort(diagnostics, comp)
       return diagnostics
   else
       return {}
@@ -89,7 +97,7 @@ local function get_sorted_diagnostics()
 end
 
 local function get_above_entry()
-  local diagnostics = get_sorted_diagnostics()
+  local diagnostics = get_sorted_diagnostics(compare_diagnostics_entries)
   local cursor = api.nvim_win_get_cursor(0)
   local cursor_line = cursor[1]
   local cursor_character = cursor[2] - 1
@@ -108,7 +116,7 @@ local function get_above_entry()
 end
 
 local function get_below_entry()
-  local diagnostics = get_sorted_diagnostics()
+  local diagnostics = get_sorted_diagnostics(compare_diagnostics_entries)
   local cursor = api.nvim_win_get_cursor(0)
   local cursor_line = cursor[1] - 1
   local cursor_character = cursor[2]
@@ -126,7 +134,7 @@ local function get_below_entry()
 end
 
 local function get_cursor_entries()
-  local diagnostics = get_sorted_diagnostics()
+  local diagnostics = get_sorted_diagnostics(compare_diagnostic_severity_asc)
   local cursor = api.nvim_win_get_cursor(0)
   local cursor_line = cursor[1] - 1
   local cursor_character = cursor[2]
