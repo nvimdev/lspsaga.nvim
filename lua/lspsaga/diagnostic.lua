@@ -24,6 +24,36 @@ local function get_character(diagnostic_entry)
   return diagnostic_entry["range"]["start"]["character"]
 end
 
+local function get_line_last(diagnostic_entry)
+  return diagnostic_entry["range"]["end"]["line"]
+end
+
+local function get_character_last(diagnostic_entry)
+  return diagnostic_entry["range"]["end"]["character"]
+end
+
+local function in_range(start_line, end_line, start_char, end_char, cursor_line, cursor_char)
+  local one_line_diag = start_line == end_line
+
+  if one_line_diag and start_line == cursor_line then
+    if cursor_char >= start_char and cursor_char < end_char then
+      return true
+    end
+
+  -- multi line diagnostic
+  else
+    if cursor_line == start_line and cursor_char >= start_char then
+      return true
+    elseif cursor_line == end_line and cursor_char < end_char then
+      return true
+    elseif cursor_line > start_line and cursor_line < end_line  then
+      return true
+    end
+  end
+
+  return false
+end
+
 local function compare_positions(line_a, line_b, character_a, character_b)
   if line_a < line_b then
       return true
@@ -93,6 +123,34 @@ local function get_below_entry()
   end
 
   return nil
+end
+
+local function get_cursor_entries()
+  local diagnostics = get_sorted_diagnostics()
+  local cursor = api.nvim_win_get_cursor(0)
+  local cursor_line = cursor[1] - 1
+  local cursor_character = cursor[2]
+
+  local cursor_entries = {}
+  for _, entry in ipairs(diagnostics) do
+      local entry_start_line = get_line(entry)
+      local entry_start_character = get_character(entry)
+      local entry_end_line = get_line_last(entry)
+      local entry_end_character = get_character_last(entry)
+
+      if in_range(
+          entry_start_line,
+          entry_end_line,
+          entry_start_character,
+          entry_end_character,
+          cursor_line,
+          cursor_character
+      ) then
+          table.insert(cursor_entries, entry)
+      end
+  end
+
+  return cursor_entries
 end
 
 -- TODO: when https://github.com/neovim/neovim/issues/12923 sovled
@@ -205,6 +263,82 @@ end
 
 function M.lsp_jump_diagnostic_next()
   jump_one_times(get_below_entry)
+end
+
+function M.show_cursor_diagnostics()
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+
+  -- if there already has diagnostic float window did not show show lines
+  -- diagnostic window
+  local has_var, diag_float_winid = pcall(api.nvim_buf_get_var,0,"diagnostic_float_window")
+  if has_var and diag_float_winid ~= nil then
+    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
+      return
+    end
+  end
+
+  opts = opts or {}
+  opts.severity_sort = if_nil(opts.severity_sort, true)
+
+  local show_header = if_nil(opts.show_header, true)
+
+  bufnr = bufnr or 0
+  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+
+  local lines = {}
+  local highlights = {}
+  if show_header then
+    table.insert(lines, "Diagnostics:")
+    table.insert(highlights, {0, "Bold"})
+  end
+
+  local line_diagnostics = get_cursor_entries()
+  if vim.tbl_isempty(line_diagnostics) then return end
+
+  for i, diagnostic in ipairs(line_diagnostics) do
+    local prefix = string.format("%d. ", i)
+    local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
+    assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
+
+    local message_lines = vim.split(diagnostic.message, '\n', true)
+    table.insert(lines, prefix..message_lines[1])
+    table.insert(highlights, {#prefix + 1, hiname})
+    if #message_lines[1] + 4 > config.max_diag_msg_width then
+      table.insert(highlights,{#prefix + 1, hiname})
+    end
+    for j = 2, #message_lines do
+      table.insert(lines, '   '..message_lines[j])
+      table.insert(highlights, {0, hiname})
+    end
+  end
+  local border_opts = {
+    border = config.border_style,
+    highlight = 'LspLinesDiagBorder'
+  }
+
+  local wrap_message = wrap.wrap_contents(lines,config.max_diag_msg_width,{
+    fill = true, pad_left = 3
+  })
+  local truncate_line = wrap.add_truncate_line(lines)
+  table.insert(wrap_message,2,truncate_line)
+
+  local content_opts = {
+    contents = wrap_message,
+    filetype = 'plaintext',
+  }
+
+  local cb,cw,bb,bw = window.create_float_window(content_opts,border_opts,opts)
+  for i, hi in ipairs(highlights) do
+    local _, hiname = unpack(hi)
+    -- Start highlight after the prefix
+    api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
+  end
+  api.nvim_buf_add_highlight(cb,-1,'LineDiagTuncateLine',1,0,-1)
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
+  api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
+  return cb,cw,bb,bw
 end
 
 function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
