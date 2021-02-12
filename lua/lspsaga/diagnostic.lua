@@ -74,7 +74,7 @@ local function get_above_entry()
     end
   end
 
-  return nil
+  return diagnostics[1]
 end
 
 local function get_below_entry()
@@ -92,7 +92,7 @@ local function get_below_entry()
       end
   end
 
-  return nil
+  return diagnostics[#diagnostics]
 end
 
 -- TODO: when https://github.com/neovim/neovim/issues/12923 sovled
