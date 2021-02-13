@@ -291,7 +291,7 @@ function M.fancy_floating_markdown(contents, opts)
   local WIN_HEIGHT = vim.fn.winheight(0)
 
 -- the max width of doc float window keep has 20 pad
-  local max_width = WIN_WIDTH * 0.7
+  local max_width = math.floor(WIN_WIDTH * 0.5)
   if width > max_width then
     width = max_width
   end
