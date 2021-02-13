@@ -149,14 +149,9 @@ local function jump_to_entry(entry)
   end
 
   local wrap_message = wrap.wrap_text(entry.message,max_width)
-
-  local truncate_line = ''
-  if #header > config.max_diag_msg_width then
-    truncate_line = wrap.add_truncate_line({header})
-  else
-    truncate_line = wrap.add_truncate_line(wrap_message)
-  end
   table.insert(wrap_message,1,header)
+
+  local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message,2,truncate_line)
 
   -- set curosr
