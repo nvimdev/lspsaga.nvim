@@ -8,6 +8,7 @@ function wrap.wrap_text(text,width,opts)
   opts = opts or {}
   local ret = {}
   local space = ' '
+  local pad_left = opts.pad_left or 0
   -- if text width < width just return it
   if #text <= width then
     table.insert(ret,text)
@@ -29,6 +30,12 @@ function wrap.wrap_text(text,width,opts)
     return tbl
   end
   ret = _truncate(text,width)
+
+  if pad_left ~= 0 then
+    for _=1,pad_left-1,1 do
+      space = space .. space
+    end
+  end
 
   if opts.fill then
     for i=2,#ret,1 do
