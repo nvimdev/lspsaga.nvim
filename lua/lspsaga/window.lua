@@ -363,6 +363,7 @@ function M.fancy_floating_markdown(contents, opts)
   -- make sure that regions between code blocks are definitely markdown.
   -- local ph = {start = 0; finish = 1;}
   for _, h in ipairs(highlights) do
+    h.finish = wraped_index
     -- apply_syntax_to_region('markdown', ph.finish, h.start)
     apply_syntax_to_region(h.ft, h.start, h.finish)
     -- ph = h
