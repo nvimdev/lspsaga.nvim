@@ -36,7 +36,13 @@ local saga = require 'lspsaga'
 -- finder_reference_icon = '  ',
 -- max_finder_preview_lines = 10,
 -- finder_action_keys = {
---   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>'
+--   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
+-- },
+-- code_action_keys = {
+--   quit = 'q',exec = '<CR>'
+-- },
+-- rename_action_keys = {
+--   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
 -- },
 -- definition_preview_icon = '  '
 -- 1: thin border | 2: rounded border | 3: thick border | 4: ascii border
