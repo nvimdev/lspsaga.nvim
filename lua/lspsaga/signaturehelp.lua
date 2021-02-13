@@ -108,5 +108,6 @@ local signature_help = function()
 end
 
 return {
-  signature_help = signature_help
+  signature_help = signature_help,
+  focusable_preview = focusable_preview
 }
