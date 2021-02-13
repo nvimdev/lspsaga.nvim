@@ -111,7 +111,10 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       if not api.nvim_buf_is_loaded(bufnr) then
         vim.fn.bufload(bufnr)
       end
-      local link = vim.uri_to_fname(uri)
+      local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
+      if libs.is_windows() then
+        link = link:gsub('^%l', link:sub(1, 1):upper())
+      end
       local short_name
 
       -- reduce filename length by root_dir or home dir
