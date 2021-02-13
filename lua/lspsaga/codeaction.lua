@@ -53,6 +53,7 @@ function Action:action_callback(response)
 
   self.contents_bufnr,self.contents_winid,_,self.border_winid = window.create_float_window(content_opts,border_opts)
   api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
+  api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()")
 
   api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
   api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
