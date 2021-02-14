@@ -23,7 +23,7 @@ local subcommands = {
 }
 
 function command.command_list()
-   return vim.tbl_keys(subcommands)
+  return vim.tbl_keys(subcommands)
 end
 
 function command.load_command(cmd,...)

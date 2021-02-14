@@ -34,7 +34,7 @@ local saga = require 'lspsaga'
 -- code_action_keys = { quit = 'q',exec = '<CR>' }
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
--- max_finder_preview_lines = 10,
+-- max_preview_lines = 10, -- preview lines of lsp_finder and definition preview
 -- finder_action_keys = {
 --   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
 -- },
@@ -97,10 +97,10 @@ nnoremap <silent> K <cmd>lua require('lspsaga.hover').render_hover_doc()<CR>
 -- or use command
 nnoremap <silent>K :Lspsaga hover_doc<CR>
 
--- scroll down hover doc
-nnoremap <silent> <C-f> <cmd>lua require('lspsaga.hover').smart_scroll_hover(1)<CR>
+-- scroll down hover doc or scroll in definition preview
+nnoremap <silent> <C-f> <cmd>lua require('lspsaga.hover').smart_scroll_with_saga(1)<CR>
 -- scroll up hover doc
-nnoremap <silent> <C-b> <cmd>lua require('lspsaga.hover').smart_scroll_hover(-1)<CR>
+nnoremap <silent> <C-b> <cmd>lua require('lspsaga.hover').smart_scroll_with_saga(-1)<CR>
 ```
 <div align='center'>
 <img
@@ -141,6 +141,8 @@ src="https://user-images.githubusercontent.com/41671631/106115648-f6915480-618b-
 nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
 -- or use command
 nnoremap <silent> gd :Lspsaga preview_definition<CR>
+
+can use smart_scroll_with_saga to scroll
 ```
 <div align='center'>
 <img

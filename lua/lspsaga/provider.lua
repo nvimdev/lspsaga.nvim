@@ -134,7 +134,7 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       table.insert(self.contents,target_line)
       target_lnum = target_lnum + 1
       -- max_preview_lines
-      local max_preview_lines = config.max_finder_preview_lines
+      local max_preview_lines = config.max_preview_lines
       local lines = api.nvim_buf_get_lines(bufnr,range.start.line-0,range["end"].line+1+max_preview_lines,false)
 
       self.short_link[target_lnum] = {
@@ -328,7 +328,7 @@ function Finder:auto_open_preview()
       self:close_auto_preview_win()
       local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
       api.nvim_buf_set_option(cb,'buflisted',false)
-      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw,1,config.max_finder_preview_lines+1})
+      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw,1,config.max_preview_lines+1})
     end,10)
   end
 end
@@ -368,7 +368,7 @@ function Finder:scroll_in_preview(direction)
   if not api.nvim_win_is_valid(pdata[2]) then return end
 
   local current_win_lnum,last_lnum = pdata[3],pdata[4]
-  scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_finder_preview_lines)
+  current_win_lnum = scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_preview_lines)
   api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],pdata[2],current_win_lnum,last_lnum})
 end
 
@@ -444,7 +444,7 @@ function lspfinder.preview_definition(timeout_ms)
     local range = result[1].result[1].targetRange or result[1].result[1].range
     local content =
         vim.api.nvim_buf_get_lines(bufnr, range.start.line, range["end"].line + 1 +
-        10, false)
+        config.max_preview_lines, false)
     content = vim.list_extend({config.definition_preview_icon.."Definition Preview",""},content)
     local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
 
@@ -452,6 +452,13 @@ function lspfinder.preview_definition(timeout_ms)
       relative = "cursor",
       style = "minimal",
     }
+    local WIN_WIDTH = vim.fn.winwidth(0)
+    local max_width = math.floor(WIN_WIDTH * 0.5)
+    local width, _ = vim.lsp.util._make_floating_popup_size(content, opts)
+
+    if width > max_width then
+      opts.width = max_width
+    end
 
     local border_opts = {
       border = config.border_style,
@@ -469,7 +476,23 @@ function lspfinder.preview_definition(timeout_ms)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
                                         contents_winid)
     vim.api.nvim_buf_add_highlight(contents_buf,-1,"DefinitionPreviewTitle",0,0,-1)
+
+    api.nvim_buf_set_var(0,'lspsaga_def_preview',{contents_winid,1,config.max_preview_lines,10})
   end
+end
+
+function lspfinder.has_saga_def_preview()
+  local has_preview,pdata = pcall(api.nvim_buf_get_var,0,'lspsaga_def_preview')
+  if has_preview and api.nvim_win_is_valid(pdata[1]) then return true end
+  return false
+end
+
+function lspfinder.scroll_in_preview(direction)
+  local has_preview,pdata = pcall(api.nvim_buf_get_var,0,'lspsaga_def_preview')
+  if not has_preview then return end
+  print(pdata[2])
+  local current_win_lnum = scroll_in_win(pdata[1],direction,pdata[2],config.max_preview_lines,pdata[4])
+  api.nvim_buf_set_var(0,'lspsaga_def_preview',{pdata[1],current_win_lnum,config.max_preview_lines,pdata[4]})
 end
 
 return lspfinder
