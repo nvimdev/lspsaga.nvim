@@ -67,17 +67,16 @@ local function call_back(_,_,response)
   Action:action_callback(response)
 end
 
+local apply_keys = libs.apply_keys("codeaction")
+
 function Action:apply_action_keys()
-  local quit_key = config.code_action_keys.quit
-  local exec_key = config.code_action_keys.exec
-  if type(quit_key) == "table" then
-    for _,key in ipairs(quit_key) do
-      api.nvim_command('nnoremap <buffer><nowait><silent>'..key..' <cmd>lua require("lspsaga.codeaction").quit_action_window()<CR>')
-    end
-  else
-    api.nvim_command('nnoremap <buffer><nowait><silent>'..quit_key..' <cmd>lua require("lspsaga.codeaction").quit_action_window()<CR>')
+  local actions = {
+    ['quit_action_window'] = config.code_action_keys.quit,
+    ['do_code_action'] = config.code_action_keys.exec
+  }
+  for func, keys in pairs(actions) do
+    apply_keys(func, keys)
   end
-  api.nvim_command('nnoremap <buffer><nowait><silent>'..exec_key..' <cmd>lua require("lspsaga.codeaction").do_code_action()<CR>')
 end
 
 function Action:code_action(context)
