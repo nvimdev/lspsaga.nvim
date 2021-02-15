@@ -16,12 +16,42 @@ local severity_icon = {
   config.hint_header,
 }
 
-local function get_line(diagnostic_entry)
+local function get_start_line(diagnostic_entry)
   return diagnostic_entry["range"]["start"]["line"]
 end
 
-local function get_character(diagnostic_entry)
+local function get_start_character(diagnostic_entry)
   return diagnostic_entry["range"]["start"]["character"]
+end
+
+local function get_end_line(diagnostic_entry)
+  return diagnostic_entry["range"]["end"]["line"]
+end
+
+local function get_end_character(diagnostic_entry)
+  return diagnostic_entry["range"]["end"]["character"]
+end
+
+local function in_range(start_line, end_line, start_char, end_char, cursor_line, cursor_char)
+  local one_line_diag = start_line == end_line
+
+  if one_line_diag and start_line == cursor_line then
+    if cursor_char >= start_char and cursor_char < end_char then
+      return true
+    end
+
+  -- multi line diagnostic
+  else
+    if cursor_line == start_line and cursor_char >= start_char then
+      return true
+    elseif cursor_line == end_line and cursor_char < end_char then
+      return true
+    elseif cursor_line > start_line and cursor_line < end_line  then
+      return true
+    end
+  end
+
+  return false
 end
 
 local function compare_positions(line_a, line_b, character_a, character_b)
@@ -37,21 +67,29 @@ local function compare_positions(line_a, line_b, character_a, character_b)
 end
 
 local function compare_diagnostics_entries(entry_a, entry_b)
-  local line_a = get_line(entry_a)
-  local line_b = get_line(entry_b)
-  local character_a = get_character(entry_a)
-  local character_b = get_character(entry_b)
+  local line_a = get_start_line(entry_a)
+  local line_b = get_start_line(entry_b)
+  local character_a = get_start_character(entry_a)
+  local character_b = get_start_character(entry_b)
   return compare_positions(line_a, line_b, character_a, character_b)
 end
 
-local function get_sorted_diagnostics()
+local function compare_diagnostic_severity_asc(entry_a, entry_b)
+  if entry_a["severity"] < entry_b["severity"] then
+    return true
+  end
+
+  return false
+end
+
+local function get_sorted_diagnostics(comp)
 --   local active_clients = lsp.get_active_clients()
   local buffer_number = api.nvim_get_current_buf()
   -- If no client id there will be get all diagnostics
   local diagnostics = lsp.diagnostic.get(buffer_number)
 
   if diagnostics ~= nil then
-      table.sort(diagnostics, compare_diagnostics_entries)
+      table.sort(diagnostics, comp)
       return diagnostics
   else
       return {}
@@ -59,15 +97,15 @@ local function get_sorted_diagnostics()
 end
 
 local function get_above_entry()
-  local diagnostics = get_sorted_diagnostics()
+  local diagnostics = get_sorted_diagnostics(compare_diagnostics_entries)
   local cursor = api.nvim_win_get_cursor(0)
   local cursor_line = cursor[1]
   local cursor_character = cursor[2] - 1
 
   for i = #diagnostics, 1, -1 do
     local entry = diagnostics[i]
-    local entry_line = get_line(entry)
-    local entry_character = get_character(entry)
+    local entry_line = get_start_line(entry)
+    local entry_character = get_start_character(entry)
 
     if not compare_positions(cursor_line - 1, entry_line, cursor_character - 1, entry_character) then
         return entry
@@ -78,14 +116,14 @@ local function get_above_entry()
 end
 
 local function get_below_entry()
-  local diagnostics = get_sorted_diagnostics()
+  local diagnostics = get_sorted_diagnostics(compare_diagnostics_entries)
   local cursor = api.nvim_win_get_cursor(0)
   local cursor_line = cursor[1] - 1
   local cursor_character = cursor[2]
 
   for _, entry in ipairs(diagnostics) do
-      local entry_line = get_line(entry)
-      local entry_character = get_character(entry)
+      local entry_line = get_start_line(entry)
+      local entry_character = get_start_character(entry)
 
       if compare_positions(cursor_line, entry_line, cursor_character, entry_character) then
           return entry
@@ -93,6 +131,34 @@ local function get_below_entry()
   end
 
   return diagnostics[#diagnostics]
+end
+
+local function get_cursor_entries()
+  local diagnostics = get_sorted_diagnostics(compare_diagnostic_severity_asc)
+  local cursor = api.nvim_win_get_cursor(0)
+  local cursor_line = cursor[1] - 1
+  local cursor_character = cursor[2]
+
+  local cursor_entries = {}
+  for _, entry in ipairs(diagnostics) do
+      local entry_start_line = get_start_line(entry)
+      local entry_start_character = get_start_character(entry)
+      local entry_end_line = get_end_line(entry)
+      local entry_end_character = get_end_character(entry)
+
+      if in_range(
+          entry_start_line,
+          entry_end_line,
+          entry_start_character,
+          entry_end_character,
+          cursor_line,
+          cursor_character
+      ) then
+          table.insert(cursor_entries, entry)
+      end
+  end
+
+  return cursor_entries
 end
 
 -- TODO: when https://github.com/neovim/neovim/issues/12923 sovled
@@ -128,8 +194,8 @@ local function jump_to_entry(entry)
     window.nvim_close_valid_window(line_diag_winids)
   end
 
-  local entry_line = get_line(entry) + 1
-  local entry_character = get_character(entry)
+  local entry_line = get_start_line(entry) + 1
+  local entry_character = get_start_character(entry)
   local hiname ={"LspDiagErrorBorder","LspDiagWarnBorder","LspDiagInforBorder","LspDiagHintBorder"}
 
   -- add server source in diagnostic float window
@@ -181,28 +247,7 @@ local function jump_to_entry(entry)
   api.nvim_command("hi! link DiagnosticTruncateLine "..hiname[entry.severity])
 end
 
-
-local function jump_one_times(get_entry_function)
-  for _ = 1, 1, -1 do
-    local entry = get_entry_function()
-
-    if entry == nil then
-        break
-    else
-        jump_to_entry(entry)
-    end
-  end
-end
-
-function M.lsp_jump_diagnostic_prev()
-  jump_one_times(get_above_entry)
-end
-
-function M.lsp_jump_diagnostic_next()
-  jump_one_times(get_below_entry)
-end
-
-function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+function show_diagnostics(get_diagnostic, opts, bufnr, line_nr, client_id)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
 
@@ -230,10 +275,10 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     table.insert(highlights, {0, "Bold"})
   end
 
-  local line_diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
-  if vim.tbl_isempty(line_diagnostics) then return end
+  local diagnostics = get_diagnostic(bufnr, line_nr, opts, client_id)
+  if vim.tbl_isempty(diagnostics) then return end
 
-  for i, diagnostic in ipairs(line_diagnostics) do
+  for i, diagnostic in ipairs(diagnostics) do
     local prefix = string.format("%d. ", i)
     local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
     assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
@@ -276,6 +321,34 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
   api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
   return cb,cw,bb,bw
+end
+
+local function jump_one_times(get_entry_function)
+  for _ = 1, 1, -1 do
+    local entry = get_entry_function()
+
+    if entry == nil then
+        break
+    else
+        jump_to_entry(entry)
+    end
+  end
+end
+
+function M.lsp_jump_diagnostic_prev()
+  jump_one_times(get_above_entry)
+end
+
+function M.lsp_jump_diagnostic_next()
+  jump_one_times(get_below_entry)
+end
+
+function M.show_cursor_diagnostics(opts, bufnr, line_nr, client_id)
+  show_diagnostics(get_cursor_entries, opts, bufnr, line_nr, client_id)
+end
+
+function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+  show_diagnostics(lsp.diagnostic.get_line_diagnostics, opts, bufnr, line_nr, client_id)
 end
 
 function M.lsp_diagnostic_sign(opts)
