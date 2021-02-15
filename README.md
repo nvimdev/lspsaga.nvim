@@ -25,11 +25,7 @@ local saga = require 'lspsaga'
 -- warn_sign = '',
 -- hint_sign = '',
 -- infor_sign = '',
--- error_header = "  Error",
--- warn_header = "  Warn",
--- hint_header = "  Hint",
--- infor_header = "  Infor",
--- max_diag_msg_width = 50,
+-- dianostic_header_icon = '   ',
 -- code_action_icon = ' ',
 -- code_action_keys = { quit = 'q',exec = '<CR>' }
 -- finder_definition_icon = '  ',

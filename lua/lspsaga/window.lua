@@ -229,6 +229,13 @@ function M.open_shadow_float_win(content_opts,opts)
   return contents_bufnr,contents_winid,shadow_bufnr,shadow_winid
 end
 
+function M.get_max_float_width()
+  -- current window width
+  local WIN_WIDTH = vim.fn.winwidth(0)
+  local max_width = math.floor(WIN_WIDTH * 0.5)
+  return max_width
+end
+
 -- use our float window instead of.
 -- https://github.com/neovim/neovim/blob/master/runtime/lua/vim/lsp/util.lua#L755
 function M.fancy_floating_markdown(contents, opts)
@@ -285,13 +292,11 @@ function M.fancy_floating_markdown(contents, opts)
     width = #stripped[1]
   end
 
--- current window width
-  local WIN_WIDTH = vim.fn.winwidth(0)
 -- current window height
   local WIN_HEIGHT = vim.fn.winheight(0)
 
 -- the max width of doc float window keep has 20 pad
-  local max_width = math.floor(WIN_WIDTH * 0.5)
+  local max_width = M.get_max_float_width()
   if width > max_width then
     width = max_width
   end
