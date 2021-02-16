@@ -115,7 +115,7 @@ local call_back = function(_, method, result)
 end
 
 local signature_help = function()
-  if not check_server_support_signaturehelp then return end
+  if not check_server_support_signaturehelp() then return end
   local params = util.make_position_params()
   vim.lsp.buf_request(0,'textDocument/signatureHelp', params,call_back)
 end
