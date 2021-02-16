@@ -12,6 +12,18 @@ local function find_window_by_var(name, value)
   end
 end
 
+local function check_server_support_signaturehelp()
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
+  local clients = vim.lsp.get_active_clients()
+  for _,client in pairs(clients) do
+    if client.resolved_capabilities.signature_help then
+      return true
+    end
+  end
+  return false
+end
+
 local function focusable_float(unique_name, fn)
   -- Go back to previous window if we are in a focusable one
   if npcall(api.nvim_win_get_var, 0, unique_name) then
@@ -103,6 +115,7 @@ local call_back = function(_, method, result)
 end
 
 local signature_help = function()
+  if not check_server_support_signaturehelp then return end
   local params = util.make_position_params()
   vim.lsp.buf_request(0,'textDocument/signatureHelp', params,call_back)
 end
