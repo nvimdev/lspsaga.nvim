@@ -3,6 +3,7 @@ local npcall = vim.F.npcall
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
+local libs = require('lspsaga.libs')
 
 local function find_window_by_var(name, value)
   for _, win in ipairs(api.nvim_list_wins()) do
