@@ -490,7 +490,6 @@ end
 function lspfinder.scroll_in_preview(direction)
   local has_preview,pdata = pcall(api.nvim_buf_get_var,0,'lspsaga_def_preview')
   if not has_preview then return end
-  print(pdata[2])
   local current_win_lnum = scroll_in_win(pdata[1],direction,pdata[2],config.max_preview_lines,pdata[4])
   api.nvim_buf_set_var(0,'lspsaga_def_preview',{pdata[1],current_win_lnum,config.max_preview_lines,pdata[4]})
 end
