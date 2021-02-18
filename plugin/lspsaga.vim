@@ -24,7 +24,7 @@ highlight default link TargetFileName  Comment
 highlight default link DefinitionIcon Special
 highlight default link ReferencesIcon Special
 highlight default ProviderTruncateLine guifg=black guibg=NONE
-highlight default SagaShadow guifg=#000000 guibg=NONE
+highlight default SagaShadow guibg=#000000
 
 highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 
