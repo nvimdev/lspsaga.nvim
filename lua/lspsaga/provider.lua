@@ -12,6 +12,10 @@ local send_request = function(timeout)
   ref_params.context = {includeDeclaration = true;}
   local def_response = lsp.buf_request_sync(0, method[1], def_params, timeout or 1000)
   local ref_response = lsp.buf_request_sync(0, method[2], ref_params, timeout or 1000)
+  if config.debug then
+    print(vim.inspect(def_response))
+    print(vim.inspect(ref_response))
+  end
 
   local responses = {}
   if libs.result_isempty(def_response) then
@@ -54,6 +58,8 @@ function Finder:lsp_finder_request()
     self.WIN_HEIGHT = vim.fn.winheight(0)
     self.contents = {}
     self.short_link = {}
+    self.definition_uri = 0
+    self.reference_uri = 0
 
     local request_intance = coroutine.create(send_request)
     self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
@@ -399,6 +405,8 @@ end
 local lspfinder = {}
 
 function lspfinder.lsp_finder()
+  local active,msg = libs.check_lsp_active()
+  if not active then print(msg) return end
   local async_finder = Finder:lsp_finder_request()
   async_finder:send()
 end
