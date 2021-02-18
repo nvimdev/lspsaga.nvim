@@ -1,8 +1,9 @@
 local api = vim.api
 local window = require 'lspsaga.window'
 
-local function open_float_terminal(command)
+local function open_float_terminal(command,border_style)
   local cmd = command or ''
+  border_style = border_style or 0
 
   -- get dimensions
   local width = api.nvim_get_option("columns")
@@ -32,12 +33,19 @@ local function open_float_terminal(command)
     enter = true
   }
 
-  local contents_bufnr,contents_winid,_,shadow_winid = window.open_shadow_float_win(content_opts,opts)
-  api.nvim_command('hi Floaterm guibg=#282c34')
+  local cb,cw,ow
+  if border_style == 0 then
+    cb,cw,_,ow = window.open_shadow_float_win(content_opts,opts)
+  else
+    local border_opts = {
+      border = border_style
+    }
+    cb,cw,_,ow = window.create_float_window(content_opts,border_opts,opts)
+  end
   api.nvim_command('terminal '..cmd)
   api.nvim_command('setlocal nobuflisted')
   api.nvim_command('startinsert!')
-  api.nvim_buf_set_var(contents_bufnr,'float_terminal_win',{contents_winid,shadow_winid})
+  api.nvim_buf_set_var(cb,'float_terminal_win',{cw,ow})
 end
 
 local function close_float_terminal()

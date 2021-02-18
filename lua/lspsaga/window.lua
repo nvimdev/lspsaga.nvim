@@ -104,7 +104,7 @@ local function open_shadow_win()
   local shadow_bufnr = api.nvim_create_buf(false,true)
   local shadow_winid = api.nvim_open_win(shadow_bufnr,true,opts)
   api.nvim_win_set_option(shadow_winid,'winhl',shadow_winhl)
-  api.nvim_win_set_option(shadow_winid,'winblend',10)
+  api.nvim_win_set_option(shadow_winid,'winblend',70)
   return shadow_bufnr,shadow_winid
 end
 
@@ -115,6 +115,11 @@ local function create_float_boder(contents,border_opts,opts)
     opts = {opts,'t',true}
   }
   local win_width,win_height,border_option = make_border_option(contents,opts)
+  if opts.height and opts.width then
+    win_width = opts.width + 2
+    win_height = opts.height + 2
+  end
+
   local border = border_opts.border or 1
   local title = border_opts.title or ''
   local highlight = border_opts.highlight or 'LspFloatWinBorder'
