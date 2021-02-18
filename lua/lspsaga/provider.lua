@@ -128,6 +128,10 @@ function Finder:create_finder_contents(result,method_type,root_dir)
         short_name = link:sub(root_dir:len() + 2)
       elseif link:find(home_dir, 1, true) then
         short_name = link:sub(home_dir:len() + 2)
+        -- some definition still has a too long path prefix
+        if #short_name > 40 then
+          short_name = libs.split_by_pathsep(short_name,4)
+        end
       else
         short_name = libs.split_by_pathsep(link,4)
       end
