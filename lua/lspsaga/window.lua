@@ -115,10 +115,6 @@ local function create_float_boder(contents,border_opts,opts)
     opts = {opts,'t',true}
   }
   local win_width,win_height,border_option = make_border_option(contents,opts)
-  if opts.height and opts.width then
-    win_width = opts.width + 2
-    win_height = opts.height + 2
-  end
 
   local border = border_opts.border or 1
   local title = border_opts.title or ''
