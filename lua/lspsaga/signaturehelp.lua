@@ -16,11 +16,14 @@ end
 -- disable signature help when only efm-langserver
 -- issue #103
 local function check_server_support_signaturehelp()
+  print('here')
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   local clients = vim.lsp.get_active_clients()
-  if #clients == 1 and clients[1].default_config.cmd == "efm-langserver" then
-    return false
+  for _,client in ipairs(clients) do
+    if client.name == "efm" then
+      return false
+    end
   end
   return true
 end
