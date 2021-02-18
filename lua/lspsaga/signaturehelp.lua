@@ -13,16 +13,16 @@ local function find_window_by_var(name, value)
   end
 end
 
+-- disable signature help when only efm-langserver
+-- issue #103
 local function check_server_support_signaturehelp()
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   local clients = vim.lsp.get_active_clients()
-  for _,client in pairs(clients) do
-    if client.resolved_capabilities.signature_help then
-      return true
-    end
+  if #clients == 1 and clients[1].default_config.cmd == "efm-langserver" then
+    return false
   end
-  return false
+  return true
 end
 
 local function focusable_float(unique_name, fn)
@@ -116,6 +116,7 @@ local call_back = function(_, method, result)
 end
 
 local signature_help = function()
+  -- check the server support the signature help
   if not check_server_support_signaturehelp() then return end
   local params = util.make_position_params()
   vim.lsp.buf_request(0,'textDocument/signatureHelp', params,call_back)
