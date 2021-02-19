@@ -31,15 +31,16 @@ function wrap.wrap_text(text,width,opts)
   end
   ret = _truncate(text,width)
 
+  local pad = ''
   if pad_left ~= 0 then
-    for _=1,pad_left-1,1 do
-      space = space .. space
+    for _=1,pad_left,1 do
+      pad = pad .. space
     end
   end
 
   if opts.fill then
     for i=2,#ret,1 do
-      ret[i] = space .. ret[i]
+      ret[i] = pad .. ret[i]
     end
   end
 
@@ -52,18 +53,20 @@ function wrap.wrap_contents(contents,width,opts)
     error("Wrong params type of function wrap_contents")
     return
   end
+  local stripped = {}
 
-  for idx, text in ipairs(contents) do
-    if #text > width then
+  for _, text in ipairs(contents) do
+    if #text < width then
+      table.insert(stripped,text)
+    else
       local tmp = wrap.wrap_text(text,width,opts)
-      for i,j in ipairs(tmp) do
-        table.insert(contents,idx+i-1,j)
+      for _,j in ipairs(tmp) do
+        table.insert(stripped,j)
       end
-      table.remove(contents,idx+#tmp)
     end
   end
 
-  return contents
+  return stripped
 end
 
 function wrap.add_truncate_line(contents)

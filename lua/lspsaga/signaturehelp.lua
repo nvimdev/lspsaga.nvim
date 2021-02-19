@@ -125,13 +125,13 @@ end
 
 local call_back = function(_, method, result)
   if not (result and result.signatures and result.signatures[1]) then
-    print('No signature help available')
+--     print('No signature help available')
     return
   end
   local lines = util.convert_signature_help_to_markdown_lines(result)
   lines = util.trim_empty_lines(lines)
   if vim.tbl_isempty(lines) then
-    print('No signature help available')
+--     print('No signature help available')
     return
   end
   focusable_preview(method, function()
