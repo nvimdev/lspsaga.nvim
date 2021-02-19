@@ -49,10 +49,20 @@ local function focusable_float(unique_name, fn)
   end
 end
 
+local function apply_syntax_to_region(ft, start, finish)
+  if ft == '' then return end
+  local name = ft..'signature'
+  local lang = "@"..ft:upper()
+  -- TODO(ashkan): better validation before this.
+  if not pcall(vim.cmd, string.format("syntax include %s syntax/%s.vim", lang, ft)) then
+    return
+  end
+  vim.cmd(string.format("syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s", name, start, finish + 1, lang))
+end
+
 local function focusable_preview(unique_name, fn)
   return focusable_float(unique_name, function()
     local contents,_ = fn()
-    -- TODO: not sure this is better
     local filetype = api.nvim_buf_get_option(0,'filetype')
     vim.validate {
       contents = { contents, 't' };
@@ -95,14 +105,18 @@ local function focusable_preview(unique_name, fn)
 
     local content_opts = {
       contents = contents,
-      filetype = filetype,
+      filetype = 'sagasignature',
     }
 
     local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
+    api.nvim_buf_add_highlight(cb,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
     api.nvim_buf_set_var(0,'saga_signature_help_win',{cw,1,#contents,max_height})
+    local cwin = api.nvim_get_current_win()
+    api.nvim_set_current_win(cw)
+    apply_syntax_to_region(filetype,1,wrap_index)
+    api.nvim_set_current_win(cwin)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
     util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
-    api.nvim_buf_add_highlight(cb,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
     return cb,cw
   end)
 end
