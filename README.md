@@ -110,6 +110,8 @@ src="https://user-images.githubusercontent.com/41671631/106566308-1dc09b00-656b-
 nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
 -- or command
 nnoremap <silent> gs :Lspsaga signature_help<CR>
+
+and you also can use smart_scroll_with_saga to scroll in signature help win
 ```
 <div align='center'>
 <img
