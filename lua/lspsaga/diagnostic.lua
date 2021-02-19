@@ -99,7 +99,7 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   local wrap_message = wrap.wrap_contents(lines,max_width,{
     fill = true, pad_left = 3
   })
-  local truncate_line = wrap.add_truncate_line(lines)
+  local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message,2,truncate_line)
 
   local content_opts = {
