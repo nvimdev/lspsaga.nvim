@@ -191,6 +191,7 @@ function M.create_float_contents(content_opts,border_option)
   api.nvim_buf_set_lines(contents_bufnr,0,-1,true,content)
   api.nvim_buf_set_option(contents_bufnr, 'modifiable', false)
   api.nvim_buf_set_option(contents_bufnr, 'bufhidden', 'wipe')
+  api.nvim_buf_set_option(contents_bufnr, 'buftype', 'nofile')
 
   local contents_winid = api.nvim_open_win(contents_bufnr, enter, opts)
   if filetype == 'markdown' then
