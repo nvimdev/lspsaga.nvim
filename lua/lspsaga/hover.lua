@@ -28,8 +28,8 @@ hover.handler = function(_, method, result)
         border_style = config.border_style,
       })
 
-      lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden", "InsertCharPre"}, contents_winid)
-      lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden", "InsertCharPre"}, border_winid)
+      lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, contents_winid)
+      lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, border_winid)
       return bufnr,contents_winid
     end)
 end
