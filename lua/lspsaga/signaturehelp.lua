@@ -21,7 +21,7 @@ local function check_server_support_signaturehelp()
   if not active then print(msg) return end
   local clients = vim.lsp.get_active_clients()
   for _,client in ipairs(clients) do
-    if client.name == "efm" then
+    if client.name == "efm" and vim.bo.filetype == 'markdown' then
       return false
     end
   end
