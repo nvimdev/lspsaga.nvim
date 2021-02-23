@@ -319,7 +319,7 @@ function M.fancy_floating_markdown(contents, opts)
     local truncate_line = wrap.add_truncate_line(stripped)
     if stripped[1]:find('{%s$') then
       for idx,text in ipairs(stripped) do
-        if text:find('}',1,true) then
+        if text == '} ' or text == '}' then
           wraped_index = idx
           break
         end

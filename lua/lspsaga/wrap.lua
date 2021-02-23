@@ -21,7 +21,11 @@ function wrap.wrap_text(text,width,opts)
     while true do
       if #tmp > w then
         table.insert(tbl,tmp:sub(1,w))
-        tmp = tmp:sub(w+1)
+        if tmp:find('^%c//') then
+          tmp = '\t// ' .. tmp:sub(w+1)
+        else
+          tmp = tmp:sub(w+1)
+        end
       else
         table.insert(tbl,tmp)
         break
