@@ -20,8 +20,12 @@ local function check_server_support_signaturehelp()
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   local clients = vim.lsp.get_active_clients()
-  local isOnlyEfm = vim.tbl_count(clients) == 1 and clients[1].name == "efm"
-  return not isOnlyEfm
+  for _,client in ipairs(clients) do
+    if client.name == "efm" then
+      return false
+    end
+  end
+  return true
 end
 
 local function focusable_float(unique_name, fn)
