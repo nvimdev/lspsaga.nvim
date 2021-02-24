@@ -93,7 +93,6 @@ function Finder:create_finder_contents(result,method_type,root_dir)
       if result.saga_msg then
         table.insert(self.contents," ")
         table.insert(self.contents,'[1] ' .. result.saga_msg)
-        table.insert(self.contents," ")
         return
       end
     else
