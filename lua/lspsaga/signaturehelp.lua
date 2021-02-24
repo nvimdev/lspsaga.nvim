@@ -19,13 +19,13 @@ end
 local function check_server_support_signaturehelp()
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
-  local clients = vim.lsp.get_active_clients()
+  local clients = vim.lsp.buf_get_clients()
   for _,client in ipairs(clients) do
-    if client.name == "efm" and vim.bo.filetype == 'markdown' then
-      return false
+    if client.resolved_capabilities.signature_help == true then
+      return true
     end
   end
-  return true
+  return false
 end
 
 local function focusable_float(unique_name, fn)
