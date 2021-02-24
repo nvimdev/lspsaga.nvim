@@ -38,7 +38,7 @@ highlight default link DefinitionPreviewTitle Title
 
 highlight default LspSagaDiagnosticBorder guifg=#7739e3 guibg=NONE
 highlight default LspSagaDiagnosticHeader guifg=#d8a657 guibg=NONE gui=bold
-highlight default LspSagaDiagnostcTruncateLine guifg=#7739e3 guibg=NONE
+highlight default LspSagaDiagnosticTruncateLine guifg=#7739e3 guibg=NONE
 highlight default LspDiagnosticsFloatingError guifg=#EC5f67 guibg=NONE
 highlight default LspDiagnosticsFloatingWarn guifg=#d8a657 guibg=NONE
 highlight default LspDiagnosticsFloatingInfor guifg=#6699cc guibg=NONE
