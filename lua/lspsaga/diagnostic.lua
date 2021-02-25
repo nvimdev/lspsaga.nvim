@@ -117,7 +117,7 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
       api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
     end
   end
-  api.nvim_buf_add_highlight(cb,-1,'LspSagaDiagnostcTruncateLine',1,0,-1)
+  api.nvim_buf_add_highlight(cb,-1,'LspSagaDiagnosticTruncateLine',1,0,-1)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
   api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
