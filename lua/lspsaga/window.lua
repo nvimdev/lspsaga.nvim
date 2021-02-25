@@ -13,16 +13,6 @@ local border_style = {
   {top_left = "+",top_mid = "-",top_right = "+",mid = "|",bottom_left = "+",bottom_right = "+"};
 }
 
-local function get_max_contents_width(contents)
-  local max_length = 0
-  for i=1,#contents-1,1 do
-    if #contents[i] > #contents[i+1] then
-      max_length = #contents[i]
-    end
-  end
-  return max_length
-end
-
 function M.make_floating_popup_options(width, height, opts)
   vim.validate {
     opts = { opts, 't', true };
@@ -298,13 +288,10 @@ function M.fancy_floating_markdown(contents, opts)
   local WIN_HEIGHT = vim.fn.winheight(0)
 
 -- the max width of doc float window keep has 20 pad
-  local WIN_WIDTH = vim.o.columns
-  local max_content_width = get_max_contents_width(stripped)
+  local WIN_WIDTH = vim.fn.winwidth(0)
   local max_width = math.floor(WIN_WIDTH * 0.5)
-  if math.floor(max_content_width/WIN_WIDTH) <= 0.8 then
-    max_width = max_content_width
-  end
-  if width > max_width then
+
+  if width > max_width and math.floor(width/WIN_WIDTH) >= 0.8 then
     width = max_width
   end
 
