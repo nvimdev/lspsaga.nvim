@@ -228,8 +228,27 @@ function M.get_max_float_width()
   return max_width
 end
 
--- use our float window instead of.
--- https://github.com/neovim/neovim/blob/master/runtime/lua/vim/lsp/util.lua#L755
+local function get_max_content_length(contents)
+  vim.validate{
+    contents = { contents,'t' }
+  }
+  local max_length = 0
+  if next(contents) == nil then
+    return max_length
+  end
+  if #contents == 1 then
+    return #contents[1]
+  end
+  for i=1,#contents-1,1 do
+    if #contents[i] > #contents[i+1] then
+      max_length = #contents[i]
+    else
+      max_length = #contents[i+1]
+    end
+  end
+  return max_length
+end
+
 function M.fancy_floating_markdown(contents, opts)
   vim.validate {
     contents = { contents, 't' };
@@ -275,24 +294,36 @@ function M.fancy_floating_markdown(contents, opts)
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
-  local width, _ = vim.lsp.util._make_floating_popup_size(stripped, opts)
-
   -- record the first line
   local firstline = stripped[1]
 
-  if #stripped[1] > width then
-    width = #stripped[1]
-  end
-
--- current window height
+  -- current window height
   local WIN_HEIGHT = vim.fn.winheight(0)
 
--- the max width of doc float window keep has 20 pad
-  local WIN_WIDTH = vim.fn.winwidth(0)
-  local max_width = math.floor(WIN_WIDTH * 0.5)
+  local width = get_max_content_length(stripped)
+  -- the max width of doc float window keep has 20 pad
+  local WIN_WIDTH = vim.o.columns
 
-  if width > max_width and math.floor(width/WIN_WIDTH) >= 0.8 then
-    width = max_width
+  if vim.fn.winnr('$') > 1 then
+    local special_win = {
+      ['NvimTree'] = true,
+      ['NerdTree'] = true,
+    }
+    local first_win_id = api.nvim_list_wins()[1]
+    local bufnr = vim.fn.winbufnr(first_win_id)
+    local buf_ft = api.nvim_buf_get_option(bufnr,'filetype')
+    if special_win[buf_ft] then
+      WIN_WIDTH = WIN_WIDTH - vim.fn.winwidth(first_win_id)
+    end
+  end
+
+  local _pad = width / WIN_WIDTH
+  if _pad >= 0.8 and _pad <= 1 then
+    width = math.floor(WIN_WIDTH * 0.8)
+  elseif _pad >= 0.6 and _pad <= 1 then
+    width = math.floor(WIN_WIDTH * 0.6)
+  elseif _pad > 1 then
+    width = math.floor(WIN_WIDTH * 0.5)
   end
 
   local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
