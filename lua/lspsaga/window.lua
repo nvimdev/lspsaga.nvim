@@ -232,21 +232,18 @@ local function get_max_content_length(contents)
   vim.validate{
     contents = { contents,'t' }
   }
-  local max_length = 0
   if next(contents) == nil then
-    return max_length
+    return 0
   end
   if #contents == 1 then
     return #contents[1]
   end
-  for i=1,#contents-1,1 do
-    if #contents[i] > #contents[i+1] then
-      max_length = #contents[i]
-    else
-      max_length = #contents[i+1]
-    end
+  local tmp = {}
+  for _,text in ipairs(contents) do
+    tmp[#tmp+1] = #text
   end
-  return max_length
+  table.sort(tmp)
+  return tmp[#tmp]
 end
 
 function M.fancy_floating_markdown(contents, opts)
