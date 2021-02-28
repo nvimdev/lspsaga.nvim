@@ -445,6 +445,7 @@ function lspfinder.preview_definition(timeout_ms)
       print("No location found: " .. method)
       return nil
   end
+  result = {vim.tbl_deep_extend("force", {}, unpack(result))}
   if vim.tbl_islist(result) and not vim.tbl_isempty(result[1]) then
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
     if #uri == 0 then return end
