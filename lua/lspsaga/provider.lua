@@ -442,10 +442,11 @@ function lspfinder.preview_definition(timeout_ms)
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
   if result == nil or vim.tbl_isempty(result) then
-      print("No location found: " .. method)
-      return nil
+    print("No location found: " .. method)
+    return nil
   end
   result = {vim.tbl_deep_extend("force", {}, unpack(result))}
+
   if vim.tbl_islist(result) and not vim.tbl_isempty(result[1]) then
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
     if #uri == 0 then return end
@@ -454,8 +455,15 @@ function lspfinder.preview_definition(timeout_ms)
         vim.fn.bufload(bufnr)
     end
     local range = result[1].result[1].targetRange or result[1].result[1].range
+    local start_line = 0
+    if range.start.line - 3 >= 1 then
+      start_line = range.start.line - 3
+    else
+      start_line = range.start.line
+    end
+
     local content =
-        vim.api.nvim_buf_get_lines(bufnr, range.start.line, range["end"].line + 1 +
+        vim.api.nvim_buf_get_lines(bufnr, start_line, range["end"].line + 1 +
         config.max_preview_lines, false)
     content = vim.list_extend({config.definition_preview_icon.."Definition Preview",""},content)
     local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
