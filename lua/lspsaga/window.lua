@@ -315,12 +315,10 @@ function M.fancy_floating_markdown(contents, opts)
   end
 
   local _pad = width / WIN_WIDTH
-  if _pad >= 0.8 and _pad <= 1 then
-    width = math.floor(WIN_WIDTH * 0.8)
-  elseif _pad >= 0.6 and _pad <= 1 then
+  if _pad < 1 then
+    width = math.floor(WIN_WIDTH * 0.7)
+  else
     width = math.floor(WIN_WIDTH * 0.6)
-  elseif _pad > 1 then
-    width = math.floor(WIN_WIDTH * 0.5)
   end
 
   local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
