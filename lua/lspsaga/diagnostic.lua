@@ -43,7 +43,7 @@ function M.lsp_jump_diagnostic_prev(opts)
   )
 end
 
-function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+local function show_diagnostics(opts, get_diagnostics)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   local max_width = window.get_max_float_width()
@@ -57,13 +57,9 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     end
   end
 
-  opts = opts or {}
   opts.severity_sort = if_nil(opts.severity_sort, true)
 
   local show_header = if_nil(opts.show_header, true)
-
-  bufnr = bufnr or 0
-  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
 
   local lines = {}
   local highlights = {}
@@ -72,10 +68,10 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     highlights[1] =  {0, "LspSagaDiagnosticHeader"}
   end
 
-  local line_diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
-  if vim.tbl_isempty(line_diagnostics) then return end
+  local diagnostics = get_diagnostics()
+  if vim.tbl_isempty(diagnostics) then return end
 
-  for i, diagnostic in ipairs(line_diagnostics) do
+  for i, diagnostic in ipairs(diagnostics) do
     local prefix = string.format("%d. ", i)
     local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
     assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
@@ -122,6 +118,19 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
   api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
   return cb,cw,bb,bw
+end
+
+function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+  opts = opts or {}
+
+  local get_line_diagnostics = function()
+    bufnr = bufnr or 0
+    line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+
+    return lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
+  end
+
+  return show_diagnostics(opts, get_line_diagnostics)
 end
 
 function M.lsp_diagnostic_sign(opts)
