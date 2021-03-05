@@ -363,8 +363,6 @@ function Finder:open_link(action_type)
   end
 
   self:quit_float_window()
-  api.nvim_win_close(self.contents_win,true)
-  api.nvim_win_close(self.border_win,true)
   api.nvim_command(action[action_type]..self.short_link[current_line].link)
   vim.fn.cursor(self.short_link[current_line].row,self.short_link[current_line].col)
   self:clear_tmp_data()
