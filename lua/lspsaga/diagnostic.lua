@@ -43,7 +43,7 @@ function M.lsp_jump_diagnostic_prev(opts)
   )
 end
 
-function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+local function show_diagnostics(opts, get_diagnostics)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
   local max_width = window.get_max_float_width()
@@ -57,13 +57,9 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     end
   end
 
-  opts = opts or {}
   opts.severity_sort = if_nil(opts.severity_sort, true)
 
   local show_header = if_nil(opts.show_header, true)
-
-  bufnr = bufnr or 0
-  line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
 
   local lines = {}
   local highlights = {}
@@ -72,10 +68,10 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
     highlights[1] =  {0, "LspSagaDiagnosticHeader"}
   end
 
-  local line_diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
-  if vim.tbl_isempty(line_diagnostics) then return end
+  local diagnostics = get_diagnostics()
+  if vim.tbl_isempty(diagnostics) then return end
 
-  for i, diagnostic in ipairs(line_diagnostics) do
+  for i, diagnostic in ipairs(diagnostics) do
     local prefix = string.format("%d. ", i)
     local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
     assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
@@ -122,6 +118,73 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
   api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
   return cb,cw,bb,bw
+end
+
+local function get_diagnostic_start(diagnostic_entry)
+  local start_pos = diagnostic_entry["range"]["start"]
+  return start_pos["line"], start_pos["character"]
+end
+
+local function get_diagnostic_end(diagnostic_entry)
+  local end_pos = diagnostic_entry["range"]["end"]
+  return end_pos["line"], end_pos["character"]
+end
+
+local function in_range(cursor_line, cursor_char)
+  return function(diagnostic)
+    start_line, start_char = get_diagnostic_start(diagnostic)
+    end_line, end_char = get_diagnostic_end(diagnostic)
+
+    local one_line_diag = start_line == end_line
+
+    if one_line_diag and start_line == cursor_line then
+      if cursor_char >= start_char and cursor_char < end_char then
+        return true
+      end
+
+    -- multi line diagnostic
+    else
+      if cursor_line == start_line and cursor_char >= start_char then
+        return true
+      elseif cursor_line == end_line and cursor_char < end_char then
+        return true
+      elseif cursor_line > start_line and cursor_line < end_line  then
+        return true
+      end
+    end
+
+    return false
+  end
+end
+
+function M.show_cursor_diagnostics(opts, bufnr, client_id)
+  opts = opts or {}
+
+  local get_line_diagnostics = function()
+    bufnr = bufnr or 0
+
+    line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
+    column_nr = vim.api.nvim_win_get_cursor(0)[2]
+
+    return vim.tbl_filter(
+      in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id)
+    )
+  end
+
+  return show_diagnostics(opts, get_line_diagnostics)
+end
+
+function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+  opts = opts or {}
+
+  local get_line_diagnostics = function()
+    bufnr = bufnr or 0
+    line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+
+    return lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
+  end
+
+  return show_diagnostics(opts, get_line_diagnostics)
 end
 
 function M.lsp_diagnostic_sign(opts)
