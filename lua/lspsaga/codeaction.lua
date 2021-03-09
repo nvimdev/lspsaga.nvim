@@ -29,34 +29,54 @@ if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
     vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspDiagnosticsDefaultInformation" })
 end
 
-function Action:render_action_virtual_text(line)
-  self.virt_text_cache = self.virt_text_cache or 0
-  return function (_,_,response)
-    local namespace = get_namespace()
-    local clear_virt_text = function ()
-      if self.virt_text_cache ~= 0 then
-        api.nvim_buf_clear_namespace(0,namespace,self.virt_text_cache,self.virt_text_cache)
-      end
-    end
+local function _update_virtual_text(line)
+  local namespace = get_namespace()
+  api.nvim_buf_clear_namespace(0, namespace, 0, -1)
 
-    if response == nil or next(response) == nil then
-      clear_virt_text()
-      return
-    end
-
-    self.virt_text_cache = line
-    if config.code_action_prompt.virtual_text then
-      local icon_with_indent = '  ' .. config.code_action_icon
-      api.nvim_buf_set_extmark(0,namespace,line,-1,{
+  if line then
+    local icon_with_indent = '  ' .. config.code_action_icon
+    api.nvim_buf_set_extmark(0,namespace,line,-1,{
         virt_text = { {icon_with_indent,'LspSagaLightBulb'} },
         virt_text_pos = 'overlay'
       })
-    end
+  end
+end
 
-    if config.code_action_prompt.sign then
-      vim.fn.sign_place(line,SIGN_GROUP,SIGN_NAME,'%',{
-        lnum = line + 1,priority = config.code_action_prompt.sign_priority
-      })
+local function _update_sign(line)
+  vim.fn.sign_unplace(
+    SIGN_GROUP, { id = line, buffer = "%" }
+  )
+
+  if line then
+    vim.fn.sign_place(
+      line, SIGN_GROUP, SIGN_NAME, "%",
+      { lnum = line + 1, priority = config.code_action_prompt.sign_priority }
+    )
+  end
+end
+
+function Action:render_action_virtual_text(line)
+  return function (_,_,actions)
+    if actions == nil or next(actions) == nil then
+      if config.code_action_prompt.virtual_text then
+        _update_virtual_text(nil)
+      end
+    else
+      if config.code_action_prompt.sign then
+        if self.lightbulb_line ~= line or not self.lightbulb_line then
+          _update_sign(nil)
+        else
+          _update_sign(line)
+        end
+      end
+
+      if config.code_action_prompt.virtual_text then
+        if self.lightbulb_line ~= line or not self.lightbulb_line then
+          _update_virtual_text(nil)
+        else
+          _update_virtual_text(line)
+        end
+      end
     end
   end
 end
@@ -129,8 +149,8 @@ local action_vritual_call_back = function (line)
 end
 
 function Action:code_action(_call_back_fn,diagnostics)
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  local active,_ = libs.check_lsp_active()
+  if not active then return end
 
   self.bufnr = vim.fn.bufnr()
   local context =  { diagnostics = diagnostics }
@@ -212,25 +232,12 @@ end
 
 lspaction.code_action_prompt = function ()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
+  local current_line = api.nvim_win_get_cursor(0)[1] - 1
+  Action.lightbulb_line = Action.lightbulb_line or nil
   if next(diagnostics) == nil then
-    local pos = api.nvim_win_get_cursor(0)[1] - 1
-    if config.code_action_prompt.enable and config.code_action_prompt.virtual_text then
-      if pos ~= Action.virt_text_cache and Action.virt_text_cache then
-        local namespace = get_namespace()
-        api.nvim_buf_clear_namespace(0,namespace,Action.virt_text_cache,Action.virt_text_cache + 1)
-      end
-    end
-
-    if config.code_action_prompt and config.code_action_prompt.sign then
-      if pos ~= Action.virt_text_cache and Action.virt_text_cache then
-        vim.fn.sign_unplace(SIGN_GROUP,{
-          id = Action.virt_text_cache,
-          buffer = '%'
-        })
-      end
-    end
-
-    return
+    Action.lightbulb_line = nil
+  else
+    Action.lightbulb_line = current_line
   end
   Action:code_action(action_vritual_call_back,diagnostics)
 end
