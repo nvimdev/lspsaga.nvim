@@ -61,6 +61,9 @@ function Action:render_action_virtual_text(line)
       if config.code_action_prompt.virtual_text then
         _update_virtual_text(nil)
       end
+      if config.code_action_prompt.sign then
+        _update_sign(nil)
+      end
     else
       if config.code_action_prompt.sign then
         if self.lightbulb_line ~= line or not self.lightbulb_line then
