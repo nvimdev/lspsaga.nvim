@@ -61,6 +61,8 @@ highlight default LspSagaCodeActionBorder guifg=#b3deef guibg=NONE
 highlight default LspSagaAutoPreview guifg=#ECBE7B guibg=NONE
 highlight default LspSagaDefPreviewBorder guifg=#b3deef guibg=NONE
 
+highlight default link LspSagaLightBulb Error
+
 function! s:lspsaga_complete(...)
   return join(luaeval('require("lspsaga.command").command_list()'),"\n")
 endfunction

@@ -11,6 +11,12 @@ saga.config_values = {
   dianostic_header_icon = '   ',
   -- code action title icon
   code_action_icon = ' ',
+  code_action_prompt = {
+    enable = true,
+    sign = true,
+    sign_priority = 20,
+    virtual_text = true,
+  },
   finder_definition_icon = '  ',
   finder_reference_icon = '  ',
   max_preview_lines = 10,
@@ -55,6 +61,9 @@ function saga.init_lsp_saga(opts)
 
   if saga.config_values.use_saga_diagnostic_sign then
     diagnostic.lsp_diagnostic_sign(saga.config_values)
+  end
+  if saga.config_values.code_action_prompt.enable then
+    vim.cmd [[autocmd CursorHold,CursorHoldI * lua require'lspsaga.codeaction'.code_action_prompt()]]
   end
 end
 
