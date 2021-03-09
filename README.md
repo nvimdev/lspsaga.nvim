@@ -27,6 +27,12 @@ local saga = require 'lspsaga'
 -- infor_sign = '',
 -- dianostic_header_icon = '   ',
 -- code_action_icon = ' ',
+-- code_action_prompt = {
+--   enable = true,
+--   sign = true,
+--   sign_priority = 20,
+--   virtual_text = true,
+-- },
 -- code_action_keys = { quit = 'q',exec = '<CR>' }
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
