@@ -155,7 +155,10 @@ function Action:code_action(_call_back_fn,diagnostics)
   local active,_ = libs.check_lsp_active()
   if not active then return end
 
-  self.bufnr = vim.fn.bufnr()
+  if vim.bo.filetype ~= 'LspSagaCodeActionTitle' then
+    self.bufnr = vim.fn.bufnr()
+  end
+
   local context =  { diagnostics = diagnostics }
   local params = vim.lsp.util.make_range_params()
   params.context = context
@@ -229,7 +232,6 @@ local lspaction = {}
 
 lspaction.code_action = function()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
-  if next(diagnostics) == nil then return end
   Action:code_action(action_call_back,diagnostics)
 end
 
