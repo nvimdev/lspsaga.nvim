@@ -44,7 +44,7 @@ end
 
 local function _update_sign(line)
   vim.fn.sign_unplace(
-    SIGN_GROUP, { id = line, buffer = "%" }
+    SIGN_GROUP, { id = Action.lightbulb_line, buffer = "%" }
   )
 
   if line then
@@ -52,6 +52,7 @@ local function _update_sign(line)
       line, SIGN_GROUP, SIGN_NAME, "%",
       { lnum = line + 1, priority = config.code_action_prompt.sign_priority }
     )
+    Action.lightbulb_line = line
   end
 end
 
