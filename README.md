@@ -91,6 +91,13 @@ vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-11eb-897d-587ac1375d4e.gif" width=500 height=500/>
 </div>
 
+- code action auto prompt
+
+<div align='center'>
+<img
+src="https://user-images.githubusercontent.com/41671631/110590664-0e102400-81b3-11eb-9b9d-a894537104bc.gif" width=500 height=500/>
+</div>
+
 ### Hover Doc
 
 ```lua
