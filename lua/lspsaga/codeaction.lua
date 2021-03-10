@@ -22,6 +22,10 @@ local get_namespace = function ()
   return api.nvim_create_namespace('sagalightbulb')
 end
 
+local get_current_winid = function ()
+  return api.nvim_get_current_win()
+end
+
 local SIGN_GROUP = "sagalightbulb"
 local SIGN_NAME = "LspSagaLightBulb"
 
@@ -43,8 +47,9 @@ local function _update_virtual_text(line)
 end
 
 local function _update_sign(line)
+  local winid = get_current_winid()
   vim.fn.sign_unplace(
-    SIGN_GROUP, { id = Action.lightbulb_line, buffer = "%" }
+    SIGN_GROUP, { id = Action[winid].lightbulb_line, buffer = "%" }
   )
 
   if line then
@@ -52,7 +57,7 @@ local function _update_sign(line)
       line, SIGN_GROUP, SIGN_NAME, "%",
       { lnum = line + 1, priority = config.code_action_prompt.sign_priority }
     )
-    Action.lightbulb_line = line
+    Action[winid].lightbulb_line = line
   end
 end
 
@@ -107,7 +112,7 @@ function Action:action_callback()
 
     local content_opts = {
       contents = contents,
-      filetype = 'LspSagaCodeActionTitle',
+      filetype = 'LspSagaCodeAction',
       enter = true
     }
 
@@ -147,11 +152,7 @@ end
 function Action:code_action(_call_back_fn,diagnostics)
   local active,_ = libs.check_lsp_active()
   if not active then return end
-
-  if vim.bo.filetype ~= 'LspSagaCodeActionTitle' then
-    self.bufnr = vim.fn.bufnr()
-  end
-
+  self.bufnr = vim.fn.bufnr()
   local context =  { diagnostics = diagnostics }
   local params = vim.lsp.util.make_range_params()
   params.context = context
@@ -223,15 +224,23 @@ end
 
 local lspaction = {}
 
+local special_buffers = {
+  ['LspSagaCodeAction'] = true, ['lspsagafinder'] = true,['NvimTree'] = true,
+  ['vist'] = true,['lspinfo'] = true,
+}
+
 lspaction.code_action = function()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
   Action:code_action(action_call_back,diagnostics)
 end
 
 lspaction.code_action_prompt = function ()
+  if special_buffers[vim.bo.filetype] then return end
+
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
---   local current_line = api.nvim_win_get_cursor(0)[1] - 1
-  Action.lightbulb_line = Action.lightbulb_line or 0
+  local winid = get_current_winid()
+  Action[winid] = Action[winid] or {}
+  Action[winid].lightbulb_line = Action[winid].lightbulb_line or 0
   Action:code_action(action_vritual_call_back,diagnostics)
 end
 
