@@ -57,7 +57,7 @@ end
 
 function Action:render_action_virtual_text(line)
   return function (_,_,actions)
-    if actions == nil or next(actions) == nil then
+    if actions == nil or vim.tbl_isempty(actions) then
       if config.code_action_prompt.virtual_text then
         _update_virtual_text(nil)
       end
@@ -66,19 +66,11 @@ function Action:render_action_virtual_text(line)
       end
     else
       if config.code_action_prompt.sign then
-        if self.lightbulb_line ~= line or not self.lightbulb_line then
-          _update_sign(nil)
-        else
-          _update_sign(line)
-        end
+        _update_sign(line)
       end
 
       if config.code_action_prompt.virtual_text then
-        if self.lightbulb_line ~= line or not self.lightbulb_line then
-          _update_virtual_text(nil)
-        else
-          _update_virtual_text(line)
-        end
+        _update_virtual_text(line)
       end
     end
   end
@@ -237,13 +229,8 @@ end
 
 lspaction.code_action_prompt = function ()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
-  local current_line = api.nvim_win_get_cursor(0)[1] - 1
-  Action.lightbulb_line = Action.lightbulb_line or nil
-  if next(diagnostics) == nil then
-    Action.lightbulb_line = nil
-  else
-    Action.lightbulb_line = current_line
-  end
+--   local current_line = api.nvim_win_get_cursor(0)[1] - 1
+  Action.lightbulb_line = Action.lightbulb_line or 0
   Action:code_action(action_vritual_call_back,diagnostics)
 end
 
