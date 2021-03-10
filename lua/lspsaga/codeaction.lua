@@ -63,7 +63,7 @@ end
 
 function Action:render_action_virtual_text(line)
   return function (_,_,actions)
-    if actions == nil or vim.tbl_isempty(actions) then
+    if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
       if config.code_action_prompt.virtual_text then
         _update_virtual_text(nil)
       end
