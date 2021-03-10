@@ -61,7 +61,11 @@ local function _update_sign(line)
   end
 end
 
-function Action:render_action_virtual_text(line)
+local need_check_diagnostic = {
+  ['go'] = true
+}
+
+function Action:render_action_virtual_text(line,diagnostics)
   return function (_,_,actions)
     if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
       if config.code_action_prompt.virtual_text then
@@ -72,11 +76,27 @@ function Action:render_action_virtual_text(line)
       end
     else
       if config.code_action_prompt.sign then
+        if need_check_diagnostic[vim.bo.filetype] then
+          if next(diagnostics) == nil then
+            _update_sign(nil)
+          else
+            _update_sign(line)
+          end
+        else
         _update_sign(line)
+        end
       end
 
       if config.code_action_prompt.virtual_text then
+        if need_check_diagnostic[vim.bo.filetype] then
+          if next(diagnostics) == nil then
+            _update_virtual_text(nil)
+          else
+            _update_virtual_text(line)
+          end
+        else
         _update_virtual_text(line)
+        end
       end
     end
   end
@@ -141,12 +161,12 @@ function Action:apply_action_keys()
   end
 end
 
-local action_call_back = function (_)
+local action_call_back = function (_,_)
   return Action:action_callback()
 end
 
-local action_vritual_call_back = function (line)
-  return Action:render_action_virtual_text(line)
+local action_vritual_call_back = function (line,diagnostics)
+  return Action:render_action_virtual_text(line,diagnostics)
 end
 
 function Action:code_action(_call_back_fn,diagnostics)
@@ -157,7 +177,7 @@ function Action:code_action(_call_back_fn,diagnostics)
   local params = vim.lsp.util.make_range_params()
   params.context = context
   local line = params.range.start.line
-  local callback = _call_back_fn(line)
+  local callback = _call_back_fn(line,diagnostics)
   vim.lsp.buf_request(0,'textDocument/codeAction', params,callback)
 end
 
