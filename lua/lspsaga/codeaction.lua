@@ -62,7 +62,7 @@ local function _update_sign(line)
 end
 
 local need_check_diagnostic = {
-  ['go'] = true,['py'] = true
+  ['go'] = true,['python'] = true
 }
 
 function Action:render_action_virtual_text(line,diagnostics)
