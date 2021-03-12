@@ -15,7 +15,7 @@ function action.smart_scroll_with_saga(direction)
   else
     local map = direction == 1 and "<C-f>" or "<C-b>"
     local key = api.nvim_replace_termcodes(map,true,false,true)
-    vim.fn.nvim_feedkeys(key,'n',true)
+    api.nvim_feedkeys(key,'n',true)
   end
 end
 
