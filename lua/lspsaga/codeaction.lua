@@ -30,7 +30,7 @@ local SIGN_GROUP = "sagalightbulb"
 local SIGN_NAME = "LspSagaLightBulb"
 
 if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-    vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspDiagnosticsDefaultInformation" })
+  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspDiagnosticsDefaultInformation" })
 end
 
 local function _update_virtual_text(line)
@@ -246,7 +246,7 @@ local lspaction = {}
 
 local special_buffers = {
   ['LspSagaCodeAction'] = true, ['lspsagafinder'] = true,['NvimTree'] = true,
-  ['vist'] = true,['lspinfo'] = true,
+  ['vist'] = true,['lspinfo'] = true,['markdown'] = true,['text'] = true,
 }
 
 lspaction.code_action = function()
@@ -256,6 +256,8 @@ end
 
 lspaction.code_action_prompt = function ()
   if special_buffers[vim.bo.filetype] then return end
+  local active_lsp,_ = libs.check_lsp_active()
+  if not active_lsp then return end
 
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
   local winid = get_current_winid()
