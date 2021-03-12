@@ -507,7 +507,7 @@ function lspfinder.has_saga_def_preview()
   return false
 end
 
-function lspfinder.scroll_in_preview(direction)
+function lspfinder.scroll_in_def_preview(direction)
   local has_preview,pdata = pcall(api.nvim_buf_get_var,0,'lspsaga_def_preview')
   if not has_preview then return end
   local current_win_lnum = scroll_in_win(pdata[1],direction,pdata[2],config.max_preview_lines,pdata[4])
