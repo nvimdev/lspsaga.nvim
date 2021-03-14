@@ -7,17 +7,6 @@ local libs = require('lspsaga.libs')
 local Action = {}
 Action.__index = Action
 
-function Action:register_clearn_fn(fn)
-  self._clear_fn = {}
-  table.insert(self._clear_fn,fn)
-end
-
-function Action:clear_tmp_data()
-  for _,fn in ipairs(self._clear_fn) do
-    fn()
-  end
-end
-
 local get_namespace = function ()
   return api.nvim_create_namespace('sagalightbulb')
 end
