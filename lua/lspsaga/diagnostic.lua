@@ -5,6 +5,7 @@ local libs = require('lspsaga.libs')
 local wrap = require 'lspsaga.wrap'
 local config = require('lspsaga').config_values
 local if_nil = vim.F.if_nil
+local hover = require('lspsaga.hover')
 local M = {}
 
 local function _iter_diagnostic_move_pos(name, opts, pos)
@@ -28,6 +29,9 @@ local function _iter_diagnostic_move_pos(name, opts, pos)
 end
 
 function M.lsp_jump_diagnostic_next(opts)
+  -- if has hover window close it
+  hover.close_hover_window()
+
   return _iter_diagnostic_move_pos(
     "DiagnosticNext",
     opts,
@@ -36,6 +40,9 @@ function M.lsp_jump_diagnostic_next(opts)
 end
 
 function M.lsp_jump_diagnostic_prev(opts)
+  -- if has hover window close it
+  hover.close_hover_window()
+
   return _iter_diagnostic_move_pos(
     "DiagnosticPrevious",
     opts,
@@ -44,6 +51,9 @@ function M.lsp_jump_diagnostic_prev(opts)
 end
 
 local function show_diagnostics(opts, get_diagnostics)
+  -- if has hover window close it
+  hover.close_hover_window()
+
   local active,_ = libs.check_lsp_active()
   if not active then return end
   local max_width = window.get_max_float_width()

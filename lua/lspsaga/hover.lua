@@ -35,6 +35,8 @@ hover.handler = function(_, method, result)
 end
 
 function hover.render_hover_doc()
+  --if has diagnostic window close
+  window.nvim_win_try_close()
   local params = util.make_position_params()
   vim.lsp.buf_request(0,'textDocument/hover', params, hover.handler)
 end
@@ -46,6 +48,13 @@ function hover.has_saga_hover()
     return true
   end
   return false
+end
+
+function hover.close_hover_window()
+  if hover.has_saga_hover() then
+    local data = npcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
+    api.nvim_win_close(data[1],true)
+  end
 end
 
 -- 1 mean down -1 mean up
