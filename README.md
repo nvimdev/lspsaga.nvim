@@ -33,7 +33,6 @@ local saga = require 'lspsaga'
 --   sign_priority = 20,
 --   virtual_text = true,
 -- },
--- code_action_keys = { quit = 'q',exec = '<CR>' }
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
 -- max_preview_lines = 10, -- preview lines of lsp_finder and definition preview
