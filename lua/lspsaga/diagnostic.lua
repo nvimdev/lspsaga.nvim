@@ -44,8 +44,8 @@ function M.lsp_jump_diagnostic_prev(opts)
 end
 
 local function show_diagnostics(opts, get_diagnostics)
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  local active,_ = libs.check_lsp_active()
+  if not active then return end
   local max_width = window.get_max_float_width()
 
   -- if there already has diagnostic float window did not show show lines
