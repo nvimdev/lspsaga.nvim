@@ -37,9 +37,11 @@ end
 
 local function _update_sign(line)
   local winid = get_current_winid()
-  vim.fn.sign_unplace(
-    SIGN_GROUP, { id = Action[winid].lightbulb_line, buffer = "%" }
-  )
+  if Action[winid] then
+    vim.fn.sign_unplace(
+      SIGN_GROUP, { id = Action[winid].lightbulb_line, buffer = "%" }
+    )
+  end
 
   if line then
     vim.fn.sign_place(
