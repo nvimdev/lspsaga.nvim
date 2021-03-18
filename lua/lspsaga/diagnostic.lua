@@ -97,9 +97,6 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
 
-  -- if has hover window close it
-  hover.close_hover_window()
-
   local border_opts = {
     border = config.border_style,
     highlight = 'LspSagaDiagnosticBorder'
