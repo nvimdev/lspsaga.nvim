@@ -12,6 +12,7 @@ local subcommands = {
   preview_definition = provider.preview_definition,
   rename = lsprename.rename,
   hover_doc = lsphover.render_hover_doc,
+  show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
   show_line_diagnostics = diagnostic.show_line_diagnostics,
   diagnostic_jump_next = diagnostic.lsp_jump_diagnostic_next,
   diagnostic_jump_prev = diagnostic.lsp_jump_diagnostic_prev,
