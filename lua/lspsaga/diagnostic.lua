@@ -45,6 +45,14 @@ function M.lsp_jump_diagnostic_prev(opts)
 end
 
 local function show_diagnostics(opts, get_diagnostics)
+  local close_hover = opts.close_hover or false
+
+  -- if we have a hover rendered, don't show diagnostics due to this usually
+  -- being bound to CursorHold which triggers after hover show
+  if not close_hover and hover.has_saga_hover() then
+    return
+  end
+
   local active,_ = libs.check_lsp_active()
   if not active then return end
   local max_width = window.get_max_float_width()
