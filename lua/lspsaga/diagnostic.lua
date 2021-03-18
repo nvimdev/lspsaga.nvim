@@ -177,7 +177,7 @@ end
 function M.show_cursor_diagnostics(opts, bufnr, client_id)
   opts = opts or {}
 
-  local get_line_diagnostics = function()
+  local get_cursor_diagnostics = function()
     bufnr = bufnr or 0
 
     line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
@@ -188,7 +188,7 @@ function M.show_cursor_diagnostics(opts, bufnr, client_id)
     )
   end
 
-  return show_diagnostics(opts, get_line_diagnostics)
+  return show_diagnostics(opts, get_cursor_diagnostics)
 end
 
 function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
