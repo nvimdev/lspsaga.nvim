@@ -29,9 +29,6 @@ local function _iter_diagnostic_move_pos(name, opts, pos)
 end
 
 function M.lsp_jump_diagnostic_next(opts)
-  -- if has hover window close it
-  hover.close_hover_window()
-
   return _iter_diagnostic_move_pos(
     "DiagnosticNext",
     opts,
@@ -40,9 +37,6 @@ function M.lsp_jump_diagnostic_next(opts)
 end
 
 function M.lsp_jump_diagnostic_prev(opts)
-  -- if has hover window close it
-  hover.close_hover_window()
-
   return _iter_diagnostic_move_pos(
     "DiagnosticPrevious",
     opts,
@@ -51,9 +45,6 @@ function M.lsp_jump_diagnostic_prev(opts)
 end
 
 local function show_diagnostics(opts, get_diagnostics)
-  -- if has hover window close it
-  hover.close_hover_window()
-
   local active,_ = libs.check_lsp_active()
   if not active then return end
   local max_width = window.get_max_float_width()
@@ -97,6 +88,10 @@ local function show_diagnostics(opts, get_diagnostics)
       table.insert(highlights, {0, hiname})
     end
   end
+
+  -- if has hover window close it
+  hover.close_hover_window()
+
   local border_opts = {
     border = config.border_style,
     highlight = 'LspSagaDiagnosticBorder'
