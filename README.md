@@ -80,7 +80,7 @@ src="https://user-images.githubusercontent.com/41671631/107140076-ae77ec00-695a-
 ```lua
 -- code action
 nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
-vnoremap <silent><leader>ca <cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>
+vnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').range_code_action()<CR>
 -- or use command
 nnoremap <silent><leader>ca :Lspsaga code_action<CR>
 vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
