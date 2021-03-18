@@ -44,6 +44,10 @@ function M.lsp_jump_diagnostic_prev(opts)
   )
 end
 
+local function comp_severity_asc(diag1, diag2)
+  return diag1["severity"] < diag2["severity"]
+end
+
 local function show_diagnostics(opts, get_diagnostics)
   local close_hover = opts.close_hover or false
 
@@ -66,8 +70,7 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
 
-  opts.severity_sort = if_nil(opts.severity_sort, true)
-
+  local severity_sort = if_nil(opts.severity_sort, true)
   local show_header = if_nil(opts.show_header, true)
 
   local lines = {}
@@ -80,7 +83,11 @@ local function show_diagnostics(opts, get_diagnostics)
   local diagnostics = get_diagnostics()
   if vim.tbl_isempty(diagnostics) then return end
 
-  for i, diagnostic in ipairs(diagnostics) do
+  local sorted_diagnostics = severity_sort
+    and table.sort(diagnostics, comp_severity_asc)
+    or diagnostics
+
+  for i, diagnostic in ipairs(sorted_diagnostics) do
     local prefix = string.format("%d. ", i)
     local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
     assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
