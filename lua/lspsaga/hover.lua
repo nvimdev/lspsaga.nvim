@@ -65,7 +65,7 @@ function hover.scroll_in_hover(direction)
   local hover_win,height,current_win_lnum,last_lnum = hover_data[1][1],hover_data[2],hover_data[3],hover_data[4]
   if not api.nvim_win_is_valid(hover_win) then return end
   current_win_lnum = action.scroll_in_win(hover_win,direction,current_win_lnum,last_lnum,height)
-  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_win,height,current_win_lnum,last_lnum})
+  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_data[1],height,current_win_lnum,last_lnum})
 end
 
 return hover
