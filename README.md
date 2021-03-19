@@ -167,6 +167,10 @@ nnoremap <silent><leader>cd <cmd>lua
 require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
 
 nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>
+-- only show diagnostic if cursor is over the area
+nnoremap <silent><leader>cc <cmd>lua
+require'lspsaga.diagnostic'.show_cursor_diagnostics()<CR>
+
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
