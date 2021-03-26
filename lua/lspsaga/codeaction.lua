@@ -30,7 +30,8 @@ local function _update_virtual_text(line)
     local icon_with_indent = '  ' .. config.code_action_icon
     api.nvim_buf_set_extmark(0,namespace,line,-1,{
         virt_text = { {icon_with_indent,'LspSagaLightBulb'} },
-        virt_text_pos = 'overlay'
+        virt_text_pos = 'overlay',
+        hl_mode = "combine"
       })
   end
 end
