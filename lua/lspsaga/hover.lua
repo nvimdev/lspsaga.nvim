@@ -1,6 +1,5 @@
 local api,lsp,util = vim.api,vim.lsp,vim.lsp.util
 local window = require('lspsaga.window')
-local config = require('lspsaga').config_values
 local action = require('lspsaga.action')
 local npcall = vim.F.npcall
 local hover = {}
@@ -24,13 +23,10 @@ hover.handler = function(_, method, result)
     markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
     if vim.tbl_isempty(markdown_lines) then return end
     window.nvim_win_try_close()
-    local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines, {
-      border_style = config.border_style,
-    })
+    local bufnr,winid = window.fancy_floating_markdown(markdown_lines)
 
-    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, contents_winid)
-    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, border_winid)
-    return bufnr,contents_winid
+    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, winid)
+    return bufnr,winid
   end)
 end
 

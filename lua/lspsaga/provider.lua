@@ -192,7 +192,7 @@ function Finder:render_finder_result()
     filetype = 'lspsagafinder',
     enter = true
   }
-  self.contents_buf,self.contents_win,self.border_bufnr,self.border_win = window.create_float_window(content_opts,border_opts,opts)
+  self.bufnr,self.winid = window.create_win_with_border(content_opts,opts)
   api.nvim_buf_set_option(self.contents_buf,'buflisted',false)
   api.nvim_win_set_var(self.conents_win,'lsp_finder_win_opts',opts)
   api.nvim_win_set_option(self.conents_win,'cursorline',true)
@@ -226,18 +226,26 @@ function Finder:apply_float_map()
     silent = true
   }
   local keymaps = {
-    {self.contents_bufnr,'n',action.open,":lua require'lspsaga.provider'.open_link(1)<CR>"},
-    {self.contents_bufnr,'n',action.vsplit,":lua require'lspsaga.provider'.open_link(2)<CR>"},
-    {self.contents_bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
-    {self.contents_bufnr,'n',action.scroll_down,":lua require'lspsaga.provider'.scroll_in_preview(1)<CR>"},
-    {self.contents_bufnr,'n',action.scroll_up,":lua require'lspsaga.provider'.scroll_in_preview(-1)<CR>"}
+    {self.bufnr,'n',action.vsplit,":lua require'lspsaga.provider'.open_link(2)<CR>"},
+    {self.bufnr,'n',action.split,":lua require'lspsaga.provider'.open_link(3)<CR>"},
+    {self.bufnr,'n',action.scroll_down,":lua require'lspsaga.provider'.scroll_in_preview(1)<CR>"},
+    {self.bufnr,'n',action.scroll_up,":lua require'lspsaga.provider'.scroll_in_preview(-1)<CR>"}
   }
+
+  if type(action.open) == 'table' then
+    for _,key in ipairs(action.open) do
+      table.insert(keymaps,{self.bufnr,'n',key,":lua require'lspsaga.provider'.open_link(1)<CR>"})
+    end
+  elseif type(action.open) == 'string' then
+    table.insert(keymaps,{self.bufnr,'n',action.open,":lua require'lspsaga.provider'.open_link(1)<CR>"})
+  end
+
   if type(action.quit) == 'table' then
     for _,key in ipairs(action.quit) do
-      table.insert(keymaps,{self.contents_bufnr,'n',key,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"})
+      table.insert(keymaps,{self.bufnr,'n',key,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"})
     end
   elseif type(action.quit) == 'string' then
-    table.insert(keymaps,{self.contents_bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"})
+    table.insert(keymaps,{self.bufnr,'n',action.quit,":lua require'lspsaga.provider'.close_lsp_finder_window()<CR>"})
   end
   nvim_create_keymap(keymaps,lhs)
 end
@@ -335,9 +343,9 @@ function Finder:auto_open_preview()
 
     vim.defer_fn(function ()
       self:close_auto_preview_win()
-      local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
-      api.nvim_buf_set_option(cb,'buflisted',false)
-      api.nvim_win_set_var(0,'saga_finder_preview',{cw,bw,1,config.max_preview_lines+1})
+      local bufnr,winid = window.create_win_with_border(content_opts,opts)
+      api.nvim_buf_set_option(bufnr,'buflisted',false)
+      api.nvim_win_set_var(0,'saga_finder_preview',{winid,1,config.max_preview_lines+1})
     end,10)
   end
 end
@@ -345,8 +353,7 @@ end
 function Finder:close_auto_preview_win()
   local has_var,pdata = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
   if has_var then
-    local winid = {pdata[1],pdata[2]}
-    window.nvim_close_valid_window(winid)
+    window.nvim_close_valid_window(pdata[1])
   end
 end
 
@@ -363,8 +370,7 @@ function Finder:open_link(action_type)
   end
 
   self:close_auto_preview_win()
-  api.nvim_win_close(self.contents_win,true)
-  api.nvim_win_close(self.border_win,true)
+  api.nvim_win_close(self.winid,true)
   api.nvim_command(action[action_type]..self.short_link[current_line].link)
   vim.fn.cursor(self.short_link[current_line].row,self.short_link[current_line].col)
   self:clear_tmp_data()
@@ -374,18 +380,16 @@ function Finder:scroll_in_preview(direction)
   local has_var,pdata = pcall(api.nvim_win_get_var,0,'saga_finder_preview')
   if not has_var then return end
   if not api.nvim_win_is_valid(pdata[1]) then return end
-  if not api.nvim_win_is_valid(pdata[2]) then return end
 
   local current_win_lnum,last_lnum = pdata[3],pdata[4]
   current_win_lnum = scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_preview_lines)
-  api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],pdata[2],current_win_lnum,last_lnum})
+  api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],current_win_lnum,last_lnum})
 end
 
 function Finder:quit_float_window()
   self:close_auto_preview_win()
-  if self.contents_win ~= 0 and self.border_win ~= 0 then
-    window.nvim_close_valid_window(self.contents_win)
-    window.nvim_close_valid_window(self.border_win)
+  if self.winid ~= 0 then
+    window.nvim_close_valid_window(self.winid)
   end
   self:clear_tmp_data()
 end
@@ -490,14 +494,12 @@ function lspfinder.preview_definition(timeout_ms)
       filetype = filetype,
     }
 
-    local contents_buf,contents_winid,_,border_winid = window.create_float_window(content_opts,border_opts,opts)
+    local bf,wi = window.create_win_with_border(content_opts,opts)
     vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
-                                        border_winid)
-    vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
-                                        contents_winid)
-    vim.api.nvim_buf_add_highlight(contents_buf,-1,"DefinitionPreviewTitle",0,0,-1)
+                                        wi)
+    vim.api.nvim_buf_add_highlight(bf,-1,"DefinitionPreviewTitle",0,0,-1)
 
-    api.nvim_buf_set_var(0,'lspsaga_def_preview',{contents_winid,1,config.max_preview_lines,10})
+    api.nvim_buf_set_var(0,'lspsaga_def_preview',{wi,1,config.max_preview_lines,10})
   end
 end
 

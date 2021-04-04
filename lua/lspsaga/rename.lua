@@ -14,9 +14,9 @@ local close_rename_win = function()
   if vim.fn.mode() == 'i' then
     vim.cmd [[stopinsert]]
   end
-  local has,winids = pcall(api.nvim_win_get_var,0,unique_name)
+  local has,winid = pcall(api.nvim_win_get_var,0,unique_name)
   if has then
-    window.nvim_close_valid_window(winids)
+    window.nvim_close_valid_window(winid)
     api.nvim_win_set_cursor(0,pos)
     pos = {}
   end
@@ -60,17 +60,17 @@ local rename = function()
     enter = true
   }
 
-  local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
+  local bufnr,winid = window.create_win_with_border(content_opts,opts)
   local saga_rename_prompt_prefix = api.nvim_create_namespace('lspsaga_rename_prompt_prefix')
-  api.nvim_win_set_option(cw,'scrolloff',0)
-  api.nvim_win_set_option(cw,'sidescrolloff',0)
-  api.nvim_buf_set_option(cb,'modifiable',true)
+  api.nvim_win_set_option(winid,'scrolloff',0)
+  api.nvim_win_set_option(winid,'sidescrolloff',0)
+  api.nvim_buf_set_option(bufnr,'modifiable',true)
   local prompt_prefix = get_prompt_prefix()
-  api.nvim_buf_set_option(cb,'buftype','prompt')
-  vim.fn.prompt_setprompt(cb, prompt_prefix)
-  api.nvim_buf_add_highlight(cb, saga_rename_prompt_prefix, 'LspSagaRenamePromptPrefix', 0, 0, #prompt_prefix)
+  api.nvim_buf_set_option(bufnr,'buftype','prompt')
+  vim.fn.prompt_setprompt(bufnr, prompt_prefix)
+  api.nvim_buf_add_highlight(bufnr, saga_rename_prompt_prefix, 'LspSagaRenamePromptPrefix', 0, 0, #prompt_prefix)
   vim.cmd [[startinsert!]]
-  api.nvim_win_set_var(0,unique_name,{cw,bw})
+  api.nvim_win_set_var(0,unique_name,winid)
   api.nvim_command("autocmd QuitPre <buffer> ++nested ++once :silent lua require('lspsaga.rename').close_rename_win()")
   apply_action_keys()
 end

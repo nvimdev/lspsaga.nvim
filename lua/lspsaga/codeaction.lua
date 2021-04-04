@@ -75,7 +75,7 @@ function Action:render_action_virtual_text(line,diagnostics)
             _update_sign(line)
           end
         else
-        _update_sign(line)
+          _update_sign(line)
         end
       end
 
@@ -87,7 +87,7 @@ function Action:render_action_virtual_text(line,diagnostics)
             _update_virtual_text(line)
           end
         else
-        _update_virtual_text(line)
+          _update_virtual_text(line)
         end
       end
     end
@@ -128,7 +128,7 @@ function Action:action_callback()
       enter = true
     }
 
-    self.contents_bufnr,self.contents_winid,_,self.border_winid = window.create_float_window(content_opts,border_opts)
+    self.bufnr,self.winid = window.create_win_with_border(content_opts,border_opts)
     api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
     api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()")
 

@@ -108,16 +108,15 @@ local function focusable_preview(unique_name, fn)
       filetype = 'sagasignature',
     }
 
-    local cb,cw,_,bw = window.create_float_window(content_opts,border_opts,opts)
-    api.nvim_buf_add_highlight(cb,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
-    api.nvim_buf_set_var(0,'saga_signature_help_win',{cw,1,#contents,max_height})
+    local bufnr,winid = window.create_win_with_border(content_opts,opts)
+    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
+    api.nvim_buf_set_var(0,'saga_signature_help_win',{winid,1,#contents,max_height})
     local cwin = api.nvim_get_current_win()
-    api.nvim_set_current_win(cw)
+    api.nvim_set_current_win(winid)
     apply_syntax_to_region(filetype,1,wrap_index)
     api.nvim_set_current_win(cwin)
-    util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
-    util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
-    return cb,cw
+    util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, winid)
+    return bufnr,winid
   end)
 end
 
