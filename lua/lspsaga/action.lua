@@ -6,6 +6,7 @@ function action.smart_scroll_with_saga(direction)
   local hover = require('lspsaga.hover')
   local finder = require('lspsaga.provider')
   local signature = require('lspsaga.signaturehelp')
+
   if hover.has_saga_hover() then
     hover.scroll_in_hover(direction)
   elseif finder.has_saga_def_preview() then
