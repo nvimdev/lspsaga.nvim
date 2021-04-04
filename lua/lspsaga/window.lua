@@ -99,7 +99,6 @@ function M.create_win_with_border(content_opts,opts)
   opts = opts or {}
   opts = generate_win_opts(contents,opts)
   opts.border = config.border_style
-  print(vim.inspect(opts))
 
   -- create contents buffer
   local bufnr = api.nvim_create_buf(false, true)
