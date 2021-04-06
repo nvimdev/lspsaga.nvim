@@ -172,7 +172,7 @@ function M.create_float_contents(content_opts,border_option)
   local contents_bufnr = api.nvim_create_buf(false, true)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
-  local content = vim.lsp.util._trim_and_pad(contents,{pad_left=0,pad_right=0})
+  local content = vim.lsp.util._trim(contents)
 
   if filetype then
     api.nvim_buf_set_option(contents_bufnr, 'filetype', filetype)
@@ -287,7 +287,7 @@ function M.fancy_floating_markdown(contents, opts)
     end
   end
   -- Clean up and add padding
-  stripped = vim.lsp.util._trim_and_pad(stripped, {pad_left=0})
+  stripped = vim.lsp.util._trim(stripped)
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
