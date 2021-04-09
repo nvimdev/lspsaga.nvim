@@ -19,7 +19,7 @@ local SIGN_GROUP = "sagalightbulb"
 local SIGN_NAME = "LspSagaLightBulb"
 
 if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspDiagnosticsDefaultInformation" })
+  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspSagaLightBulbSign" })
 end
 
 local function _update_virtual_text(line)
