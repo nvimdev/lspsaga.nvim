@@ -98,14 +98,11 @@ local function focusable_preview(unique_name, fn)
       local truncate_line = wrap.add_truncate_line(contents)
       table.insert(contents,wrap_index + 1,truncate_line)
     end
-    local border_opts = {
-      border = config.border_style,
-      highlight = 'LspSagaSignatureHelpBorder'
-    }
 
     local content_opts = {
       contents = contents,
       filetype = 'sagasignature',
+      highlight = 'LspSagaSignatureHelpBorder'
     }
 
     local bufnr,winid = window.create_win_with_border(content_opts,opts)

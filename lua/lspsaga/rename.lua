@@ -48,16 +48,11 @@ local rename = function()
     width = 30,
   }
 
-  local border_opts = {
-    border = config.border_style,
-    title = 'New name',
-    highlight = 'LspSagaRenameBorder'
-  }
-
   local content_opts = {
     contents = {},
     filetype = '',
-    enter = true
+    enter = true,
+    highlight = 'LspSagaRenameBorder'
   }
 
   local bufnr,winid = window.create_win_with_border(content_opts,opts)

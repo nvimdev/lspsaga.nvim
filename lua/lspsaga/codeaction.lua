@@ -117,25 +117,21 @@ function Action:action_callback()
     local truncate_line = wrap.add_truncate_line(contents)
     table.insert(contents,2,truncate_line)
 
-    local border_opts = {
-      border = config.border_style,
-      highlight = 'LspSagaCodeActionBorder'
-    }
-
     local content_opts = {
       contents = contents,
       filetype = 'LspSagaCodeAction',
-      enter = true
+      enter = true,
+      highlight = 'LspSagaCodeActionBorder'
     }
 
-    self.bufnr,self.winid = window.create_win_with_border(content_opts,border_opts)
+    self.action_bufnr,self.action_winid = window.create_win_with_border(content_opts)
     api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
     api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()")
 
-    api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
-    api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
+    api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
+    api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
     for i=1,#contents-2,1 do
-      api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
+      api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end
     self:apply_action_keys()
   end
@@ -223,14 +219,13 @@ end
 function Action:clear_tmp_data()
   self.actions = {}
   self.bufnr = 0
-  self.contents_bufnr = 0
-  self.contents_winid = 0
-  self.border_winid = 0
+  self.action_bufnr = 0
+  self.action_winid = 0
 end
 
 function Action:quit_action_window ()
-  if self.contents_winid == 0 and self.border_winid == 0 then return end
-  window.nvim_close_valid_window({self.contents_winid,self.border_winid})
+  if self.action_bufnr == 0 and self.action_winid == 0 then return end
+  window.nvim_close_valid_window(self.action_winid)
   self:clear_tmp_data()
 end
 

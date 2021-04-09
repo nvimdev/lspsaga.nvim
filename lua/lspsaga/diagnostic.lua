@@ -104,11 +104,6 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
 
-  local border_opts = {
-    border = config.border_style,
-    highlight = 'LspSagaDiagnosticBorder'
-  }
-
   local wrap_message = wrap.wrap_contents(lines,max_width,{
     fill = true, pad_left = 3
   })
@@ -118,6 +113,7 @@ local function show_diagnostics(opts, get_diagnostics)
   local content_opts = {
     contents = wrap_message,
     filetype = 'plaintext',
+    highlight = 'LspSagaDiagnosticBorder'
   }
 
   local bufnr,winid = window.create_win_with_border(content_opts,opts)

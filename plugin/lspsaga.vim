@@ -12,6 +12,8 @@ endif
 
 let g:loaded_lspsaga = 1
 
+let s:bg_color = synIDattr(hlID("Normal"), "bg")
+
 highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 
 highlight default LspFloatWinBorder guifg=black guibg=NONE

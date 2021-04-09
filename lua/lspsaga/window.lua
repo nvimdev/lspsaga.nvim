@@ -88,14 +88,17 @@ local function open_shadow_win()
   return shadow_bufnr,shadow_winid
 end
 
+
 function M.create_win_with_border(content_opts,opts)
   vim.validate{
     content_opts = {content_opts,'t'},
     contents = {content_opts.content,'t',true},
-    opts = {opts,'t'}
+    opts = {opts,'t',true}
   }
 
-  local contents,filetype,enter = content_opts.contents,content_opts.filetype,content_opts.enter
+  local contents,filetype = content_opts.contents,content_opts.filetype
+  local enter = content_opts.enter or false
+  local highlight = content_opts.highlight or 'LspFloatWinBorder'
   opts = opts or {}
   opts = generate_win_opts(contents,opts)
   opts.border = config.border_style
@@ -120,7 +123,7 @@ function M.create_win_with_border(content_opts,opts)
     api.nvim_win_set_option(winid, 'conceallevel', 2)
   end
 
-  api.nvim_win_set_option(winid,"winhl","Normal:LspSagaContent,NormalNC:LspSagaContent")
+  api.nvim_win_set_option(winid,"winhl","Normal:Normal,FloatBorder:"..highlight)
   api.nvim_win_set_option(winid,'winblend',0)
   api.nvim_win_set_option(winid, 'foldlevel', 100)
   return bufnr,winid
@@ -260,7 +263,8 @@ function M.fancy_floating_markdown(contents, opts)
 
   local content_opts = {
     contents = stripped,
-    filetype = 'sagahover'
+    filetype = 'sagahover',
+    highlight = 'LspSagaHoverBorder'
   }
 
   -- Make the floating window.

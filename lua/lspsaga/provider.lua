@@ -182,16 +182,13 @@ function Finder:render_finder_result()
     opts.height = max_height
   end
 
-  local border_opts = {
-    border = config.border_style,
-    highlight = 'LspSagaLspFinderBorder'
-  }
-
   local content_opts = {
     contents = self.contents,
     filetype = 'lspsagafinder',
-    enter = true
+    enter = true,
+    highlight = 'LspSagaLspFinderBorder'
   }
+
   self.bufnr,self.winid = window.create_win_with_border(content_opts,opts)
   api.nvim_buf_set_option(self.contents_buf,'buflisted',false)
   api.nvim_win_set_var(self.conents_win,'lsp_finder_win_opts',opts)
@@ -331,14 +328,10 @@ function Finder:auto_open_preview()
       end
     end
 
-    local border_opts = {
-      border = config.border_style,
-      highlight = 'LspSagaAutoPreview'
-    }
-
     local content_opts = {
       contents = content,
       filetype = self.buf_filetype,
+      highlight = 'LspSagaAutoPreview'
     }
 
     vim.defer_fn(function ()
@@ -484,14 +477,10 @@ function lspfinder.preview_definition(timeout_ms)
       opts.width = max_width
     end
 
-    local border_opts = {
-      border = config.border_style,
-      highlight = 'LspSagaDefPreviewBorder'
-    }
-
     local content_opts = {
       contents = content,
       filetype = filetype,
+      highlight = 'LspSagaDefPreviewBorder'
     }
 
     local bf,wi = window.create_win_with_border(content_opts,opts)
