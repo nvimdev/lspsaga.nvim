@@ -70,7 +70,7 @@ local function focusable_preview(unique_name, fn)
     }
     local opts = {}
     -- Clean up input: trim empty lines from the end, pad
-    contents = util._trim_and_pad(contents, opts)
+    contents = util._trim(contents, opts)
     -- Compute size of float needed to show (wrapped) lines
     opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
     local width, _ = util._make_floating_popup_size(contents, opts)
