@@ -105,10 +105,33 @@ function Action:action_callback()
     local title = config['code_action_icon'] .. 'CodeActions:'
     table.insert(contents,title)
 
-    self.actions = response
-    for index,action in pairs(response) do
-      local action_title = '['..index..']' ..' '.. action.title
-      table.insert(contents,action_title)
+    local from_other_servers = function()
+      local actions = {}
+      for _,action in pairs(response) do
+        self.actions[#self.actions+1] = action
+        local action_title = '['..#self.actions ..']' ..' '.. action.title
+        actions[#actions+1] = action_title
+      end
+      return actions
+    end
+
+    if self.actions and next(self.actions) ~= nil then
+      local other_actions = from_other_servers()
+      if next(other_actions) ~= nil then
+        vim.tbl_extend('force',self.actions,other_actions)
+      end
+      api.nvim_buf_set_option(self.action_bufnr,'modifiable',true)
+      vim.fn.append(vim.fn.line('$'),other_actions)
+      vim.cmd("resize "..#self.actions+2)
+      for i,_ in pairs(other_actions) do
+        vim.fn.matchadd('LspSagaCodeActionContent','\\%'.. #self.actions+1+i..'l')
+      end
+    else
+      self.actions = response
+      for index,action in pairs(response) do
+        local action_title = '['..index..']' ..' '.. action.title
+        table.insert(contents,action_title)
+      end
     end
 
     if #contents == 1 then return end
