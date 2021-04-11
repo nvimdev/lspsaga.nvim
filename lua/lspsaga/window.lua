@@ -3,6 +3,45 @@ local M = {}
 local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 
+local function get_border_style(style,highlight)
+  highlight = highlight or 'FloatBorder'
+  local border_style = {
+    ["single"] = "single",["double"] = "double",
+    ["round"] = {
+      {"╭", highlight},
+      {"─", highlight},
+      {"╮", highlight},
+      {"│", highlight},
+      {"╯", highlight},
+      {"─", highlight},
+      {"╰", highlight},
+      {"│", highlight}
+    },
+    ["bold"] = {
+      {"┏", highlight},
+      {"─", highlight},
+      {"┓", highlight},
+      {"│", highlight},
+      {"┛", highlight},
+      {"─", highlight},
+      {"┗", highlight},
+      {"│", highlight}
+    },
+    ["plus"] = {
+      {"+", highlight},
+      {"─", highlight},
+      {"+", highlight},
+      {"│", highlight},
+      {"+", highlight},
+      {"─", highlight},
+      {"+", highlight},
+      {"│", highlight}
+    }
+  }
+
+  return border_style[style]
+end
+
 local function make_floating_popup_options(width, height, opts)
   vim.validate {
     opts = { opts, 't', true };
@@ -101,7 +140,7 @@ function M.create_win_with_border(content_opts,opts)
   local highlight = content_opts.highlight or 'LspFloatWinBorder'
   opts = opts or {}
   opts = generate_win_opts(contents,opts)
-  opts.border = config.border_style
+  opts.border = get_border_style(config.border_style,highlight)
 
   -- create contents buffer
   local bufnr = api.nvim_create_buf(false, true)
