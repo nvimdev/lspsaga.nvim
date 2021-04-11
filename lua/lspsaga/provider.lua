@@ -312,7 +312,7 @@ function Finder:auto_open_preview()
 
     if pad_right >= 0 then
       opts.col = finder_win_opts.col+width+2
-      opts.row = finder_win_opts.row
+      opts.row = finder_win_opts.row - 1
       opts.width = min_width + math.max(0, math.min(math.floor((pad_right-10)/1.5), 60))
       opts.height = self.definition_uri + self.reference_uri + 6
       if opts.height > max_height then
