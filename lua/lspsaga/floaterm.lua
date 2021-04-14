@@ -40,7 +40,7 @@ local function open_float_terminal(command,border_style)
     local border_opts = {
       border = border_style
     }
-    cb,cw,_,ow = window.create_float_window(content_opts,border_opts,opts)
+    cb,cw,_,ow = window.create_win_with_border(content_opts,opts)
   end
   api.nvim_command('terminal '..cmd)
   api.nvim_command('setlocal nobuflisted')

@@ -104,11 +104,6 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
 
-  local border_opts = {
-    border = config.border_style,
-    highlight = 'LspSagaDiagnosticBorder'
-  }
-
   local wrap_message = wrap.wrap_contents(lines,max_width,{
     fill = true, pad_left = 3
   })
@@ -118,23 +113,23 @@ local function show_diagnostics(opts, get_diagnostics)
   local content_opts = {
     contents = wrap_message,
     filetype = 'plaintext',
+    highlight = 'LspSagaDiagnosticBorder'
   }
 
-  local cb,cw,bb,bw = window.create_float_window(content_opts,border_opts,opts)
+  local bufnr,winid = window.create_win_with_border(content_opts,opts)
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)
     -- Start highlight after the prefix
     if i == 1 then
-      api.nvim_buf_add_highlight(cb, -1, hiname, 0, 0, -1)
+      api.nvim_buf_add_highlight(bufnr, -1, hiname, 0, 0, -1)
     else
-      api.nvim_buf_add_highlight(cb, -1, hiname, i, 3, -1)
+      api.nvim_buf_add_highlight(bufnr, -1, hiname, i, 3, -1)
     end
   end
-  api.nvim_buf_add_highlight(cb,-1,'LspSagaDiagnosticTruncateLine',1,0,-1)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, bw)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, cw)
-  api.nvim_win_set_var(0,"show_line_diag_winids",{cw,bw})
-  return cb,cw,bb,bw
+  api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDiagnosticTruncateLine',1,0,-1)
+  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, winid)
+  api.nvim_win_set_var(0,"show_line_diag_winids",winid)
+  return winid
 end
 
 local function get_diagnostic_start(diagnostic_entry)

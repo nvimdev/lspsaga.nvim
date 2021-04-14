@@ -1,6 +1,5 @@
 local api,lsp,util = vim.api,vim.lsp,vim.lsp.util
 local window = require('lspsaga.window')
-local config = require('lspsaga').config_values
 local action = require('lspsaga.action')
 local npcall = vim.F.npcall
 local hover = {}
@@ -24,13 +23,10 @@ hover.handler = function(_, method, result)
     markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
     if vim.tbl_isempty(markdown_lines) then return end
     window.nvim_win_try_close()
-    local bufnr,contents_winid,_,border_winid = window.fancy_floating_markdown(markdown_lines, {
-      border_style = config.border_style,
-    })
+    local bufnr,winid = window.fancy_floating_markdown(markdown_lines)
 
-    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, contents_winid)
-    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, border_winid)
-    return bufnr,contents_winid
+    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, winid)
+    return bufnr,winid
   end)
 end
 
@@ -44,7 +40,7 @@ end
 function hover.has_saga_hover()
   local has_hover_win,datas = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
   if not has_hover_win then return false end
-  if api.nvim_win_is_valid(datas[1][1]) then
+  if api.nvim_win_is_valid(datas[1]) then
     return true
   end
   return false
@@ -53,8 +49,7 @@ end
 function hover.close_hover_window()
   if hover.has_saga_hover() then
     local data = npcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
-    api.nvim_win_close(data[1][1],true)
-    api.nvim_win_close(data[1][2],true)
+    api.nvim_win_close(data[1],true)
   end
 end
 
@@ -62,10 +57,10 @@ end
 function hover.scroll_in_hover(direction)
   local has_hover_win,hover_data = pcall(api.nvim_win_get_var,0,'lspsaga_hoverwin_data')
   if not has_hover_win then return end
-  local hover_win,height,current_win_lnum,last_lnum = hover_data[1][1],hover_data[2],hover_data[3],hover_data[4]
+  local hover_win,height,current_win_lnum,last_lnum = hover_data[1],hover_data[2],hover_data[3],hover_data[4]
   if not api.nvim_win_is_valid(hover_win) then return end
   current_win_lnum = action.scroll_in_win(hover_win,direction,current_win_lnum,last_lnum,height)
-  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_data[1],height,current_win_lnum,last_lnum})
+  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{hover_win,height,current_win_lnum,last_lnum})
 end
 
 return hover

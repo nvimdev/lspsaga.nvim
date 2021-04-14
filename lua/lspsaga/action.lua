@@ -6,12 +6,16 @@ function action.smart_scroll_with_saga(direction)
   local hover = require('lspsaga.hover')
   local finder = require('lspsaga.provider')
   local signature = require('lspsaga.signaturehelp')
+  local implement = require('lspsaga.implement')
+
   if hover.has_saga_hover() then
     hover.scroll_in_hover(direction)
   elseif finder.has_saga_def_preview() then
     finder.scroll_in_def_preview(direction)
   elseif signature.has_saga_signature() then
     signature.scroll_in_signature(direction)
+  elseif implement.has_implement_win() then
+    implement.scroll_in_implement(direction)
   else
     local map = direction == 1 and "<C-f>" or "<C-b>"
     local key = api.nvim_replace_termcodes(map,true,false,true)

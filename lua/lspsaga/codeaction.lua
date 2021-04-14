@@ -19,7 +19,7 @@ local SIGN_GROUP = "sagalightbulb"
 local SIGN_NAME = "LspSagaLightBulb"
 
 if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspDiagnosticsDefaultInformation" })
+  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspSagaLightBulbSign" })
 end
 
 local function _update_virtual_text(line)
@@ -75,7 +75,7 @@ function Action:render_action_virtual_text(line,diagnostics)
             _update_sign(line)
           end
         else
-        _update_sign(line)
+          _update_sign(line)
         end
       end
 
@@ -87,7 +87,7 @@ function Action:render_action_virtual_text(line,diagnostics)
             _update_virtual_text(line)
           end
         else
-        _update_virtual_text(line)
+          _update_virtual_text(line)
         end
       end
     end
@@ -105,10 +105,33 @@ function Action:action_callback()
     local title = config['code_action_icon'] .. 'CodeActions:'
     table.insert(contents,title)
 
-    self.actions = response
-    for index,action in pairs(response) do
-      local action_title = '['..index..']' ..' '.. action.title
-      table.insert(contents,action_title)
+    local from_other_servers = function()
+      local actions = {}
+      for _,action in pairs(response) do
+        self.actions[#self.actions+1] = action
+        local action_title = '['..#self.actions ..']' ..' '.. action.title
+        actions[#actions+1] = action_title
+      end
+      return actions
+    end
+
+    if self.actions and next(self.actions) ~= nil then
+      local other_actions = from_other_servers()
+      if next(other_actions) ~= nil then
+        vim.tbl_extend('force',self.actions,other_actions)
+      end
+      api.nvim_buf_set_option(self.action_bufnr,'modifiable',true)
+      vim.fn.append(vim.fn.line('$'),other_actions)
+      vim.cmd("resize "..#self.actions+2)
+      for i,_ in pairs(other_actions) do
+        vim.fn.matchadd('LspSagaCodeActionContent','\\%'.. #self.actions+1+i..'l')
+      end
+    else
+      self.actions = response
+      for index,action in pairs(response) do
+        local action_title = '['..index..']' ..' '.. action.title
+        table.insert(contents,action_title)
+      end
     end
 
     if #contents == 1 then return end
@@ -117,25 +140,21 @@ function Action:action_callback()
     local truncate_line = wrap.add_truncate_line(contents)
     table.insert(contents,2,truncate_line)
 
-    local border_opts = {
-      border = config.border_style,
-      highlight = 'LspSagaCodeActionBorder'
-    }
-
     local content_opts = {
       contents = contents,
       filetype = 'LspSagaCodeAction',
-      enter = true
+      enter = true,
+      highlight = 'LspSagaCodeActionBorder'
     }
 
-    self.contents_bufnr,self.contents_winid,_,self.border_winid = window.create_float_window(content_opts,border_opts)
+    self.action_bufnr,self.action_winid = window.create_win_with_border(content_opts)
     api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
     api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()")
 
-    api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
-    api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
+    api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
+    api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
     for i=1,#contents-2,1 do
-      api.nvim_buf_add_highlight(self.contents_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
+      api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end
     self:apply_action_keys()
   end
@@ -223,14 +242,13 @@ end
 function Action:clear_tmp_data()
   self.actions = {}
   self.bufnr = 0
-  self.contents_bufnr = 0
-  self.contents_winid = 0
-  self.border_winid = 0
+  self.action_bufnr = 0
+  self.action_winid = 0
 end
 
 function Action:quit_action_window ()
-  if self.contents_winid == 0 and self.border_winid == 0 then return end
-  window.nvim_close_valid_window({self.contents_winid,self.border_winid})
+  if self.action_bufnr == 0 and self.action_winid == 0 then return end
+  window.nvim_close_valid_window(self.action_winid)
   self:clear_tmp_data()
 end
 
