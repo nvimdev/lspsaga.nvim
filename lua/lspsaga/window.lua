@@ -240,7 +240,7 @@ function M.fancy_floating_markdown(contents, opts)
     end
   end
   -- Clean up and add padding
-  stripped = vim.lsp.util._trim(stripped, {pad_left=0})
+  stripped = vim.lsp.util._trim(stripped)
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
