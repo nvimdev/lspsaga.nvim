@@ -2,6 +2,7 @@ local lsp,api = vim.lsp,vim.api
 local config = require('lspsaga').config_values
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
+local action = require('lspsaga.action')
 local implement = {}
 
 function implement.lspsaga_implementation(timeout_ms)
@@ -35,7 +36,7 @@ function implement.lspsaga_implementation(timeout_ms)
     local content =
         vim.api.nvim_buf_get_lines(bufnr, start_line, range["end"].line + 1 +
         config.max_preview_lines, false)
-    content = vim.list_extend({config.definition_preview_icon.."Definition Preview",""},content)
+    content = vim.list_extend({config.definition_preview_icon.."Lsp Implements",""},content)
     local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
 
     local opts = {
@@ -60,8 +61,25 @@ function implement.lspsaga_implementation(timeout_ms)
                                         wi)
     vim.api.nvim_buf_add_highlight(bf,-1,"DefinitionPreviewTitle",0,0,-1)
 
-    api.nvim_buf_set_var(0,'lspsaga_def_preview',{wi,1,config.max_preview_lines,10})
+    api.nvim_buf_set_var(0,'lspsaga_implement_preview',{wi,1,config.max_preview_lines,10})
   end
 end
 
+function implement.has_implement_win()
+  local has_win,data = pcall(api.nvim_buf_get_var,0,'lspsaga_implement_preview')
+  if not has_win then return false end
+  if api.nvim_win_is_valid(data[1]) then
+    return true
+  end
+  return false
+end
+
+function implement.scroll_in_implement(direction)
+  local has_hover_win,data = pcall(api.nvim_win_get_var,0,'lspsaga_implement_preview')
+  if not has_hover_win then return end
+  local hover_win,height,current_win_lnum,last_lnum = data[1],data[2],data[3],data[4]
+  if not api.nvim_win_is_valid(hover_win) then return end
+  current_win_lnum = action.scroll_in_win(hover_win,direction,current_win_lnum,last_lnum,height)
+  api.nvim_win_set_var(0,'lspsaga_implement_preview',{hover_win,height,current_win_lnum,last_lnum})
+end
 return implement

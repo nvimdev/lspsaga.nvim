@@ -14,7 +14,7 @@ saga.config_values = {
   code_action_prompt = {
     enable = true,
     sign = true,
-    sign_priority = 20,
+    sign_priority = 40,
     virtual_text = true,
   },
   finder_definition_icon = '  ',
@@ -31,7 +31,6 @@ saga.config_values = {
     quit = '<C-c>',exec = '<CR>'
   },
   definition_preview_icon = '  ',
-  -- 1: thin border | 2: rounded border | 3: thick border
   border_style = "single",
   rename_prompt_prefix = '➤',
   server_filetype_map = {}

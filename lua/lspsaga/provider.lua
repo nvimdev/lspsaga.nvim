@@ -300,7 +300,7 @@ function Finder:auto_open_preview()
   if next(content) ~= nil then
     local has_var,finder_win_opts = pcall(api.nvim_win_get_var,0,'lsp_finder_win_opts')
     if not has_var then print('get finder window options wrong') return end
-    local width = vim.fn.winwidth(0)
+    local width = api.nvim_get_option('columns')
     local height = vim.fn.winheight(0)
     local opts = {
       relative = 'win',
@@ -469,7 +469,7 @@ function lspfinder.preview_definition(timeout_ms)
       relative = "cursor",
       style = "minimal",
     }
-    local WIN_WIDTH = vim.fn.winwidth(0)
+    local WIN_WIDTH = api.nvim_get_option('columns')
     local max_width = math.floor(WIN_WIDTH * 0.5)
     local width, _ = vim.lsp.util._make_floating_popup_size(content, opts)
 
