@@ -169,8 +169,8 @@ function M.create_win_with_border(content_opts,opts)
 end
 
 function M.open_shadow_float_win(content_opts,opts)
-  local shadow_bufnr,shadow_winid =  open_shadow_win()
-  local contents_bufnr,contents_winid = M.create_float_contents(content_opts,opts)
+  local shadow_bufnr,shadow_winid = open_shadow_win()
+  local contents_bufnr,contents_winid = M.create_win_with_border(content_opts,opts)
   return contents_bufnr,contents_winid,shadow_bufnr,shadow_winid
 end
 
