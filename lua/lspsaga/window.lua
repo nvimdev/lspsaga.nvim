@@ -181,6 +181,28 @@ function M.get_max_float_width()
   return max_width
 end
 
+-- get the valid the screen_width
+-- if have the file tree in left
+-- use vim.o.column - file tree win width
+local function get_valid_screen_width()
+  local screen_width = vim.o.columns
+
+  if vim.fn.winnr('$') > 1 then
+    local special_win = {
+      ['NvimTree'] = true,
+      ['NerdTree'] = true,
+    }
+    local first_win_id = api.nvim_list_wins()[1]
+    local bufnr = vim.fn.winbufnr(first_win_id)
+    local buf_ft = api.nvim_buf_get_option(bufnr,'filetype')
+    if special_win[buf_ft] then
+      screen_width = screen_width - vim.fn.winwidth(first_win_id)
+    end
+    return screen_width
+  end
+  return screen_width
+end
+
 local function get_max_content_length(contents)
   vim.validate{
     contents = { contents,'t' }
@@ -252,20 +274,7 @@ function M.fancy_floating_markdown(contents, opts)
 
   local width = get_max_content_length(stripped)
   -- the max width of doc float window keep has 20 pad
-  local WIN_WIDTH = vim.o.columns
-
-  if vim.fn.winnr('$') > 1 then
-    local special_win = {
-      ['NvimTree'] = true,
-      ['NerdTree'] = true,
-    }
-    local first_win_id = api.nvim_list_wins()[1]
-    local bufnr = vim.fn.winbufnr(first_win_id)
-    local buf_ft = api.nvim_buf_get_option(bufnr,'filetype')
-    if special_win[buf_ft] then
-      WIN_WIDTH = WIN_WIDTH - vim.fn.winwidth(first_win_id)
-    end
-  end
+  local WIN_WIDTH = get_valid_screen_width()
 
   local _pad = width / WIN_WIDTH
   if _pad < 1 then

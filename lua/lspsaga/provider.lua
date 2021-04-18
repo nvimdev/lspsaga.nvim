@@ -434,6 +434,7 @@ end
 function lspfinder.preview_definition(timeout_ms)
   local active,msg = libs.check_lsp_active()
   if not active then print(msg) return end
+  local filetype = vim.api.nvim_buf_get_option(0, "filetype")
 
   local method = "textDocument/definition"
   local params = lsp.util.make_position_params()
@@ -448,6 +449,23 @@ function lspfinder.preview_definition(timeout_ms)
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
     if #uri == 0 then return end
     local bufnr = vim.uri_to_bufnr(uri)
+    local link = vim.uri_to_fname(uri)
+    local short_name
+    local root_dir = libs.get_lsp_root_dir()
+
+    -- reduce filename length by root_dir or home dir
+    if link:find(root_dir, 1, true) then
+      short_name = link:sub(root_dir:len() + 2)
+    elseif link:find(home_dir, 1, true) then
+      short_name = link:sub(home_dir:len() + 2)
+      -- some definition still has a too long path prefix
+      if #short_name > 40 then
+        short_name = libs.split_by_pathsep(short_name,4)
+      end
+    else
+      short_name = libs.split_by_pathsep(link,4)
+    end
+
     if not vim.api.nvim_buf_is_loaded(bufnr) then
         vim.fn.bufload(bufnr)
     end
@@ -462,8 +480,7 @@ function lspfinder.preview_definition(timeout_ms)
     local content =
         vim.api.nvim_buf_get_lines(bufnr, start_line, range["end"].line + 1 +
         config.max_preview_lines, false)
-    content = vim.list_extend({config.definition_preview_icon.."Definition Preview",""},content)
-    local filetype = vim.api.nvim_buf_get_option(bufnr, "filetype")
+    content = vim.list_extend({config.definition_preview_icon.."Definition Preview: "..short_name,"" },content)
 
     local opts = {
       relative = "cursor",
