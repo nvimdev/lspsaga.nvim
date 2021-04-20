@@ -3,6 +3,14 @@ local M = {}
 local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 
+local function trim(...)
+  local fn = vim.lsp.util._trim
+  if not fn then
+    fn = vim.lsp.util._trim_and_pad
+  end
+  return fn(...)
+end
+
 local function get_border_style(style,highlight)
   highlight = highlight or 'FloatBorder'
   local border_style = {
@@ -146,7 +154,7 @@ function M.create_win_with_border(content_opts,opts)
   local bufnr = api.nvim_create_buf(false, true)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
-  local content = vim.lsp.util._trim(contents)
+  local content = trim(contents)
 
   if filetype then
     api.nvim_buf_set_option(bufnr, 'filetype', filetype)
@@ -262,7 +270,7 @@ function M.fancy_floating_markdown(contents, opts)
     end
   end
   -- Clean up and add padding
-  stripped = vim.lsp.util._trim(stripped)
+  stripped = trim(stripped)
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
