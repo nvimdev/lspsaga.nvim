@@ -146,7 +146,7 @@ function M.create_win_with_border(content_opts,opts)
   local bufnr = api.nvim_create_buf(false, true)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
-  local content = vim.lsp.util._trim(contents)
+  local content = vim.lsp.util._trim_and_pad(contents)
 
   if filetype then
     api.nvim_buf_set_option(bufnr, 'filetype', filetype)
