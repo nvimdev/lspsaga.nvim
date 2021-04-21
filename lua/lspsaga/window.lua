@@ -162,7 +162,7 @@ function M.create_win_with_border(content_opts,opts)
     api.nvim_win_set_option(winid, 'conceallevel', 2)
   end
 
-  api.nvim_win_set_option(winid,"winhl","Normal:NormalFloat,FloatBorder:"..highlight)
+  api.nvim_win_set_option(winid,"winhl","Normal:LspFloatWinNormal,FloatBorder:"..highlight)
   api.nvim_win_set_option(winid,'winblend',0)
   api.nvim_win_set_option(winid, 'foldlevel', 100)
   return bufnr,winid
