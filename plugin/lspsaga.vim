@@ -19,7 +19,7 @@ highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 highlight default LspFloatWinBorder guifg=black guibg=NONE
 highlight default LspSagaBorderTitle guifg=orange guibg=NONE gui=bold
 
-hi link  NormalFloat Normal
+highlight default link LspFloatWinNormal Normal
 highlight default link TargetWord Error
 highlight default link ReferencesCount Title
 highlight default link DefinitionCount Title
