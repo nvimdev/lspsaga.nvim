@@ -150,6 +150,10 @@ local function in_range(cursor_line, cursor_char)
     local one_line_diag = start_line == end_line
 
     if one_line_diag and start_line == cursor_line then
+      -- include single line diagnostics without proper character range
+      if start_char == 0 and end_char == 0 then
+        return true
+      end
       if cursor_char >= start_char and cursor_char < end_char then
         return true
       end
