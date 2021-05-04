@@ -144,8 +144,8 @@ end
 
 local function in_range(cursor_line, cursor_char)
   return function(diagnostic)
-    start_line, start_char = get_diagnostic_start(diagnostic)
-    end_line, end_char = get_diagnostic_end(diagnostic)
+    local start_line, start_char = get_diagnostic_start(diagnostic)
+    local end_line, end_char = get_diagnostic_end(diagnostic)
 
     local one_line_diag = start_line == end_line
 
@@ -179,8 +179,8 @@ function M.show_cursor_diagnostics(opts, bufnr, client_id)
   local get_cursor_diagnostics = function()
     bufnr = bufnr or 0
 
-    line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
-    column_nr = vim.api.nvim_win_get_cursor(0)[2]
+    local line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
+    local column_nr = vim.api.nvim_win_get_cursor(0)[2]
 
     return vim.tbl_filter(
       in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id)
