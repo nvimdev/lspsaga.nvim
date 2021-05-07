@@ -175,7 +175,7 @@ local function no_char_range(cursor_line, diagnostic)
 
   if one_line_diag and start_line == cursor_line then
     -- include single line diagnostics without proper character range
-    if start_char == 0 and end_char == 0 then
+    if start_char == end_char then
       return true
     end
   end
