@@ -142,35 +142,45 @@ local function get_diagnostic_end(diagnostic_entry)
   return end_pos["line"], end_pos["character"]
 end
 
-local function in_range(cursor_line, cursor_char)
-  return function(diagnostic)
-    local start_line, start_char = get_diagnostic_start(diagnostic)
-    local end_line, end_char = get_diagnostic_end(diagnostic)
+local function in_range(cursor_line, cursor_char, diagnostic)
+  local start_line, start_char = get_diagnostic_start(diagnostic)
+  local end_line, end_char = get_diagnostic_end(diagnostic)
 
-    local one_line_diag = start_line == end_line
+  local one_line_diag = start_line == end_line
 
-    if one_line_diag and start_line == cursor_line then
-      -- include single line diagnostics without proper character range
-      if start_char == 0 and end_char == 0 then
-        return true
-      end
-      if cursor_char >= start_char and cursor_char < end_char then
-        return true
-      end
-
-    -- multi line diagnostic
-    else
-      if cursor_line == start_line and cursor_char >= start_char then
-        return true
-      elseif cursor_line == end_line and cursor_char < end_char then
-        return true
-      elseif cursor_line > start_line and cursor_line < end_line  then
-        return true
-      end
+  if one_line_diag and start_line == cursor_line then
+    if cursor_char >= start_char and cursor_char < end_char then
+      return true
     end
 
-    return false
+  -- multi line diagnostic
+  else
+    if cursor_line == start_line and cursor_char >= start_char then
+      return true
+    elseif cursor_line == end_line and cursor_char < end_char then
+      return true
+    elseif cursor_line > start_line and cursor_line < end_line  then
+      return true
+    end
   end
+
+  return false
+end
+
+local function no_char_range(cursor_line, diagnostic)
+  local start_line, start_char = get_diagnostic_start(diagnostic)
+  local end_line, end_char = get_diagnostic_end(diagnostic)
+
+  local one_line_diag = start_line == end_line
+
+  if one_line_diag and start_line == cursor_line then
+    -- include single line diagnostics without proper character range
+    if start_char == 0 and end_char == 0 then
+      return true
+    end
+  end
+
+  return false
 end
 
 function M.show_cursor_diagnostics(opts, bufnr, client_id)
@@ -182,8 +192,12 @@ function M.show_cursor_diagnostics(opts, bufnr, client_id)
     local line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
     local column_nr = vim.api.nvim_win_get_cursor(0)[2]
 
+    local is_cursor_diag = function(diagnostic)
+      return in_range(line_nr, column_nr, diagnostic) or no_char_range(line_nr, diagnostic)
+    end
+
     return vim.tbl_filter(
-      in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id)
+      is_cursor_diag, lsp.diagnostic.get(bufnr, client_id)
     )
   end
 
