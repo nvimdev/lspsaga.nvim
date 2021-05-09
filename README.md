@@ -228,11 +228,6 @@ The available highlight groups are:
 | `ProviderTruncateLine` | |
 | `SagaShadow` | |
 | `LspSagaFinderSelection` | |
-| `DiagnosticTruncateLine` | |
-| `DiagnosticError` | |
-| `DiagnosticWarning` | |
-| `DiagnosticInformation` | |
-| `DiagnosticHint` | |
 | `DefinitionPreviewTitle` | |
 | `LspSagaShTruncateLine` | |
 | `LspSagaDocTruncateLine` | |
@@ -248,6 +243,9 @@ The available highlight groups are:
 | `LspSagaAutoPreview` | |
 | `LspSagaDefPreviewBorder` | |
 | `LspLinesDiagBorder` | |
+| `LspSagaDiagnosticBorder` | |
+| `LspSagaDiagnosticTruncateLine` | |
+| `LspSagaDiagnosticHeader` | |
 
 # License
 
