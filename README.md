@@ -215,6 +215,7 @@ The available highlight groups are:
 | Group Name               | Description                                                      |
 | :----------------------- | :----------------------------------------------------------------|
 | `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
+| `LspSagaLspFinderBorder` | |
 | `LspFloatWinNormal` | |
 | `LspFloatWinBorder` | |
 | `LspSagaBorderTitle` | |
