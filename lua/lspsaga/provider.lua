@@ -232,6 +232,7 @@ function Finder:apply_float_map()
   local keymaps = {
     { self.bufnr, "n", action.vsplit, ":lua require'lspsaga.provider'.open_link(2)<CR>" },
     { self.bufnr, "n", action.split, ":lua require'lspsaga.provider'.open_link(3)<CR>" },
+    { self.bufnr, "n", action.tabnew, ":lua require'lspsaga.provider'.open_link(4)<CR>" },
     { self.bufnr, "n", action.scroll_down, ":lua require'lspsaga.provider'.scroll_in_preview(1)<CR>" },
     { self.bufnr, "n", action.scroll_up, ":lua require'lspsaga.provider'.scroll_in_preview(-1)<CR>" },
   }
@@ -394,8 +395,9 @@ end
 -- action 1 mean enter
 -- action 2 mean vsplit
 -- action 3 mean split
+-- action 4 mean tabnew
 function Finder:open_link(action_type)
-  local action = { "edit ", "vsplit ", "split " }
+  local action = { "edit ", "vsplit ", "split ", "tabnew " }
   local current_line = vim.fn.line "."
 
   if self.short_link[current_line] == nil then

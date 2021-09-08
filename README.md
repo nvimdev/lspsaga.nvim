@@ -51,6 +51,7 @@ lspsaga.setup { -- defaults ...
     open = "o",
     vsplit = "s",
     split = "i",
+    tabnew = "t",
     quit = "q",
     scroll_down = "<C-f>",
     scroll_up = "<C-b>",
