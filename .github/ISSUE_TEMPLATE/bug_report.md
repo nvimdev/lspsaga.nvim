@@ -16,6 +16,9 @@ assignees: ''
 **Actual Behavior**
 <!-- what is the Actual Behaviour your getting from the steps you've defined above? -->
 
+**Neovim Built in Behavior**
+<!-- what is the Default Behavior of vim.lsp.buf.the handlers? -->
+
 ### Details
 
 <!-- Steps to reproduce -->

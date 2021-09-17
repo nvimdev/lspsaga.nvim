@@ -8,20 +8,21 @@ saga.config_values = {
   warn_sign = '',
   hint_sign = '',
   infor_sign = '',
-  -- jump diagnostic header
-  error_header = "  Error",
-  warn_header = "  Warn",
-  hint_header = "  Hint",
-  infor_header = "  Infor",
-  max_diag_msg_width = 50,
+  dianostic_header_icon = '   ',
   -- code action title icon
   code_action_icon = ' ',
+  code_action_prompt = {
+    enable = true,
+    sign = true,
+    sign_priority = 40,
+    virtual_text = true,
+  },
   finder_definition_icon = '  ',
   finder_reference_icon = '  ',
-  max_finder_preview_lines = 10,
+  max_preview_lines = 10,
   finder_action_keys = {
     open = 'o', vsplit = 's',split = 'i',quit = 'q',
-    scroll_down = '<C-f>',scroll_up = '<C-d>'
+    scroll_down = '<C-f>',scroll_up = '<C-b>'
   },
   code_action_keys = {
     quit = 'q',exec = '<CR>'
@@ -30,8 +31,7 @@ saga.config_values = {
     quit = '<C-c>',exec = '<CR>'
   },
   definition_preview_icon = '  ',
-  -- 1: thin border | 2: rounded border | 3: thick border
-  border_style = 1,
+  border_style = "single",
   rename_prompt_prefix = '➤',
   server_filetype_map = {}
 }
@@ -60,6 +60,9 @@ function saga.init_lsp_saga(opts)
 
   if saga.config_values.use_saga_diagnostic_sign then
     diagnostic.lsp_diagnostic_sign(saga.config_values)
+  end
+  if saga.config_values.code_action_prompt.enable then
+    vim.cmd [[autocmd CursorHold,CursorHoldI * lua require'lspsaga.codeaction'.code_action_prompt()]]
   end
 end
 

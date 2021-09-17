@@ -25,16 +25,17 @@ local saga = require 'lspsaga'
 -- warn_sign = '',
 -- hint_sign = '',
 -- infor_sign = '',
--- error_header = "  Error",
--- warn_header = "  Warn",
--- hint_header = "  Hint",
--- infor_header = "  Infor",
--- max_diag_msg_width = 50,
+-- dianostic_header_icon = '   ',
 -- code_action_icon = ' ',
--- code_action_keys = { quit = 'q',exec = '<CR>' }
+-- code_action_prompt = {
+--   enable = true,
+--   sign = true,
+--   sign_priority = 20,
+--   virtual_text = true,
+-- },
 -- finder_definition_icon = '  ',
 -- finder_reference_icon = '  ',
--- max_finder_preview_lines = 10,
+-- max_preview_lines = 10, -- preview lines of lsp_finder and definition preview
 -- finder_action_keys = {
 --   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
 -- },
@@ -45,8 +46,8 @@ local saga = require 'lspsaga'
 --   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
 -- },
 -- definition_preview_icon = '  '
--- 1: thin border | 2: rounded border | 3: thick border | 4: ascii border
--- border_style = 1
+-- "single" "double" "round" "plus"
+-- border_style = "single"
 -- rename_prompt_prefix = '➤',
 -- if you don't use nvim-lspconfig you must pass your server name and
 -- the related filetypes into this table
@@ -79,7 +80,7 @@ src="https://user-images.githubusercontent.com/41671631/107140076-ae77ec00-695a-
 ```lua
 -- code action
 nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
-vnoremap <silent><leader>ca <cmd>'<,'>lua require('lspsaga.codeaction').range_code_action()<CR>
+vnoremap <silent><leader>ca :<C-U>lua require('lspsaga.codeaction').range_code_action()<CR>
 -- or use command
 nnoremap <silent><leader>ca :Lspsaga code_action<CR>
 vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
@@ -87,6 +88,13 @@ vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-11eb-897d-587ac1375d4e.gif" width=500 height=500/>
+</div>
+
+- code action auto prompt
+
+<div align='center'>
+<img
+src="https://user-images.githubusercontent.com/41671631/110590664-0e102400-81b3-11eb-9b9d-a894537104bc.gif" width=500 height=500/>
 </div>
 
 ### Hover Doc
@@ -97,10 +105,10 @@ nnoremap <silent> K <cmd>lua require('lspsaga.hover').render_hover_doc()<CR>
 -- or use command
 nnoremap <silent>K :Lspsaga hover_doc<CR>
 
--- scroll down hover doc
-nnoremap <silent> <C-f> <cmd>lua require('lspsaga.hover').smart_scroll_hover(1)<CR>
+-- scroll down hover doc or scroll in definition preview
+nnoremap <silent> <C-f> <cmd>lua require('lspsaga.action').smart_scroll_with_saga(1)<CR>
 -- scroll up hover doc
-nnoremap <silent> <C-b> <cmd>lua require('lspsaga.hover').smart_scroll_hover(-1)<CR>
+nnoremap <silent> <C-b> <cmd>lua require('lspsaga.action').smart_scroll_with_saga(-1)<CR>
 ```
 <div align='center'>
 <img
@@ -114,6 +122,8 @@ src="https://user-images.githubusercontent.com/41671631/106566308-1dc09b00-656b-
 nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
 -- or command
 nnoremap <silent> gs :Lspsaga signature_help<CR>
+
+and you also can use smart_scroll_with_saga to scroll in signature help win
 ```
 <div align='center'>
 <img
@@ -141,6 +151,8 @@ src="https://user-images.githubusercontent.com/41671631/106115648-f6915480-618b-
 nnoremap <silent> gd <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
 -- or use command
 nnoremap <silent> gd :Lspsaga preview_definition<CR>
+
+can use smart_scroll_with_saga to scroll
 ```
 <div align='center'>
 <img
@@ -155,6 +167,10 @@ nnoremap <silent><leader>cd <cmd>lua
 require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
 
 nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>
+-- only show diagnostic if cursor is over the area
+nnoremap <silent><leader>cc <cmd>lua
+require'lspsaga.diagnostic'.show_cursor_diagnostics()<CR>
+
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
@@ -199,6 +215,7 @@ The available highlight groups are:
 | Group Name               | Description                                                      |
 | :----------------------- | :----------------------------------------------------------------|
 | `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
+| `LspFloatWinNormal` | |
 | `LspFloatWinBorder` | |
 | `LspSagaBorderTitle` | |
 | `TargetWord` | |

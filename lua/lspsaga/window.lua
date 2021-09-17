@@ -1,29 +1,48 @@
 local vim,api = vim,vim.api
 local M = {}
+local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 
--- 1 thin
--- 2 radio
--- 3 crude
--- 4 ascii
-local border_style = {
-  {top_left = "┌",top_mid = "─",top_right = "┐",mid = "│",bottom_left = "└",bottom_right= "┘" };
-  {top_left = "╭",top_mid = "─",top_right = "╮",mid = "│",bottom_left = "╰",bottom_right= "╯" };
-  {top_left = "┏",top_mid = "━",top_right = "┓",mid = "┃",bottom_left = "┗",bottom_right = "┛"};
-  {top_left = "+",top_mid = "-",top_right = "+",mid = "|",bottom_left = "+",bottom_right = "+"};
-}
+local function get_border_style(style,highlight)
+  highlight = highlight or 'FloatBorder'
+  local border_style = {
+    ["single"] = "single",["double"] = "double",
+    ["round"] = {
+      {"╭", highlight},
+      {"─", highlight},
+      {"╮", highlight},
+      {"│", highlight},
+      {"╯", highlight},
+      {"─", highlight},
+      {"╰", highlight},
+      {"│", highlight}
+    },
+    ["bold"] = {
+      {"┏", highlight},
+      {"─", highlight},
+      {"┓", highlight},
+      {"│", highlight},
+      {"┛", highlight},
+      {"─", highlight},
+      {"┗", highlight},
+      {"│", highlight}
+    },
+    ["plus"] = {
+      {"+", highlight},
+      {"─", highlight},
+      {"+", highlight},
+      {"│", highlight},
+      {"+", highlight},
+      {"─", highlight},
+      {"+", highlight},
+      {"│", highlight}
+    }
+  }
 
-function M.get_max_contents_width(contents)
-  local max_length = 0
-  for i=1,#contents-1,1 do
-    if #contents[i] > #contents[i+1] then
-      max_length = #contents[i]
-    end
-  end
-  return max_length
+  return border_style[style]
 end
 
-function M.make_floating_popup_options(width, height, opts)
+local function make_floating_popup_options(width, height, opts)
   vim.validate {
     opts = { opts, 't', true };
   }
@@ -54,14 +73,14 @@ function M.make_floating_popup_options(width, height, opts)
     local lines_below = vim.fn.winheight(0) - lines_above
     new_option.anchor = ''
 
-    if lines_above < lines_below then
-      new_option.anchor = new_option.anchor..'N'
-      height = math.min(lines_below, height)
+    local pum_pos = vim.fn.pum_getpos()
+    local pum_vis = not vim.tbl_isempty(pum_pos) -- pumvisible() can be true and pum_pos() returns {}
+    if pum_vis and vim.fn.line(".") >= pum_pos.row or not pum_vis and lines_above < lines_below then
+      new_option.anchor = 'N'
       new_option.row = 1
     else
-      new_option.anchor = new_option.anchor..'S'
-      height = math.min(lines_above, height)
-      new_option.row = 0
+      new_option.anchor = 'S'
+      new_option.row = -2
     end
 
     if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
@@ -79,11 +98,11 @@ function M.make_floating_popup_options(width, height, opts)
   return new_option
 end
 
-local function make_border_option(contents,opts)
+local function generate_win_opts(contents,opts)
   opts = opts or {}
   local win_width,win_height = vim.lsp.util._make_floating_popup_size(contents,opts)
-  local border_option = M.make_floating_popup_options(win_width+2, win_height+2, opts)
-  return win_width+2,win_height,border_option
+  opts = make_floating_popup_options(win_width, win_height, opts)
+  return opts
 end
 
 local function get_shadow_config()
@@ -104,133 +123,104 @@ local function open_shadow_win()
   local shadow_bufnr = api.nvim_create_buf(false,true)
   local shadow_winid = api.nvim_open_win(shadow_bufnr,true,opts)
   api.nvim_win_set_option(shadow_winid,'winhl',shadow_winhl)
-  api.nvim_win_set_option(shadow_winid,'winblend',10)
+  api.nvim_win_set_option(shadow_winid,'winblend',70)
   return shadow_bufnr,shadow_winid
 end
 
-local function create_float_boder(contents,border_opts,opts)
-  vim.validate{
-    contents = {contents,'t'},
-    border_opts = {border_opts,'t'},
-    opts = {opts,'t',true}
-  }
-  local win_width,win_height,border_option = make_border_option(contents,opts)
-  local border = border_opts.border or 1
-  local title = border_opts.title or ''
-  local highlight = border_opts.highlight or 'LspFloatWinBorder'
 
-  local top_left = border_style[border].top_left
-  local top_mid  = border_style[border].top_mid
-  local top_right = border_style[border].top_right
-  local mid_line = border_style[border].mid
-  local bottom_left= border_style[border].bottom_left
-  local bottom_right = border_style[border].bottom_right
-  -- set border
-  local border_lines = {top_left .. title .. string.rep(top_mid, win_width-2-#title) ..top_right}
-  local middle_line = mid_line .. string.rep(" ", win_width-2) .. mid_line
-  local bottom_line = bottom_left .. string.rep(top_mid, win_width-2) .. bottom_right
-  for _=1, win_height do
-    table.insert(border_lines, middle_line)
-  end
-  table.insert(border_lines,bottom_line)
-  local border_bufnr = vim.api.nvim_create_buf(false, true)
-  -- buffer settings for border buffer
-  api.nvim_buf_set_lines(border_bufnr, 0, -1, false, border_lines)
-  api.nvim_buf_set_option(border_bufnr, 'buftype', 'nofile')
---   api.nvim_buf_set_option(border_bufnr, 'filetype', 'lspwinborder')
-  api.nvim_buf_set_option(border_bufnr, 'modifiable', false)
-  api.nvim_buf_set_option(border_bufnr, 'bufhidden', 'wipe')
-
-  if string.len(title) ~= 0 then
-    api.nvim_buf_add_highlight(border_bufnr,-1,'LspSagaBorderTitle',0,3,#title+3)
-  end
-
-  -- create border
-  local border_winid = api.nvim_open_win(border_bufnr, false, border_option)
-  api.nvim_win_set_option(border_winid,"winhl","Normal:"..highlight..",NormalNC:"..highlight)
-  api.nvim_win_set_option(border_winid,"cursorcolumn",false)
-  return border_bufnr,border_winid
-end
-
-function M.create_float_contents(content_opts,border_option)
+function M.create_win_with_border(content_opts,opts)
   vim.validate{
     content_opts = {content_opts,'t'},
     contents = {content_opts.content,'t',true},
-    border_option = {border_option,'t'}
+    opts = {opts,'t',true}
   }
 
-  local opts= border_option
-  opts.width = border_option.width - 2
-  opts.height = border_option.height - 2
-  if opts.row ~= 0 then
-    opts.row = border_option.row + 1
-  else
-    opts.row = border_option.row - 1
-  end
+  local contents,filetype = content_opts.contents,content_opts.filetype
+  local enter = content_opts.enter or false
+  local highlight = content_opts.highlight or 'LspFloatWinBorder'
+  opts = opts or {}
+  opts = generate_win_opts(contents,opts)
+  opts.border = get_border_style(config.border_style,highlight)
 
-  if opts.anchor == "NE" then
-    opts.col = border_option.col - 1
-  elseif opts.anchor == "NW" then
-    opts.col = border_option.col + 1
-  else
-    opts.col = border_option.col + 1
-  end
-
-  local contents,filetype,enter = content_opts.contents,content_opts.filetype,content_opts.enter
   -- create contents buffer
-  local contents_bufnr = api.nvim_create_buf(false, true)
+  local bufnr = api.nvim_create_buf(false, true)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
-  local content = vim.lsp.util._trim_and_pad(contents,{pad_left=0,pad_right=0})
+  local content = vim.lsp.util._trim(contents)
 
   if filetype then
-    api.nvim_buf_set_option(contents_bufnr, 'filetype', filetype)
+    api.nvim_buf_set_option(bufnr, 'filetype', filetype)
   end
 
-  api.nvim_buf_set_lines(contents_bufnr,0,-1,true,content)
-  api.nvim_buf_set_option(contents_bufnr, 'modifiable', false)
-  api.nvim_buf_set_option(contents_bufnr, 'bufhidden', 'wipe')
+  api.nvim_buf_set_lines(bufnr,0,-1,true,content)
+  api.nvim_buf_set_option(bufnr, 'modifiable', false)
+  api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
+  api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
 
-  local contents_winid = api.nvim_open_win(contents_bufnr, enter, opts)
+  local winid = api.nvim_open_win(bufnr, enter, opts)
   if filetype == 'markdown' then
-    api.nvim_win_set_option(contents_winid, 'conceallevel', 2)
+    api.nvim_win_set_option(winid, 'conceallevel', 2)
   end
 
-  api.nvim_win_set_option(contents_winid,"winhl","Normal:LspSagaContent,NormalNC:LspSagaContent")
-  api.nvim_win_set_option(contents_winid,'winblend',0)
-  api.nvim_win_set_option(contents_winid, 'foldlevel', 100)
-  return contents_bufnr, contents_winid
-end
-
-function M.create_float_window(content_opts,border_opts,opts)
-  vim.validate{
-    content_opts = {content_opts,'t'},
-    border_opts = {border_opts,'t'},
-  }
-  content_opts.enter = content_opts.enter or false
-
-  local contents,enter = content_opts.contents,content_opts.enter
-  local _,_,border_option = make_border_option(contents,opts)
-
-  if not enter then
-    local contents_bufnr,contents_winid = M.create_float_contents(content_opts,border_option)
-    local border_bufnr,border_winid = create_float_boder(contents,border_opts,opts)
-    return contents_bufnr,contents_winid,border_bufnr,border_winid
-  end
-
-  local border_bufnr,border_winid = create_float_boder(contents,border_opts,opts)
-  local contents_bufnr,contents_winid = M.create_float_contents(content_opts,border_option)
-  return contents_bufnr,contents_winid,border_bufnr,border_winid
+  api.nvim_win_set_option(winid,"winhl","Normal:LspFloatWinNormal,FloatBorder:"..highlight)
+  api.nvim_win_set_option(winid,'winblend',0)
+  api.nvim_win_set_option(winid, 'foldlevel', 100)
+  return bufnr,winid
 end
 
 function M.open_shadow_float_win(content_opts,opts)
-  local shadow_bufnr,shadow_winid =  open_shadow_win()
-  local contents_bufnr,contents_winid = M.create_float_contents(content_opts,opts)
+  local shadow_bufnr,shadow_winid = open_shadow_win()
+  local contents_bufnr,contents_winid = M.create_win_with_border(content_opts,opts)
   return contents_bufnr,contents_winid,shadow_bufnr,shadow_winid
 end
 
--- use our float window instead of.
--- https://github.com/neovim/neovim/blob/master/runtime/lua/vim/lsp/util.lua#L755
+function M.get_max_float_width()
+  -- current window width
+  local WIN_WIDTH = vim.fn.winwidth(0)
+  local max_width = math.floor(WIN_WIDTH * 0.5)
+  return max_width
+end
+
+-- get the valid the screen_width
+-- if have the file tree in left
+-- use vim.o.column - file tree win width
+local function get_valid_screen_width()
+  local screen_width = vim.o.columns
+
+  if vim.fn.winnr('$') > 1 then
+    local special_win = {
+      ['NvimTree'] = true,
+      ['NerdTree'] = true,
+    }
+    local first_win_id = api.nvim_list_wins()[1]
+    local bufnr = vim.fn.winbufnr(first_win_id)
+    local buf_ft = api.nvim_buf_get_option(bufnr,'filetype')
+    if special_win[buf_ft] then
+      screen_width = screen_width - vim.fn.winwidth(first_win_id)
+    end
+    return screen_width
+  end
+  return screen_width
+end
+
+local function get_max_content_length(contents)
+  vim.validate{
+    contents = { contents,'t' }
+  }
+  if next(contents) == nil then
+    return 0
+  end
+  if #contents == 1 then
+    return #contents[1]
+  end
+  local tmp = {}
+  for _,text in ipairs(contents) do
+    tmp[#tmp+1] = #text
+  end
+  table.sort(tmp)
+  return tmp[#tmp]
+end
+
 function M.fancy_floating_markdown(contents, opts)
   vim.validate {
     contents = { contents, 't' };
@@ -272,28 +262,25 @@ function M.fancy_floating_markdown(contents, opts)
     end
   end
   -- Clean up and add padding
-  stripped = vim.lsp.util._trim_and_pad(stripped, {pad_left=0})
+  stripped = vim.lsp.util._trim(stripped)
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo["wrap"] and api.nvim_win_get_width(0))
-  local width, _ = vim.lsp.util._make_floating_popup_size(stripped, opts)
-
   -- record the first line
   local firstline = stripped[1]
 
-  if #stripped[1] > width then
-    width = #stripped[1]
-  end
-
--- current window width
-  local WIN_WIDTH = vim.fn.winwidth(0)
--- current window height
+  -- current window height
   local WIN_HEIGHT = vim.fn.winheight(0)
 
--- the max width of doc float window keep has 20 pad
-  local max_width = math.floor(WIN_WIDTH * 0.5)
-  if width > max_width then
-    width = max_width
+  local width = get_max_content_length(stripped)
+  -- the max width of doc float window keep has 20 pad
+  local WIN_WIDTH = get_valid_screen_width()
+
+  local _pad = width / WIN_WIDTH
+  if _pad < 1 then
+    width = math.floor(WIN_WIDTH * 0.7)
+  else
+    width = math.floor(WIN_WIDTH * 0.6)
   end
 
   local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
@@ -311,7 +298,7 @@ function M.fancy_floating_markdown(contents, opts)
     local truncate_line = wrap.add_truncate_line(stripped)
     if stripped[1]:find('{%s$') then
       for idx,text in ipairs(stripped) do
-        if text:find('}',1,true) then
+        if text == '} ' or text == '}' then
           wraped_index = idx
           break
         end
@@ -322,27 +309,23 @@ function M.fancy_floating_markdown(contents, opts)
     end
   end
 
-  local border_opts = {
-    border = opts.border_style,
+  local content_opts = {
+    contents = stripped,
+    filetype = 'sagahover',
     highlight = 'LspSagaHoverBorder'
   }
 
-  local content_opts = {
-    contents = stripped,
-    filetype = 'sagahover'
-  }
-
   -- Make the floating window.
-  local contents_bufnr,contents_winid,border_bufnr,border_winid = M.create_float_window(content_opts,border_opts,opts)
+  local bufnr,winid = M.create_win_with_border(content_opts,opts)
   local height = opts.height or #stripped
-  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{contents_winid,height,height,#stripped})
+  api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{winid,height,height,#stripped})
 
-  api.nvim_buf_add_highlight(contents_bufnr,-1,'LspSagaDocTruncateLine',wraped_index,0,-1)
+  api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDocTruncateLine',wraped_index,0,-1)
 
   -- Switch to the floating window to apply the syntax highlighting.
   -- This is because the syntax command doesn't accept a target.
   local cwin = vim.api.nvim_get_current_win()
-  vim.api.nvim_set_current_win(contents_winid)
+  vim.api.nvim_set_current_win(winid)
 
   vim.cmd("ownsyntax markdown")
   local idx = 1
@@ -370,7 +353,7 @@ function M.fancy_floating_markdown(contents, opts)
   end
 
   vim.api.nvim_set_current_win(cwin)
-  return contents_bufnr, contents_winid,border_bufnr,border_winid
+  return bufnr,winid
 end
 
 function M.nvim_close_valid_window(winid)
