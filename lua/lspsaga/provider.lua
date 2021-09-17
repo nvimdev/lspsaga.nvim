@@ -300,32 +300,49 @@ function Finder:auto_open_preview()
   if next(content) ~= nil then
     local has_var,finder_win_opts = pcall(api.nvim_win_get_var,0,'lsp_finder_win_opts')
     if not has_var then print('get finder window options wrong') return end
-    local width = api.nvim_get_option('columns')
-    local height = vim.fn.winheight(0)
     local opts = {
-      relative = 'win',
+      relative = 'editor',
+      -- We'll make sure the preview window is the correct size
+      no_size_override = true,
     }
 
-    local min_width = 42
-    local pad_right = self.WIN_WIDTH - width - 20 - min_width
-    local max_height = finder_win_opts.height or height
+    local finder_width = vim.fn.winwidth(0)
+    local finder_height = vim.fn.winheight(0)
+    local screen_width = api.nvim_get_option("columns")
 
-    if pad_right >= 0 then
-      opts.col = finder_win_opts.col+width+2
-      opts.row = finder_win_opts.row - 1
-      opts.width = min_width + math.max(0, math.min(math.floor((pad_right-10)/1.5), 60))
+    local content_width = 0
+    for _, line in ipairs(content) do
+      content_width = math.max(vim.fn.strdisplaywidth(line), content_width)
+    end
+
+    local border_width
+    if config.border_style == "double" then
+      border_width = 4
+    else
+      border_width = 2
+    end
+
+    local max_width = screen_width - finder_win_opts.col - finder_width - border_width - 2
+
+    if max_width > 42 then
+      -- Put preview window to the right of the finder window
+      local preview_width = math.min(content_width + border_width, max_width)
+      opts.col = finder_win_opts.col + finder_width + 2
+      opts.row = finder_win_opts.row
+      opts.width = preview_width
       opts.height = self.definition_uri + self.reference_uri + 6
-      if opts.height > max_height then
-        opts.height = max_height
+      if opts.height > finder_height then
+        opts.height = finder_height
       end
-    elseif pad_right < 0 then
-      opts.row = finder_win_opts.row + height + 2
+    else
+      -- Put preview window below the finder window
+      local max_height = self.WIN_HEIGHT - finder_win_opts.row - finder_height - border_width - 2
+      if max_height <= 3 then return end -- Don't show preview window if too short
+
+      opts.row = finder_win_opts.row + finder_height + 2
       opts.col = finder_win_opts.col
-      opts.width = min_width
-      opts.height = 8
-      if self.WIN_HEIGHT - height - opts.row < 4 then
-        return
-      end
+      opts.width = finder_width
+      opts.height = math.min(8, max_height)
     end
 
     local content_opts = {
