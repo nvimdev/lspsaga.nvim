@@ -7,7 +7,7 @@ A light-weight lsp plugin based on neovim built-in lsp with highly a performant 
 * vim-plug
 ```vim
 Plug 'neovim/nvim-lspconfig'
-Plug 'glepnir/lspsaga.nvim'
+Plug 'tami5/lspsaga.nvim'
 ```
 
 ## Usage
