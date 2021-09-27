@@ -1,12 +1,12 @@
 local command = {}
-local provider = require('lspsaga.provider')
-local lsprename = require('lspsaga.rename')
-local lsphover = require('lspsaga.hover')
-local diagnostic = require('lspsaga.diagnostic')
-local codeaction = require('lspsaga.codeaction')
-local signature = require('lspsaga.signaturehelp')
-local floaterm = require('lspsaga.floaterm')
-local implement = require('lspsaga.implement')
+local provider = require "lspsaga.provider"
+local lsprename = require "lspsaga.rename"
+local lsphover = require "lspsaga.hover"
+local diagnostic = require "lspsaga.diagnostic"
+local codeaction = require "lspsaga.codeaction"
+local signature = require "lspsaga.signaturehelp"
+local floaterm = require "lspsaga.floaterm"
+local implement = require "lspsaga.implement"
 
 local subcommands = {
   lsp_finder = provider.lsp_finder,
@@ -29,8 +29,8 @@ function command.command_list()
   return vim.tbl_keys(subcommands)
 end
 
-function command.load_command(cmd,...)
-  local args = {...}
+function command.load_command(cmd, ...)
+  local args = { ... }
   if next(args) ~= nil then
     subcommands[cmd](args[1])
   else
