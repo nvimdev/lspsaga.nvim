@@ -60,7 +60,11 @@ local need_check_diagnostic = {
 }
 
 function Action:render_action_virtual_text(line, diagnostics)
-  return function(_, _, actions)
+  return function(_, method, actions)
+    if vim.fn.has('nvim-0.5.1') == 1 then
+        actions = method
+    end
+
     if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
       if config.code_action_prompt.virtual_text then
         _update_virtual_text(nil)
@@ -97,7 +101,11 @@ function Action:render_action_virtual_text(line, diagnostics)
 end
 
 function Action:action_callback()
-  return function(_, _, response)
+  return function(_, method, response)
+    if vim.fn.has('nvim-0.5.1') == 1 then
+        response = method
+    end
+
     if response == nil or vim.tbl_isempty(response) then
       print "No code actions available"
       return
@@ -182,7 +190,7 @@ local action_call_back = function(_, _)
   return Action:action_callback()
 end
 
-local action_vritual_call_back = function(line, diagnostics)
+local action_virtual_call_back = function(line, diagnostics)
   return Action:render_action_virtual_text(line, diagnostics)
 end
 
@@ -295,7 +303,7 @@ lspaction.code_action_prompt = function()
   local winid = get_current_winid()
   Action[winid] = Action[winid] or {}
   Action[winid].lightbulb_line = Action[winid].lightbulb_line or 0
-  Action:code_action(action_vritual_call_back, diagnostics)
+  Action:code_action(action_virtual_call_back, diagnostics)
 end
 
 lspaction.do_code_action = function()
