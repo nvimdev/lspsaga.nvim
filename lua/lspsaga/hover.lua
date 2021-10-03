@@ -16,56 +16,28 @@ local function focusable_float(unique_name, fn)
   end
 end
 
-hover.handler = (function()
-  --- TODO: remove nvim-5.1 is released
-  if vim.fn.has "nvim-0.5" == 1 then
-    return function(_, method, result)
-      focusable_float(method, function()
-        if not (result and result.contents) then
-          return
-        end
-        local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
-        markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
-        if vim.tbl_isempty(markdown_lines) then
-          return
-        end
-        window.nvim_win_try_close()
-        local bufnr, winid = window.fancy_floating_markdown(markdown_lines)
-
-        lsp.util.close_preview_autocmd({
-          "CursorMoved",
-          "BufHidden",
-          "BufLeave",
-          "InsertCharPre",
-        }, winid)
-        return bufnr, winid
-      end)
+hover.handler = function(_, result, ctx, _)
+  focusable_float(ctx.method, function()
+    if not (result and result.contents) then
+      return
     end
-  end
+    local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
+    markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
+    if vim.tbl_isempty(markdown_lines) then
+      return
+    end
+    window.nvim_win_try_close()
+    local bufnr, winid = window.fancy_floating_markdown(markdown_lines)
 
-  return function(_, result, ctx, _)
-    focusable_float(ctx.method, function()
-      if not (result and result.contents) then
-        return
-      end
-      local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
-      markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
-      if vim.tbl_isempty(markdown_lines) then
-        return
-      end
-      window.nvim_win_try_close()
-      local bufnr, winid = window.fancy_floating_markdown(markdown_lines)
-
-      lsp.util.close_preview_autocmd({
-        "CursorMoved",
-        "BufHidden",
-        "BufLeave",
-        "InsertCharPre",
-      }, winid)
-      return bufnr, winid
-    end)
-  end
-end)()
+    lsp.util.close_preview_autocmd({
+      "CursorMoved",
+      "BufHidden",
+      "BufLeave",
+      "InsertCharPre",
+    }, winid)
+    return bufnr, winid
+  end)
+end
 
 function hover.render_hover_doc()
   --if has diagnostic window close
