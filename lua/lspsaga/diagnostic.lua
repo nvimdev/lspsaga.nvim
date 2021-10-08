@@ -9,12 +9,15 @@ local hover = require "lspsaga.hover"
 local M = {}
 
 -- :h diagnostic-highlights
-local diagnostic_highlights = {
+local diagnostic_highlights = {}
+if vim.diagnostic then
+  diagnostic_highlights = {
     [vim.diagnostic.severity.ERROR] = "DiagnosticFloatingError",
     [vim.diagnostic.severity.WARN] = "DiagnosticFloatingWarn",
     [vim.diagnostic.severity.INFO] = "DiagnosticFloatingInfo",
     [vim.diagnostic.severity.HINT] = "DiagnosticFloatingHint"
-}
+  }
+end
 
 local function _iter_diagnostic_move_pos(name, opts, pos)
   opts = opts or {}
@@ -91,7 +94,7 @@ local function show_diagnostics(opts, get_diagnostics)
 
   for i, diagnostic in ipairs(sorted_diagnostics) do
     local prefix = string.format("%d. ", i)
-    local hiname = diagnostic_highlights[diagnostic.severity]
+    local hiname = diagnostic_highlights[diagnostic.severity] or lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
     assert(hiname, "unknown severity: " .. tostring(diagnostic.severity))
 
     local message_lines = vim.split(diagnostic.message, "\n", true)
