@@ -15,7 +15,7 @@ if vim.diagnostic then
     [vim.diagnostic.severity.ERROR] = "DiagnosticFloatingError",
     [vim.diagnostic.severity.WARN] = "DiagnosticFloatingWarn",
     [vim.diagnostic.severity.INFO] = "DiagnosticFloatingInfo",
-    [vim.diagnostic.severity.HINT] = "DiagnosticFloatingHint"
+    [vim.diagnostic.severity.HINT] = "DiagnosticFloatingHint",
   }
 end
 
@@ -94,7 +94,8 @@ local function show_diagnostics(opts, get_diagnostics)
 
   for i, diagnostic in ipairs(sorted_diagnostics) do
     local prefix = string.format("%d. ", i)
-    local hiname = diagnostic_highlights[diagnostic.severity] or lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
+    local hiname = diagnostic_highlights[diagnostic.severity]
+      or lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
     assert(hiname, "unknown severity: " .. tostring(diagnostic.severity))
 
     local message_lines = vim.split(diagnostic.message, "\n", true)
@@ -229,4 +230,3 @@ function M.lsp_diagnostic_sign(opts)
 end
 
 return M
-

@@ -69,10 +69,7 @@ local function focusable_preview(unique_name, fn)
   return focusable_float(unique_name, function()
     local contents, _ = fn()
     local filetype = api.nvim_buf_get_option(0, "filetype")
-    vim.validate {
-      contents = { contents, "t" },
-      filetype = { filetype, "s", true },
-    }
+    vim.validate { contents = { contents, "t" }, filetype = { filetype, "s", true } }
     local opts = {}
     -- Clean up input: trim empty lines from the end, pad
     contents = util._trim(contents, opts)
@@ -140,42 +137,21 @@ local scroll_in_signature = function(direction)
   api.nvim_buf_set_var(0, "saga_signature_help_win", { swin, current_win_lnum, last_lnum, height })
 end
 
-local call_back = (function()
-  --- TODO: remove after nvim 5.1 is released
-  if vim.fn.has "nvim-0.5" == 1 then
-    return function(_, method, result)
-      if not (result and result.signatures and result.signatures[1]) then
-        --     print('No signature help available')
-        return
-      end
-      local lines = util.convert_signature_help_to_markdown_lines(result)
-      lines = util.trim_empty_lines(lines)
-      if vim.tbl_isempty(lines) then
-        --     print('No signature help available')
-        return
-      end
-      focusable_preview(method, function()
-        return lines, util.try_trim_markdown_code_blocks(lines)
-      end)
-    end
+local call_back = function(_, result, ctx, _)
+  if not (result and result.signatures and result.signatures[1]) then
+    --     print('No signature help available')
+    return
   end
-
-  return function(_, result, ctx, _)
-    if not (result and result.signatures and result.signatures[1]) then
-      --     print('No signature help available')
-      return
-    end
-    local lines = util.convert_signature_help_to_markdown_lines(result)
-    lines = util.trim_empty_lines(lines)
-    if vim.tbl_isempty(lines) then
-      print "No signature help available"
-      return
-    end
-    focusable_preview(ctx.method, function()
-      return lines, util.try_trim_markdown_code_blocks(lines)
-    end)
+  local lines = util.convert_signature_help_to_markdown_lines(result)
+  lines = util.trim_empty_lines(lines)
+  if vim.tbl_isempty(lines) then
+    print "No signature help available"
+    return
   end
-end)()
+  focusable_preview(ctx.method, function()
+    return lines, util.try_trim_markdown_code_blocks(lines)
+  end)
+end
 
 local signature_help = function()
   -- check the server support the signature help
