@@ -205,27 +205,14 @@ function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
 end
 
 function M.lsp_diagnostic_sign(opts)
-  local group = {
-    err_group = {
-      highlight = "LspDiagnosticsSignError",
-      sign = opts.error_sign,
-    },
-    warn_group = {
-      highlight = "LspDiagnosticsSignWarning",
-      sign = opts.warn_sign,
-    },
-    hint_group = {
-      highlight = "LspDiagnosticsSignHint",
-      sign = opts.hint_sign,
-    },
-    infor_group = {
-      highlight = "LspDiagnosticsSignInformation",
-      sign = opts.infor_sign,
-    },
-  }
-
-  for _, g in pairs(group) do
-    vim.fn.sign_define(g.highlight, { text = g.sign, texthl = g.highlight, linehl = "", numhl = "" })
+  for type, icon in pairs {
+    Error = opts.error_sign,
+    Warn = opts.warn_sign,
+    Hint = opts.hint_sign,
+    Info = opts.infor_sign,
+  } do
+    local hl = "DiagnosticSign" .. type
+    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
   end
 end
 
