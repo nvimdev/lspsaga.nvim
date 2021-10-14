@@ -1,59 +1,23 @@
 -- lsp dianostic
-local vim, api, lsp, util = vim, vim.api, vim.lsp, vim.lsp.util
 local window = require "lspsaga.window"
 local libs = require "lspsaga.libs"
 local wrap = require "lspsaga.wrap"
 local config = require("lspsaga").config_values
 local if_nil = vim.F.if_nil
 local hover = require "lspsaga.hover"
+local fmt = string.format
 local M = {}
 
--- :h diagnostic-highlights
-local diagnostic_highlights = {}
-if vim.diagnostic then
-  diagnostic_highlights = {
-    [vim.diagnostic.severity.ERROR] = "DiagnosticFloatingError",
-    [vim.diagnostic.severity.WARN] = "DiagnosticFloatingWarn",
-    [vim.diagnostic.severity.INFO] = "DiagnosticFloatingInfo",
-    [vim.diagnostic.severity.HINT] = "DiagnosticFloatingHint",
-  }
-end
+M.highlights = {
+  [vim.diagnostic.severity.ERROR] = "DiagnosticFloatingError",
+  [vim.diagnostic.severity.WARN] = "DiagnosticFloatingWarn",
+  [vim.diagnostic.severity.INFO] = "DiagnosticFloatingInfo",
+  [vim.diagnostic.severity.HINT] = "DiagnosticFloatingHint",
+}
 
-local function _iter_diagnostic_move_pos(name, opts, pos)
-  opts = opts or {}
-
-  local enable_popup = if_nil(opts.enable_popup, true)
-  local win_id = opts.win_id or vim.api.nvim_get_current_win()
-
-  if not pos then
-    print(string.format("%s: No more valid diagnostics to move to.", name))
-    return
-  end
-
-  vim.api.nvim_win_set_cursor(win_id, { pos[1] + 1, pos[2] })
-
-  if enable_popup then
-    vim.schedule(function()
-      M.show_line_diagnostics(opts.popup_opts, vim.api.nvim_win_get_buf(win_id))
-    end)
-  end
-end
-
-function M.lsp_jump_diagnostic_next(opts)
-  return _iter_diagnostic_move_pos("DiagnosticNext", opts, vim.lsp.diagnostic.get_next_pos(opts))
-end
-
-function M.lsp_jump_diagnostic_prev(opts)
-  return _iter_diagnostic_move_pos("DiagnosticPrevious", opts, vim.lsp.diagnostic.get_prev_pos(opts))
-end
-
-local function comp_severity_asc(diag1, diag2)
-  return diag1["severity"] < diag2["severity"]
-end
-
-local function show_diagnostics(opts, get_diagnostics)
+---TODO(refactor): move to popup.lua
+local show_diagnostics = function(opts, get_diagnostics)
   local close_hover = opts.close_hover or false
-
   -- if we have a hover rendered, don't show diagnostics due to this usually
   -- being bound to CursorHold which triggers after hover show
   if not close_hover and hover.has_saga_hover() then
@@ -66,11 +30,10 @@ local function show_diagnostics(opts, get_diagnostics)
   end
   local max_width = window.get_max_float_width()
 
-  -- if there already has diagnostic float window did not show show lines
-  -- diagnostic window
-  local has_var, diag_float_winid = pcall(api.nvim_buf_get_var, 0, "diagnostic_float_window")
+  -- if there already has diagnostic float window did not show show lines diagnostic window
+  local has_var, diag_float_winid = pcall(vim.api.nvim_buf_get_var, 0, "diagnostic_float_window")
   if has_var and diag_float_winid ~= nil then
-    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
+    if vim.api.nvim_win_is_valid(diag_float_winid[1]) and vim.api.nvim_win_is_valid(diag_float_winid[2]) then
       return
     end
   end
@@ -86,16 +49,18 @@ local function show_diagnostics(opts, get_diagnostics)
   end
 
   local diagnostics = get_diagnostics()
+
   if vim.tbl_isempty(diagnostics) then
     return
+  elseif severity_sort then
+    table.sort(diagnostics, function(a, b)
+      return a["severity"] < b["severity"]
+    end)
   end
 
-  local sorted_diagnostics = severity_sort and table.sort(diagnostics, comp_severity_asc) or diagnostics
-
-  for i, diagnostic in ipairs(sorted_diagnostics) do
+  for i, diagnostic in ipairs(diagnostics) do
     local prefix = string.format("%d. ", i)
-    local hiname = diagnostic_highlights[diagnostic.severity]
-      or lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
+    local hiname = M.highlights[diagnostic.severity]
     assert(hiname, "unknown severity: " .. tostring(diagnostic.severity))
 
     local message_lines = vim.split(diagnostic.message, "\n", true)
@@ -110,110 +75,110 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
 
-  local wrap_message = wrap.wrap_contents(lines, max_width, {
-    fill = true,
-    pad_left = 3,
-  })
+  local wrap_message = wrap.wrap_contents(lines, max_width, { fill = true, pad_left = 3 })
   local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message, 2, truncate_line)
 
-  local content_opts = {
-    contents = wrap_message,
-    filetype = "plaintext",
-    highlight = "LspSagaDiagnosticBorder",
-  }
-
+  local content_opts = { contents = wrap_message, filetype = "plaintext", highlight = "LspSagaDiagnosticBorder" }
   local bufnr, winid = window.create_win_with_border(content_opts, opts)
+
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)
     -- Start highlight after the prefix
     if i == 1 then
-      api.nvim_buf_add_highlight(bufnr, -1, hiname, 0, 0, -1)
+      vim.api.nvim_buf_add_highlight(bufnr, -1, hiname, 0, 0, -1)
     else
-      api.nvim_buf_add_highlight(bufnr, -1, hiname, i, 3, -1)
+      vim.api.nvim_buf_add_highlight(bufnr, -1, hiname, i, 3, -1)
     end
   end
-  api.nvim_buf_add_highlight(bufnr, -1, "LspSagaDiagnosticTruncateLine", 1, 0, -1)
-  util.close_preview_autocmd({ "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" }, winid)
-  api.nvim_win_set_var(0, "show_line_diag_winids", winid)
+
+  vim.api.nvim_buf_add_highlight(bufnr, -1, "LspSagaDiagnosticTruncateLine", 1, 0, -1)
+  vim.lsp.util.close_preview_autocmd({ "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" }, winid)
+  vim.api.nvim_win_set_var(0, "show_line_diag_winids", winid)
+
   return winid
 end
 
-local function get_diagnostic_start(diagnostic_entry)
-  local start_pos = diagnostic_entry["range"]["start"]
-  return start_pos["line"], start_pos["character"]
+M.show_cursor_diagnostics = function(opts, bufnr)
+  return show_diagnostics(opts or {}, function()
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    local lnum, cnum = cursor[1] - 1, cursor[2]
+
+    return vim.tbl_filter(
+      function(diagnostic)
+        local start_pos = diagnostic["range"]["start"]
+        local end_pos = diagnostic["range"]["end"]
+        local start_line, start_char = start_pos["line"], start_pos["character"]
+        local end_line, end_char = end_pos["line"], end_pos["character"]
+        local one_line_diag = start_line == end_line
+
+        if one_line_diag and start_line == lnum then
+          if cnum >= start_char and cnum < end_char then
+            return true
+          end
+          -- multi line diagnostic
+        else
+          if lnum == start_line and cnum >= start_char then
+            return true
+          elseif lnum == end_line and cnum < end_char then
+            return true
+          elseif lnum > start_line and lnum < end_line then
+            return true
+          end
+        end
+
+        return false
+      end,
+      vim.diagnostic.get(bufnr, {
+        lnum = lnum,
+      })
+    )
+  end)
 end
 
-local function get_diagnostic_end(diagnostic_entry)
-  local end_pos = diagnostic_entry["range"]["end"]
-  return end_pos["line"], end_pos["character"]
+M.show_line_diagnostics = function(opts, lnum, bufnr)
+  return show_diagnostics(opts or {}, function()
+    return vim.diagnostic.get(bufnr, { lnum = lnum or (vim.api.nvim_win_get_cursor(0)[1] - 1) })
+  end)
 end
 
-local function in_range(cursor_line, cursor_char)
-  return function(diagnostic)
-    start_line, start_char = get_diagnostic_start(diagnostic)
-    end_line, end_char = get_diagnostic_end(diagnostic)
-
-    local one_line_diag = start_line == end_line
-
-    if one_line_diag and start_line == cursor_line then
-      if cursor_char >= start_char and cursor_char < end_char then
-        return true
-      end
-
-      -- multi line diagnostic
-    else
-      if cursor_line == start_line and cursor_char >= start_char then
-        return true
-      elseif cursor_line == end_line and cursor_char < end_char then
-        return true
-      elseif cursor_line > start_line and cursor_line < end_line then
-        return true
-      end
+M.navigate = function(direction)
+  return function(opts)
+    opts = opts or {}
+    local pos = vim.diagnostic[fmt("get_%s_pos", direction)](opts)
+    if not pos then
+      --- TODO: move to notify.lua, notify.diagnostics.no_more_diagnostics(direction:gsub("^%l", string.upper)))
+      return print(fmt("Diagnostic%s: No more valid diagnostics to move to.", direction:gsub("^%l", string.upper)))
     end
 
-    return false
+    local win_id = opts.win_id or vim.api.nvim_get_current_win()
+    vim.api.nvim_win_set_cursor(win_id, { pos[1] + 1, pos[2] })
+
+    vim.schedule(function()
+      M.show_line_diagnostics(opts.popup_opts, nil, vim.api.nvim_win_get_buf(win_id))
+    end)
   end
 end
 
-function M.show_cursor_diagnostics(opts, bufnr, client_id)
-  opts = opts or {}
-
-  local get_cursor_diagnostics = function()
-    bufnr = bufnr or 0
-
-    line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
-    column_nr = vim.api.nvim_win_get_cursor(0)[2]
-
-    return vim.tbl_filter(in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id))
-  end
-
-  return show_diagnostics(opts, get_cursor_diagnostics)
-end
-
-function M.show_line_diagnostics(opts, bufnr, line_nr, client_id)
-  opts = opts or {}
-
-  local get_line_diagnostics = function()
-    bufnr = bufnr or 0
-    line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
-
-    return lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
-  end
-
-  return show_diagnostics(opts, get_line_diagnostics)
-end
-
-function M.lsp_diagnostic_sign(opts)
-  for type, icon in pairs {
-    Error = opts.error_sign,
-    Warn = opts.warn_sign,
-    Hint = opts.hint_sign,
-    Info = opts.infor_sign,
-  } do
-    local hl = "DiagnosticSign" .. type
-    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-  end
-end
+--- TODO: at some point just use builtin function to preview diagnostics
+--- Missing borders and formating of title
+-- vim.diagnostic.show_position_diagnostics {
+--   focusable = false,
+--   close_event = { "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" },
+--   source = false,
+--   show_header = true,
+--   border = "rounded",
+--   format = function(info)
+--     local lines = {}
+--     if config.diagnostic_show_source then
+--       lines[#lines + 1] = info.source:gsub("%.", ":")
+--     end
+--     lines[#lines + 1] = info.message
+--     if config.diagnostic_show_code then
+--       lines[#lines + 1] = fmt("(%s)", info.user_data.lsp.code)
+--     end
+--     return table.concat(lines, " ")
+--   end,
+-- }
 
 return M

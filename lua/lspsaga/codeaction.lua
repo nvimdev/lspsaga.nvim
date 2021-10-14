@@ -1,4 +1,3 @@
-local api = vim.api
 local window = require "lspsaga.window"
 local config = require("lspsaga").config_values
 local wrap = require "lspsaga.wrap"
@@ -8,11 +7,11 @@ local Action = {}
 Action.__index = Action
 
 local get_namespace = function()
-  return api.nvim_create_namespace "sagalightbulb"
+  return vim.api.nvim_create_namespace "sagalightbulb"
 end
 
 local get_current_winid = function()
-  return api.nvim_get_current_win()
+  return vim.api.nvim_get_current_win()
 end
 
 local SIGN_GROUP = "sagalightbulb"
@@ -24,11 +23,11 @@ end
 
 local function _update_virtual_text(line)
   local namespace = get_namespace()
-  api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+  vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
 
   if line then
     local icon_with_indent = "  " .. config.code_action_icon
-    api.nvim_buf_set_extmark(0, namespace, line, -1, {
+    vim.api.nvim_buf_set_extmark(0, namespace, line, -1, {
       virt_text = { { icon_with_indent, "LspSagaLightBulb" } },
       virt_text_pos = "overlay",
       hl_mode = "combine",
@@ -61,8 +60,8 @@ local need_check_diagnostic = {
 
 function Action:render_action_virtual_text(line, diagnostics)
   return function(_, method, actions)
-    if vim.fn.has('nvim-0.5.1') == 1 then
-        actions = method
+    if vim.fn.has "nvim-0.5.1" == 1 then
+      actions = method
     end
 
     if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
@@ -102,8 +101,8 @@ end
 
 function Action:action_callback()
   return function(_, method, response)
-    if vim.fn.has('nvim-0.5.1') == 1 then
-        response = method
+    if vim.fn.has "nvim-0.5.1" == 1 then
+      response = method
     end
 
     if response == nil or vim.tbl_isempty(response) then
@@ -130,7 +129,7 @@ function Action:action_callback()
       if next(other_actions) ~= nil then
         vim.tbl_extend("force", self.actions, other_actions)
       end
-      api.nvim_buf_set_option(self.action_bufnr, "modifiable", true)
+      vim.api.nvim_buf_set_option(self.action_bufnr, "modifiable", true)
       vim.fn.append(vim.fn.line "$", other_actions)
       vim.cmd("resize " .. #self.actions + 2)
       for i, _ in pairs(other_actions) do
@@ -160,19 +159,17 @@ function Action:action_callback()
     }
 
     self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts)
-    api.nvim_command 'autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()'
-    api.nvim_command "autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()"
+    vim.api.nvim_command 'autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()'
+    vim.api.nvim_command "autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()"
 
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, "LspSagaCodeActionTitle", 0, 0, -1)
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, "LspSagaCodeActionTruncateLine", 1, 0, -1)
+    vim.api.nvim_buf_add_highlight(self.action_bufnr, -1, "LspSagaCodeActionTitle", 0, 0, -1)
+    vim.api.nvim_buf_add_highlight(self.action_bufnr, -1, "LspSagaCodeActionTruncateLine", 1, 0, -1)
     for i = 1, #contents - 2, 1 do
-      api.nvim_buf_add_highlight(self.action_bufnr, -1, "LspSagaCodeActionContent", 1 + i, 0, -1)
+      vim.api.nvim_buf_add_highlight(self.action_bufnr, -1, "LspSagaCodeActionContent", 1 + i, 0, -1)
     end
     self:apply_action_keys()
   end
 end
-
-local apply_keys = libs.apply_keys "codeaction"
 
 local apply_keys = libs.apply_keys "codeaction"
 
@@ -217,7 +214,7 @@ function Action:range_code_action(context, start_pos, end_pos)
 
   self.bufnr = vim.fn.bufnr()
   vim.validate { context = { context, "t", true } }
-  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
+  context = context or { diagnostics = vim.diagnostic.get() }
   local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
   params.context = context
   local call_back = self:action_callback()
@@ -286,7 +283,7 @@ local special_buffers = {
 }
 
 lspaction.code_action = function()
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
+  local diagnostics = vim.diagnostic.get()
   Action:code_action(action_call_back, diagnostics)
 end
 
@@ -299,7 +296,7 @@ lspaction.code_action_prompt = function()
     return
   end
 
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
+  local diagnostics = vim.diagnostic.get()
   local winid = get_current_winid()
   Action[winid] = Action[winid] or {}
   Action[winid].lightbulb_line = Action[winid].lightbulb_line or 0

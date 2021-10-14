@@ -8,7 +8,9 @@ saga.config_values = {
   warn_sign = "",
   hint_sign = "",
   infor_sign = "",
-  dianostic_header_icon = "   ",
+  diagnostic_header_icon = "   ",
+  -- diagnostic_show_source = true,
+  -- diagnostic_show_code = true,
   -- code action title icon
   code_action_icon = " ",
   code_action_prompt = {
@@ -42,6 +44,8 @@ saga.config_values = {
   server_filetype_map = {},
 }
 
+saga.config_values.dianostic_header_icon = saga.config_values.diagnostic_header_icon
+
 local extend_config = function(opts)
   opts = opts or {}
   if next(opts) == nil then
@@ -51,6 +55,10 @@ local extend_config = function(opts)
     if saga.config_values[key] == nil then
       error(string.format("[LspSaga] Key %s not exist in config values", key))
       return
+    end
+    if key == "dianostic_header_icon" then
+      --- TODO: remove
+      print "dianostic_header_icon will be depericated soon due to miss-spelling. use 'diagnostic_header_icon'"
     end
     if type(saga.config_values[key]) == "table" then
       for k, v in pairs(value) do
@@ -62,16 +70,31 @@ local extend_config = function(opts)
   end
 end
 
-function saga.init_lsp_saga(opts)
+saga.init_lsp_saga = function(opts)
   extend_config(opts)
-  local diagnostic = require "lspsaga.diagnostic"
+  local config = saga.config_values
 
-  if saga.config_values.use_saga_diagnostic_sign then
-    diagnostic.lsp_diagnostic_sign(saga.config_values)
+  if config.use_saga_diagnostic_sign then
+    for type, icon in pairs {
+      Error = config.error_sign,
+      Warn = config.warn_sign,
+      Hint = config.hint_sign,
+      Info = config.infor_sign,
+    } do
+      local hl = "DiagnosticSign" .. type
+      vim.fn.sign_define(hl, {
+        text = icon,
+        texthl = hl,
+        numhl = "",
+      })
+    end
   end
-  if saga.config_values.code_action_prompt.enable then
+
+  if config.code_action_prompt.enable then
     vim.cmd [[autocmd CursorHold,CursorHoldI * lua require'lspsaga.codeaction'.code_action_prompt()]]
   end
 end
+
+saga.setup = saga.init_lsp_saga
 
 return saga
