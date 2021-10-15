@@ -10,15 +10,16 @@ TODO .......
 
 ## Install
 
-* vim-plug
-```vim
-Plug 'neovim/nvim-lspconfig'
-Plug 'tami5/lspsaga.nvim'
+### Packer
+
+```lua
+use { 'tami5/lspsaga.nvim' } 
 ```
 
 ## Requirements
 
-- NEOVIM NIGHTLY (`+v0.6.0-dev+1865-g3beea1fe1`)
+- neovim/nvim-lspconfig
+- NEOVIM NIGHTLY (`+v0.6.0-dev+1865-g3beea1fe1`) or use nvim51 branch `use { 'tami5/lspsaga.nvim', branch = 'nvim51' } `
 
 ## Setup
 
