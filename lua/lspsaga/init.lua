@@ -91,7 +91,7 @@ saga.init_lsp_saga = function(opts)
   end
 
   if config.code_action_prompt.enable then
-    vim.cmd [[autocmd CursorHold,CursorHoldI * lua require'lspsaga.codeaction'.code_action_prompt()]]
+    require("lspsaga.codeaction.indicator").attach()
   end
 end
 

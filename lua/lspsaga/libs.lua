@@ -129,14 +129,21 @@ function libs.get_lsp_root_dir()
   return ""
 end
 
-function libs.apply_keys(ns)
-  return function(func, keys)
+function libs.apply_keys(ns, actions)
+  local map = function(func, keys)
     keys = type(keys) == "string" and { keys } or keys
     local fmt = "nnoremap <buffer><nowait><silent>%s <cmd>lua require('lspsaga.%s').%s()<CR>"
 
     vim.tbl_map(function(key)
       api.nvim_command(string.format(fmt, key, ns, func))
     end, keys)
+  end
+  if actions then
+    for func, keys in pairs(actions) do
+      map(func, keys)
+    end
+  else
+    return map
   end
 end
 
