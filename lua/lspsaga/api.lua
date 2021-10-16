@@ -5,7 +5,7 @@ M.methods = {
 }
 
 M.diagnostics_line = function(bufnr, winid)
-  vim.diagnostic.get(bufnr, { lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1 })
+  return vim.diagnostic.get(bufnr, { lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1 })
 end
 
 M.code_action_request = function(args)
