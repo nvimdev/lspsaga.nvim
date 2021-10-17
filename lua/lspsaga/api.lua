@@ -5,7 +5,9 @@ M.methods = {
 }
 
 M.diagnostics_line = function(bufnr, winid)
-  return vim.diagnostic.get(bufnr, { lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1 })
+  if vim['diagnostic'] ~= nil then
+    return vim.diagnostic.get(bufnr, { lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1 })
+  end
 end
 
 M.code_action_request = function(args)
