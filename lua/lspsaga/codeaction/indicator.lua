@@ -1,4 +1,4 @@
-local M = {}
+local M = { servers = {} }
 local _config = require("lspsaga").config_values
 local config = _config.code_action_prompt
 local icon = _config.code_action_icon
@@ -63,7 +63,22 @@ end
 
 M.check = function()
   local active, _ = libs.check_lsp_active()
-  if M.special_buffers[vim.bo.filetype] or not active then
+  local current_file = vim.fn.expand "%:p"
+
+  if M.servers[current_file] == nil then
+    local clients = vim.lsp.get_active_clients()
+    for _, client in ipairs(clients) do
+      if client.resolved_capabilities.code_actions then
+        M.servers[current_file] = true
+        break
+      end
+    end
+    if M.servers[current_file] == nil then
+      M.servers[current_file] = false
+    end
+  end
+
+  if M.special_buffers[vim.bo.filetype] or not active or M.servers[current_file] == false then
     return
   end
 
