@@ -396,7 +396,9 @@ function Finder:clear_tmp_data()
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
-  api.nvim_command('hi! CursorLine  guibg='..self.cursor_line_bg)
+  if self.cursor_line_bg ~= '' then
+    api.nvim_command('hi! CursorLine  guibg='..self.cursor_line_bg)
+  end
   if self.cursor_line_fg == '' then
     api.nvim_command('hi! CursorLine  guifg=NONE')
   end
