@@ -4,15 +4,9 @@ M.methods = {
   code_action = "textDocument/codeAction",
 }
 
-M.diagnostics_line = function(bufnr, winid)
-  if vim['diagnostic'] ~= nil then
-    return vim.diagnostic.get(bufnr, { lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1 })
-  end
-end
-
 M.code_action_request = function(args)
-  local winid, bufnr = (args.winid or vim.api.nvim_get_current_win()), vim.api.nvim_get_current_buf()
-  args.params.context = args.context or { diagnostics = M.diagnostics_line(bufnr, winid) }
+  local bufnr = vim.api.nvim_get_current_buf()
+  args.params.context = args.context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
   local callback = args.callback { bufnr = bufnr, method = M.methods.code_action, params = args.params }
   vim.lsp.buf_request_all(bufnr, M.methods.code_action, args.params, callback)
 end
