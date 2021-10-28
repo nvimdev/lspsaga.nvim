@@ -106,10 +106,8 @@ M.show_cursor_diagnostics = function(opts, bufnr)
 
     return vim.tbl_filter(
       function(diagnostic)
-        local start_pos = diagnostic["range"]["start"]
-        local end_pos = diagnostic["range"]["end"]
-        local start_line, start_char = start_pos["line"], start_pos["character"]
-        local end_line, end_char = end_pos["line"], end_pos["character"]
+        local start_line, start_char = diagnostic['lnum'], diagnostic["col"]
+        local end_line, end_char = diagnostic["end_lnum"], diagnostic["end_col"]
         local one_line_diag = start_line == end_line
 
         if one_line_diag and start_line == lnum then
