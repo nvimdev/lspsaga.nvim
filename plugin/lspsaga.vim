@@ -1,18 +1,18 @@
 if exists('g:loaded_lspsaga') | finish | endif
 
-let s:save_cpo = &cpo
-set cpo&vim
+let s:save_cpo = &cpoptions
+set cpoptions&vim
 
 if !has('nvim')
     echohl Error
-    echom "Sorry this plugin only works with versions of neovim that support lua"
+    echom 'Sorry this plugin only works with versions of neovim that support lua'
     echohl clear
     finish
 endif
 
 let g:loaded_lspsaga = 1
 
-let s:bg_color = synIDattr(hlID("Normal"), "bg")
+let s:bg_color = synIDattr(hlID('Normal'), 'bg')
 
 highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 
@@ -73,5 +73,5 @@ endfunction
 " LspSaga Commands with complete
 command! -nargs=+ -complete=custom,s:lspsaga_complete Lspsaga    lua require('lspsaga.command').load_command(<f-args>)
 
-let &cpo = s:save_cpo
+let &cpoptions = s:save_cpo
 unlet s:save_cpo
