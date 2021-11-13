@@ -33,7 +33,8 @@ saga.config_values = {
   definition_preview_icon = '  ',
   border_style = "single",
   rename_prompt_prefix = '➤',
-  server_filetype_map = {}
+  server_filetype_map = {},
+  prefix_diagnostic = true
 }
 
 local extend_config = function(opts)
