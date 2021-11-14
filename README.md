@@ -67,6 +67,7 @@ lspsaga.setup { -- defaults ...
   border_style = "single",
   rename_prompt_prefix = "➤",
   server_filetype_map = {},
+  diagnostic_prefix_format = "%d. ",
 }
 ```
 ## Example Keymapings

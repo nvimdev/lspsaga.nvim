@@ -59,7 +59,7 @@ local show_diagnostics = function(opts, get_diagnostics)
   end
 
   for i, diagnostic in ipairs(diagnostics) do
-    local prefix = string.format("%d. ", i)
+    local prefix = string.format(config.diagnostic_prefix_format, i)
     local hiname = M.highlights[diagnostic.severity]
     assert(hiname, "unknown severity: " .. tostring(diagnostic.severity))
 
@@ -76,8 +76,10 @@ local show_diagnostics = function(opts, get_diagnostics)
   end
 
   local wrap_message = wrap.wrap_contents(lines, max_width, { fill = true, pad_left = 3 })
-  local truncate_line = wrap.add_truncate_line(wrap_message)
-  table.insert(wrap_message, 2, truncate_line)
+  if show_header then
+    local truncate_line = wrap.add_truncate_line(wrap_message)
+    table.insert(wrap_message, 2, truncate_line)
+  end
 
   local content_opts = { contents = wrap_message, filetype = "plaintext", highlight = "LspSagaDiagnosticBorder" }
   local bufnr, winid = window.create_win_with_border(content_opts, opts)
