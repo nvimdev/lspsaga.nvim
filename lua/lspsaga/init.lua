@@ -38,6 +38,7 @@ saga.config_values = {
     quit = "<C-c>",
     exec = "<CR>",
   },
+  rename_prompt_populate = true,
   definition_preview_icon = "  ",
   border_style = "single",
   rename_prompt_prefix = "➤",
