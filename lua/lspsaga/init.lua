@@ -60,7 +60,7 @@ local extend_config = function(opts)
     end
     if key == "dianostic_header_icon" then
       --- TODO: remove
-      print "dianostic_header_icon will be depericated soon due to miss-spelling. use 'diagnostic_header_icon'"
+      print "dianostic_header_icon will be deprecated soon due to misspelling. use 'diagnostic_header_icon'"
     end
     if type(saga.config_values[key]) == "table" then
       for k, v in pairs(value) do
