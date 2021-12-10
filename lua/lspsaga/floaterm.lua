@@ -1,5 +1,6 @@
 local api = vim.api
 local window = require "lspsaga.window"
+local terminal_is_open = 0
 
 local function open_float_terminal(command, border_style)
   local cmd = command or ""
@@ -46,6 +47,7 @@ local function open_float_terminal(command, border_style)
   api.nvim_command "setlocal nobuflisted"
   api.nvim_command "startinsert!"
   api.nvim_buf_set_var(cb, "float_terminal_win", { cw, ow })
+  terminal_is_open = 1
 end
 
 local function close_float_terminal()
@@ -61,10 +63,20 @@ local function close_float_terminal()
   then
     api.nvim_win_close(float_terminal_win[1], true)
     api.nvim_win_close(float_terminal_win[2], true)
+    terminal_is_open = 0
+  end
+end
+
+local function toggle_float_terminal()
+  if terminal_is_open == 0 then
+    open_float_terminal()
+  else
+    close_float_terminal()
   end
 end
 
 return {
   open_float_terminal = open_float_terminal,
   close_float_terminal = close_float_terminal,
+  toggle_float_terminal = toggle_float_terminal,
 }
