@@ -1,4 +1,4 @@
--- lsp dianostic
+-- lsp diagnostic
 local window = require "lspsaga.window"
 local libs = require "lspsaga.libs"
 local wrap = require "lspsaga.wrap"
@@ -44,7 +44,7 @@ local show_diagnostics = function(opts, get_diagnostics)
   local lines = {}
   local highlights = {}
   if show_header then
-    lines[1] = config.dianostic_header_icon .. "Diagnostics:"
+    lines[1] = config.diagnostic_header_icon .. "Diagnostics:"
     highlights[1] = { 0, "LspSagaDiagnosticHeader" }
   end
 
