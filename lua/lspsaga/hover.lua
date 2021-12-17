@@ -1,6 +1,7 @@
 local api, lsp, util = vim.api, vim.lsp, vim.lsp.util
 local window = require "lspsaga.window"
 local action = require "lspsaga.action"
+local libs = require 'lspsaga.libs'
 local npcall = vim.F.npcall
 local hover = {}
 
@@ -29,7 +30,7 @@ hover.handler = function(_, result, ctx, _)
     window.nvim_win_try_close()
     local bufnr, winid = window.fancy_floating_markdown(markdown_lines)
 
-    lsp.util.close_preview_autocmd({
+    libs.close_preview_autocmd({
       "CursorMoved",
       "BufHidden",
       "BufLeave",

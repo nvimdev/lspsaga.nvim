@@ -95,7 +95,7 @@ local show_diagnostics = function(opts, get_diagnostics)
   end
 
   vim.api.nvim_buf_add_highlight(bufnr, -1, "LspSagaDiagnosticTruncateLine", 1, 0, -1)
-  vim.lsp.util.close_preview_autocmd({ "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" }, winid)
+  libs.close_preview_autocmd({ "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" }, winid)
   vim.api.nvim_win_set_var(0, "show_line_diag_winids", winid)
 
   return winid

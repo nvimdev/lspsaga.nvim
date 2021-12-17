@@ -564,7 +564,7 @@ function lspfinder.preview_definition(timeout_ms)
         }
 
         local bf, wi = window.create_win_with_border(content_opts, opts)
-        vim.lsp.util.close_preview_autocmd({ "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" }, wi)
+        libs.close_preview_autocmd({ "CursorMoved", "CursorMovedI", "BufHidden", "BufLeave" }, wi)
         vim.api.nvim_buf_add_highlight(bf, -1, "DefinitionPreviewTitle", 0, 0, -1)
 
         api.nvim_buf_set_var(0, "lspsaga_def_preview", { wi, 1, config.max_preview_lines, 10 })
