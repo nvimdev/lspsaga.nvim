@@ -127,7 +127,9 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
   api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDiagnosticTruncateLine',1,0,-1)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, winid)
+  api.nvim_command(
+    string.format('autocmd CursorMoved,CursorMovedI,BufHidden,BufLeave <buffer> ++once lua pcall(vim.api.nvim_win_close, %d, true)', winid)
+  )
   api.nvim_win_set_var(0,"show_line_diag_winids",winid)
   return winid
 end

@@ -501,7 +501,9 @@ function lspfinder.preview_definition(timeout_ms)
     }
 
     local bf,wi = window.create_win_with_border(content_opts,opts)
-    vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
+    api.nvim_command(
+      string.format('autocmd CursorMoved,CursorMovedI,BufHidden,BufLeave <buffer> ++once lua pcall(vim.api.nvim_win_close, %d, true)', winid)
+    )
                                         wi)
     vim.api.nvim_buf_add_highlight(bf,-1,"DefinitionPreviewTitle",0,0,-1)
 

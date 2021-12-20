@@ -25,7 +25,9 @@ hover.handler = function(_, method, result)
     window.nvim_win_try_close()
     local bufnr,winid = window.fancy_floating_markdown(markdown_lines)
 
-    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, winid)
+    api.nvim_command(
+      string.format('autocmd CursorMoved,BufHidden,BufLeave,InsertCharPre <buffer> ++once lua pcall(vim.api.nvim_win_close, %d, true)', winid)
+    )
     return bufnr,winid
   end)
 end
