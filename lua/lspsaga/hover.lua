@@ -16,8 +16,8 @@ local function focusable_float(unique_name, fn)
   end
 end
 
-hover.handler = function(_, method, result)
-  focusable_float(method, function()
+hover.handler = function(_, result, ctx)
+  focusable_float(ctx.method, function()
     if not (result and result.contents) then return end
     local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
     markdown_lines = lsp.util.trim_empty_lines(markdown_lines)

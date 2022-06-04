@@ -95,7 +95,7 @@ function Action:render_action_virtual_text(line,diagnostics)
 end
 
 function Action:action_callback()
-  return function (_,_,response)
+  return function (_, response)
     if response == nil or vim.tbl_isempty(response) then
       print("No code actions available")
       return
