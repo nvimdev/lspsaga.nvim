@@ -32,7 +32,7 @@ function M.lsp_jump_diagnostic_next(opts)
   return _iter_diagnostic_move_pos(
     "DiagnosticNext",
     opts,
-    vim.lsp.diagnostic.get_next_pos(opts)
+    vim.diagnostic.get(opts)
   )
 end
 
