@@ -36,6 +36,16 @@ local function _update_virtual_text(line)
   end
 end
 
+local function check_server_support_codeaction()
+  local clients = vim.lsp.buf_get_clients()
+    for _,client in pairs(clients) do
+      if client.resolved_capabilities.code_action == true then
+        return true
+      end
+    end
+  return false
+end
+
 local function _update_sign(line)
   local winid = get_current_winid()
   if Action[winid] and Action[winid].lightbulb_line ~= 0 then
@@ -182,19 +192,23 @@ end
 
 function Action:code_action(_call_back_fn,diagnostics)
   local active,_ = libs.check_lsp_active()
-  if not active then return end
+  local has_code_action = check_server_support_codeaction()
+  if not (active and has_code_action) then return end
+
   self.bufnr = vim.fn.bufnr()
   local context =  { diagnostics = diagnostics }
   local params = vim.lsp.util.make_range_params()
   params.context = context
   local line = params.range.start.line
   local callback = _call_back_fn(line,diagnostics)
+
   vim.lsp.buf_request(0,'textDocument/codeAction', params,callback)
 end
 
 function Action:range_code_action(context, start_pos, end_pos)
-  local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  local active,_ = libs.check_lsp_active()
+  local has_code_action = check_server_support_codeaction()
+  if not (active and has_code_action) then return end
 
   self.bufnr = vim.fn.bufnr()
   vim.validate { context = { context, 't', true } }
@@ -223,6 +237,9 @@ local function lsp_execute_command(bn,command)
 end
 
 function Action:do_code_action()
+  local has_code_action = check_server_support_codeaction()
+  if not has_code_action then return end
+
   local number = tonumber(vim.fn.expand("<cword>"))
   local action = self.actions[number]
 
@@ -267,7 +284,8 @@ end
 lspaction.code_action_prompt = function ()
   if special_buffers[vim.bo.filetype] then return end
   local active_lsp,_ = libs.check_lsp_active()
-  if not active_lsp then return end
+  local has_code_action = check_server_support_codeaction()
+  if not (active_lsp and has_code_action) then return end
 
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
   local winid = get_current_winid()
