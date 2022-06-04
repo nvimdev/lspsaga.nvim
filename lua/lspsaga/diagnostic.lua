@@ -1,4 +1,4 @@
--- lsp dianostic
+-- lsp diagnostic
 local vim,api,lsp,util = vim,vim.api,vim.lsp,vim.lsp.util
 local window = require 'lspsaga.window'
 local libs = require('lspsaga.libs')
@@ -76,7 +76,7 @@ local function show_diagnostics(opts, get_diagnostics)
   local lines = {}
   local highlights = {}
   if show_header then
-    lines[1] = config.dianostic_header_icon .. "Diagnostics:"
+    lines[1] = config.diagnostic_header_icon .. "Diagnostics:"
     highlights[1] =  {0, "LspSagaDiagnosticHeader"}
   end
 
