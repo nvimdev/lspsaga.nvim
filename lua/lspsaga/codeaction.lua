@@ -39,7 +39,7 @@ end
 local function check_server_support_codeaction()
   local clients = vim.lsp.buf_get_clients()
     for _,client in pairs(clients) do
-      if client.resolved_capabilities.code_action == true then
+      if client.server_capabilities.code_action == true then
         return true
       end
     end

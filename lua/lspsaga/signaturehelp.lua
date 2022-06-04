@@ -21,7 +21,7 @@ local function check_server_support_signaturehelp()
   if not active then print(msg) return end
   local clients = vim.lsp.buf_get_clients()
   for _,client in pairs(clients) do
-    if client.resolved_capabilities.signature_help == true then
+    if client.server_capabilities.signature_help == true then
       return true
     end
   end
