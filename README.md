@@ -215,6 +215,7 @@ The available highlight groups are:
 | Group Name               | Description                                                      |
 | :----------------------- | :----------------------------------------------------------------|
 | `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
+| `LspSagaLspFinderBorder` | |
 | `LspFloatWinNormal` | |
 | `LspFloatWinBorder` | |
 | `LspSagaBorderTitle` | |
@@ -227,11 +228,6 @@ The available highlight groups are:
 | `ProviderTruncateLine` | |
 | `SagaShadow` | |
 | `LspSagaFinderSelection` | |
-| `DiagnosticTruncateLine` | |
-| `DiagnosticError` | |
-| `DiagnosticWarning` | |
-| `DiagnosticInformation` | |
-| `DiagnosticHint` | |
 | `DefinitionPreviewTitle` | |
 | `LspSagaShTruncateLine` | |
 | `LspSagaDocTruncateLine` | |
@@ -247,6 +243,9 @@ The available highlight groups are:
 | `LspSagaAutoPreview` | |
 | `LspSagaDefPreviewBorder` | |
 | `LspLinesDiagBorder` | |
+| `LspSagaDiagnosticBorder` | |
+| `LspSagaDiagnosticTruncateLine` | |
+| `LspSagaDiagnosticHeader` | |
 
 # License
 

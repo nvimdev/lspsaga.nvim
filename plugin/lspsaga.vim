@@ -31,12 +31,6 @@ highlight default SagaShadow guibg=#000000
 
 highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 
-highlight default DiagnosticTruncateLine guifg=#6699cc guibg=NONE gui=bold
-highlight default link DiagnosticError Error
-highlight default link DiagnosticWarning WarningMsg
-highlight default DiagnosticInformation guifg=#6699cc guibg=NONE gui=bold
-highlight default DiagnosticHint guifg=#56b6c2 guibg=NONE gui=bold
-
 highlight default link DefinitionPreviewTitle Title
 
 highlight default LspSagaDiagnosticBorder guifg=#7739e3 guibg=NONE
