@@ -100,7 +100,17 @@ end
 
 local function generate_win_opts(contents,opts)
   opts = opts or {}
-  local win_width,win_height = vim.lsp.util._make_floating_popup_size(contents,opts)
+  local win_width, win_height
+  -- _make_floating_popup_size doesn't allow the window size to be larger than
+  -- the current window. For the finder preview window, this means it won't let the
+  -- preview window be wider than the finder window. To work around this, the
+  -- no_size_override option can be set to indicate that the size shouldn't be changed
+  -- from what was given.
+  if (opts.no_size_override and opts.width and opts.height) then
+    win_width, win_height = opts.width, opts.height
+  else
+    win_width, win_height = vim.lsp.util._make_floating_popup_size(contents,opts)
+  end
   opts = make_floating_popup_options(win_width, win_height, opts)
   return opts
 end
