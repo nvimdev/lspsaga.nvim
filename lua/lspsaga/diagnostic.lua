@@ -183,7 +183,7 @@ local function no_char_range(cursor_line, diagnostic)
   return false
 end
 
-function M.show_cursor_diagnostics(opts, bufnr, client_id)
+function M.show_cursor_diagnostics(opts, bufnr)
   opts = opts or {}
 
   local get_cursor_diagnostics = function()
@@ -197,7 +197,7 @@ function M.show_cursor_diagnostics(opts, bufnr, client_id)
     end
 
     return vim.tbl_filter(
-      is_cursor_diag, lsp.diagnostic.get(bufnr, client_id)
+      is_cursor_diag, vim.diagnostic.get(bufnr)
     )
   end
 
