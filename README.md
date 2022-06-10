@@ -20,7 +20,7 @@ local saga = require 'lspsaga'
 
 -- add your config value here
 -- default value
--- use_saga_diagnostic_sign = true
+-- use_saga_diagnostic_sign = true,
 -- error_sign = '',
 -- warn_sign = '',
 -- hint_sign = '',
@@ -47,11 +47,11 @@ local saga = require 'lspsaga'
 -- },
 -- definition_preview_icon = '  '
 -- "single" "double" "round" "plus"
--- border_style = "single"
+-- border_style = "single",
 -- rename_prompt_prefix = '➤',
 -- if you don't use nvim-lspconfig you must pass your server name and
 -- the related filetypes into this table
--- like server_filetype_map = {metals = {'sbt', 'scala'}}
+-- like server_filetype_map = {metals = {'sbt', 'scala'}},
 -- server_filetype_map = {}
 
 saga.init_lsp_saga {
