@@ -137,7 +137,6 @@ local function open_shadow_win()
   return shadow_bufnr,shadow_winid
 end
 
-
 function M.create_win_with_border(content_opts,opts)
   vim.validate{
     content_opts = {content_opts,'t'},
