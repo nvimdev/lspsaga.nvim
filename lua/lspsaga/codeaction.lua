@@ -273,7 +273,7 @@ local lspaction = {}
 
 local special_buffers = {
   ['LspSagaCodeAction'] = true, ['lspsagafinder'] = true,['NvimTree'] = true,
-  ['vist'] = true,['lspinfo'] = true,['markdown'] = true,['text'] = true,
+  ['vista'] = true,['lspinfo'] = true,['markdown'] = true,['text'] = true,
 }
 
 lspaction.code_action = function()
