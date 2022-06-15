@@ -22,10 +22,19 @@ hover.handler = function(_, result, ctx)
     local markdown_lines = lsp.util.convert_input_to_markdown_lines(result.contents)
     markdown_lines = lsp.util.trim_empty_lines(markdown_lines)
     if vim.tbl_isempty(markdown_lines) then return end
+    local buffer = api.nvim_get_current_buf()
     window.nvim_win_try_close()
     local bufnr,winid = window.fancy_floating_markdown(markdown_lines)
 
-    lsp.util.close_preview_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}, winid)
+    api.nvim_create_autocmd({"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"},{
+      buffer = buffer,
+      once = true,
+      callback = function()
+        if api.nvim_win_is_valid(winid) then
+          api.nvim_win_close(winid,true)
+        end
+      end
+    })
     return bufnr,winid
   end)
 end
