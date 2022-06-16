@@ -1,5 +1,4 @@
 local command = {}
-local provider = require('lspsaga.provider')
 local lsprename = require('lspsaga.rename')
 local lsphover = require('lspsaga.hover')
 local diagnostic = require('lspsaga.diagnostic')
@@ -9,8 +8,8 @@ local floaterm = require('lspsaga.floaterm')
 local implement = require('lspsaga.implement')
 
 local subcommands = {
-  lsp_finder = provider.lsp_finder,
-  preview_definition = provider.preview_definition,
+  lsp_finder = require('lspsaga.provider').lsp_finder,
+  preview_definition = require('lspsaga.definition').preview_definition,
   rename = lsprename.rename,
   hover_doc = lsphover.render_hover_doc,
   show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
