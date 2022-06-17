@@ -137,4 +137,16 @@ function libs.apply_keys(ns)
   end
 end
 
+function libs.close_preview_autocmd(bufnr,winid,events)
+  api.nvim_create_autocmd(events,{
+    buffer = bufnr,
+    once = true,
+    callback = function()
+      if api.nvim_win_is_valid(winid) then
+        api.nvim_win_close(winid,true)
+      end
+    end
+  })
+end
+
 return libs
