@@ -32,7 +32,7 @@ function M.lsp_jump_diagnostic_next(opts)
   return _iter_diagnostic_move_pos(
     "DiagnosticNext",
     opts,
-    vim.diagnostic.get(opts)
+    vim.diagnostic.get_next_pos()
   )
 end
 
@@ -40,7 +40,7 @@ function M.lsp_jump_diagnostic_prev(opts)
   return _iter_diagnostic_move_pos(
     "DiagnosticPrevious",
     opts,
-    vim.lsp.diagnostic.get_prev_pos(opts)
+    vim.diagnostic.get_prev_pos(opts)
   )
 end
 
@@ -87,11 +87,11 @@ local function show_diagnostics(opts, get_diagnostics)
     and table.sort(diagnostics, comp_severity_asc)
     or diagnostics
 
+  local severities = vim.diagnostic.severity
   for i, diagnostic in ipairs(sorted_diagnostics) do
     local prefix = string.format("%d. ", i)
-    local hiname = lsp.diagnostic._get_floating_severity_highlight_name(diagnostic.severity)
-    assert(hiname, 'unknown severity: ' .. tostring(diagnostic.severity))
 
+    local hiname = severities[diagnostic.severity] or severities[1]
     local message_lines = vim.split(diagnostic.message, '\n', true)
     table.insert(lines, prefix..message_lines[1])
     table.insert(highlights, {#prefix + 1, hiname})
@@ -127,7 +127,7 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
   api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDiagnosticTruncateLine',1,0,-1)
-  util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, winid)
+  libs.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, winid)
   api.nvim_win_set_var(0,"show_line_diag_winids",winid)
   return winid
 end

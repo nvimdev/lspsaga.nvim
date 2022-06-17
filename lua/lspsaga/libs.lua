@@ -137,4 +137,10 @@ function libs.apply_keys(ns)
   end
 end
 
+function libs.close_preview_autocmd(events, winid)
+  local events_str = table.concat(events, ',')
+  local cmd = string.format('autocmd %s <buffer> ++once lua pcall(vim.api.nvim_win_close, %d, true)', events_str, winid)
+  vim.api.nvim_command(cmd)
+end
+
 return libs
