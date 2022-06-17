@@ -40,7 +40,7 @@ function M.lsp_jump_diagnostic_prev(opts)
   return _iter_diagnostic_move_pos(
     "DiagnosticPrevious",
     opts,
-    vim.diagnostic.get_prev_pos(opts)
+    vim.diagnostic.get_prev_pos()
   )
 end
 
