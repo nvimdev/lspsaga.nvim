@@ -44,18 +44,20 @@ highlight default link LspSagaDiagnosticHint DiagnosticHint
 
 highlight default LspSagaShTruncateLine guifg=black guibg=NONE
 highlight default LspSagaDocTruncateLine guifg=black guibg=NONE
-highlight default LspSagaCodeActionTitle guifg=#da8548 guibg=NONE gui=bold
-highlight default LspSagaCodeActionTruncateLine guifg=black guibg=NONE
 
-highlight default LspSagaCodeActionContent guifg=#98be65 guibg=NONE gui=bold
+highlight default LspSagaTruncateLine guifg=black guibg=NONE
+
+highlight default LspSagaCodeActionTitle guifg=#da8548 gui=bold
+highlight default LspSagaCodeActionBorder guifg=#98be65
+highlight default LspSagaCodeActionContent guifg=#98be65 gui=bold
 
 highlight default LspSagaRenamePromptPrefix guifg=#98be65 guibg=NONE
 
-highlight default LspSagaRenameBorder guifg=#3bb6c4 guibg=NONE
+highlight default LspSagaRenameBorder guifg=#3bb6c4
 highlight default LspSagaHoverBorder guifg=#80A0C2 guibg=NONE
 highlight default LspSagaSignatureHelpBorder guifg=#98be65 guibg=NONE
+
 highlight default LspSagaLspFinderBorder guifg=#51afef guibg=NONE
-highlight default LspSagaCodeActionBorder guifg=#b3deef guibg=NONE
 highlight default LspSagaAutoPreview guifg=#ECBE7B guibg=NONE
 highlight default LspSagaDefPreviewBorder guifg=#b3deef guibg=NONE
 

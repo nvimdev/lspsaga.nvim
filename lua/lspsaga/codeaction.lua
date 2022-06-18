@@ -9,16 +9,6 @@ local method = 'textDocument/codeAction'
 local Action = {}
 Action.__index = Action
 
-local function check_server_support_codeaction()
-  local clients = vim.lsp.buf_get_clients()
-    for _,client in pairs(clients) do
-      if client.server_capabilities.code_action == true then
-        return true
-      end
-    end
-  return false
-end
-
 function Action:action_callback(response)
     if response == nil or vim.tbl_isempty(response) then
       print("No code actions available")
@@ -66,7 +56,7 @@ function Action:action_callback(response)
 
     local content_opts = {
       contents = contents,
-      filetype = 'LspSagaCodeAction',
+      filetype = 'sagacodeaction',
       enter = true,
       highlight = 'LspSagaCodeActionBorder'
     }

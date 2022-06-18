@@ -215,7 +215,7 @@ The available highlight groups are:
 | Group Name                      | Description                                                      |
 |:--------------------------------|:-----------------------------------------------------------------|
 | `LspSagaFinderSelection`        | Currently active entry in the finder window that gets previewed. |
-| `LspSagaLspFinderBorder`        | Lsp Finder window border                                                                 |
+| `LspSagaLspFinderBorder`        | Lsp Finder window border                                         |
 | `LspFloatWinNormal`             |                                                                  |
 | `LspFloatWinBorder`             |                                                                  |
 | `LspSagaBorderTitle`            |                                                                  |
@@ -241,10 +241,10 @@ The available highlight groups are:
 | `LspSagaCodeActionBorder`       |                                                                  |
 | `LspSagaAutoPreview`            |                                                                  |
 | `LspSagaDefPreviewBorder`       |                                                                  |
-| `LspSagaDiagnosticError`        |  Default link to DiagnosticError                                                               |
-| `LspSagaDiagnosticWarn`         |  Default link to DiagnosticWarn                                                                |
-| `LspSagaDiagnosticInfo`         |  Default link to DiagnosticInfo                                                              |
-| `LspSagaDiagnosticHint`         |  Default link to DiagnosticHint                                                               |
+| `LspSagaDiagnosticError`        | Default link to DiagnosticError                                  |
+| `LspSagaDiagnosticWarn`         | Default link to DiagnosticWarn                                   |
+| `LspSagaDiagnosticInfo`         | Default link to DiagnosticInfo                                   |
+| `LspSagaDiagnosticHint`         | Default link to DiagnosticHint                                   |
 | `LspSagaDiagnosticTruncateLine` |                                                                  |
 | `LspSagaDiagnosticHeader`       |                                                                  |
 
