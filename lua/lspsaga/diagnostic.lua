@@ -34,7 +34,7 @@ local function render_diagnostic_window(entry)
 
   api.nvim_buf_add_highlight(bufnr,-1,hi_name,0,0,#icon)
   api.nvim_buf_add_highlight(bufnr,-1,hi_name,0,#icon,-1)
-  api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDiagnosticTruncateLine',1,0,-1)
+  api.nvim_buf_add_highlight(bufnr,-1,'LspSagaTrunCateLine',1,0,-1)
 
   for i,_ in pairs(wrap_message) do
     if i > 2 then

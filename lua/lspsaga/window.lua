@@ -329,7 +329,7 @@ function M.fancy_floating_markdown(contents, opts)
   local height = opts.height or #stripped
   api.nvim_win_set_var(0,'lspsaga_hoverwin_data',{winid,height,height,#stripped})
 
-  api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDocTruncateLine',wrapped_index,0,-1)
+  api.nvim_buf_add_highlight(bufnr,-1,'LspSagaTrunCateLine',wrapped_index,0,-1)
 
   -- Switch to the floating window to apply the syntax highlighting.
   -- This is because the syntax command doesn't accept a target.

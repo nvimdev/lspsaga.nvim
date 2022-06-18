@@ -107,7 +107,7 @@ local function focusable_preview(unique_name, fn)
     }
 
     local bufnr,winid = window.create_win_with_border(content_opts,opts)
-    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
+    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaTrunCateLine',wrap_index,0,-1)
     api.nvim_buf_set_var(0,'saga_signature_help_win',{winid,1,#contents,max_height})
     local cwin = api.nvim_get_current_win()
     api.nvim_set_current_win(winid)
