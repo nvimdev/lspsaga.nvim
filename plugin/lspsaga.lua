@@ -8,7 +8,7 @@ local highlights = {
   -- finder
   LspSagaLspFinderBorder = {fg = '#51afef'},
   LspSagaAutoPreview = { fg= '#ecbe7b'},
-  LspSagaFinderSelection = { fg = '89d957',bold = true},
+  LspSagaFinderSelection = { fg = '#89d957',bold = true},
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   -- hover

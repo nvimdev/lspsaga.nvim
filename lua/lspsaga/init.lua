@@ -1,3 +1,4 @@
+local api = vim.api
 local saga = {}
 
 saga.config_values = {
@@ -12,7 +13,7 @@ saga.config_values = {
   diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   -- code action title icon
   code_action_icon = ' ',
-  code_action_prompt = {
+  code_action_lightbulb = {
     enable = true,
     sign = true,
     sign_priority = 40,
@@ -57,14 +58,17 @@ end
 
 function saga.init_lsp_saga(opts)
   extend_config(opts)
-  local diagnostic = require 'lspsaga.diagnostic'
+--   local diagnostic = require 'lspsaga.diagnostic'
 
 --   if saga.config_values.use_saga_diagnostic_sign then
 --     diagnostic.lsp_diagnostic_sign(saga.config_values)
 --   end
---   if saga.config_values.code_action_prompt.enable then
---     vim.cmd [[autocmd CursorHold,CursorHoldI * lua require'lspsaga.codeaction'.code_action_prompt()]]
---   end
+  if saga.config_values.code_action_lightbulb.enable then
+    api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
+      pattern = '*',
+      callback = require('lspsaga.lightbulb').action_lightbulb
+    })
+  end
 end
 
 return saga
