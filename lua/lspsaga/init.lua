@@ -8,7 +8,8 @@ saga.config_values = {
   warn_sign = '',
   hint_sign = '',
   infor_sign = '',
-  diagnostic_header_icon = '   ',
+  -- Error,Warn,Info,Hint
+  diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   -- code action title icon
   code_action_icon = ' ',
   code_action_prompt = {

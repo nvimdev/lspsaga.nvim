@@ -34,12 +34,13 @@ highlight default LspSagaFinderSelection guifg=#89d957 guibg=NONE gui=bold
 highlight default link DefinitionPreviewTitle Title
 
 highlight default LspSagaDiagnosticBorder guifg=#7739e3 guibg=NONE
-highlight default LspSagaDiagnosticHeader guifg=#d8a657 guibg=NONE gui=bold
-highlight default LspSagaDiagnosticTruncateLine guifg=#7739e3 guibg=NONE
-highlight default LspDiagnosticsFloatingError guifg=#EC5f67 guibg=NONE
-highlight default LspDiagnosticsFloatingWarn guifg=#d8a657 guibg=NONE
-highlight default LspDiagnosticsFloatingInfor guifg=#6699cc guibg=NONE
-highlight default LspDiagnosticsFloatingHint guifg=#56b6c2 guibg=NONE
+highlight default DiagnosticHeader guifg=#d8a657 guibg=NONE gui=bold
+highlight default LspSagaDiagnosticTruncateLine guifg=black guibg=NONE
+
+highlight default link LspSagaDiagnosticError DiagnosticError
+highlight default link LspSagaDiagnosticWarn DiagnosticWarn
+highlight default link LspSagaDiagnosticInfo DiagnosticInfo
+highlight default link LspSagaDiagnosticHint DiagnosticHint
 
 highlight default LspSagaShTruncateLine guifg=black guibg=NONE
 highlight default LspSagaDocTruncateLine guifg=black guibg=NONE
