@@ -13,7 +13,6 @@ end
 local function check_server_support_codeaction()
   local clients = vim.lsp.buf_get_clients()
     for _,client in pairs(clients) do
-      print(vim.inspect(client))
       if client.supports_method(method) then
         return true
       end
@@ -52,7 +51,6 @@ local function _update_sign(line)
 end
 
 local function render_action_virtual_text(line,diagnostics,actions)
-  print(vim.inspect(actions))
   if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(nil)
