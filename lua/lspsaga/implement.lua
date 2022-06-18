@@ -57,8 +57,11 @@ function implement.lspsaga_implementation(timeout_ms)
     }
 
     local bf,wi = window.create_win_with_border(content_opts,opts)
-    vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
-                                        wi)
+
+    local close_events= {"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}
+    vim.defer_fn(function()
+      libs.close_preview_autocmd(bf,wi,close_events)
+    end,0)
     vim.api.nvim_buf_add_highlight(bf,-1,"DefinitionPreviewTitle",0,0,-1)
 
     api.nvim_buf_set_var(0,'lspsaga_implement_preview',{wi,1,config.max_preview_lines,10})

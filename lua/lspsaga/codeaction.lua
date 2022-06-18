@@ -3,38 +3,11 @@ local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
+local method = 'textDocument/codeAction'
+
 
 local Action = {}
 Action.__index = Action
-
-local get_namespace = function ()
-  return api.nvim_create_namespace('sagalightbulb')
-end
-
-local get_current_winid = function ()
-  return api.nvim_get_current_win()
-end
-
-local SIGN_GROUP = "sagalightbulb"
-local SIGN_NAME = "LspSagaLightBulb"
-
-if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspSagaLightBulb" })
-end
-
-local function _update_virtual_text(line)
-  local namespace = get_namespace()
-  api.nvim_buf_clear_namespace(0, namespace, 0, -1)
-
-  if line then
-    local icon_with_indent = '  ' .. config.code_action_icon
-    api.nvim_buf_set_extmark(0,namespace,line,-1,{
-        virt_text = { {icon_with_indent,'LspSagaLightBulb'} },
-        virt_text_pos = 'overlay',
-        hl_mode = "combine"
-      })
-  end
-end
 
 local function check_server_support_codeaction()
   local clients = vim.lsp.buf_get_clients()
@@ -46,66 +19,7 @@ local function check_server_support_codeaction()
   return false
 end
 
-local function _update_sign(line)
-  local winid = get_current_winid()
-  if Action[winid] and Action[winid].lightbulb_line ~= 0 then
-    vim.fn.sign_unplace(
-      SIGN_GROUP, { id = Action[winid].lightbulb_line, buffer = "%" }
-    )
-  end
-
-  if line then
-    vim.fn.sign_place(
-      line, SIGN_GROUP, SIGN_NAME, "%",
-      { lnum = line + 1, priority = config.code_action_prompt.sign_priority }
-    )
-    Action[winid].lightbulb_line = line
-  end
-end
-
-local need_check_diagnostic = {
-  ['go'] = true,['python'] = true
-}
-
-function Action:render_action_virtual_text(line,diagnostics)
-  return function (_,_,actions)
-    if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
-      if config.code_action_prompt.virtual_text then
-        _update_virtual_text(nil)
-      end
-      if config.code_action_prompt.sign then
-        _update_sign(nil)
-      end
-    else
-      if config.code_action_prompt.sign then
-        if need_check_diagnostic[vim.bo.filetype] then
-          if next(diagnostics) == nil then
-            _update_sign(nil)
-          else
-            _update_sign(line)
-          end
-        else
-          _update_sign(line)
-        end
-      end
-
-      if config.code_action_prompt.virtual_text then
-        if need_check_diagnostic[vim.bo.filetype] then
-          if next(diagnostics) == nil then
-            _update_virtual_text(nil)
-          else
-            _update_virtual_text(line)
-          end
-        else
-          _update_virtual_text(line)
-        end
-      end
-    end
-  end
-end
-
-function Action:action_callback()
-  return function (_, response)
+function Action:action_callback(response)
     if response == nil or vim.tbl_isempty(response) then
       print("No code actions available")
       return
@@ -158,8 +72,19 @@ function Action:action_callback()
     }
 
     self.action_bufnr,self.action_winid = window.create_win_with_border(content_opts)
-    api.nvim_command('autocmd CursorMoved <buffer> lua require("lspsaga.codeaction").set_cursor()')
-    api.nvim_command("autocmd QuitPre <buffer> lua require('lspsaga.codeaction').quit_action_window()")
+    api.nvim_create_autocmd('CursorMoved',{
+      buffer = self.action_bufnr,
+      callback = function()
+        require('lspsaga.codeaction'):set_cursor()
+      end
+    })
+
+    api.nvim_create_autocmd('QuitPre',{
+      buffer = self.action_bufnr,
+      callback = function()
+        require('lspsaga.codeaction'):quit_action_window()
+      end
+    })
 
     api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
     api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTruncateLine",1,0,-1)
@@ -167,7 +92,6 @@ function Action:action_callback()
       api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end
     self:apply_action_keys()
-  end
 end
 
 local apply_keys = libs.apply_keys("codeaction")
@@ -182,41 +106,30 @@ function Action:apply_action_keys()
   end
 end
 
-local action_call_back = function (_,_)
-  return Action:action_callback()
-end
-
-local action_vritual_call_back = function (line,diagnostics)
-  return Action:render_action_virtual_text(line,diagnostics)
-end
-
-function Action:code_action(_call_back_fn,diagnostics)
-  local active,_ = libs.check_lsp_active()
-  local has_code_action = check_server_support_codeaction()
-  if not (active and has_code_action) then return end
-
-  self.bufnr = vim.fn.bufnr()
+function Action:code_action()
+  self.bufnr = api.nvim_get_current_buf()
+  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context =  { diagnostics = diagnostics }
   local params = vim.lsp.util.make_range_params()
   params.context = context
-  local line = params.range.start.line
-  local callback = _call_back_fn(line,diagnostics)
 
-  vim.lsp.buf_request(0,'textDocument/codeAction', params,callback)
+  vim.lsp.buf_request_all(self.bufnr,method, params,function(results)
+    local response = results[1].result
+    self:action_callback(response)
+  end)
 end
 
 function Action:range_code_action(context, start_pos, end_pos)
-  local active,_ = libs.check_lsp_active()
-  local has_code_action = check_server_support_codeaction()
-  if not (active and has_code_action) then return end
-
-  self.bufnr = vim.fn.bufnr()
+  self.bufnr = api.nvim_get_current_buf()
   vim.validate { context = { context, 't', true } }
-  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics() }
+  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr) }
   local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
   params.context = context
-  local call_back = self:action_callback()
-  vim.lsp.buf_request(0,'textDocument/codeAction', params,call_back)
+
+  vim.lsp.buf_request_all(self.bufnr,method, params,function(results)
+    local response = results[1].result
+    self:action_callback(response)
+  end)
 end
 
 function Action:set_cursor ()
@@ -237,9 +150,6 @@ local function lsp_execute_command(bn,command)
 end
 
 function Action:do_code_action()
-  local has_code_action = check_server_support_codeaction()
-  if not has_code_action then return end
-
   local number = tonumber(vim.fn.expand("<cword>"))
   local action = self.actions[number]
 
@@ -271,27 +181,8 @@ end
 
 local lspaction = {}
 
-local special_buffers = {
-  ['LspSagaCodeAction'] = true, ['lspsagafinder'] = true,['NvimTree'] = true,
-  ['vista'] = true,['lspinfo'] = true,['markdown'] = true,['text'] = true,
-}
-
 lspaction.code_action = function()
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
-  Action:code_action(action_call_back,diagnostics)
-end
-
-lspaction.code_action_prompt = function ()
-  if special_buffers[vim.bo.filetype] then return end
-  local active_lsp,_ = libs.check_lsp_active()
-  local has_code_action = check_server_support_codeaction()
-  if not (active_lsp and has_code_action) then return end
-
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
-  local winid = get_current_winid()
-  Action[winid] = Action[winid] or {}
-  Action[winid].lightbulb_line = Action[winid].lightbulb_line or 0
-  Action:code_action(action_vritual_call_back,diagnostics)
+  Action:code_action()
 end
 
 lspaction.do_code_action = function ()

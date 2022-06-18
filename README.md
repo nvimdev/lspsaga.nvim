@@ -212,40 +212,41 @@ highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
 
 The available highlight groups are:
 
-| Group Name               | Description                                                      |
-| :----------------------- | :----------------------------------------------------------------|
-| `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
-| `LspSagaLspFinderBorder` | |
-| `LspFloatWinNormal` | |
-| `LspFloatWinBorder` | |
-| `LspSagaBorderTitle` | |
-| `TargetWord` | |
-| `ReferencesCount` | |
-| `DefinitionCount` | |
-| `TargetFileName` | |
-| `DefinitionIcon` | |
-| `ReferencesIcon` | |
-| `ProviderTruncateLine` | |
-| `SagaShadow` | |
-| `LspSagaFinderSelection` | |
-| `DefinitionPreviewTitle` | |
-| `LspSagaShTruncateLine` | |
-| `LspSagaDocTruncateLine` | |
-| `LineDiagTuncateLine` | |
-| `LspSagaCodeActionTitle` | |
-| `LspSagaCodeActionTruncateLine` | |
-| `LspSagaCodeActionContent` | |
-| `LspSagaRenamePromptPrefix` | |
-| `LspSagaRenameBorder` | |
-| `LspSagaHoverBorder` | |
-| `LspSagaSignatureHelpBorder` | |
-| `LspSagaCodeActionBorder` | |
-| `LspSagaAutoPreview` | |
-| `LspSagaDefPreviewBorder` | |
-| `LspLinesDiagBorder` | |
-| `LspSagaDiagnosticBorder` | |
-| `LspSagaDiagnosticTruncateLine` | |
-| `LspSagaDiagnosticHeader` | |
+| Group Name                      | Description                                                      |
+|:--------------------------------|:-----------------------------------------------------------------|
+| `LspSagaFinderSelection`        | Currently active entry in the finder window that gets previewed. |
+| `LspSagaLspFinderBorder`        | Lsp Finder window border                                                                 |
+| `LspFloatWinNormal`             |                                                                  |
+| `LspFloatWinBorder`             |                                                                  |
+| `LspSagaBorderTitle`            |                                                                  |
+| `TargetWord`                    |                                                                  |
+| `ReferencesCount`               |                                                                  |
+| `DefinitionCount`               |                                                                  |
+| `TargetFileName`                |                                                                  |
+| `DefinitionIcon`                |                                                                  |
+| `ReferencesIcon`                |                                                                  |
+| `ProviderTruncateLine`          |                                                                  |
+| `SagaShadow`                    |                                                                  |
+| `LspSagaFinderSelection`        |                                                                  |
+| `DefinitionPreviewTitle`        |                                                                  |
+| `LspSagaShTruncateLine`         |                                                                  |
+| `LspSagaDocTruncateLine`        |                                                                  |
+| `LspSagaCodeActionTitle`        |                                                                  |
+| `LspSagaCodeActionTruncateLine` |                                                                  |
+| `LspSagaCodeActionContent`      |                                                                  |
+| `LspSagaRenamePromptPrefix`     |                                                                  |
+| `LspSagaRenameBorder`           |                                                                  |
+| `LspSagaHoverBorder`            |                                                                  |
+| `LspSagaSignatureHelpBorder`    |                                                                  |
+| `LspSagaCodeActionBorder`       |                                                                  |
+| `LspSagaAutoPreview`            |                                                                  |
+| `LspSagaDefPreviewBorder`       |                                                                  |
+| `LspSagaDiagnosticError`        |  Default link to DiagnosticError                                                               |
+| `LspSagaDiagnosticWarn`         |  Default link to DiagnosticWarn                                                                |
+| `LspSagaDiagnosticInfo`         |  Default link to DiagnosticInfo                                                              |
+| `LspSagaDiagnosticHint`         |  Default link to DiagnosticHint                                                               |
+| `LspSagaDiagnosticTruncateLine` |                                                                  |
+| `LspSagaDiagnosticHeader`       |                                                                  |
 
 # License
 

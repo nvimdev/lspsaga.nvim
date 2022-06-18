@@ -8,7 +8,7 @@ local floaterm = require('lspsaga.floaterm')
 local implement = require('lspsaga.implement')
 
 local subcommands = {
-  lsp_finder = require('lspsaga.provider').lsp_finder,
+  lsp_finder = require('lspsaga.finder').lsp_finder,
   preview_definition = require('lspsaga.definition').preview_definition,
   rename = lsprename.rename,
   hover_doc = lsphover.render_hover_doc,
