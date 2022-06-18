@@ -77,23 +77,32 @@ local function render_action_virtual_text(line,diagnostics,actions)
   end
 end
 
+local send_request  = coroutine.create(function()
+  local current_buf = api.nvim_get_current_buf()
+  vim.w.lightbulb_line = vim.w.lightbulb_line or 0
+
+  while true do
+    local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(current_buf)
+    local context =  { diagnostics = diagnostics }
+    local params = vim.lsp.util.make_range_params()
+    params.context = context
+    local line = params.range.start.line
+    local response = vim.lsp.buf_request_sync(current_buf,method, params)
+    local actions = response[1].result
+    current_buf = coroutine.yield(line,diagnostics,actions)
+  end
+end)
+
+local render_bulb  = function()
+  local current_buf = api.nvim_get_current_buf()
+  local _,line,diagnostics,actions = coroutine.resume(send_request,current_buf)
+  render_action_virtual_text(line,diagnostics,actions)
+end
+
 function lb.action_lightbulb()
   local has_code_action = check_server_support_codeaction()
   if not has_code_action then return end
-
-  local current_buf = api.nvim_get_current_buf()
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(current_buf)
-  vim.w.lightbulb_line = vim.w.lightbulb_line or 0
-
-  local context =  { diagnostics = diagnostics }
-  local params = vim.lsp.util.make_range_params()
-  params.context = context
-  local line = params.range.start.line
-
-  vim.lsp.buf_request_all(current_buf,method, params,function(results)
-    local actions = results[1].result
-    render_action_virtual_text(line,diagnostics,actions)
-  end)
+  render_bulb()
 end
 
 return lb
