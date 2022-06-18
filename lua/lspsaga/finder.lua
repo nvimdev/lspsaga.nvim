@@ -190,19 +190,19 @@ function Finder:render_finder_result()
   api.nvim_create_autocmd('CursorMoved',{
     buffer = self.bufnr,
     callback = function()
-      require('lspsaga.provider'):set_cursor()
+      require('lspsaga.finder'):set_cursor()
     end
   })
   api.nvim_create_autocmd('CursorMoved',{
     buffer = self.bufnr,
     callback = function()
-      require('lspsaga.provider'):auto_open_preview()
+      require('lspsaga.finder'):auto_open_preview()
     end
   })
   api.nvim_create_autocmd('QuitPre',{
     buffer = self.bufnr,
     callback = function()
-      require('lspsaga.provider'):quit_float_window()
+      require('lspsaga.finder'):quit_float_window()
     end
   })
 
@@ -227,26 +227,26 @@ function Finder:apply_float_map()
     silent = true
   }
   local keymaps = {
-    {self.bufnr,'n',action.vsplit,":lua require('lspsaga.provider'):open_link(2)<CR>"},
-    {self.bufnr,'n',action.split,":lua require('lspsaga.provider'):open_link(3)<CR>"},
-    {self.bufnr,'n',action.scroll_down,":lua require('lspsaga.provider'):scroll_in_preview(1)<CR>"},
-    {self.bufnr,'n',action.scroll_up,":lua require('lspsaga.provider'):scroll_in_preview(-1)<CR>"}
+    {self.bufnr,'n',action.vsplit,":lua require('lspsaga.finder'):open_link(2)<CR>"},
+    {self.bufnr,'n',action.split,":lua require('lspsaga.finder'):open_link(3)<CR>"},
+    {self.bufnr,'n',action.scroll_down,":lua require('lspsaga.finder'):scroll_in_preview(1)<CR>"},
+    {self.bufnr,'n',action.scroll_up,":lua require('lspsaga.finder'):scroll_in_preview(-1)<CR>"}
   }
 
   if type(action.open) == 'table' then
     for _,key in ipairs(action.open) do
-      table.insert(keymaps,{self.bufnr,'n',key,":lua require('lspsaga.provider'):open_link(1)<CR>"})
+      table.insert(keymaps,{self.bufnr,'n',key,":lua require('lspsaga.finder'):open_link(1)<CR>"})
     end
   elseif type(action.open) == 'string' then
-    table.insert(keymaps,{self.bufnr,'n',action.open,":lua require('lspsaga.provider'):open_link(1)<CR>"})
+    table.insert(keymaps,{self.bufnr,'n',action.open,":lua require('lspsaga.finder'):open_link(1)<CR>"})
   end
 
   if type(action.quit) == 'table' then
     for _,key in ipairs(action.quit) do
-      table.insert(keymaps,{self.bufnr,'n',key,":lua require('lspsaga.provider'):quit_float_window()<CR>"})
+      table.insert(keymaps,{self.bufnr,'n',key,":lua require('lspsaga.finder'):quit_float_window()<CR>"})
     end
   elseif type(action.quit) == 'string' then
-    table.insert(keymaps,{self.bufnr,'n',action.quit,":lua require('lspsaga.provider'):quit_float_window()<CR>"})
+    table.insert(keymaps,{self.bufnr,'n',action.quit,":lua require('lspsaga.finder'):quit_float_window()<CR>"})
   end
   nvim_create_keymap(keymaps,lhs)
 end

@@ -142,6 +142,7 @@ function libs.close_preview_autocmd(bufnr,winid,events)
     buffer = bufnr,
     once = true,
     callback = function()
+      print(winid)
       if api.nvim_win_is_valid(winid) then
         api.nvim_win_close(winid,true)
       end
