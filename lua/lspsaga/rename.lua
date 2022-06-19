@@ -25,7 +25,7 @@ end
 local apply_action_keys = function(bufnr)
   local quit_key = config.rename_action_keys.quit
   local exec_key = config.rename_action_keys.exec
-  local rhs_of_quit = [[<cmd>lua require('lspasga.rename').close_rename_win()<CR>]]
+  local rhs_of_quit = [[<cmd>lua require('lspsaga.rename').close_rename_win()<CR>]]
   local rhs_of_exec = [[<cmd>lua require('lspsaga.rename').do_rename()<CR>]]
   local opts = {nowait = true,silent = true,noremap = true}
 
@@ -89,11 +89,6 @@ local do_rename = function(options)
   local prompt_prefix = get_prompt_prefix()
   local new_name = vim.trim(vim.fn.getline('.'):sub(#prompt_prefix+1,-1))
   close_rename_win()
-  local current_name = vim.fn.expand('<cword>')
-
-  if not (new_name and #new_name > 0) or new_name == current_name then
-    return
-  end
 
   local bufnr = api.nvim_get_current_buf()
 
@@ -126,8 +121,8 @@ local do_rename = function(options)
     local function rename(name)
       local params = util.make_position_params(win, client.offset_encoding)
       params.newName = name
-      local handler = client.handlers['textDocument/rename'] or vim.lsp.handlers['textDocument/rename']
-      client.request('textDocument/rename', params, function(...)
+      local handler = client.handlers[method] or vim.lsp.handlers[method]
+      client.request(method, params, function(...)
         handler(...)
         try_use_client(next(clients, idx))
       end, bufnr)
@@ -152,7 +147,7 @@ local do_rename = function(options)
         end
       end)
     else
-      assert(client.supports_method('textDocument/rename'), 'Client must support textDocument/rename')
+      assert(client.supports_method(method), 'Client must support textDocument/rename')
       if new_name then
         rename(new_name)
         return
