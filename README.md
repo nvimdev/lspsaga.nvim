@@ -89,7 +89,7 @@ vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-11eb-897d-587ac1375d4e.gif" width=500 height=500/>
 </div>
 
-- code action auto prompt
+- code action lightbulb
 
 <div align='center'>
 <img
@@ -209,43 +209,8 @@ highlight link LspSagaFinderSelection Search
 highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
 ```
 
-The available highlight groups are:
+The available highlight groups you can find in [here](./plugin/lspsaga.lua)
 
-| Group Name                      | Description                                                      |
-|:--------------------------------|:-----------------------------------------------------------------|
-| `LspSagaFinderSelection`        | Currently active entry in the finder window that gets previewed. |
-| `LspSagaLspFinderBorder`        | Lsp Finder window border                                         |
-| `LspFloatWinNormal`             |                                                                  |
-| `LspFloatWinBorder`             |                                                                  |
-| `LspSagaBorderTitle`            |                                                                  |
-| `TargetWord`                    |                                                                  |
-| `ReferencesCount`               |                                                                  |
-| `DefinitionCount`               |                                                                  |
-| `TargetFileName`                |                                                                  |
-| `DefinitionIcon`                |                                                                  |
-| `ReferencesIcon`                |                                                                  |
-| `ProviderTruncateLine`          |                                                                  |
-| `SagaShadow`                    |                                                                  |
-| `LspSagaFinderSelection`        |                                                                  |
-| `DefinitionPreviewTitle`        |                                                                  |
-| `LspSagaShTruncateLine`         |                                                                  |
-| `LspSagaDocTruncateLine`        |                                                                  |
-| `LspSagaCodeActionTitle`        |                                                                  |
-| `LspSagaCodeActionTruncateLine` |                                                                  |
-| `LspSagaCodeActionContent`      |                                                                  |
-| `LspSagaRenamePromptPrefix`     |                                                                  |
-| `LspSagaRenameBorder`           |                                                                  |
-| `LspSagaHoverBorder`            |                                                                  |
-| `LspSagaSignatureHelpBorder`    |                                                                  |
-| `LspSagaCodeActionBorder`       |                                                                  |
-| `LspSagaAutoPreview`            |                                                                  |
-| `LspSagaDefPreviewBorder`       |                                                                  |
-| `LspSagaDiagnosticError`        | Default link to DiagnosticError                                  |
-| `LspSagaDiagnosticWarn`         | Default link to DiagnosticWarn                                   |
-| `LspSagaDiagnosticInfo`         | Default link to DiagnosticInfo                                   |
-| `LspSagaDiagnosticHint`         | Default link to DiagnosticHint                                   |
-| `LspSagaDiagnosticTruncateLine` |                                                                  |
-| `LspSagaDiagnosticHeader`       |                                                                  |
 
 # License
 
