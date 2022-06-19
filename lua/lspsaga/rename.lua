@@ -22,18 +22,23 @@ local close_rename_win = function()
   end
 end
 
-local apply_action_keys = function()
+local apply_action_keys = function(bufnr)
   local quit_key = config.rename_action_keys.quit
   local exec_key = config.rename_action_keys.exec
-  api.nvim_command('inoremap <buffer><nowait><silent>'..exec_key..' <cmd>lua require("lspsaga.rename").do_rename()<CR>')
+  local rhs_of_quit = [[<cmd>lua require('lspasga.rename').close_rename_win()<CR>]]
+  local rhs_of_exec = [[<cmd>lua require('lspsaga.rename').do_rename()<CR>]]
+  local opts = {nowait = true,silent = true,noremap = true}
+
+  api.nvim_buf_set_keymap(bufnr,'i',exec_key,rhs_of_exec,opts)
+
   if type(quit_key) == "table" then
     for _,k in ipairs(quit_key) do
-      api.nvim_command('inoremap <buffer><nowait><silent>'..k..' <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
+      api.nvim_buf_set_keymap(bufnr,'i',k,rhs_of_quit,opts)
     end
   else
-    api.nvim_command('inoremap <buffer><nowait><silent>'..quit_key..' <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
+    api.nvim_buf_set_keymap(bufnr,'i',quit_key,rhs_of_quit,opts)
   end
-  api.nvim_command('nnoremap <buffer><silent>q <cmd>lua require("lspsaga.rename").close_rename_win()<CR>')
+  api.nvim_buf_set_keymap(bufnr,'n',quit_key,rhs_of_quit,opts)
 end
 
 local rename = function()
@@ -66,8 +71,15 @@ local rename = function()
   api.nvim_buf_add_highlight(bufnr, saga_rename_prompt_prefix, 'LspSagaRenamePromptPrefix', 0, 0, #prompt_prefix)
   vim.cmd [[startinsert!]]
   api.nvim_win_set_var(0,unique_name,winid)
-  api.nvim_command("autocmd QuitPre <buffer> ++nested ++once :silent lua require('lspsaga.rename').close_rename_win()")
-  apply_action_keys()
+  api.nvim_create_autocmd('QuitPre',{
+    buffer = bufnr,
+    once = true,
+    nested = true,
+    callback = function()
+      require('lspsaga.rename').close_rename_win()
+    end
+  })
+  apply_action_keys(bufnr)
 end
 
 local do_rename = function()
