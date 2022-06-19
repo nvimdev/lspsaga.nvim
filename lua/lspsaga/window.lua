@@ -80,7 +80,7 @@ local function make_floating_popup_options(width, height, opts)
       new_option.row = 1
     else
       new_option.anchor = 'S'
-      new_option.row = -2
+      new_option.row = 0
     end
 
     if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
