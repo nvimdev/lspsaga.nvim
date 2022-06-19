@@ -12,7 +12,7 @@ saga.config_values = {
   -- Error,Warn,Info,Hint
   diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   -- code action title icon
-  code_action_icon = ' ',
+  code_action_icon = '💡',
   code_action_lightbulb = {
     enable = true,
     sign = true,
