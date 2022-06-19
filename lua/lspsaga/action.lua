@@ -4,14 +4,14 @@ local action = {}
 -- direction must 1 or -1
 function action.smart_scroll_with_saga(direction)
   local hover = require('lspsaga.hover')
-  local finder = require('lspsaga.provider')
+  local def = require('lspsaga.definition')
   local signature = require('lspsaga.signaturehelp')
   local implement = require('lspsaga.implement')
 
   if hover.has_saga_hover() then
     hover.scroll_in_hover(direction)
-  elseif finder.has_saga_def_preview() then
-    finder.scroll_in_def_preview(direction)
+  elseif def.has_saga_def_preview() then
+    def.scroll_in_def_preview(direction)
   elseif signature.has_saga_signature() then
     signature.scroll_in_signature(direction)
   elseif implement.has_implement_win() then

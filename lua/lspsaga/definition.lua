@@ -76,8 +76,9 @@ function def.preview_definition(timeout_ms)
 
     local bf,wi = window.create_win_with_border(content_opts,opts)
 
+    local current_buf = api.nvim_get_current_buf()
     api.nvim_create_autocmd({"CursorMoved", "CursorMovedI","BufHidden", "BufLeave"},{
-      buffer = bf,
+      buffer = current_buf,
       once = true,
       callback = function()
         if api.nvim_win_is_valid(wi) then

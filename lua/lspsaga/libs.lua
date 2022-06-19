@@ -34,16 +34,6 @@ function libs.has_value(tbl,val)
   return false
 end
 
-function libs.nvim_create_augroup(group_name,definitions)
-  vim.api.nvim_command('augroup '..group_name)
-  vim.api.nvim_command('autocmd!')
-  for _, def in ipairs(definitions) do
-    local command = table.concat(vim.tbl_flatten{'autocmd', def}, ' ')
-    vim.api.nvim_command(command)
-  end
-  vim.api.nvim_command('augroup END')
-end
-
 function libs.nvim_create_keymap(definitions,lhs)
   for _, def in pairs(definitions) do
     local bufnr = def[1]
@@ -142,7 +132,6 @@ function libs.close_preview_autocmd(bufnr,winid,events)
     buffer = bufnr,
     once = true,
     callback = function()
-      print(winid)
       if api.nvim_win_is_valid(winid) then
         api.nvim_win_close(winid,true)
       end
