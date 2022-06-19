@@ -24,7 +24,8 @@ warn_sign = '',
 hint_sign = '',
 infor_sign = '',
 diagnostic_header_icon = '   ',
-code_action_icon = ' ',
+-- use emoji lightbulb in default
+code_action_icon = '💡',
 -- same as nvim-lightbulb but async
 code_action_lightbulb = {
   enable = true,
