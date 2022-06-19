@@ -160,15 +160,15 @@ function Action:range_code_action(context, start_pos, end_pos)
 end
 
 function Action:set_cursor ()
-  local column = 2
-  local current_line = vim.fn.line('.')
+  local col = 1
+  local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
   if current_line == 1 then
-    vim.fn.cursor(3,column)
+    api.nvim_win_set_cursor(self.action_winid,{3,col})
   elseif current_line == 2 then
-    vim.fn.cursor(2+#self.actions,column)
+    api.nvim_win_set_cursor(self.action_winid,{2+#self.actions,col})
   elseif current_line == #self.actions + 3 then
-    vim.fn.cursor(3,column)
+    api.nvim_win_set_cursor(self.action_winid,{3,col})
   end
 end
 
