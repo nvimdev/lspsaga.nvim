@@ -46,6 +46,8 @@ function Action:action_callback()
     }
 
     self.action_bufnr,self.action_winid = window.create_win_with_border(content_opts)
+    -- initial position in code action window
+    api.nvim_win_set_cursor(self.action_winid,{3,1})
     api.nvim_create_autocmd('CursorMoved',{
       buffer = self.action_bufnr,
       callback = function()
