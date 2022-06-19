@@ -3,7 +3,7 @@ local highlights = {
   LspSagaTrunCateLine = {fg='black'},
   -- code action
   LspSagaCodeActionTitle = {fg='#da8548',bold = true},
-  LspSagaCodeActionBorder= {fg = '#98be65'},
+  LspSagaCodeActionBorder= {fg = '#CBA6F7'},
   LspSagaCodeActionContent = {fg = '#98be65',bold = true},
   -- finder
   LspSagaLspFinderBorder = {fg = '#51afef'},

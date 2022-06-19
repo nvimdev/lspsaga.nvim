@@ -9,43 +9,27 @@ local method = 'textDocument/codeAction'
 local Action = {}
 Action.__index = Action
 
-function Action:action_callback(response)
-    if response == nil or vim.tbl_isempty(response) then
-      print("No code actions available")
-      return
-    end
-
+function Action:action_callback()
     local contents = {}
     local title = config['code_action_icon'] .. 'CodeActions:'
     table.insert(contents,title)
 
-    local from_other_servers = function()
-      local actions = {}
-      for _,action in pairs(response) do
-        self.actions[#self.actions+1] = action
-        local action_title = '['..#self.actions ..']' ..' '.. action.title
-        actions[#actions+1] = action_title
+    local index = 0
+    for _,client_with_actions in pairs(self.action_tuples) do
+      local action_title = ''
+      if #client_with_actions ~= 2 then
+        vim.notify("There has somethint wrong in aciton_tuples")
+        return
       end
-      return actions
-    end
-
-    if self.actions and next(self.actions) ~= nil then
-      local other_actions = from_other_servers()
-      if next(other_actions) ~= nil then
-        vim.tbl_extend('force',self.actions,other_actions)
+      index = index + 1
+      if client_with_actions[2].title then
+        action_title = "[" ..index..']'..' ' .. client_with_actions[2].title
+        if self.actions == nil then
+          self.actions = {}
+        end
+        self.actions[index] = client_with_actions
       end
-      api.nvim_buf_set_option(self.action_bufnr,'modifiable',true)
-      vim.fn.append(vim.fn.line('$'),other_actions)
-      vim.cmd("resize "..#self.actions+2)
-      for i,_ in pairs(other_actions) do
-        vim.fn.matchadd('LspSagaCodeActionContent','\\%'.. #self.actions+1+i..'l')
-      end
-    else
-      self.actions = response
-      for index,action in pairs(response) do
-        local action_title = '['..index..']' ..' '.. action.title
-        table.insert(contents,action_title)
-      end
+      table.insert(contents,action_title)
     end
 
     if #contents == 1 then return end
@@ -96,16 +80,65 @@ function Action:apply_action_keys()
   end
 end
 
+function Action:get_clients(results,options)
+  local function action_filter(a)
+      -- filter by specified action kind
+      if options and options.context and options.context.only then
+        if not a.kind then
+          return false
+        end
+        local found = false
+        for _, o in ipairs(options.context.only) do
+          -- action kinds are hierarchical with . as a separator: when requesting only
+          -- 'quickfix' this filter allows both 'quickfix' and 'quickfix.foo', for example
+          if a.kind:find('^' .. o .. '$') or a.kind:find('^' .. o .. '%.') then
+            found = true
+            break
+          end
+        end
+        if not found then
+          return false
+        end
+      end
+      -- filter by user function
+      if options and options.filter and not options.filter(a) then
+        return false
+      end
+      -- no filter removed this action
+      return true
+    end
+
+    if self.action_tuples == nil then
+      self.action_tuples = {}
+    end
+
+    for client_id, result in pairs(results) do
+      for _, action in pairs(result.result or {}) do
+        if action_filter(action) then
+          table.insert(self.action_tuples, { client_id, action })
+        end
+      end
+    end
+    if #self.action_tuples == 0 then
+      vim.notify('No code actions available', vim.log.levels.INFO)
+      return
+    end
+end
+
 function Action:code_action()
   self.bufnr = api.nvim_get_current_buf()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context =  { diagnostics = diagnostics }
   local params = vim.lsp.util.make_range_params()
   params.context = context
+  if self.ctx == nil then
+    self.ctx = {}
+  end
+  self.ctx = {bufnr = self.bufnr,method = method,params = params}
 
   vim.lsp.buf_request_all(self.bufnr,method, params,function(results)
-    local response = results[1].result
-    self:action_callback(response)
+    self:get_clients(results)
+    self:action_callback()
   end)
 end
 
@@ -115,10 +148,14 @@ function Action:range_code_action(context, start_pos, end_pos)
   context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr) }
   local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
   params.context = context
+  if self.ctx == nil then
+    self.ctx = {}
+  end
+  self.ctx = {bufnr = self.bufnr,method = method,params = params}
 
   vim.lsp.buf_request_all(self.bufnr,method, params,function(results)
-    local response = results[1].result
-    self:action_callback(response)
+    self:get_clients(results)
+    self:action_callback()
   end)
 end
 
@@ -135,23 +172,31 @@ function Action:set_cursor ()
   end
 end
 
-local function lsp_execute_command(bn,command)
-  vim.lsp.buf_request(bn,'workspace/executeCommand', command)
-end
-
 function Action:do_code_action()
   local number = tonumber(vim.fn.expand("<cword>"))
-  local action = self.actions[number]
+  local action = self.actions[number][2]
+  local client = vim.lsp.get_client_by_id(self.actions[number][1])
 
-  if action.edit or type(action.command) == "table" then
-    if action.edit then
-      vim.lsp.util.apply_workspace_edit(action.edit)
+  if action.edit then
+    vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
+  end
+  if action.command then
+    local command = type(action.command) == 'table' and action.command or action
+    local fn = client.commands[command.command] or vim.lsp.commands[command.command]
+    if fn then
+      local enriched_ctx = vim.deepcopy(self.ctx)
+      enriched_ctx.client_id = client.id
+      fn(command, enriched_ctx)
+    else
+      -- Not using command directly to exclude extra properties,
+      -- see https://github.com/python-lsp/python-lsp-server/issues/146
+      local params = {
+        command = command.command,
+        arguments = command.arguments,
+        workDoneToken = command.workDoneToken,
+      }
+      client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
     end
-    if type(action.command) == "table" then
-      lsp_execute_command(self.bufnr,action.command)
-    end
-  else
-    lsp_execute_command(self.bufnr,action)
   end
   self:quit_action_window()
 end
@@ -161,6 +206,8 @@ function Action:clear_tmp_data()
   self.bufnr = 0
   self.action_bufnr = 0
   self.action_winid = 0
+  self.action_tuples = {}
+  self.ctx = {}
 end
 
 function Action:quit_action_window ()
