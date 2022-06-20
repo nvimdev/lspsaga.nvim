@@ -24,11 +24,16 @@ local do_request = co.create(function(method)
 
     local resp = lsp.buf_request_sync(bufnr,method,params,timeout)
     if libs.result_isempty(resp) then
-      resp[1] = {}
-      resp[1].result = {}
-      resp[1].result.saga_msg = msgs[method]
+      resp = {}
+      resp.result = {
+        saga_msg = msgs[method]
+      }
     end
-    method = co.yield(resp[1].result)
+    for _,res in pairs(resp) do
+      if res.result and next(res.result) ~= nil then
+        method = co.yield(res.result)
+      end
+    end
   end
 end)
 
@@ -37,7 +42,7 @@ local Finder = {}
 function Finder:lsp_finder_request()
     local root_dir = libs.get_lsp_root_dir()
     if string.len(root_dir) == 0 then
-      print('[LspSaga] get root dir failed')
+      vim.notify('[LspSaga] get root dir failed')
       return
     end
     self.WIN_WIDTH = fn.winwidth(0)
