@@ -25,9 +25,9 @@ local do_request = co.create(function(method)
     local resp = lsp.buf_request_sync(bufnr,method,params,timeout)
     if libs.result_isempty(resp) then
       resp = {}
-      resp.result = {
+      resp.result = {{
         saga_msg = msgs[method]
-      }
+      }}
     end
 
     local results = {}
