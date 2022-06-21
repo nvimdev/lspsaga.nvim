@@ -18,24 +18,15 @@ local close_rename_win = function()
   if has then
     window.nvim_close_valid_window(winid)
   end
+  api.nvim_win_set_cursor(0,{pos[1],pos[2] + 1})
 end
 
 local apply_action_keys = function(bufnr)
-  local quit_key = config.rename_action_keys.quit
-  local exec_key = config.rename_action_keys.exec
+  local quit_key = config.rename_action_quit
   local rhs_of_quit = [[<cmd>lua require('lspsaga.rename').close_rename_win()<CR>]]
-  local rhs_of_exec = [[<cmd>lua require('lspsaga.rename').do_rename()<CR>]]
   local opts = {nowait = true,silent = true,noremap = true}
 
---   api.nvim_buf_set_keymap(bufnr,'i',exec_key,rhs_of_exec,opts)
-
-  if type(quit_key) == "table" then
-    for _,k in ipairs(quit_key) do
-      api.nvim_buf_set_keymap(bufnr,'i',k,rhs_of_quit,opts)
-    end
-  else
-    api.nvim_buf_set_keymap(bufnr,'i',quit_key,rhs_of_quit,opts)
-  end
+  api.nvim_buf_set_keymap(bufnr,'i',quit_key,rhs_of_quit,opts)
   api.nvim_buf_set_keymap(bufnr,'n',quit_key,rhs_of_quit,opts)
 end
 
@@ -44,8 +35,6 @@ local lsp_rename = function()
   if not active then vim.notify(msg) return end
   local current_buf = api.nvim_get_current_buf()
   local current_win = api.nvim_get_current_win()
-  -- if exist a rename float win close it.
-  close_rename_win()
   pos = api.nvim_win_get_cursor(current_win)
 
   local opts = {
