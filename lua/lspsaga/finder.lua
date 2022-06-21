@@ -29,11 +29,17 @@ local do_request = co.create(function(method)
         saga_msg = msgs[method]
       }
     end
+
+    local results = {}
     for _,res in pairs(resp) do
       if res.result and next(res.result) ~= nil then
-        method = co.yield(res.result)
+        for _,v in pairs(res.result) do
+          table.insert(results,v)
+        end
       end
     end
+
+    method = coroutine.yield(results)
   end
 end)
 
