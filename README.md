@@ -26,6 +26,8 @@ infor_sign = '',
 diagnostic_header_icon = '   ',
 -- use emoji lightbulb in default
 code_action_icon = '💡',
+-- if true can press number to execute the codeaction in codeaction window
+code_action_num_shortcut = true,
 -- same as nvim-lightbulb but async
 code_action_lightbulb = {
   enable = true,

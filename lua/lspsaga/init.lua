@@ -13,6 +13,8 @@ saga.config_values = {
   diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   -- code action title icon
   code_action_icon = '💡',
+  -- if true can press number to execute the codeaction in codeaction window
+  code_action_num_shortcut = true,
   code_action_lightbulb = {
     enable = true,
     sign = true,

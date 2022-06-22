@@ -68,6 +68,9 @@ function Action:action_callback()
       api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end
     self:apply_action_keys()
+    if config.code_action_num_shortcut then
+      self:num_shortcut()
+    end
     -- dsiable some move keys in codeaction
     libs.disable_move_keys(self.action_bufnr)
 end
@@ -176,6 +179,16 @@ function Action:set_cursor ()
   end
 end
 
+function Action:num_shortcut()
+  local rhs_prefix = "<cmd>lua require('lspsaga.codeaction').do_code_action('"
+  local tail = "')<CR>"
+  local opts = {nowait = true,silent = true,noremap =true}
+  for num,_ in pairs(self.actions) do
+    local rhs = rhs_prefix ..num ..tail
+    api.nvim_buf_set_keymap(self.action_bufnr,'n',tostring(num),rhs,opts)
+  end
+end
+
 function Action:apply_action(action,client)
   if action.edit then
     vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
@@ -200,8 +213,8 @@ function Action:apply_action(action,client)
   end
 end
 
-function Action:do_code_action()
-  local number = tonumber(vim.fn.expand("<cword>"))
+function Action:do_code_action(num)
+  local number = num and tonumber(num) or tonumber(vim.fn.expand("<cword>"))
   local action = self.actions[number][2]
   local client = vim.lsp.get_client_by_id(self.actions[number][1])
 
