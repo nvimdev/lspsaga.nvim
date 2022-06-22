@@ -23,7 +23,7 @@ local highlights = {
   -- rename
   LspSagaRenameBorder = { fg = '#3bb6c4'},
   LspSagaRenamePromptPrefix = {fg= '#98be65'},
-  LspSagaRenameMatch = { fg = '#262a33',bg='#FF8700'},
+  LspSagaRenameMatch = { link = 'Search'},
   -- diagnostic
   LspSagaDiagnosticError = { link = 'DiagnosticError'},
   LspSagaDiagnosticWarn  = { link = 'DiagnosticWarn'},
