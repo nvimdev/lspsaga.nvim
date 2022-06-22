@@ -18,12 +18,8 @@ Lspsaga support use command `Lspsaga` with completion or use lua function
 
 local saga = require 'lspsaga'
 
-use_saga_diagnostic_sign = true
-error_sign = '',
-warn_sign = '',
-hint_sign = '',
-infor_sign = '',
-diagnostic_header_icon = '   ',
+-- Error,Warn,Info,Hint
+diagnostic_header_icon = {' ',' ',' ','ﴞ '},
 -- use emoji lightbulb in default
 code_action_icon = '💡',
 -- if true can press number to execute the codeaction in codeaction window

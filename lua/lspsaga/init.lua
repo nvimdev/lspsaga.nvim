@@ -3,12 +3,6 @@ local saga = {}
 
 saga.config_values = {
   debug = false,
-  use_saga_diagnostic_sign = true,
-  -- diagnostic sign
-  error_sign = '',
-  warn_sign = '',
-  hint_sign = '',
-  infor_sign = '',
   -- Error,Warn,Info,Hint
   diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   -- code action title icon
@@ -58,11 +52,6 @@ end
 
 function saga.init_lsp_saga(opts)
   extend_config(opts)
---   local diagnostic = require 'lspsaga.diagnostic'
-
---   if saga.config_values.use_saga_diagnostic_sign then
---     diagnostic.lsp_diagnostic_sign(saga.config_values)
---   end
   if saga.config_values.code_action_lightbulb.enable then
     api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
       pattern = '*',
