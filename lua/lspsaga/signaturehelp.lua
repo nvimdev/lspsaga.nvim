@@ -1,10 +1,11 @@
 local util,api = vim.lsp.util,vim.api
 local npcall = vim.F.npcall
 local window = require('lspsaga.window')
-local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 local action = require('lspsaga.action')
+
+local method = "textDocument/signatureHelp"
 
 local function find_window_by_var(name, value)
   for _, win in ipairs(api.nvim_list_wins()) do
@@ -18,10 +19,10 @@ end
 -- issue #103
 local function check_server_support_signaturehelp()
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
   local clients = vim.lsp.buf_get_clients()
   for _,client in pairs(clients) do
-    if client.server_capabilities.signature_help == true then
+    if client.supports_method(method) then
       return true
     end
   end
@@ -106,13 +107,16 @@ local function focusable_preview(unique_name, fn)
     }
 
     local bufnr,winid = window.create_win_with_border(content_opts,opts)
-    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaShTruncateLine',wrap_index,0,-1)
+    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaTrunCateLine',wrap_index,0,-1)
     api.nvim_buf_set_var(0,'saga_signature_help_win',{winid,1,#contents,max_height})
     local cwin = api.nvim_get_current_win()
     api.nvim_set_current_win(winid)
     apply_syntax_to_region(filetype,1,wrap_index)
     api.nvim_set_current_win(cwin)
-    util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}, winid)
+
+    local current_buf = api.nvim_get_current_buf()
+    local close_events = {"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}
+    libs.close_preview_autocmd(current_buf,winid,close_events)
     return bufnr,winid
   end)
 end
@@ -135,13 +139,11 @@ end
 
 local call_back = function(_, result, ctx)
   if not (result and result.signatures and result.signatures[1]) then
---     print('No signature help available')
     return
   end
   local lines = util.convert_signature_help_to_markdown_lines(result)
   lines = util.trim_empty_lines(lines)
   if vim.tbl_isempty(lines) then
---     print('No signature help available')
     return
   end
   focusable_preview(ctx.method, function()
@@ -153,7 +155,8 @@ local signature_help = function()
   -- check the server support the signature help
   if not check_server_support_signaturehelp() then return end
   local params = util.make_position_params()
-  vim.lsp.buf_request(0,'textDocument/signatureHelp', params,call_back)
+  local current_buf = api.nvim_get_current_buf()
+  vim.lsp.buf_request(current_buf,'textDocument/signatureHelp', params,call_back)
 end
 
 return {

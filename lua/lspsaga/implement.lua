@@ -7,13 +7,13 @@ local implement = {}
 
 function implement.lspsaga_implementation(timeout_ms)
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
 
   local method = "textDocument/implementation"
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
   if result == nil or vim.tbl_isempty(result) then
-    print("No location found: " .. method)
+    vim.notify("No location found: " .. method)
     return nil
   end
   result = {vim.tbl_deep_extend("force", {}, unpack(result))}
@@ -57,8 +57,11 @@ function implement.lspsaga_implementation(timeout_ms)
     }
 
     local bf,wi = window.create_win_with_border(content_opts,opts)
-    vim.lsp.util.close_preview_autocmd({"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"},
-                                        wi)
+
+    local close_events= {"CursorMoved", "CursorMovedI", "BufHidden", "BufLeave"}
+    vim.defer_fn(function()
+      libs.close_preview_autocmd(bf,wi,close_events)
+    end,0)
     vim.api.nvim_buf_add_highlight(bf,-1,"DefinitionPreviewTitle",0,0,-1)
 
     api.nvim_buf_set_var(0,'lspsaga_implement_preview',{wi,1,config.max_preview_lines,10})

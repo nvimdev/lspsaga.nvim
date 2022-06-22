@@ -34,16 +34,6 @@ function libs.has_value(tbl,val)
   return false
 end
 
-function libs.nvim_create_augroup(group_name,definitions)
-  vim.api.nvim_command('augroup '..group_name)
-  vim.api.nvim_command('autocmd!')
-  for _, def in ipairs(definitions) do
-    local command = table.concat(vim.tbl_flatten{'autocmd', def}, ' ')
-    vim.api.nvim_command(command)
-  end
-  vim.api.nvim_command('augroup END')
-end
-
 function libs.nvim_create_keymap(definitions,lhs)
   for _, def in pairs(definitions) do
     local bufnr = def[1]
@@ -64,7 +54,7 @@ end
 
 function libs.result_isempty(res)
   if type(res) ~= "table" then
-    print('[Lspsaga] Server return wrong response')
+    vim.notify('[Lspsaga] Server return wrong response')
     return
   end
   for _,v in pairs(res) do
@@ -100,7 +90,7 @@ end
 
 function libs.get_lsp_root_dir()
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
     if (client.config.filetypes and client.config.root_dir) then
@@ -137,10 +127,50 @@ function libs.apply_keys(ns)
   end
 end
 
-function libs.close_preview_autocmd(events, winid)
-  local events_str = table.concat(events, ',')
-  local cmd = string.format('autocmd %s <buffer> ++once lua pcall(vim.api.nvim_win_close, %d, true)', events_str, winid)
-  vim.api.nvim_command(cmd)
+function libs.close_preview_autocmd(bufnr,winid,events)
+  api.nvim_create_autocmd(events,{
+    buffer = bufnr,
+    once = true,
+    callback = function()
+      if api.nvim_win_is_valid(winid) then
+        api.nvim_win_close(winid,true)
+      end
+    end
+  })
+end
+
+function libs.disable_move_keys(bufnr)
+  local keys = { 'h','l','w','b','<Bs>'}
+  local opts = { nowait = true,noremap = true,silent = true}
+  for _,key in pairs(keys) do
+    api.nvim_buf_set_keymap(bufnr,'n',key,'',opts)
+  end
+end
+
+function libs.async(routine, ...)
+	local f = coroutine.create(function(await, ...) routine(await, ...) end)
+	local await = { error = nil, result = nil, completed = false }
+	local complete = function(arg, err)
+		await.result = arg
+		await.error = err
+		await.completed = true
+		coroutine.resume(f)
+	end
+	await.resolve = function(arg) complete(arg, nil) end
+	await.reject = function(err) complete(nil, err) end
+	await.__call = function(self, wait, ...)
+		local lastResult = self.result
+		self.completed = false
+		wait(self, ...)
+		if not self.completed then coroutine.yield(f, ...) end
+		if self.error then assert(false, self.error) end
+		self.completed = false
+		local newResult = self.result
+		self.result = lastResult
+		return newResult
+	end
+	setmetatable(await, await)
+	coroutine.resume(f, await, ...)
 end
 
 return libs

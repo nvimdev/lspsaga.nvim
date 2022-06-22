@@ -18,41 +18,43 @@ Lspsaga support use command `Lspsaga` with completion or use lua function
 
 local saga = require 'lspsaga'
 
--- add your config value here
--- default value
--- use_saga_diagnostic_sign = true
--- error_sign = '',
--- warn_sign = '',
--- hint_sign = '',
--- infor_sign = '',
--- diagnostic_header_icon = '   ',
--- code_action_icon = ' ',
--- code_action_prompt = {
---   enable = true,
---   sign = true,
---   sign_priority = 20,
---   virtual_text = true,
--- },
--- finder_definition_icon = '  ',
--- finder_reference_icon = '  ',
--- max_preview_lines = 10, -- preview lines of lsp_finder and definition preview
--- finder_action_keys = {
---   open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
--- },
--- code_action_keys = {
---   quit = 'q',exec = '<CR>'
--- },
--- rename_action_keys = {
---   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
--- },
--- definition_preview_icon = '  '
--- "single" "double" "round" "plus"
--- border_style = "single"
--- rename_prompt_prefix = '➤',
--- if you don't use nvim-lspconfig you must pass your server name and
--- the related filetypes into this table
--- like server_filetype_map = {metals = {'sbt', 'scala'}}
--- server_filetype_map = {}
+use_saga_diagnostic_sign = true
+error_sign = '',
+warn_sign = '',
+hint_sign = '',
+infor_sign = '',
+diagnostic_header_icon = '   ',
+-- use emoji lightbulb in default
+code_action_icon = '💡',
+-- if true can press number to execute the codeaction in codeaction window
+code_action_num_shortcut = true,
+-- same as nvim-lightbulb but async
+code_action_lightbulb = {
+  enable = true,
+  sign = true,
+  sign_priority = 20,
+  virtual_text = true,
+},
+finder_definition_icon = '  ',
+finder_reference_icon = '  ',
+max_preview_lines = 10, -- preview lines of lsp_finder and definition preview
+finder_action_keys = {
+  open = 'o', vsplit = 's',split = 'i',quit = 'q',scroll_down = '<C-f>', scroll_up = '<C-b>' -- quit can be a table
+},
+code_action_keys = {
+  quit = 'q',exec = '<CR>'
+},
+rename_action_keys = {
+  quit = '<C-c>',exec = '<CR>'  -- quit can be a table
+},
+definition_preview_icon = '  '
+"single" "double" "round" "plus"
+border_style = "single"
+rename_prompt_prefix = '➤',
+if you don't use nvim-lspconfig you must pass your server name and
+the related filetypes into this table
+like server_filetype_map = {metals = {'sbt', 'scala'}}
+server_filetype_map = {}
 
 saga.init_lsp_saga {
   your custom option here
@@ -90,7 +92,7 @@ vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-11eb-897d-587ac1375d4e.gif" width=500 height=500/>
 </div>
 
-- code action auto prompt
+- async lightbulb
 
 <div align='center'>
 <img
@@ -130,7 +132,7 @@ and you also can use smart_scroll_with_saga to scroll in signature help win
 src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
 </div>
 
-### Rename
+### Rename with Preview
 
 ```lua
 -- rename
@@ -141,7 +143,7 @@ nnoremap <silent>gr :Lspsaga rename<CR>
 ```
 <div align="center">
 <img
-src="https://user-images.githubusercontent.com/41671631/106115648-f6915480-618b-11eb-9818-003cfb15c8ac.gif" />
+src="https://user-images.githubusercontent.com/41671631/175011235-aa0bd54e-eeb2-4dd7-a4e1-5afe9adfd4cf.gif" />
 </div>
 
 ### Preview Definition
@@ -162,15 +164,6 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 ### Jump Diagnostic and Show Diagnostics
 
 ```lua
--- show
-nnoremap <silent><leader>cd <cmd>lua
-require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
-
-nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>
--- only show diagnostic if cursor is over the area
-nnoremap <silent><leader>cc <cmd>lua
-require'lspsaga.diagnostic'.show_cursor_diagnostics()<CR>
-
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
@@ -210,42 +203,8 @@ highlight link LspSagaFinderSelection Search
 highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
 ```
 
-The available highlight groups are:
+The available highlight groups you can find in [here](./plugin/lspsaga.lua)
 
-| Group Name               | Description                                                      |
-| :----------------------- | :----------------------------------------------------------------|
-| `LspSagaFinderSelection` | Currently active entry in the finder window that gets previewed. |
-| `LspSagaLspFinderBorder` | |
-| `LspFloatWinNormal` | |
-| `LspFloatWinBorder` | |
-| `LspSagaBorderTitle` | |
-| `TargetWord` | |
-| `ReferencesCount` | |
-| `DefinitionCount` | |
-| `TargetFileName` | |
-| `DefinitionIcon` | |
-| `ReferencesIcon` | |
-| `ProviderTruncateLine` | |
-| `SagaShadow` | |
-| `LspSagaFinderSelection` | |
-| `DefinitionPreviewTitle` | |
-| `LspSagaShTruncateLine` | |
-| `LspSagaDocTruncateLine` | |
-| `LineDiagTuncateLine` | |
-| `LspSagaCodeActionTitle` | |
-| `LspSagaCodeActionTruncateLine` | |
-| `LspSagaCodeActionContent` | |
-| `LspSagaRenamePromptPrefix` | |
-| `LspSagaRenameBorder` | |
-| `LspSagaHoverBorder` | |
-| `LspSagaSignatureHelpBorder` | |
-| `LspSagaCodeActionBorder` | |
-| `LspSagaAutoPreview` | |
-| `LspSagaDefPreviewBorder` | |
-| `LspLinesDiagBorder` | |
-| `LspSagaDiagnosticBorder` | |
-| `LspSagaDiagnosticTruncateLine` | |
-| `LspSagaDiagnosticHeader` | |
 
 # License
 

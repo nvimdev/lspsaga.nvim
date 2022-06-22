@@ -1,3 +1,4 @@
+local api = vim.api
 local saga = {}
 
 saga.config_values = {
@@ -8,10 +9,13 @@ saga.config_values = {
   warn_sign = '',
   hint_sign = '',
   infor_sign = '',
-  diagnostic_header_icon = '   ',
+  -- Error,Warn,Info,Hint
+  diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   -- code action title icon
-  code_action_icon = ' ',
-  code_action_prompt = {
+  code_action_icon = '💡',
+  -- if true can press number to execute the codeaction in codeaction window
+  code_action_num_shortcut = true,
+  code_action_lightbulb = {
     enable = true,
     sign = true,
     sign_priority = 40,
@@ -27,9 +31,7 @@ saga.config_values = {
   code_action_keys = {
     quit = 'q',exec = '<CR>'
   },
-  rename_action_keys = {
-    quit = '<C-c>',exec = '<CR>'
-  },
+  rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
   border_style = "single",
   rename_prompt_prefix = '➤',
@@ -56,13 +58,16 @@ end
 
 function saga.init_lsp_saga(opts)
   extend_config(opts)
-  local diagnostic = require 'lspsaga.diagnostic'
+--   local diagnostic = require 'lspsaga.diagnostic'
 
-  if saga.config_values.use_saga_diagnostic_sign then
-    diagnostic.lsp_diagnostic_sign(saga.config_values)
-  end
-  if saga.config_values.code_action_prompt.enable then
-    vim.cmd [[autocmd CursorHold,CursorHoldI * lua require'lspsaga.codeaction'.code_action_prompt()]]
+--   if saga.config_values.use_saga_diagnostic_sign then
+--     diagnostic.lsp_diagnostic_sign(saga.config_values)
+--   end
+  if saga.config_values.code_action_lightbulb.enable then
+    api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
+      pattern = '*',
+      callback = require('lspsaga.lightbulb').action_lightbulb
+    })
   end
 end
 
