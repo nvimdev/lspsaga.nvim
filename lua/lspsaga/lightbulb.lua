@@ -50,8 +50,12 @@ local function _update_sign(line)
   end
 end
 
+-- TODO:for some server like rust-analyzer gopls pyright
+-- it also return code actions when diagnostic is empty
+-- in rust `fn main(){}` it should have a lightbulb for fn
+-- but now not work for this.need fix
 local function render_action_virtual_text(line,diagnostics,actions)
-  if actions == nil or type(actions) ~= "table" or vim.tbl_isempty(actions) then
+  if actions == nil or next(actions) == nil then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(nil)
     end
@@ -87,8 +91,11 @@ local send_request  = coroutine.create(function()
     local params = vim.lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
-    local response = vim.lsp.buf_request_sync(current_buf,method, params)
-    local actions = response[1].result
+    local response = vim.lsp.buf_request_sync(current_buf,method, params,1000)
+    local actions = {}
+    for _,res in pairs(response) do
+      table.insert(actions,res.result)
+    end
     current_buf = coroutine.yield(line,diagnostics,actions)
   end
 end)
