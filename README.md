@@ -92,7 +92,7 @@ vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-11eb-897d-587ac1375d4e.gif" width=500 height=500/>
 </div>
 
-- code action lightbulb
+- async lightbulb
 
 <div align='center'>
 <img
@@ -132,7 +132,7 @@ and you also can use smart_scroll_with_saga to scroll in signature help win
 src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
 </div>
 
-### Rename
+### Rename with Preview
 
 ```lua
 -- rename
@@ -164,15 +164,6 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 ### Jump Diagnostic and Show Diagnostics
 
 ```lua
--- show
-nnoremap <silent><leader>cd <cmd>lua
-require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
-
-nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>
--- only show diagnostic if cursor is over the area
-nnoremap <silent><leader>cc <cmd>lua
-require'lspsaga.diagnostic'.show_cursor_diagnostics()<CR>
-
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
