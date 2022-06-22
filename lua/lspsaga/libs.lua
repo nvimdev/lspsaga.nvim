@@ -139,6 +139,14 @@ function libs.close_preview_autocmd(bufnr,winid,events)
   })
 end
 
+function libs.disable_move_keys(bufnr)
+  local keys = { 'h','l','w','b','<Bs>'}
+  local opts = { nowait = true,noremap = true,silent = true}
+  for _,key in pairs(keys) do
+    api.nvim_buf_set_keymap(bufnr,'n',key,'',opts)
+  end
+end
+
 function libs.async(routine, ...)
 	local f = coroutine.create(function(await, ...) routine(await, ...) end)
 	local await = { error = nil, result = nil, completed = false }

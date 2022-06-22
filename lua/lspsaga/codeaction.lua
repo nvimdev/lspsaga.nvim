@@ -68,6 +68,8 @@ function Action:action_callback()
       api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end
     self:apply_action_keys()
+    -- dsiable some move keys in codeaction
+    libs.disable_move_keys(self.action_bufnr)
 end
 
 local apply_keys = libs.apply_keys("codeaction")

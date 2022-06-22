@@ -196,6 +196,7 @@ function Finder:render_finder_result()
   if not self.cursor_line_bg and not self.cursor_line_fg then
     self:get_cursorline_highlight()
   end
+
   api.nvim_command('highlight! link CursorLine LspSagaFinderSelection')
 
   api.nvim_create_autocmd('CursorMoved',{
@@ -228,6 +229,8 @@ function Finder:render_finder_result()
   -- load float window map
   self:apply_float_map()
   self:lsp_finder_highlight()
+  -- disable some move keys in finder window
+  libs.disable_move_keys(self.bufnr)
 end
 
 function Finder:apply_float_map()
