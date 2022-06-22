@@ -141,7 +141,7 @@ nnoremap <silent>gr :Lspsaga rename<CR>
 ```
 <div align="center">
 <img
-src="https://user-images.githubusercontent.com/41671631/106115648-f6915480-618b-11eb-9818-003cfb15c8ac.gif" />
+src="https://user-images.githubusercontent.com/41671631/175011235-aa0bd54e-eeb2-4dd7-a4e1-5afe9adfd4cf.gif" />
 </div>
 
 ### Preview Definition
