@@ -54,7 +54,7 @@ end
 
 function libs.result_isempty(res)
   if type(res) ~= "table" then
-    print('[Lspsaga] Server return wrong response')
+    vim.notify('[Lspsaga] Server return wrong response')
     return
   end
   for _,v in pairs(res) do
@@ -90,7 +90,7 @@ end
 
 function libs.get_lsp_root_dir()
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
     if (client.config.filetypes and client.config.root_dir) then

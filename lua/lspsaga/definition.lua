@@ -7,14 +7,14 @@ local def = {}
 
 function def.preview_definition(timeout_ms)
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
   local filetype = vim.api.nvim_buf_get_option(0, "filetype")
 
   local method = "textDocument/definition"
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
   if result == nil or vim.tbl_isempty(result) then
-    print("No location found: " .. method)
+    vim.notify("No location found: " .. method)
     return nil
   end
   result = vim.tbl_values(result)

@@ -19,7 +19,7 @@ end
 -- issue #103
 local function check_server_support_signaturehelp()
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
   local clients = vim.lsp.buf_get_clients()
   for _,client in pairs(clients) do
     if client.supports_method(method) then
@@ -139,7 +139,6 @@ end
 
 local call_back = function(_, result, ctx)
   if not (result and result.signatures and result.signatures[1]) then
---     print('No signature help available')
     return
   end
   local lines = util.convert_signature_help_to_markdown_lines(result)

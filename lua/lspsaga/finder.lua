@@ -318,7 +318,7 @@ function Finder:auto_open_preview()
 
   if next(content) ~= nil then
     local has_var,finder_win_opts = pcall(api.nvim_win_get_var,0,'lsp_finder_win_opts')
-    if not has_var then print('get finder window options wrong') return end
+    if not has_var then vim.notify('get finder window options wrong') return end
     local opts = {
       relative = 'editor',
       -- We'll make sure the preview window is the correct size
@@ -440,7 +440,7 @@ end
 
 function Finder.lsp_finder()
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
   Finder:lsp_finder_request()
 end
 

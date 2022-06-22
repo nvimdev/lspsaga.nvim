@@ -7,13 +7,13 @@ local implement = {}
 
 function implement.lspsaga_implementation(timeout_ms)
   local active,msg = libs.check_lsp_active()
-  if not active then print(msg) return end
+  if not active then vim.notify(msg) return end
 
   local method = "textDocument/implementation"
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0,method,params,timeout_ms or 1000)
   if result == nil or vim.tbl_isempty(result) then
-    print("No location found: " .. method)
+    vim.notify("No location found: " .. method)
     return nil
   end
   result = {vim.tbl_deep_extend("force", {}, unpack(result))}
