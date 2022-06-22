@@ -206,6 +206,11 @@ highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
 The available highlight groups you can find in [here](./plugin/lspsaga.lua)
 
 
+## Donate
+[![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
+
+If you'd like to support my work financially, buy me a drink through [paypal](https://paypal.me/bobbyhub)
+
 # License
 
 MIT
