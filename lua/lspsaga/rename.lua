@@ -71,9 +71,9 @@ local find_reference = function()
   local response = lsp.buf_request_sync(bufnr,method,params,timeout)
   if libs.result_isempty(response) then return end
 
-  -- if user has highlight cusorword plugin removed the highlight before
+  -- if user has highlight cusorword plugin remove the highlight before
   -- and restore it when rename done
-  if vim.fn.hlexists('CursorWord') then
+  if vim.fn.hlexists('CursorWord') == 1 then
     if next(cursorword_hl) == nil then
       local cursorword_color = api.nvim_get_hl_by_name('CursorWord',true)
       cursorword_hl = cursorword_color
