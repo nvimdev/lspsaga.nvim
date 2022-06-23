@@ -23,7 +23,7 @@ local do_request = co.create(function(method)
     end
 
     local resp = lsp.buf_request_sync(bufnr,method,params,timeout)
-    if libs.result_isempty(resp) then
+    if libs.result_isempty(resp) or resp == nil then
       resp = {}
       resp.result = {{
         saga_msg = msgs[method]
@@ -243,6 +243,7 @@ function Finder:apply_float_map()
   local keymaps = {
     {self.bufnr,'n',action.vsplit,":lua require('lspsaga.finder'):open_link(2)<CR>"},
     {self.bufnr,'n',action.split,":lua require('lspsaga.finder'):open_link(3)<CR>"},
+    {self.bufnr,'n',action.split,":lua require('lspsaga.finder'):open_link(4)<CR>"},
     {self.bufnr,'n',action.scroll_down,":lua require('lspsaga.finder'):scroll_in_preview(1)<CR>"},
     {self.bufnr,'n',action.scroll_up,":lua require('lspsaga.finder'):scroll_in_preview(-1)<CR>"}
   }
@@ -389,8 +390,9 @@ end
 -- action 1 mean enter
 -- action 2 mean vsplit
 -- action 3 mean split
+-- action 4 mean split
 function Finder:open_link(action_type)
-  local action = {"edit ","vsplit ","split "}
+  local action = {"edit ","vsplit ","split ", "tabe "}
   local current_line = fn.line('.')
 
   if self.short_link[current_line] == nil then
