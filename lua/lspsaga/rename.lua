@@ -88,6 +88,7 @@ local find_reference = function()
   else
     api.nvim_set_hl(0,'LspSagaRenameMatch',rename_match_hl)
   end
+  if next(response) == nil or type(response) ~= 'table' then return end
 
   for _,res in pairs(response) do
     if res.result then
