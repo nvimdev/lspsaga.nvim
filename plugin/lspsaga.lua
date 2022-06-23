@@ -1,9 +1,9 @@
 local api = vim.api
 local highlights = {
-  LspSagaTrunCateLine = {fg='black'},
   -- code action
   LspSagaCodeActionTitle = {fg='#da8548',bold = true},
   LspSagaCodeActionBorder= {fg = '#CBA6F7'},
+  LspSagaCodeActionTrunCateLine = { link = 'LspSagaCodeActionBorder'},
   LspSagaCodeActionContent = {fg = '#98be65',bold = true},
   -- finder
   LspSagaLspFinderBorder = {fg = '#51afef'},
@@ -19,7 +19,8 @@ local highlights = {
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   DefinitionPreviewTitle = { link = 'Title'},
   -- hover
-  LspSagaHoverBorder = { fg = '#80a0c2'},
+  LspSagaHoverBorder = { fg = '#f7bb3b'},
+  LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder'},
   -- rename
   LspSagaRenameBorder = { fg = '#3bb6c4'},
   LspSagaRenamePromptPrefix = {fg= '#98be65'},
@@ -29,8 +30,13 @@ local highlights = {
   LspSagaDiagnosticWarn  = { link = 'DiagnosticWarn'},
   LspSagaDiagnosticInfo  = { link = 'DiagnosticInfo'},
   LspSagaDiagnosticHint  = { link = 'DiagnosticHint'},
+  LspSagaErrorTrunCateLine = { link = 'DiagnosticError'},
+  LspSagaWarnTrunCateLine = { link = 'DiagnosticWarn'},
+  LspSagaInfoTrunCateLine = { link = 'DiagnosticInfo'},
+  LspSagaHintTrunCateLine = { link = 'DiagnosticHint'},
   -- signture help
   LspSagaSignatureHelpBorder = { fg = "#98be65"},
+  LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder'},
   -- lightbulb
   LspSagaLightBulb = { link = 'DiagnosticSignHint'},
   -- shadow
