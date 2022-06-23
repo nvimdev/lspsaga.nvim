@@ -126,7 +126,12 @@ local lsp_rename = function()
   local bufnr,winid = window.create_win_with_border(content_opts,opts)
   set_local_options()
   api.nvim_buf_set_lines(bufnr,-2,-1,false,{current_word})
-  vim.cmd [[normal viw]]
+
+  if config.rename_into_visual then
+    vim.cmd [[normal! viw]]
+  else
+    vim.cmd [[startinsert!]]
+  end
 
   api.nvim_win_set_var(0,unique_name,winid)
   api.nvim_create_autocmd('QuitPre',{

@@ -25,10 +25,10 @@ saga.config_values = {
   code_action_keys = {
     quit = 'q',exec = '<CR>'
   },
+  rename_into_visual = true,
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
   border_style = "single",
-  rename_prompt_prefix = '➤',
   server_filetype_map = {}
 }
 
