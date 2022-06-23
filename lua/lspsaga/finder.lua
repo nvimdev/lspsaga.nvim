@@ -243,6 +243,7 @@ function Finder:apply_float_map()
   local keymaps = {
     {self.bufnr,'n',action.vsplit,":lua require('lspsaga.finder'):open_link(2)<CR>"},
     {self.bufnr,'n',action.split,":lua require('lspsaga.finder'):open_link(3)<CR>"},
+    {self.bufnr,'n',action.tab,":lua require('lspsaga.finder'):open_link(4)<CR>"},
     {self.bufnr,'n',action.scroll_down,":lua require('lspsaga.finder'):scroll_in_preview(1)<CR>"},
     {self.bufnr,'n',action.scroll_up,":lua require('lspsaga.finder'):scroll_in_preview(-1)<CR>"}
   }
@@ -375,7 +376,7 @@ function Finder:auto_open_preview()
       local bufnr,winid = window.create_win_with_border(content_opts,opts)
       api.nvim_buf_set_option(bufnr,'buflisted',false)
       api.nvim_win_set_var(0,'saga_finder_preview',{winid,1,config.max_preview_lines+1})
-    end,10)
+    end,0)
   end
 end
 
@@ -389,8 +390,9 @@ end
 -- action 1 mean enter
 -- action 2 mean vsplit
 -- action 3 mean split
+-- action 4 mean split
 function Finder:open_link(action_type)
-  local action = {"edit ","vsplit ","split "}
+  local action = {"edit ","vsplit ","split ","tabe "}
   local current_line = fn.line('.')
 
   if self.short_link[current_line] == nil then

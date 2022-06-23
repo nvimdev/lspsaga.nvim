@@ -20,7 +20,7 @@ saga.config_values = {
   max_preview_lines = 10,
   finder_action_keys = {
     open = 'o', vsplit = 's',split = 'i',quit = 'q',
-    scroll_down = '<C-f>',scroll_up = '<C-b>'
+    tab = 't', scroll_down = '<C-f>',scroll_up = '<C-b>'
   },
   code_action_keys = {
     quit = 'q',exec = '<CR>'
