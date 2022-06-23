@@ -101,6 +101,14 @@ local find_reference = function()
   end
 end
 
+local feedkeys = function(keys,mode)
+  api.nvim_feedkeys(
+    api.nvim_replace_termcodes(keys, true, true, true),
+    mode,
+    true
+  )
+end
+
 local lsp_rename = function()
   local active,msg = libs.check_lsp_active()
   if not active then vim.notify(msg) return end
@@ -127,11 +135,8 @@ local lsp_rename = function()
   set_local_options()
   api.nvim_buf_set_lines(bufnr,-2,-1,false,{current_word})
 
-  if config.rename_into_visual then
-    vim.cmd [[normal! viw]]
-  else
-    vim.cmd [[startinsert!]]
-  end
+  vim.cmd [[normal! viw]]
+  feedkeys('<C-g>','v')
 
   api.nvim_win_set_var(0,unique_name,winid)
   api.nvim_create_autocmd('QuitPre',{
