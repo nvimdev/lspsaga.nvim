@@ -40,8 +40,6 @@ finder_action_keys = {
 code_action_keys = {
   quit = 'q',exec = '<CR>'
 },
--- default is true when you in rename window it will select the current word
-rename_into_visual = true,
 rename_action_keys = {
   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
 },
@@ -129,7 +127,7 @@ and you also can use smart_scroll_with_saga to scroll in signature help win
 src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
 </div>
 
-### Rename with Preview
+### Rename with Preview and Select
 
 ```lua
 -- rename
@@ -140,7 +138,7 @@ nnoremap <silent>gr :Lspsaga rename<CR>
 ```
 <div align="center">
 <img
-src="https://user-images.githubusercontent.com/41671631/175011235-aa0bd54e-eeb2-4dd7-a4e1-5afe9adfd4cf.gif" />
+src="https://user-images.githubusercontent.com/41671631/175300080-6e72001c-78dd-4d86-8139-bba38befee15.gif" />
 </div>
 
 ### Preview Definition
