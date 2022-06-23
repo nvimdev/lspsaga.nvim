@@ -27,7 +27,7 @@ hover.handler = function(_, result, ctx)
     window.nvim_win_try_close()
     local bufnr,winid = window.fancy_floating_markdown(markdown_lines)
 
-    local close_events ={"CursorMoved", "BufHidden","BufLeave", "InsertCharPre"}
+    local close_events ={"CursorMoved", "BufHidden","BufLeave", "InsertEnter"}
     libs.close_preview_autocmd(buffer,winid,close_events)
 
     return bufnr,winid
