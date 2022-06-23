@@ -44,7 +44,7 @@ rename_action_keys = {
   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
 },
 definition_preview_icon = '  '
-"single" "double" "round" "plus"
+"single" "double" "rounded" "bold" "plus"
 border_style = "single"
 rename_prompt_prefix = '➤',
 if you don't use nvim-lspconfig you must pass your server name and
