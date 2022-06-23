@@ -152,8 +152,15 @@ function M.create_win_with_border(content_opts,opts)
     api.nvim_buf_set_option(bufnr, 'filetype', filetype)
   end
 
-  api.nvim_buf_set_lines(bufnr,0,-1,true,content)
-  api.nvim_buf_set_option(bufnr, 'modifiable', false)
+	content = vim.tbl_flatten(vim.tbl_map(function (line)
+		if string.find(line,'\n') then
+			return vim.split(line, '\n')
+		end
+		return line
+	end, content))
+
+	api.nvim_buf_set_lines(bufnr,0,-1,true,content)
+	api.nvim_buf_set_option(bufnr, 'modifiable', false)
   api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
   api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
 
