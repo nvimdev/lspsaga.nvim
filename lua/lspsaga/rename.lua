@@ -43,6 +43,8 @@ local apply_action_keys = function(bufnr)
   local opts = {nowait = true,silent = true,noremap = true}
 
   api.nvim_buf_set_keymap(bufnr,'i',exec_key,rhs_of_exec,opts)
+  api.nvim_buf_set_keymap(bufnr,'n',exec_key,rhs_of_exec,opts)
+
   api.nvim_buf_set_keymap(bufnr,'i',quit_key,rhs_of_quit,opts)
   api.nvim_buf_set_keymap(bufnr,'n',quit_key,rhs_of_quit,opts)
   api.nvim_buf_set_keymap(bufnr,'v',quit_key,rhs_of_quit,opts)
