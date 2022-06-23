@@ -63,7 +63,7 @@ function Action:action_callback()
     })
 
     api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
-    api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaTrunCateLine",1,0,-1)
+    api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionTrunCateLine",1,0,-1)
     for i=1,#contents-2,1 do
       api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end

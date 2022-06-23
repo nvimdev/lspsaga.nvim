@@ -132,7 +132,7 @@ src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-
 
 ```lua
 -- rename
-nnoremap <silent>gr <cmd>lua require('lspsaga.rename').rename()<CR>
+nnoremap <silent>gr <cmd>lua require('lspsaga.rename').lsp_rename()<CR>
 -- or command
 nnoremap <silent>gr :Lspsaga rename<CR>
 -- close rename win use <C-c> in insert mode or `q` in normal mode or `:q`
