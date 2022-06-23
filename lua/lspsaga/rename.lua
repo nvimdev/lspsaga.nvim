@@ -4,12 +4,8 @@ local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 
 local unique_name = 'textDocument-rename'
-local saga_rename_prompt_prefix = api.nvim_create_namespace('lspsaga_rename_prompt_prefix')
 local pos = {}
 
-local get_prompt_prefix = function()
-  return config.rename_prompt_prefix..' '
-end
 
 -- store the CursorWord highlight
 local cursorword_hl = {}
@@ -30,7 +26,7 @@ local close_rename_win = function()
   if has then
     window.nvim_close_valid_window(winid)
   end
-  api.nvim_win_set_cursor(0,{pos[1],pos[2] + 1})
+  api.nvim_win_set_cursor(0,{pos[1],pos[2]})
 
   if next(cursorword_hl) ~= nil then
     api.nvim_set_hl(0,'CursorWord',cursorword_hl)
@@ -41,18 +37,24 @@ end
 
 local apply_action_keys = function(bufnr)
   local quit_key = config.rename_action_quit
+  local exec_key = '<CR>'
   local rhs_of_quit = [[<cmd>lua require('lspsaga.rename').close_rename_win()<CR>]]
+  local rhs_of_exec = [[<cmd>lua require("lspsaga.rename").do_rename()<CR>]]
   local opts = {nowait = true,silent = true,noremap = true}
+
+  api.nvim_buf_set_keymap(bufnr,'i',exec_key,rhs_of_exec,opts)
+  api.nvim_buf_set_keymap(bufnr,'n',exec_key,rhs_of_exec,opts)
 
   api.nvim_buf_set_keymap(bufnr,'i',quit_key,rhs_of_quit,opts)
   api.nvim_buf_set_keymap(bufnr,'n',quit_key,rhs_of_quit,opts)
+  api.nvim_buf_set_keymap(bufnr,'v',quit_key,rhs_of_quit,opts)
 end
 
 local set_local_options = function()
   local opt_locals = {
     scrolloff = 0,
     sidescrolloff = 0,
-    modifiable = true
+    modifiable = true,
   }
 
   for opt,val in pairs(opt_locals) do
@@ -112,7 +114,7 @@ end
 local lsp_rename = function()
   local active,msg = libs.check_lsp_active()
   if not active then vim.notify(msg) return end
-  local current_buf = api.nvim_get_current_buf()
+--   local current_buf = api.nvim_get_current_buf()
   local current_win = api.nvim_get_current_win()
   local current_word = vim.fn.expand('<cword>')
   pos = api.nvim_win_get_cursor(current_win)
@@ -133,29 +135,10 @@ local lsp_rename = function()
 
   local bufnr,winid = window.create_win_with_border(content_opts,opts)
   set_local_options()
+  api.nvim_buf_set_lines(bufnr,-2,-1,false,{current_word})
 
-  local prompt_prefix = get_prompt_prefix()
-  api.nvim_buf_set_option(bufnr,'buftype','prompt')
-  vim.fn.prompt_setprompt(bufnr, prompt_prefix)
-  api.nvim_buf_add_highlight(bufnr, saga_rename_prompt_prefix, 'LspSagaRenamePromptPrefix', 0, 0, #prompt_prefix)
-
-  local options = {
-    bufnr = current_buf
-  }
-  vim.fn.prompt_setcallback(bufnr,function(new_name)
-    close_rename_win()
-    api.nvim_win_set_cursor(current_win,pos)
-    vim.lsp.buf.rename(new_name,options)
-    api.nvim_win_set_cursor(current_win,{pos[1],pos[2]+1})
-    pos = {}
-  end)
-
-  vim.cmd [[startinsert!]]
-  -- TODO: find a way to change the mode to visual mode then select the
-  -- current word will be better but prompt buffer looks like some wired.
-  -- can not use feedkesy("<ESC>") and other command to do it. it will cause
-  -- the current word disappear.
-  feedkeys(current_word,'i')
+  vim.cmd [[normal! viw]]
+  feedkeys('<C-g>','v')
 
   api.nvim_win_set_var(0,unique_name,winid)
   api.nvim_create_autocmd('QuitPre',{
@@ -169,7 +152,22 @@ local lsp_rename = function()
   apply_action_keys(bufnr)
 end
 
+local function do_rename()
+  local new_name = vim.trim(api.nvim_get_current_line())
+  close_rename_win()
+  local current_name = vim.fn.expand('<cword>')
+  if not (new_name and #new_name > 0) or new_name == current_name then
+    return
+  end
+  local current_win = api.nvim_get_current_win()
+  api.nvim_win_set_cursor(current_win,pos)
+  vim.lsp.buf.rename(new_name)
+  api.nvim_win_set_cursor(current_win,{pos[1],pos[2]+1})
+  pos = {}
+end
+
 return {
   lsp_rename = lsp_rename,
   close_rename_win = close_rename_win,
+  do_rename = do_rename
 }

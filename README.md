@@ -40,13 +40,14 @@ finder_action_keys = {
 code_action_keys = {
   quit = 'q',exec = '<CR>'
 },
+-- default is true when you in rename window it will select the current word
+rename_into_visual = true,
 rename_action_keys = {
   quit = '<C-c>',exec = '<CR>'  -- quit can be a table
 },
 definition_preview_icon = '  '
-"single" "double" "round" "plus"
+"single" "double" "rounded" "bold" "plus"
 border_style = "single"
-rename_prompt_prefix = '➤',
 if you don't use nvim-lspconfig you must pass your server name and
 the related filetypes into this table
 like server_filetype_map = {metals = {'sbt', 'scala'}}

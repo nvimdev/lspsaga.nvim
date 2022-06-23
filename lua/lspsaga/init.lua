@@ -28,7 +28,6 @@ saga.config_values = {
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
   border_style = "single",
-  rename_prompt_prefix = '➤',
   server_filetype_map = {}
 }
 

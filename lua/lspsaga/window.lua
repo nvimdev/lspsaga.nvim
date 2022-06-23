@@ -7,16 +7,7 @@ local function get_border_style(style,highlight)
   highlight = highlight or 'FloatBorder'
   local border_style = {
     ["single"] = "single",["double"] = "double",
-    ["round"] = {
-      {"╭", highlight},
-      {"─", highlight},
-      {"╮", highlight},
-      {"│", highlight},
-      {"╯", highlight},
-      {"─", highlight},
-      {"╰", highlight},
-      {"│", highlight}
-    },
+    ["rounded"] = 'rounded',
     ["bold"] = {
       {"┏", highlight},
       {"─", highlight},
@@ -230,6 +221,7 @@ local function get_max_content_length(contents)
   return tmp[#tmp]
 end
 
+-- TODO: better doc render
 function M.fancy_floating_markdown(contents, opts)
   vim.validate {
     contents = { contents, 't' };
@@ -320,7 +312,7 @@ function M.fancy_floating_markdown(contents, opts)
 
   local content_opts = {
     contents = stripped,
-    filetype = 'sagahover',
+    filetype = 'markdown',
     highlight = 'LspSagaHoverBorder'
   }
 
