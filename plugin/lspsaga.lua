@@ -23,7 +23,6 @@ local highlights = {
   LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder'},
   -- rename
   LspSagaRenameBorder = { fg = '#3bb6c4'},
-  LspSagaRenamePromptPrefix = {fg= '#98be65'},
   LspSagaRenameMatch = { link = 'Search'},
   -- diagnostic
   LspSagaDiagnosticError = { link = 'DiagnosticError'},
