@@ -14,6 +14,10 @@ local function render_diagnostic_window(entry)
   local max_width = window.get_max_float_width()
 
   local icon = config.diagnostic_header_icon[entry.severity]
+  -- remove dot in source tail {lua-language-server}
+  if entry.source and entry.source:find('%.$') then
+    entry.source = entry.source:gsub('%.','')
+  end
   local source = config.show_diagnostic_source and entry.source or ''
   if #config.diagnostic_source_bracket == 2  and #source > 0 then
     source = config.diagnostic_source_bracket[1] .. source ..config.diagnostic_source_bracket[2]
