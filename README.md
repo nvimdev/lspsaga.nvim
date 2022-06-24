@@ -69,10 +69,10 @@ nnoremap <silent> gh :Lspsaga lsp_finder<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/107140076-ae77ec00-695a-11eb-8329-0b9d8361bfeb.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/175307158-97f2a269-eeea-48e5-8b1e-d70123c30d77.gif" />
 </div>
 
-### Code Action
+### Code Action Support use number to execute
 
 ```lua
 -- code action
@@ -84,14 +84,14 @@ vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/105657414-490a1100-5eff-11eb-897d-587ac1375d4e.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/175305503-180e6b39-d162-4ef2-aa2b-9ffe309948e6.gif"/>
 </div>
 
 - async lightbulb
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/110590664-0e102400-81b3-11eb-9b9d-a894537104bc.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/175305874-e95508e1-ecb9-4e5a-a664-85dfd3577ef1.gif"/>
 </div>
 
 ### Hover Doc
@@ -109,7 +109,7 @@ nnoremap <silent> <C-b> <cmd>lua require('lspsaga.action').smart_scroll_with_sag
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/106566308-1dc09b00-656b-11eb-85e2-2ab5b23599c9.gif" width=500 height=500/>
+src="https://user-images.githubusercontent.com/41671631/175306592-f0540e35-561f-418c-a41e-7df167ba9b86.gif"/>
 </div>
 
 ### SignatureHelp
@@ -124,7 +124,7 @@ and you also can use smart_scroll_with_saga to scroll in signature help win
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/105969051-c7fb7700-60c2-11eb-9c79-aef3e01d88b1.gif" width=500 height=500 />
+src="https://user-images.githubusercontent.com/41671631/175306809-755c4624-a5d2-4c11-8b29-f41914f22411.gif"/>
 </div>
 
 ### Rename with Preview and Select
@@ -168,7 +168,7 @@ nnoremap <silent> ]e :Lspsaga diagnostic_jump_prev<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/102290042-21786e00-3f7b-11eb-8026-d467bc256ba8.gif" width=500 height=300/>
+src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-4496-b7cb-2a077ab9ecc0.gif"/>
 </div>
 
 ### Float Terminal
