@@ -375,7 +375,7 @@ function Finder:auto_open_preview()
       local bufnr,winid = window.create_win_with_border(content_opts,opts)
       api.nvim_buf_set_option(bufnr,'buflisted',false)
       api.nvim_win_set_var(0,'saga_finder_preview',{winid,1,config.max_preview_lines+1})
-    end,10)
+    end,5)
   end
 end
 

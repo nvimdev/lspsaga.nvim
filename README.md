@@ -20,6 +20,10 @@ local saga = require 'lspsaga'
 
 -- Error,Warn,Info,Hint
 diagnostic_header_icon = {' ',' ',' ','ﴞ '},
+-- show diagnostic source
+show_diagnostic_source = true,
+-- add bracket or something with diagnostic source,just have 2 elements
+diagnostic_source_bracket = {},
 -- use emoji lightbulb in default
 code_action_icon = '💡',
 -- if true can press number to execute the codeaction in codeaction window
