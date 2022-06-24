@@ -25,6 +25,7 @@ local highlights = {
   LspSagaRenameBorder = { fg = '#3bb6c4'},
   LspSagaRenameMatch = { link = 'Search'},
   -- diagnostic
+  LspSagaDiagnosticSource = {fg = '#FF8700'},
   LspSagaDiagnosticError = { link = 'DiagnosticError'},
   LspSagaDiagnosticWarn  = { link = 'DiagnosticWarn'},
   LspSagaDiagnosticInfo  = { link = 'DiagnosticInfo'},
