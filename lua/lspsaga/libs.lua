@@ -53,6 +53,7 @@ function libs.check_lsp_active()
 end
 
 function libs.result_isempty(res)
+  if res == nil then return true end
   if type(res) ~= "table" then
     vim.notify('[Lspsaga] Server return wrong response')
     return
