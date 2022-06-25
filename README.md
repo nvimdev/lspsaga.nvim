@@ -99,7 +99,7 @@ src="https://user-images.githubusercontent.com/41671631/175305503-180e6b39-d162-
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175305874-e95508e1-ecb9-4e5a-a664-85dfd3577ef1.gif"/>
+src="https://user-images.githubusercontent.com/41671631/175752848-cef8218a-f8e4-42c2-96bd-06bb07cd42c6.gif"/>
 </div>
 
 ### Hover Doc
