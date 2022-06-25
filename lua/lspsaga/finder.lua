@@ -410,7 +410,7 @@ function Finder:scroll_in_preview(direction)
   if not has_var then return end
   if not api.nvim_win_is_valid(pdata[1]) then return end
 
-  local current_win_lnum,last_lnum = pdata[3],pdata[4]
+  local current_win_lnum,last_lnum = pdata[2],pdata[3]
   current_win_lnum = scroll_in_win(pdata[1],direction,current_win_lnum,last_lnum,config.max_preview_lines)
   api.nvim_win_set_var(0,'saga_finder_preview',{pdata[1],current_win_lnum,last_lnum})
 end
