@@ -98,25 +98,25 @@ local send_request  = coroutine.create(function()
     local params = vim.lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
-    local response = vim.lsp.buf_request_sync(current_buf,method, params,1000)
-    if libs.result_isempty(response) then
-      response = { { result = {}}}
-    end
-
-    local actions = {}
-    for _,res in pairs(response) do
-      if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
-        table.insert(actions,res.result)
+    vim.lsp.buf_request_all(current_buf,method, params,function(results)
+      if libs.result_isempty(results) then
+        results = { { result = {}}}
       end
-    end
-    current_buf = coroutine.yield(line,diagnostics,actions)
+      local actions = {}
+      for _,res in pairs(results) do
+        if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
+          table.insert(actions,res.result)
+        end
+      end
+      render_action_virtual_text(line,diagnostics,actions)
+    end)
+    current_buf = coroutine.yield()
   end
 end)
 
 local render_bulb  = function()
   local current_buf = api.nvim_get_current_buf()
-  local _,line,diagnostics,actions = coroutine.resume(send_request,current_buf)
-  render_action_virtual_text(line,diagnostics,actions)
+  coroutine.resume(send_request,current_buf)
 end
 
 function lb.action_lightbulb()

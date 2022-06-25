@@ -15,6 +15,7 @@ local highlights = {
   DefinitionCount = {link = 'Title'},
   ReferencesCount = {link = 'Title'},
   TargetWord = {link = 'Error'},
+  FinderCount = {fg= 'black',bg='#98be65'},
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   DefinitionPreviewTitle = { link = 'Title'},

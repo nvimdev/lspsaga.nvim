@@ -276,6 +276,8 @@ function Finder:lsp_finder_highlight ()
   api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,#ref_icon,self.param_length+#ref_icon+3)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,0,-1)
+
+  vim.fn.matchadd('FinderCount','\\s\\d\\s')
 end
 
 function Finder:set_cursor()
