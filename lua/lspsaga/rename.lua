@@ -66,42 +66,42 @@ local method = 'textDocument/references'
 local ns = api.nvim_create_namespace('LspsagaRename')
 
 local find_reference = function()
-  local timeout = 1000
   local bufnr = api.nvim_get_current_buf()
   local params = util.make_position_params()
   params.context = {includeDeclaration = true}
-  local response = lsp.buf_request_sync(bufnr,method,params,timeout)
-  if libs.result_isempty(response) then return end
+  lsp.buf_request_all(bufnr,method,params,function(response)
+    if libs.result_isempty(response) then return end
 
   -- if user has highlight cusorword plugin remove the highlight before
   -- and restore it when rename done
-  if vim.fn.hlexists('CursorWord') == 1 then
-    if next(cursorword_hl) == nil then
-      local cursorword_color = api.nvim_get_hl_by_name('CursorWord',true)
-      cursorword_hl = cursorword_color
+    if vim.fn.hlexists('CursorWord') == 1 then
+      if next(cursorword_hl) == nil then
+        local cursorword_color = api.nvim_get_hl_by_name('CursorWord',true)
+        cursorword_hl = cursorword_color
+      end
+      api.nvim_set_hl(0,'CursorWord',{fg ='none',bg = 'none'})
     end
-    api.nvim_set_hl(0,'CursorWord',{fg ='none',bg = 'none'})
-  end
 
-  if next(rename_match_hl) == nil then
-    rename_match_hl = api.nvim_get_hl_by_name('LspSagaRenameMatch',true)
-  else
-    api.nvim_set_hl(0,'LspSagaRenameMatch',rename_match_hl)
-  end
-  if next(response) == nil or type(response) ~= 'table' then return end
+    if next(rename_match_hl) == nil then
+      rename_match_hl = api.nvim_get_hl_by_name('LspSagaRenameMatch',true)
+    else
+      api.nvim_set_hl(0,'LspSagaRenameMatch',rename_match_hl)
+    end
+    if next(response) == nil or type(response) ~= 'table' then return end
 
-  for _,res in pairs(response) do
-    if res.result then
-      for _,v in pairs(res.result) do
-        if v.range then
-          local line = v.range.start.line
-          local start_char = v.range.start.character
-          local end_char = v.range['end'].character
-          api.nvim_buf_add_highlight(bufnr,ns,'LspSagaRenameMatch',line,start_char,end_char)
+    for _,res in pairs(response) do
+      if res.result then
+        for _,v in pairs(res.result) do
+          if v.range then
+            local line = v.range.start.line
+            local start_char = v.range.start.character
+            local end_char = v.range['end'].character
+            api.nvim_buf_add_highlight(bufnr,ns,'LspSagaRenameMatch',line,start_char,end_char)
+          end
         end
       end
     end
-  end
+  end)
 end
 
 local feedkeys = function(keys,mode)

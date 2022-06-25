@@ -6,7 +6,7 @@ saga.config_values = {
   -- Error,Warn,Info,Hint
   diagnostic_header_icon = {' ',' ',' ','ﴞ '},
   show_diagnostic_source = true,
-  diagnostic_source_bracket = {},
+  diagnostic_source_bracket = {'❴','❵'},
   -- code action title icon
   code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window
@@ -17,8 +17,8 @@ saga.config_values = {
     sign_priority = 40,
     virtual_text = true,
   },
-  finder_definition_icon = '  ',
-  finder_reference_icon = '  ',
+  finder_definition_icon = ' ',
+  finder_reference_icon = ' ',
   max_preview_lines = 10,
   finder_action_keys = {
     open = 'o', vsplit = 's',split = 'i', tabe = 't', quit = 'q',

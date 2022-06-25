@@ -1,4 +1,5 @@
 local api = vim.api
+local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local method = 'textDocument/codeAction'
 local lb = {}
@@ -35,48 +36,54 @@ local function _update_virtual_text(line)
 end
 
 local function _update_sign(line)
+
+  local current_buf = api.nvim_get_current_buf()
+  if vim.w.lightbulb_line == 0 then vim.w.lightbulb_line = 1 end
   if vim.w.lightbulb_line ~= 0 then
     vim.fn.sign_unplace(
-      SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = "%" }
+      SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = current_buf }
     )
   end
 
   if line then
     vim.fn.sign_place(
-      line, SIGN_GROUP, SIGN_NAME, "%",
+      line, SIGN_GROUP, SIGN_NAME, current_buf,
       { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
     )
     vim.w.lightbulb_line = line
   end
 end
 
--- TODO:for some server like rust-analyzer gopls pyright
--- it also return code actions when diagnostic is empty
--- in rust `fn main(){}` it should have a lightbulb for fn
--- but now not work for this.need fix
 local function render_action_virtual_text(line,diagnostics,actions)
-  if actions == nil or next(actions) == nil then
+  if next(actions) == nil and next(diagnostics) == nil then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(nil)
     end
     if config.code_action_lightbulb.sign then
       _update_sign(nil)
     end
-  else
+  elseif next(actions) ~= nil and next(diagnostics) == nil then
     if config.code_action_lightbulb.sign then
-      if next(diagnostics) == nil then
-        _update_sign(nil)
-      else
-        _update_sign(line)
-      end
+      _update_sign(line)
     end
 
     if config.code_action_lightbulb.virtual_text then
-      if next(diagnostics) == nil then
-        _update_virtual_text(nil)
-      else
         _update_virtual_text(line)
-      end
+    end
+  elseif next(actions) ~= nil and next(diagnostics) ~= nil then
+    if config.code_action_lightbulb.sign then
+      _update_sign(line)
+    end
+
+    if config.code_action_lightbulb.virtual_text then
+        _update_virtual_text(line)
+    end
+  else
+    if config.code_action_lightbulb.virtual_text then
+      _update_virtual_text(nil)
+    end
+    if config.code_action_lightbulb.sign then
+      _update_sign(nil)
     end
   end
 end
@@ -91,19 +98,25 @@ local send_request  = coroutine.create(function()
     local params = vim.lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
-    local response = vim.lsp.buf_request_sync(current_buf,method, params,1000)
-    local actions = {}
-    for _,res in pairs(response) do
-      table.insert(actions,res.result)
-    end
-    current_buf = coroutine.yield(line,diagnostics,actions)
+    vim.lsp.buf_request_all(current_buf,method, params,function(results)
+      if libs.result_isempty(results) then
+        results = { { result = {}}}
+      end
+      local actions = {}
+      for _,res in pairs(results) do
+        if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
+          table.insert(actions,res.result)
+        end
+      end
+      render_action_virtual_text(line,diagnostics,actions)
+    end)
+    current_buf = coroutine.yield()
   end
 end)
 
 local render_bulb  = function()
   local current_buf = api.nvim_get_current_buf()
-  local _,line,diagnostics,actions = coroutine.resume(send_request,current_buf)
-  render_action_virtual_text(line,diagnostics,actions)
+  coroutine.resume(send_request,current_buf)
 end
 
 function lb.action_lightbulb()

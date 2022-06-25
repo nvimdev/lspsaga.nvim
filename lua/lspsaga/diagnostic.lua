@@ -14,13 +14,17 @@ local function render_diagnostic_window(entry)
   local max_width = window.get_max_float_width()
 
   local icon = config.diagnostic_header_icon[entry.severity]
+  -- remove dot in source tail {lua-language-server}
+  if entry.source and entry.source:find('%.$') then
+    entry.source = entry.source:gsub('%.','')
+  end
   local source = config.show_diagnostic_source and entry.source or ''
   if #config.diagnostic_source_bracket == 2  and #source > 0 then
     source = config.diagnostic_source_bracket[1] .. source ..config.diagnostic_source_bracket[2]
   end
-  wrap_message[1] = icon .. ' ' .. diag_type[entry.severity] ..' ' .. source
+  wrap_message[1] = icon .. ' ' .. diag_type[entry.severity]
 
-  table.insert(wrap_message,entry.message)
+  table.insert(wrap_message,source ..' '.. entry.message)
   wrap_message = wrap.wrap_contents(wrap_message,max_width,{
       fill = true, pad_left = 1
     })
@@ -39,9 +43,6 @@ local function render_diagnostic_window(entry)
 
   local title_icon_length = #icon + #diag_type[entry.severity] + 1
   api.nvim_buf_add_highlight(bufnr,-1,hi_name,0,0,title_icon_length)
-  if config.show_diagnostic_source then
-    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDiagnosticSource',0,title_icon_length + 1,-1)
-  end
 
   local truncate_line_hl = 'LspSaga'..diag_type[entry.severity] ..'TrunCateLine'
   api.nvim_buf_add_highlight(bufnr,-1,truncate_line_hl,1,0,-1)
@@ -50,6 +51,10 @@ local function render_diagnostic_window(entry)
     if i > 2 then
       api.nvim_buf_add_highlight(bufnr,-1,hi_name,i-1,0,-1)
     end
+  end
+
+  if config.show_diagnostic_source then
+    api.nvim_buf_add_highlight(bufnr,-1,'LspSagaDiagnosticSource',2,0,#source)
   end
 
   local close_autocmds = {"CursorMoved", "CursorMovedI","InsertEnter"}

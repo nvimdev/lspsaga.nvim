@@ -128,6 +128,11 @@ local function open_shadow_win()
   return shadow_bufnr,shadow_winid
 end
 
+-- content_opts a table with filed
+-- contents table type
+-- filetype string type
+-- enter boolean into window or not
+-- highlight border highlight string type
 function M.create_win_with_border(content_opts,opts)
   vim.validate{
     content_opts = {content_opts,'t'},

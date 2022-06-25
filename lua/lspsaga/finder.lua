@@ -277,6 +277,8 @@ function Finder:lsp_finder_highlight ()
   api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,#ref_icon,self.param_length+#ref_icon+3)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,0,-1)
+
+  vim.fn.matchadd('FinderCount','\\s\\d\\s')
 end
 
 function Finder:set_cursor()
@@ -375,7 +377,8 @@ function Finder:auto_open_preview()
       self:close_auto_preview_win()
       local bufnr,winid = window.create_win_with_border(content_opts,opts)
       api.nvim_buf_set_option(bufnr,'buflisted',false)
-      api.nvim_win_set_var(0,'saga_finder_preview',{winid,1,config.max_preview_lines+1})
+      local last_lnum = #content > config.max_preview_lines and config.max_preview_lines or #content
+      api.nvim_win_set_var(0,'saga_finder_preview',{winid,1,last_lnum})
     end,5)
   end
 end
