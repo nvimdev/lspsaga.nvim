@@ -86,7 +86,7 @@ nnoremap <silent> gh :Lspsaga lsp_finder<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175307158-97f2a269-eeea-48e5-8b1e-d70123c30d77.gif" />
+src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-4053-b671-303df4e94a19.gif" />
 </div>
 
 ### Code Action Support use number to execute
