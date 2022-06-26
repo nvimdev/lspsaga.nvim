@@ -68,8 +68,8 @@ function Finder:word_symbol_kind()
         break
       end
     end
-    local icon = kind[result[index].kind][2]
-    self.param = icon .. current_word
+    local icon = index ~= 0 and kind[result[index].kind][2] or ' '
+    self.param = icon ..' '.. current_word
   end)
 end
 
