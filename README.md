@@ -53,9 +53,7 @@ finder_action_keys = {
 code_action_keys = {
   quit = 'q',exec = '<CR>'
 },
-rename_action_keys = {
-  quit = '<C-c>',exec = '<CR>'  -- quit can be a table
-},
+rename_action_quit = '<C-c>',
 definition_preview_icon = '  '
 -- "single" "double" "rounded" "bold" "plus"
 border_style = "single"
