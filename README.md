@@ -167,6 +167,10 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 ### Jump Diagnostic and Show Diagnostics
 
 ```lua
+nnoremap <silent><leader>cd <cmd>lua
+require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
+
+nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>``lua
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
@@ -174,6 +178,7 @@ nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_ne
 nnoremap <silent> [e :Lspsaga diagnostic_jump_next<CR>
 nnoremap <silent> ]e :Lspsaga diagnostic_jump_prev<CR>
 ```
+
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-4496-b7cb-2a077ab9ecc0.gif"/>

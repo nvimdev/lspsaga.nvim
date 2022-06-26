@@ -74,11 +74,11 @@ function Finder:create_finder_contents(result,method,root_dir)
   local method_option = {
     [methods[1]] = {
       icon = config.finder_definition_icon,
-      title = ':  '.. #result ..' Definitions'
+      title = ' '.. #result ..' Definitions' .. ''
     },
     [methods[2]] = {
       icon = config.finder_reference_icon,
-      title = ':  '.. #result ..' References'
+      title = ' '.. #result ..' References' .. ''
     };
   }
 
@@ -276,8 +276,6 @@ function Finder:lsp_finder_highlight ()
   api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,#ref_icon,self.param_length+#ref_icon+3)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,0,-1)
-
-  vim.fn.matchadd('FinderCount','\\s\\d\\s')
 end
 
 function Finder:set_cursor()

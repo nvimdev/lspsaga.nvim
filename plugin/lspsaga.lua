@@ -15,7 +15,6 @@ local highlights = {
   DefinitionCount = {link = 'Title'},
   ReferencesCount = {link = 'Title'},
   TargetWord = {link = 'Error'},
-  FinderCount = {fg= 'black',bg='#98be65'},
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   DefinitionPreviewTitle = { link = 'Title'},
@@ -35,6 +34,9 @@ local highlights = {
   LspSagaWarnTrunCateLine = { link = 'DiagnosticWarn'},
   LspSagaInfoTrunCateLine = { link = 'DiagnosticInfo'},
   LspSagaHintTrunCateLine = { link = 'DiagnosticHint'},
+  LspSagaDiagnosticBorder = {fg = '#CBA6F7'},
+  LspSagaDiagnosticHeader = { fg= '#afd700'},
+  LspSagaDiagnosticTruncateLine = {link = 'LspSagaDiagnosticBorder'},
   -- signture help
   LspSagaSignatureHelpBorder = { fg = "#98be65"},
   LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder'},
