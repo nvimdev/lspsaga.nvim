@@ -1,5 +1,7 @@
 local api = vim.api
+
 local saga = {}
+saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
   debug = false,
@@ -54,6 +56,7 @@ function saga.init_lsp_saga(opts)
   extend_config(opts)
   if saga.config_values.code_action_lightbulb.enable then
     api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
+      group = saga.saga_augroup,
       pattern = '*',
       callback = require('lspsaga.lightbulb').action_lightbulb
     })

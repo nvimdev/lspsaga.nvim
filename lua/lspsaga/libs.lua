@@ -1,6 +1,7 @@
 local api = vim.api
 local libs = {}
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
+local saga_augroup = require('lspsaga').saga_augroup
 
 function libs.is_windows()
   return vim.loop.os_uname().sysname:find("Windows", 1, true) and true
@@ -130,6 +131,7 @@ end
 
 function libs.close_preview_autocmd(bufnr,winid,events)
   api.nvim_create_autocmd(events,{
+    group = saga_augroup,
     buffer = bufnr,
     once = true,
     callback = function()
