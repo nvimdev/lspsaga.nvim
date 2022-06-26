@@ -14,7 +14,7 @@ local highlights = {
   TargetFileName = {link = 'Comment'},
   DefinitionCount = {link = 'Title'},
   ReferencesCount = {link = 'Title'},
-  TargetWord = {link = 'Error'},
+  TargetWord = {fg = '#1abc9c' ,underline = true},
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   DefinitionPreviewTitle = { link = 'Title'},

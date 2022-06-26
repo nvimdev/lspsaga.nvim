@@ -74,17 +74,17 @@ function Finder:create_finder_contents(result,method,root_dir)
   local method_option = {
     [methods[1]] = {
       icon = config.finder_definition_icon,
-      title = ' '.. #result ..' Definitions' .. ''
+      title = ' '.. #result ..' Definitions'
     },
     [methods[2]] = {
       icon = config.finder_reference_icon,
-      title = ' '.. #result ..' References' .. ''
+      title = ' '.. #result ..' References'
     };
   }
 
   local params = fn.expand("<cword>")
   self.param_length = #params
-  local title = method_option[method].icon.. params ..method_option[method].title
+  local title = method_option[method].icon..' '.. params ..method_option[method].title
 
   if method == methods[1] then
     self.definition_uri = result.saga_msg and 1 or #result
@@ -271,9 +271,9 @@ function Finder:lsp_finder_highlight ()
   local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
   -- add syntax
   api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionIcon",0,1,#def_icon-1)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",0,#def_icon,self.param_length+#def_icon+3)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",0,#def_icon + 1,self.param_length+#def_icon+1)
   api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionCount",0,0,-1)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,#ref_icon,self.param_length+#ref_icon+3)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,#ref_icon + 1,self.param_length+#ref_icon+1)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
   api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,0,-1)
 end
