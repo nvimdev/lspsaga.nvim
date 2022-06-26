@@ -13,6 +13,7 @@ local highlights = {
   DefinitionCount = {link = 'Title'},
   ReferencesCount = {link = 'Title'},
   TargetWord = {fg = '#1abc9c' ,bold =true},
+  FinderSeparator = {fg='#36d0e0'},
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   DefinitionPreviewTitle = { link = 'Title'},

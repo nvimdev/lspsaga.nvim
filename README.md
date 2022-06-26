@@ -43,6 +43,8 @@ code_action_lightbulb = {
   sign_priority = 20,
   virtual_text = true,
 },
+-- separator in finder
+finder_separator = '  ',
 -- preview lines of lsp_finder and definition preview
 max_preview_lines = 10,
 finder_action_keys = {

@@ -49,12 +49,27 @@ local Finder = {}
 function Finder:word_symbol_kind()
   local method = 'textDocument/documentSymbol'
   local current_buf = api.nvim_get_current_buf()
+  local current_word = vim.fn.expand('<cword>')
   local params = { textDocument = lsp.util.make_text_document_params() }
   lsp.buf_request_all(current_buf,method,params,function(results)
-    local result = results[1].result
-    local last_index = #result
-    local icon = kind[result[last_index].kind][2]
-    self.param = icon .. result[last_index].name
+    local result
+    local clients = vim.lsp.buf_get_clients()
+    for client_id,_ in pairs(results) do
+      if clients[client_id].supports_method(method) then
+        result = results[client_id].result
+        break
+      end
+    end
+
+    local index = 0
+    for i,val in pairs(result) do
+      if val.name == current_word then
+        index = i
+        break
+      end
+    end
+    local icon = kind[result[index].kind][2]
+    self.param = icon .. current_word
   end)
 end
 
@@ -93,7 +108,7 @@ function Finder:create_finder_contents(result,method,root_dir)
     [methods[2]] = ' '.. #result ..' References'
   }
 
-  local title = self.param ..method_option[method]
+  local title = self.param .. config.finder_separator.. method_option[method]
 
   if method == methods[1] then
     self.definition_uri = result.saga_msg and 1 or #result
@@ -277,11 +292,14 @@ end
 
 function Finder:lsp_finder_highlight ()
   local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
+  local sp_length = #config.finder_separator
   -- add syntax
   api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",0,0,#self.param)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionCount",0,#self.param+1,-1)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"FinderSeparator",0,#self.param+1,#self.param+1+sp_length)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionCount",0,#self.param+1+sp_length,-1)
   api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,0,#self.param)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,#self.param+1,-1)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"FinderSeparator",3+def_uri_count,#self.param,#self.param+1+sp_length)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,#self.param+sp_length,-1)
 end
 
 function Finder:set_cursor()
