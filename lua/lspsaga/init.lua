@@ -4,7 +4,7 @@ local saga = {}
 saga.config_values = {
   debug = false,
   -- Error,Warn,Info,Hint
-  diagnostic_header_icon = {' ',' ',' ','ﴞ '},
+  diagnostic_header = {' ',' ',' ','ﴞ '},
   show_diagnostic_source = true,
   diagnostic_source_bracket = {'❴','❵'},
   -- code action title icon

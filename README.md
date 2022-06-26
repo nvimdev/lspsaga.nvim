@@ -22,7 +22,12 @@ local saga = require 'lspsaga'
 -- use emoji 
 -- like {'🙀','😿','😾','😺'}
 -- {'😡','😥','😤','😐'}
-diagnostic_header_icon = {' ',' ',' ','ﴞ '},
+-- and diagnostic_header can be a function type
+-- must return a string and when diagnostic_header
+-- is fucntion type it will have a param `entry`
+-- entry is a table type has these filed
+-- {bufnr,code,col,end_col,end_lnum,lnum,message,severity,source}
+diagnostic_header = {' ',' ',' ','ﴞ '},
 -- show diagnostic source
 show_diagnostic_source = true,
 -- add bracket or something with diagnostic source,just have 2 elements

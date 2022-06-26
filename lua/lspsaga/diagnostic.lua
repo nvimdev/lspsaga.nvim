@@ -9,12 +9,28 @@ local api = vim.api
 local diag = {}
 local diag_type = {'Error','Warn','Info','Hint'}
 
+local jump_diagnostic_header = function(entry)
+  if type(config.diagnostic_header) == 'table' then
+    local icon = config.diagnostic_header[entry.severity]
+    return icon
+  end
+
+  if type(config.diagnostic_header) == 'function' then
+    local header = config.diagnostic_header(entry)
+    if type(header) ~= 'string' then
+      vim.notify('diagnostic_header function must return a string')
+      return ''
+    end
+    return header
+  end
+end
+
 local function render_diagnostic_window(entry)
   local current_buffer = api.nvim_get_current_buf()
   local wrap_message  = {}
   local max_width = window.get_max_float_width()
 
-  local icon = config.diagnostic_header_icon[entry.severity]
+  local header = jump_diagnostic_header(entry)
   -- remove dot in source tail {lua-language-server}
   if entry.source and entry.source:find('%.$') then
     entry.source = entry.source:gsub('%.','')
@@ -23,7 +39,7 @@ local function render_diagnostic_window(entry)
   if #config.diagnostic_source_bracket == 2  and #source > 0 then
     source = config.diagnostic_source_bracket[1] .. source ..config.diagnostic_source_bracket[2]
   end
-  wrap_message[1] = icon .. ' ' .. diag_type[entry.severity]
+  wrap_message[1] = header .. ' ' .. diag_type[entry.severity]
 
   table.insert(wrap_message,source ..' '.. entry.message)
   wrap_message = wrap.wrap_contents(wrap_message,max_width,{
@@ -42,7 +58,7 @@ local function render_diagnostic_window(entry)
 
   local bufnr,winid = window.create_win_with_border(content_opts)
 
-  local title_icon_length = #icon + #diag_type[entry.severity] + 1
+  local title_icon_length = #header + #diag_type[entry.severity] + 1
   api.nvim_buf_add_highlight(bufnr,-1,hi_name,0,0,title_icon_length)
 
   local truncate_line_hl = 'LspSaga'..diag_type[entry.severity] ..'TrunCateLine'
