@@ -64,7 +64,7 @@ function Finder:word_symbol_kind()
 
     local index = 0
     for i,val in pairs(result) do
-      if val.name == current_word then
+      if val.name:find(current_word) then
         index = i
         break
       end
