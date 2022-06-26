@@ -4,6 +4,7 @@ local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 local method = 'textDocument/codeAction'
+local saga_augroup = require('lspsaga').saga_augroup
 
 
 local Action = {}
@@ -49,6 +50,7 @@ function Action:action_callback()
     -- initial position in code action window
     api.nvim_win_set_cursor(self.action_winid,{3,1})
     api.nvim_create_autocmd('CursorMoved',{
+      group = saga_augroup,
       buffer = self.action_bufnr,
       callback = function()
         require('lspsaga.codeaction'):set_cursor()
@@ -56,6 +58,7 @@ function Action:action_callback()
     })
 
     api.nvim_create_autocmd('QuitPre',{
+      group = saga_augroup,
       buffer = self.action_bufnr,
       callback = function()
         require('lspsaga.codeaction'):quit_action_window()

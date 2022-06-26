@@ -5,6 +5,7 @@ local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local home_dir = libs.get_home_dir()
 local scroll_in_win = require('lspsaga.action').scroll_in_win
+local saga_augroup = require('lspsaga').saga_augroup
 
 local methods = {"textDocument/definition","textDocument/references"}
 
@@ -225,18 +226,21 @@ function Finder:render_finder_result()
   api.nvim_command('highlight! link CursorLine LspSagaFinderSelection')
 
   api.nvim_create_autocmd('CursorMoved',{
+    group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
       require('lspsaga.finder'):set_cursor()
     end
   })
   api.nvim_create_autocmd('CursorMoved',{
+    group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
       require('lspsaga.finder'):auto_open_preview()
     end
   })
   api.nvim_create_autocmd('QuitPre',{
+    group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
       require('lspsaga.finder'):quit_float_window()
