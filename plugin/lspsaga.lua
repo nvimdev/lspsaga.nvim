@@ -9,12 +9,10 @@ local highlights = {
   LspSagaLspFinderBorder = {fg = '#51afef'},
   LspSagaAutoPreview = { fg= '#ecbe7b'},
   LspSagaFinderSelection = { fg = '#89d957',bold = true},
-  ReferencesIcon = {link = 'Special'},
-  DefinitionIcon = {link = 'Special'},
   TargetFileName = {link = 'Comment'},
   DefinitionCount = {link = 'Title'},
   ReferencesCount = {link = 'Title'},
-  TargetWord = {fg = '#1abc9c' ,underline = true},
+  TargetWord = {fg = '#1abc9c' ,bold =true},
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef'},
   DefinitionPreviewTitle = { link = 'Title'},

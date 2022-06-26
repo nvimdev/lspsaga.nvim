@@ -43,8 +43,6 @@ code_action_lightbulb = {
   sign_priority = 20,
   virtual_text = true,
 },
-finder_definition_icon = '  ',
-finder_reference_icon = '  ',
 -- preview lines of lsp_finder and definition preview
 max_preview_lines = 10,
 finder_action_keys = {
@@ -70,6 +68,10 @@ saga.init_lsp_saga {
 
 or --use default config
 saga.init_lsp_saga()
+
+-- change the lsp symbol kind
+local kind = require('lspsaga.lspkind')
+kind[type number][2] = icon
 ```
 
 ### Async Lsp Finder

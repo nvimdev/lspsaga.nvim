@@ -1,4 +1,5 @@
 local window = require 'lspsaga.window'
+local kind = require('lspsaga.lspkind')
 local api,lsp,fn,co = vim.api,vim.lsp,vim.fn,coroutine
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
@@ -45,6 +46,18 @@ end)
 
 local Finder = {}
 
+function Finder:word_symbol_kind()
+  local method = 'textDocument/documentSymbol'
+  local current_buf = api.nvim_get_current_buf()
+  local params = { textDocument = lsp.util.make_text_document_params() }
+  lsp.buf_request_all(current_buf,method,params,function(results)
+    local result = results[1].result
+    local last_index = #result
+    local icon = kind[result[last_index].kind][2]
+    self.param = icon .. result[last_index].name
+  end)
+end
+
 function Finder:lsp_finder_request()
     local root_dir = libs.get_lsp_root_dir()
     if string.len(root_dir) == 0 then
@@ -57,8 +70,11 @@ function Finder:lsp_finder_request()
     self.short_link = {}
     self.definition_uri = 0
     self.reference_uri = 0
-
     self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
+
+    -- get current word symbol kind
+    self:word_symbol_kind()
+
     for _,method in pairs(methods) do
       local ok,result = co.resume(do_request,method)
       if not ok then
@@ -70,21 +86,14 @@ function Finder:lsp_finder_request()
 end
 
 function Finder:create_finder_contents(result,method,root_dir)
+
   local target_lnum = 0
   local method_option = {
-    [methods[1]] = {
-      icon = config.finder_definition_icon,
-      title = ' '.. #result ..' Definitions'
-    },
-    [methods[2]] = {
-      icon = config.finder_reference_icon,
-      title = ' '.. #result ..' References'
-    };
+    [methods[1]] = ' '.. #result ..' Definitions',
+    [methods[2]] = ' '.. #result ..' References'
   }
 
-  local params = fn.expand("<cword>")
-  self.param_length = #params
-  local title = method_option[method].icon..' '.. params ..method_option[method].title
+  local title = self.param ..method_option[method]
 
   if method == methods[1] then
     self.definition_uri = result.saga_msg and 1 or #result
@@ -193,6 +202,7 @@ function Finder:render_finder_result()
   api.nvim_win_set_var(self.winid,'lsp_finder_win_opts',opts)
   api.nvim_win_set_option(self.winid,'cursorline',true)
 
+
   if not self.cursor_line_bg and not self.cursor_line_fg then
     self:get_cursorline_highlight()
   end
@@ -266,16 +276,12 @@ function Finder:apply_float_map()
 end
 
 function Finder:lsp_finder_highlight ()
-  local def_icon = config.finder_definition_icon or ''
-  local ref_icon = config.finder_reference_icon or ''
   local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
   -- add syntax
-  api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionIcon",0,1,#def_icon-1)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",0,#def_icon + 1,self.param_length+#def_icon+1)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionCount",0,0,-1)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,#ref_icon + 1,self.param_length+#ref_icon+1)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesIcon",3+def_uri_count,1,#ref_icon+4)
-  api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,0,-1)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",0,0,#self.param)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"DefinitionCount",0,#self.param+1,-1)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"TargetWord",3+def_uri_count,0,#self.param)
+  api.nvim_buf_add_highlight(self.bufnr,-1,"ReferencesCount",3+def_uri_count,#self.param+1,-1)
 end
 
 function Finder:set_cursor()
