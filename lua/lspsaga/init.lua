@@ -4,7 +4,7 @@ local saga = {}
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
-  debug = false,
+  border_style = "single",
   -- Error,Warn,Info,Hint
   diagnostic_header = {' ',' ',' ','ﴞ '},
   show_diagnostic_source = true,
@@ -30,7 +30,11 @@ saga.config_values = {
   },
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
-  border_style = "single",
+  -- winbar
+  symbol_in_winbar = true,
+  winbar_separator = '>',
+  winbar_show_file = true,
+  winbar_separator_rainbow = false,
   server_filetype_map = {}
 }
 

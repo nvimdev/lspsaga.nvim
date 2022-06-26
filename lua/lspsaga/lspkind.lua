@@ -1,5 +1,5 @@
 local kind = {
-	[1]  = { "File"," "},
+	[1]  = { "File"," ",},
 	[2]  = { "Module"," "},
 	[3]  = { "Namespace"," "},
 	[4]  = { "Package"," "},
