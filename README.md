@@ -22,7 +22,12 @@ local saga = require 'lspsaga'
 -- use emoji 
 -- like {'🙀','😿','😾','😺'}
 -- {'😡','😥','😤','😐'}
-diagnostic_header_icon = {' ',' ',' ','ﴞ '},
+-- and diagnostic_header can be a function type
+-- must return a string and when diagnostic_header
+-- is fucntion type it will have a param `entry`
+-- entry is a table type has these filed
+-- {bufnr,code,col,end_col,end_lnum,lnum,message,severity,source}
+diagnostic_header = {' ',' ',' ','ﴞ '},
 -- show diagnostic source
 show_diagnostic_source = true,
 -- add bracket or something with diagnostic source,just have 2 elements
@@ -38,8 +43,8 @@ code_action_lightbulb = {
   sign_priority = 20,
   virtual_text = true,
 },
-finder_definition_icon = '  ',
-finder_reference_icon = '  ',
+-- separator in finder
+finder_separator = '  ',
 -- preview lines of lsp_finder and definition preview
 max_preview_lines = 10,
 finder_action_keys = {
@@ -65,6 +70,10 @@ saga.init_lsp_saga {
 
 or --use default config
 saga.init_lsp_saga()
+
+-- change the lsp symbol kind
+local kind = require('lspsaga.lspkind')
+kind[type number][2] = icon
 ```
 
 ### Async Lsp Finder
@@ -77,7 +86,7 @@ nnoremap <silent> gh :Lspsaga lsp_finder<CR>
 ```
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175307158-97f2a269-eeea-48e5-8b1e-d70123c30d77.gif" />
+src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-4053-b671-303df4e94a19.gif" />
 </div>
 
 ### Code Action Support use number to execute
@@ -167,6 +176,10 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 ### Jump Diagnostic and Show Diagnostics
 
 ```lua
+nnoremap <silent><leader>cd <cmd>lua
+require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
+
+nnoremap <silent> <leader>cd :Lspsaga show_line_diagnostics<CR>``lua
 -- jump diagnostic
 nnoremap <silent> [e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
 nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
@@ -174,6 +187,7 @@ nnoremap <silent> ]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_ne
 nnoremap <silent> [e :Lspsaga diagnostic_jump_next<CR>
 nnoremap <silent> ]e :Lspsaga diagnostic_jump_prev<CR>
 ```
+
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-4496-b7cb-2a077ab9ecc0.gif"/>

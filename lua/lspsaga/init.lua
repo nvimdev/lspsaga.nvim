@@ -1,10 +1,12 @@
 local api = vim.api
+
 local saga = {}
+saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
   debug = false,
   -- Error,Warn,Info,Hint
-  diagnostic_header_icon = {' ',' ',' ','ﴞ '},
+  diagnostic_header = {' ',' ',' ','ﴞ '},
   show_diagnostic_source = true,
   diagnostic_source_bracket = {'❴','❵'},
   -- code action title icon
@@ -17,8 +19,7 @@ saga.config_values = {
     sign_priority = 40,
     virtual_text = true,
   },
-  finder_definition_icon = ' ',
-  finder_reference_icon = ' ',
+  finder_separator = '  ',
   max_preview_lines = 10,
   finder_action_keys = {
     open = 'o', vsplit = 's',split = 'i', tabe = 't', quit = 'q',
@@ -55,6 +56,7 @@ function saga.init_lsp_saga(opts)
   extend_config(opts)
   if saga.config_values.code_action_lightbulb.enable then
     api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
+      group = saga.saga_augroup,
       pattern = '*',
       callback = require('lspsaga.lightbulb').action_lightbulb
     })

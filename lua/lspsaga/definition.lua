@@ -4,6 +4,7 @@ local config = require('lspsaga').config_values
 local lsp,fn,api = vim.lsp,vim.fn,vim.api
 local scroll_in_win = require('lspsaga.action').scroll_in_win
 local def = {}
+local saga_augroup = require('lspsaga').saga_augroup
 
 function def.preview_definition(timeout_ms)
   local active,msg = libs.check_lsp_active()
@@ -78,6 +79,7 @@ function def.preview_definition(timeout_ms)
 
     local current_buf = api.nvim_get_current_buf()
     api.nvim_create_autocmd({"CursorMoved", "CursorMovedI","BufHidden", "BufLeave"},{
+      group = saga_augroup,
       buffer = current_buf,
       once = true,
       callback = function()

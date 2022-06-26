@@ -2,6 +2,7 @@ local api,util,lsp = vim.api,vim.lsp.util,vim.lsp
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
+local saga_augroup = require('lspsaga').saga_augroup
 
 local unique_name = 'textDocument-rename'
 local pos = {}
@@ -143,6 +144,7 @@ local lsp_rename = function()
 
   api.nvim_win_set_var(0,unique_name,winid)
   api.nvim_create_autocmd('QuitPre',{
+    group = saga_augroup,
     buffer = bufnr,
     once = true,
     nested = true,
