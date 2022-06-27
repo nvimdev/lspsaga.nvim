@@ -52,26 +52,29 @@ function Finder:word_symbol_kind()
   local current_buf = api.nvim_get_current_buf()
   local current_word = vim.fn.expand('<cword>')
   local params = { textDocument = lsp.util.make_text_document_params() }
-  lsp.buf_request_all(current_buf,method,params,function(results)
-    local result
-    local clients = vim.lsp.buf_get_clients()
-    for client_id,_ in pairs(results) do
-      if clients[client_id].supports_method(method) then
-        result = results[client_id].result
-        break
-      end
-    end
+  local results = lsp.buf_request_sync(current_buf,method,params,500)
+  local result = {}
+  local clients = vim.lsp.buf_get_clients()
 
-    local index = 0
+  for client_id,_ in pairs(results) do
+    if clients[client_id].supports_method(method) then
+      result = results[client_id].result
+      break
+    end
+  end
+
+  local index = 0
+  if next(result) ~= nil then
     for i,val in pairs(result) do
       if val.name:find(current_word) then
         index = i
         break
       end
     end
-    local icon = index ~= 0 and kind[result[index].kind][2] or ' '
-    self.param = icon ..' '.. current_word
-  end)
+  end
+
+  local icon = index ~= 0 and kind[result[index].kind][2] or ' '
+  self.param = icon ..' '.. current_word
 end
 
 function Finder:lsp_finder_request()
@@ -80,6 +83,9 @@ function Finder:lsp_finder_request()
       vim.notify('[LspSaga] get root dir failed')
       return
     end
+    -- get current word symbol kind
+    self:word_symbol_kind()
+
     self.WIN_WIDTH = fn.winwidth(0)
     self.WIN_HEIGHT = fn.winheight(0)
     self.contents = {}
@@ -88,8 +94,6 @@ function Finder:lsp_finder_request()
     self.reference_uri = 0
     self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
 
-    -- get current word symbol kind
-    self:word_symbol_kind()
 
     for _,method in pairs(methods) do
       local ok,result = co.resume(do_request,method)
@@ -418,8 +422,9 @@ end
 -- action 1 mean enter
 -- action 2 mean vsplit
 -- action 3 mean split
+-- action 4 mean tabe
 function Finder:open_link(action_type)
-  local action = {"edit ","vsplit ","split "}
+  local action = {"edit ","vsplit ","split ","tabe "}
   local current_line = fn.line('.')
 
   if self.short_link[current_line] == nil then
