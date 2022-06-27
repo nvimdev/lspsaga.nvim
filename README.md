@@ -15,10 +15,11 @@ A light-weight lsp plugin based on neovim built-in lsp with highly a performant 
    - [Vim Plug](#vim-plug)
    - [Packer](#packer)
 2. [Configuration](#configuration)
-3. [Customize Appearance](#customize-appearance)
-4. [Showcase](#showcase)
-5. [Donate](#donate)
-6. [License](#license)
+3. [Mappings](#mappings)
+4. [Customize Appearance](#customize-appearance)
+5. [Showcase](#showcase)
+6. [Donate](#donate)
+7. [License](#license)
 
 ## Install
 
@@ -113,6 +114,10 @@ saga.init_lsp_saga({
     server_filetype_map = {},
 })
 ```
+
+## Mappings
+
+Plugin does not provide mappings by default. However, you can bind mappings yourself. You can find examples in the [showcase](#showcase) section.
 
 ## Customize Appearance
 
