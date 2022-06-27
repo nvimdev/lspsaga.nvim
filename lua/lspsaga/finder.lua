@@ -80,6 +80,7 @@ function Finder:lsp_finder_request()
       vim.notify('[LspSaga] get root dir failed')
       return
     end
+
     self.WIN_WIDTH = fn.winwidth(0)
     self.WIN_HEIGHT = fn.winheight(0)
     self.contents = {}
@@ -88,8 +89,6 @@ function Finder:lsp_finder_request()
     self.reference_uri = 0
     self.buf_filetype = api.nvim_buf_get_option(0,'filetype')
 
-    -- get current word symbol kind
-    self:word_symbol_kind()
 
     for _,method in pairs(methods) do
       local ok,result = co.resume(do_request,method)
@@ -109,7 +108,19 @@ function Finder:create_finder_contents(result,method,root_dir)
     [methods[2]] = ' '.. #result ..' References'
   }
 
-  local title = self.param .. config.finder_separator.. method_option[method]
+  local title = ''
+  local current_word = vim.fn.expand('<cword>')
+  -- because the self.param is set in an aysnc request.
+  -- so when get result of method maybe it's nil
+  if self.param == nil then
+    title = config.finder_separator.. method_option[method]
+  else
+    title = self.param .. config.finder_separator.. method_option[method]
+  end
+
+  if method == methods[2] and not self.contents[1]:find(current_word) then
+    self.contents[1] = self.param .. self.contents[1]
+  end
 
   if method == methods[1] then
     self.definition_uri = result.saga_msg and 1 or #result
@@ -470,6 +481,8 @@ end
 function Finder.lsp_finder()
   local active,msg = libs.check_lsp_active()
   if not active then vim.notify(msg) return end
+  -- get current word symbol kind
+  Finder:word_symbol_kind()
   Finder:lsp_finder_request()
 end
 
