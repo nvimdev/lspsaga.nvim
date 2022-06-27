@@ -52,26 +52,29 @@ function Finder:word_symbol_kind()
   local current_buf = api.nvim_get_current_buf()
   local current_word = vim.fn.expand('<cword>')
   local params = { textDocument = lsp.util.make_text_document_params() }
-  lsp.buf_request_all(current_buf,method,params,function(results)
-    local result
-    local clients = vim.lsp.buf_get_clients()
+  local results = lsp.buf_request_sync(current_buf,method,params,500)
+  local result
+  local clients = vim.lsp.buf_get_clients()
+  if not libs.result_isempty(results) then
     for client_id,_ in pairs(results) do
-      if clients[client_id].supports_method(method) then
+      if clients[client_id] and clients[client_id].supports_method(method) then
         result = results[client_id].result
-        break
       end
     end
+  end
 
-    local index = 0
+  local index = 0
+  if result ~= nil and next(result) ~= nil then
     for i,val in pairs(result) do
       if val.name:find(current_word) then
         index = i
         break
       end
     end
-    local icon = index ~= 0 and kind[result[index].kind][2] or ' '
-    self.param = icon ..' '.. current_word
-  end)
+  end
+
+  local icon = index ~= 0 and kind[result[index].kind][2] or ' '
+  self.param = icon ..' '.. current_word
 end
 
 function Finder:lsp_finder_request()
@@ -80,6 +83,8 @@ function Finder:lsp_finder_request()
       vim.notify('[LspSaga] get root dir failed')
       return
     end
+    -- get current word symbol kind
+    self:word_symbol_kind()
 
     self.WIN_WIDTH = fn.winwidth(0)
     self.WIN_HEIGHT = fn.winheight(0)
@@ -108,19 +113,7 @@ function Finder:create_finder_contents(result,method,root_dir)
     [methods[2]] = ' '.. #result ..' References'
   }
 
-  local title = ''
-  local current_word = vim.fn.expand('<cword>')
-  -- because the self.param is set in an aysnc request.
-  -- so when get result of method maybe it's nil
-  if self.param == nil then
-    title = config.finder_separator.. method_option[method]
-  else
-    title = self.param .. config.finder_separator.. method_option[method]
-  end
-
-  if method == methods[2] and not self.contents[1]:find(current_word) then
-    self.contents[1] = self.param .. self.contents[1]
-  end
+  local title = self.param .. config.finder_separator.. method_option[method]
 
   if method == methods[1] then
     self.definition_uri = result.saga_msg and 1 or #result
@@ -482,8 +475,6 @@ end
 function Finder.lsp_finder()
   local active,msg = libs.check_lsp_active()
   if not active then vim.notify(msg) return end
-  -- get current word symbol kind
-  Finder:word_symbol_kind()
   Finder:lsp_finder_request()
 end
 
