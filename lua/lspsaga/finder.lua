@@ -53,18 +53,18 @@ function Finder:word_symbol_kind()
   local current_word = vim.fn.expand('<cword>')
   local params = { textDocument = lsp.util.make_text_document_params() }
   local results = lsp.buf_request_sync(current_buf,method,params,500)
-  local result
+  local result = {}
   local clients = vim.lsp.buf_get_clients()
-  if not libs.result_isempty(results) then
-    for client_id,_ in pairs(results) do
-      if clients[client_id] and clients[client_id].supports_method(method) then
-        result = results[client_id].result
-      end
+
+  for client_id,_ in pairs(results) do
+    if clients[client_id].supports_method(method) then
+      result = results[client_id].result
+      break
     end
   end
 
   local index = 0
-  if result ~= nil and next(result) ~= nil then
+  if next(result) ~= nil then
     for i,val in pairs(result) do
       if val.name:find(current_word) then
         index = i
