@@ -4,8 +4,8 @@ local symbar = {}
 local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
 local symbol_cache = {}
-
 local winbar_sep = '%#LspSagaWinbarSep#'..config.winbar_separator .. '%*'
+local method = 'textDocument/documentSymbol'
 
 local function get_file_name()
   local f = vim.fn.expand('%:t')
@@ -18,8 +18,7 @@ local function get_file_name()
   return ns_prefix..'FIcon#'..icon..' ' ..'%*'.. ns_prefix ..'File#'.. f .. '%*'
 end
 
-local function word_symbol_kind()
-  local method = 'textDocument/documentSymbol'
+function symbar:word_symbol_kind()
   local current_buf = api.nvim_get_current_buf()
   local current_word = vim.fn.expand('<cword>')
   local current_win = api.nvim_get_current_win()
@@ -43,22 +42,11 @@ local function word_symbol_kind()
     local index,range = 0,{}
     for i,res in pairs(result) do
       table.insert(symbol_cache,res)
-      range = res.range
     end
-
-    local win_bar = ''
-
-    if config.winbar_show_file then
-      local f = get_file_name()
-      win_bar = win_bar .. f ..winbar_sep
-    end
-
-    api.nvim_win_set_option(0,'winbar',win_bar)
   end)
 end
 
 function symbar.render_symbol_winbar()
-  word_symbol_kind()
 end
 
 return symbar
