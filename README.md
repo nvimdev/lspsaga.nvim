@@ -64,6 +64,8 @@ saga.init_lsp_saga()
 saga.init_lsp_saga({
     -- "single" | "double" | "rounded" | "bold" | "plus"
     border_style = "single",
+    -- when cursor in saga window you config these to move
+    move_in_saga = { prev = '<C-p>',next = '<C-n>'},
     -- Error, Warn, Info, Hint
     -- use emoji like
     -- { "🙀", "😿", "😾", "😺" }
