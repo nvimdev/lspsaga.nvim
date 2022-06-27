@@ -62,6 +62,8 @@ saga.init_lsp_saga()
 
 -- use custom config
 saga.init_lsp_saga({
+    -- "single" | "double" | "rounded" | "bold" | "plus"
+    border_style = "single",
     -- Error, Warn, Info, Hint
     -- use emoji like
     -- { "🙀", "😿", "😾", "😺" }
@@ -96,6 +98,7 @@ saga.init_lsp_saga({
         open = "o",
         vsplit = "s",
         split = "i",
+        tabe = "t",
         quit = "q",
         scroll_down = "<C-f>",
         scroll_up = "<C-b>", -- quit can be a table
@@ -106,8 +109,6 @@ saga.init_lsp_saga({
     },
     rename_action_quit = "<C-c>",
     definition_preview_icon = "  ",
-    -- "single" | "double" | "rounded" | "bold" | "plus"
-    border_style = "single",
     -- if you don't use nvim-lspconfig you must pass your server name and
     -- the related filetypes into this table
     -- like server_filetype_map = { metals = { "sbt", "scala" } }

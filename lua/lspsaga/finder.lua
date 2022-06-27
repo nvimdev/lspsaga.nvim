@@ -429,8 +429,9 @@ end
 -- action 1 mean enter
 -- action 2 mean vsplit
 -- action 3 mean split
+-- action 4 mean tabe
 function Finder:open_link(action_type)
-  local action = {"edit ","vsplit ","split "}
+  local action = {"edit ","vsplit ","split ","tabe "}
   local current_line = fn.line('.')
 
   if self.short_link[current_line] == nil then
