@@ -259,25 +259,28 @@ function Finder:render_finder_result()
     local def_count = self.definition_uri ~= 0 and self.definition_uri or -1
     api.nvim_buf_add_highlight(self.bufnr,-1,"TargetFileName",i+def_count+4,0,-1)
   end
+  -- disable some move keys in finder window
+  libs.disable_move_keys(self.bufnr)
   -- load float window map
   self:apply_float_map()
   self:lsp_finder_highlight()
-  -- disable some move keys in finder window
-  libs.disable_move_keys(self.bufnr)
 end
 
 function Finder:apply_float_map()
   local action = config.finder_action_keys
+  local move = config.move_in_saga
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local lhs = {
     noremap = true,
     silent = true
   }
   local keymaps = {
+    {self.bufnr,'n',move.prev,'<Up>'},
+    {self.bufnr,'n',move.next,'<Down>'},
     {self.bufnr,'n',action.vsplit,":lua require('lspsaga.finder'):open_link(2)<CR>"},
     {self.bufnr,'n',action.split,":lua require('lspsaga.finder'):open_link(3)<CR>"},
     {self.bufnr,'n',action.scroll_down,":lua require('lspsaga.finder'):scroll_in_preview(1)<CR>"},
-    {self.bufnr,'n',action.scroll_up,":lua require('lspsaga.finder'):scroll_in_preview(-1)<CR>"}
+    {self.bufnr,'n',action.scroll_up,":lua require('lspsaga.finder'):scroll_in_preview(-1)<CR>"},
   }
 
   if type(action.open) == 'table' then
