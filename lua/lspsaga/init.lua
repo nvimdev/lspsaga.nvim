@@ -5,6 +5,11 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
   border_style = "single",
+  -- when cusor in saga float window
+  -- config these keys to move
+  move_in_saga = {
+    prev = '<C-p>',next = '<C-n>'
+  },
   -- Error,Warn,Info,Hint
   diagnostic_header = {' ',' ',' ','ﴞ '},
   show_diagnostic_source = true,

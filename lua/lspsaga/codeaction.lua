@@ -70,12 +70,13 @@ function Action:action_callback()
     for i=1,#contents-2,1 do
       api.nvim_buf_add_highlight(self.action_bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
     end
+    -- dsiable some move keys in codeaction
+    libs.disable_move_keys(self.action_bufnr)
+
     self:apply_action_keys()
     if config.code_action_num_shortcut then
       self:num_shortcut()
     end
-    -- dsiable some move keys in codeaction
-    libs.disable_move_keys(self.action_bufnr)
 end
 
 local apply_keys = libs.apply_keys("codeaction")
@@ -88,6 +89,11 @@ function Action:apply_action_keys()
   for func, keys in pairs(actions) do
     apply_keys(func, keys)
   end
+
+  local move = config.move_in_saga
+  local opts = {noremap = true,silent = true, nowait = true}
+  api.nvim_buf_set_keymap(self.action_bufnr,'n', move.prev,'<Up>',opts)
+  api.nvim_buf_set_keymap(self.action_bufnr,'n', move.next,'<Down>',opts)
 end
 
 function Action:get_clients(results,options)
