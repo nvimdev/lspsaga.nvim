@@ -1,5 +1,6 @@
 local lsp,api = vim.lsp,vim.api
 local config = require('lspsaga').config_values
+local saga_group = require('lspsaga').saga_augroup
 local symbar = {}
 local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
@@ -7,7 +8,7 @@ local symbol_cache = {}
 local winbar_sep = '%#LspSagaWinbarSep#'..config.winbar_separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
-local function get_file_name()
+function symbar:get_file_name()
   local f = vim.fn.expand('%:t')
 	local ok,devicons = pcall(require,'nvim-web-devicons')
   local icon,color = '',''
@@ -18,17 +19,14 @@ local function get_file_name()
   return ns_prefix..'FIcon#'..icon..' ' ..'%*'.. ns_prefix ..'File#'.. f .. '%*'
 end
 
-function symbar:word_symbol_kind()
+function symbar.document_highlight()
   local current_buf = api.nvim_get_current_buf()
-  local current_word = vim.fn.expand('<cword>')
-  local current_win = api.nvim_get_current_win()
-  local current_line = api.nvim_win_get_cursor(current_win)[1]
+  local clients = vim.lsp.buf_get_clients()
   local params = { textDocument = lsp.util.make_text_document_params() }
   lsp.buf_request_all(current_buf,method,params,function(results)
     local result
-    local clients = vim.lsp.buf_get_clients()
     for client_id,_ in pairs(results) do
-      if clients[client_id].supports_method(method) then
+      if clients[client_id].server_capabilities.documentHighlightProvider then
         result = results[client_id].result
         break
       end
@@ -39,14 +37,29 @@ function symbar:word_symbol_kind()
       return
     end
 
-    local index,range = 0,{}
-    for i,res in pairs(result) do
+    for _,res in pairs(result) do
       table.insert(symbol_cache,res)
     end
   end)
 end
 
 function symbar.render_symbol_winbar()
+end
+
+function symbar.config_document_autocmd()
+  api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
+    group = saga_group,
+    buffer = 0,
+    callback = symbar.document_highlight,
+    desc = 'Lspsaga Document Highlight'
+  })
+
+  api.nvim_create_autocmd('CursorMoved',{
+    group = saga_group,
+    buffer = 0,
+    callback = vim.lsp.buf.clear_references,
+    desc = 'Lspsaga Clear All References'
+  })
 end
 
 return symbar
