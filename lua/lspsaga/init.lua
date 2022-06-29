@@ -70,6 +70,10 @@ function saga.init_lsp_saga(opts)
       callback = require('lspsaga.lightbulb').action_lightbulb
     })
   end
+
+  if saga.config_values.symbol_in_winbar then
+    require('lspsaga.symbolwinbar').config_symbol_autocmd()
+  end
 end
 
 return saga

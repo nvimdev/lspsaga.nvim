@@ -3,7 +3,7 @@ local config = require('lspsaga').config_values
 local saga_group = require('lspsaga').saga_augroup
 local libs = require('lspsaga.libs')
 local symbar = {
-  document_cache = {}
+  symbol_cache = {}
 }
 local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
@@ -24,64 +24,110 @@ function symbar:get_file_name()
   return ns_prefix..'FIcon#'..icon..' ' ..'%*'.. ns_prefix ..'File#'.. f .. '%*'
 end
 
-function symbar:cache_document_highlight()
-  if self.cache_state then return end
-
+local do_symbol_request = function(callback)
   local current_buf = api.nvim_get_current_buf()
-  local clients = vim.lsp.buf_get_clients()
   local params = { textDocument = lsp.util.make_text_document_params() }
-  lsp.buf_request_all(current_buf,method,params,function(results)
-    local result
-    for client_id,_ in pairs(results) do
-      if clients[client_id].server_capabilities.documentHighlightProvider then
-        result = results[client_id].result
-        break
-      end
-    end
+  lsp.buf_request_all(current_buf,method,params,callback)
 
-    if result == nil then
-      vim.notify('All servers of this buffer does not spport '..method)
-      return
-    end
-
-    for _,res in pairs(result) do
-      table.insert(self.document_cache,res)
-    end
-    self.cache_state = true
-  end)
 end
 
-function symbar.render_symbol_winbar()
-  local current_win = api.nvim_get_current_win()
-  local current_line = api.nvim_win_get_cursor(current_win)[1]
-end
-
-function symbar.document_highlight()
+function symbar:get_buf_symbol(force,...)
   if not libs.check_lsp_active() then
     return
   end
-  symbar:cache_document_highlight()
+
+  local clients = vim.lsp.buf_get_clients()
+  local client_id
+  for id,conf in pairs(clients) do
+    if conf.server_capabilities.documentHighlightProvider then
+      client_id = id
+      break
+    end
+  end
+
+  if client_id == nil then
+    vim.nofity('All servers of this buffer does not support '..method)
+    return
+  end
+
+  local current_buf = api.nvim_get_current_buf()
+  if self.symbol_cache[current_buf] and self.symbol_cache[current_buf][1] and not force then
+    return
+  end
+
+  local _callback = function(results)
+    if libs.result_isempty(results) then
+      return
+    end
+    local result
+    result = results[client_id].results
+    self.symbol_cache[current_buf] = {true,result}
+    self.cache_state = true
+  end
+
+  do_symbol_request(_callback)
 end
 
-function symbar.config_document_autocmd()
+--@private
+local function removeElementByKey(tbl,key)
+  local tmp ={}
+
+  for i in pairs(tbl) do
+    table.insert(tmp,i)
+  end
+
+  local newTbl = {}
+  local i = 1
+  while i <= #tmp do
+      local val = tmp [i]
+      if val == key then
+        table.remove(tmp,i)
+       else
+        newTbl[val] = tbl[val]
+        i = i + 1
+       end
+   end
+  return newTbl
+end
+
+function symbar:clear_cache()
+  local current_buf = api.nvim_get_current_buf()
+  if self.symbol_cache[current_buf] then
+    self.symbol_cache = removeElementByKey(self.symbol_cache,current_buf)
+  end
+end
+
+function symbar.config_symbol_autocmd()
+  api.nvim_create_autocmd('BufDelete',{
+    pattern = '*',
+    callback = function()
+      symbar:clear_cache()
+    end,
+    desc = 'Lspsaga clear document symbol cache'
+  })
+
   api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
     group = saga_group,
     buffer = 0,
-    callback = symbar.document_highlight,
+    callback = function()
+      if next(symbar.symbol_cache) == nil then
+        symbar:get_buf_symbol()
+      end
+    end,
     desc = 'Lspsaga Document Highlight'
   })
-
-  api.nvim_create_autocmd('CursorMoved',{
-    group = saga_group,
-    buffer = 0,
-    callback = function()
-      if not libs.check_lsp_active() then
-        return
-      end
-      vim.lsp.buf.clear_references()
-    end,
-    desc = 'Lspsaga Clear All References'
-  })
+-- 
+--   api.nvim_create_autocmd('CursorMoved',{
+--     group = saga_group,
+--     buffer = 0,
+--     callback = function()
+--       if not libs.check_lsp_active() then
+--         return
+--       end
+--       vim.lsp.buf.clear_references()
+--     end,
+--     desc = 'Lspsaga Clear All References'
+--   })
 end
 
 return symbar
