@@ -57,7 +57,7 @@ function Finder:word_symbol_kind()
   local clients = vim.lsp.buf_get_clients()
 
   for client_id,_ in pairs(results) do
-    if clients[client_id].supports_method(method) then
+    if clients[client_id].server_capabilities.documentHighlightProvider then
       result = results[client_id].result
       break
     end
