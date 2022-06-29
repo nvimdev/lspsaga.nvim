@@ -48,19 +48,24 @@ end)
 local Finder = {}
 
 function Finder:word_symbol_kind()
-  local method = 'textDocument/documentSymbol'
-  local current_buf = api.nvim_get_current_buf()
-  local current_word = vim.fn.expand('<cword>')
-  local params = { textDocument = lsp.util.make_text_document_params() }
-  local results = lsp.buf_request_sync(current_buf,method,params,500)
-  local result = {}
   local clients = vim.lsp.buf_get_clients()
-
-  for client_id,_ in pairs(results) do
-    if clients[client_id].server_capabilities.documentHighlightProvider then
-      result = results[client_id].result
-      break
+  local client
+  for client_id,conf in pairs(clients) do
+    if conf.server_capabilities.documentHighlightProvider then
+      client = client_id
     end
+  end
+
+  local result = {}
+  local current_word = vim.fn.expand('<cword>')
+  local method = 'textDocument/documentSymbol'
+  if client ~= nil then
+    local current_buf = api.nvim_get_current_buf()
+    local params = { textDocument = lsp.util.make_text_document_params() }
+    local results = lsp.buf_request_sync(current_buf,method,params,500)
+    result = results[client].result
+  else
+    vim.notify('All Servers of this buffer not support '..method)
   end
 
   local index = 0
