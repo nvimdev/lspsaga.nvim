@@ -31,8 +31,19 @@ local do_symbol_request = function(callback)
 
 end
 
+--@private
+local render_symbol_winbar = function()
+
+end
+
 function symbar:get_buf_symbol(force,...)
   if not libs.check_lsp_active() then
+    return
+  end
+
+  force = force or false
+  local current_buf = api.nvim_get_current_buf()
+  if self.symbol_cache[current_buf] and self.symbol_cache[current_buf][1] and not force then
     return
   end
 
@@ -50,9 +61,10 @@ function symbar:get_buf_symbol(force,...)
     return
   end
 
-  local current_buf = api.nvim_get_current_buf()
-  if self.symbol_cache[current_buf] and self.symbol_cache[current_buf][1] and not force then
-    return
+  local arg = {...}
+  local fn
+  if #arg > 0 then
+    fn = unpack(arg)
   end
 
   local _callback = function(results)
@@ -63,6 +75,10 @@ function symbar:get_buf_symbol(force,...)
     result = results[client_id].results
     self.symbol_cache[current_buf] = {true,result}
     self.cache_state = true
+
+    if fn ~= nil then
+      fn()
+    end
   end
 
   do_symbol_request(_callback)
@@ -110,8 +126,10 @@ function symbar.config_symbol_autocmd()
     group = saga_group,
     buffer = 0,
     callback = function()
-      if next(symbar.symbol_cache) == nil then
-        symbar:get_buf_symbol()
+      local current_buf = api.nvim_get_current_buf()
+      local cache = symbar.symbol_cache
+      if cache[current_buf] == nil or next(cache[current_buf]) == nil then
+        symbar:get_buf_symbol(true)
       end
     end,
     desc = 'Lspsaga Document Highlight'
