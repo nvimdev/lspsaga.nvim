@@ -48,7 +48,6 @@ end
 function libs.check_lsp_active()
   local active_clients = vim.lsp.buf_get_clients()
   if next(active_clients) == nil then
-    vim.notify('[lspsaga] No lsp client available')
     return false
   end
   return true
