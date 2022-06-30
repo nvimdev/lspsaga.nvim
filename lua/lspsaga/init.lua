@@ -36,11 +36,11 @@ saga.config_values = {
   },
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
-  -- winbar
+  -- winbar must nightly
   symbol_in_winbar = true,
   winbar_separator = '>',
   winbar_show_file = true,
-  winbar_separator_rainbow = false,
+  winbar_file_format = nil,
   server_filetype_map = {}
 }
 

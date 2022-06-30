@@ -12,15 +12,22 @@ local winbar_sep = '%#LspSagaWinbarSep#'..config.winbar_separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
-  local f = vim.fn.expand('%:t')
+  local file_name = ''
+  if config.winbar_file_format ~= nil and type(config.winbar_file_format) == 'function' then
+    file_name = config.winbar_file_format()
+  else
+    file_name = vim.fn.expand('%:t')
+  end
 	local ok,devicons = pcall(require,'nvim-web-devicons')
   local f_icon = ''
   local color = ''
   if ok then
-    f_icon,color = devicons.get_icon_color(f,vim.bo.filetype)
+    f_icon,color = devicons.get_icon_color(file_name,vim.bo.filetype)
   end
+  -- if filetype doesn't match devicon will set f_icon to nil so add a patch
+  f_icon = f_icon == nil and '' or f_icon
   api.nvim_set_hl(0,'LspSagaWinbarFIcon',{fg=color})
-  return ns_prefix..'FIcon#'..f_icon..' ' ..'%*'.. ns_prefix ..'File#'.. f .. '%*'
+  return ns_prefix..'FIcon#'..f_icon..' ' ..'%*'.. ns_prefix ..'File#'.. file_name .. '%*'
 end
 
 --@private
@@ -57,7 +64,6 @@ local render_symbol_winbar = function()
   local winbar_val = show_file and symbar:get_file_name() or ''
 
   local symbols = symbar.symbol_cache[current_buf][2]
-  print(current_buf,symbols)
 
   local winbar_elements = {}
   find_in_node(symbols,current_line - 1,winbar_elements)
