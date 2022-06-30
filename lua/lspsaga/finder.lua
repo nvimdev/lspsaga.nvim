@@ -492,8 +492,10 @@ function Finder:clear_tmp_data()
 end
 
 function Finder.lsp_finder()
-  local active,msg = libs.check_lsp_active()
-  if not active then vim.notify(msg) return end
+  if not libs.check_lsp_active() then
+    return
+  end
+
   Finder:lsp_finder_request()
 end
 

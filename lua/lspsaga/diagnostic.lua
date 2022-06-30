@@ -129,8 +129,9 @@ local function show_diagnostics(opts, get_diagnostics)
     return
   end
 
-  local active,_ = libs.check_lsp_active()
-  if not active then return end
+  if not libs.check_lsp_active() then
+    return
+  end
   local max_width = window.get_max_float_width()
 
   -- if there already has diagnostic float window did not show show lines

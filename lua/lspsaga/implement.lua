@@ -6,8 +6,9 @@ local action = require('lspsaga.action')
 local implement = {}
 
 function implement.lspsaga_implementation(timeout_ms)
-  local active,msg = libs.check_lsp_active()
-  if not active then vim.notify(msg) return end
+  if not libs.check_lsp_active() then
+    return
+  end
 
   local method = "textDocument/implementation"
   local params = lsp.util.make_position_params()

@@ -48,9 +48,10 @@ end
 function libs.check_lsp_active()
   local active_clients = vim.lsp.buf_get_clients()
   if next(active_clients) == nil then
-    return false,'[lspsaga] No lsp client available'
+    vim.notify('[lspsaga] No lsp client available')
+    return false
   end
-  return true,nil
+  return true
 end
 
 function libs.result_isempty(res)
@@ -91,8 +92,10 @@ function libs.split_by_pathsep(text,start_pos)
 end
 
 function libs.get_lsp_root_dir()
-  local active,msg = libs.check_lsp_active()
-  if not active then vim.notify(msg) return end
+  if not libs.check_lsp_active() then
+    return
+  end
+
   local clients = vim.lsp.get_active_clients()
   for _,client in pairs(clients) do
     if (client.config.filetypes and client.config.root_dir) then

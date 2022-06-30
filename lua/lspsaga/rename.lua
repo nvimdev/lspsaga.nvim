@@ -98,8 +98,10 @@ local feedkeys = function(keys,mode)
 end
 
 local lsp_rename = function()
-  local active,msg = libs.check_lsp_active()
-  if not active then vim.notify(msg) return end
+  if not libs.check_lsp_active() then
+    return
+  end
+
 --   local current_buf = api.nvim_get_current_buf()
   local current_win = api.nvim_get_current_win()
   local current_word = vim.fn.expand('<cword>')

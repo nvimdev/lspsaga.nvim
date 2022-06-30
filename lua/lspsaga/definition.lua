@@ -7,8 +7,10 @@ local def = {}
 local saga_augroup = require('lspsaga').saga_augroup
 
 function def.preview_definition(timeout_ms)
-  local active,msg = libs.check_lsp_active()
-  if not active then vim.notify(msg) return end
+  if not libs.check_lsp_active() then
+    return
+  end
+
   local filetype = vim.api.nvim_buf_get_option(0, "filetype")
 
   local method = "textDocument/definition"
