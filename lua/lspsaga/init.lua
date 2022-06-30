@@ -37,7 +37,7 @@ saga.config_values = {
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
   -- winbar must nightly
-  symbol_in_winbar = true,
+  symbol_in_winbar = false,
   winbar_separator = '>',
   winbar_show_file = true,
   winbar_file_format = nil,
