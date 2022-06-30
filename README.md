@@ -111,6 +111,14 @@ saga.init_lsp_saga({
     },
     rename_action_quit = "<C-c>",
     definition_preview_icon = "  ",
+    -- show symbols in winbar must nightly
+    symbol_in_winbar = false,
+    winbar_separator = '>',
+    winbar_show_file = true,
+    -- function type  return file string,
+    -- by default saga use expand('%:t')
+    -- you can custom file name include path or something
+    winbar_file_format = function() your code here end,
     -- if you don't use nvim-lspconfig you must pass your server name and
     -- the related filetypes into this table
     -- like server_filetype_map = { metals = { "sbt", "scala" } }
@@ -303,6 +311,16 @@ vim.keymap.set("n", "]e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", { silent = tr
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-4496-b7cb-2a077ab9ecc0.gif"/>
+</div>
+
+</details>
+
+<details>
+<summary>Fastest show symbols in winbar by use cache </summary>
+
+<div align="center">
+<img
+src="https://user-images.githubusercontent.com/41671631/176679585-9485676b-ddea-44ca-bc88-b0eb04d450b1.gif" />
 </div>
 
 </details>

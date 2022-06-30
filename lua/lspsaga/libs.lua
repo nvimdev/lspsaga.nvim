@@ -46,7 +46,7 @@ function libs.nvim_create_keymap(definitions,lhs)
 end
 
 function libs.check_lsp_active()
-  local active_clients = vim.lsp.get_active_clients()
+  local active_clients = vim.lsp.buf_get_clients()
   if next(active_clients) == nil then
     return false,'[lspsaga] No lsp client available'
   end

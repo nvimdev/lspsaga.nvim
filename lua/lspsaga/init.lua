@@ -1,10 +1,11 @@
 local api = vim.api
 
 local saga = {}
+
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
-  debug = false,
+  border_style = "single",
   -- when cusor in saga float window
   -- config these keys to move
   move_in_saga = {
@@ -35,7 +36,11 @@ saga.config_values = {
   },
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
-  border_style = "single",
+  -- winbar must nightly
+  symbol_in_winbar = false,
+  winbar_separator = '>',
+  winbar_show_file = true,
+  winbar_file_format = nil,
   server_filetype_map = {}
 }
 
@@ -65,6 +70,11 @@ function saga.init_lsp_saga(opts)
       pattern = '*',
       callback = require('lspsaga.lightbulb').action_lightbulb
     })
+  end
+
+  if saga.config_values.symbol_in_winbar then
+    require('lspsaga.lspkind').gen_symbol_winbar_hi()
+    require('lspsaga.symbolwinbar').config_symbol_autocmd()
   end
 end
 
