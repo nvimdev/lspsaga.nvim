@@ -1,6 +1,7 @@
 local api = vim.api
 
 local saga = {}
+
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
@@ -72,6 +73,7 @@ function saga.init_lsp_saga(opts)
   end
 
   if saga.config_values.symbol_in_winbar then
+    require('lspsaga.lspkind').gen_symbol_winbar_hi()
     require('lspsaga.symbolwinbar').config_symbol_autocmd()
   end
 end

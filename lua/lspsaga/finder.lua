@@ -6,6 +6,7 @@ local libs = require('lspsaga.libs')
 local home_dir = libs.get_home_dir()
 local scroll_in_win = require('lspsaga.action').scroll_in_win
 local saga_augroup = require('lspsaga').saga_augroup
+local symbar = require('lspsaga.symbolwinbar')
 
 local methods = {"textDocument/definition","textDocument/references"}
 
@@ -63,7 +64,9 @@ function Finder:word_symbol_kind()
     local current_buf = api.nvim_get_current_buf()
     local params = { textDocument = lsp.util.make_text_document_params() }
     local results = lsp.buf_request_sync(current_buf,method,params,500)
-    result = results[client].result
+    if results ~= nil then
+      result = results[client].result
+    end
   else
     vim.notify('All Servers of this buffer not support '..method)
   end
@@ -414,6 +417,9 @@ function Finder:auto_open_preview()
       self:close_auto_preview_win()
       local bufnr,winid = window.create_win_with_border(content_opts,opts)
       api.nvim_buf_set_option(bufnr,'buflisted',false)
+      if config.symbol_in_winbar then
+        api.nvim_win_set_option(winid,'winbar','')
+      end
       local last_lnum = #content > config.max_preview_lines and config.max_preview_lines or #content
       api.nvim_win_set_var(0,'saga_finder_preview',{winid,1,last_lnum})
     end,5)
