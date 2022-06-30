@@ -49,6 +49,9 @@ end)
 local Finder = {}
 
 function Finder:word_symbol_kind()
+  local current_buf = api.nvim_get_current_buf()
+  local current_word = vim.fn.expand('<cword>')
+
   local clients = vim.lsp.buf_get_clients()
   local client
   for client_id,conf in pairs(clients) do
@@ -58,17 +61,20 @@ function Finder:word_symbol_kind()
   end
 
   local result = {}
-  local current_word = vim.fn.expand('<cword>')
-  local method = 'textDocument/documentSymbol'
-  if client ~= nil then
-    local current_buf = api.nvim_get_current_buf()
-    local params = { textDocument = lsp.util.make_text_document_params() }
-    local results = lsp.buf_request_sync(current_buf,method,params,500)
-    if results ~= nil then
-      result = results[client].result
-    end
+
+  if symbar.symbol_cache[current_buf] ~= nil then
+    result = symbar.symbol_cache[current_buf][2]
   else
-    vim.notify('All Servers of this buffer not support '..method)
+    local method = 'textDocument/documentSymbol'
+    if client ~= nil then
+      local params = { textDocument = lsp.util.make_text_document_params() }
+      local results = lsp.buf_request_sync(current_buf,method,params,500)
+      if results ~= nil then
+        result = results[client].result
+      end
+    else
+      vim.notify('All Servers of this buffer not support '..method)
+    end
   end
 
   local index = 0
@@ -229,7 +235,6 @@ function Finder:render_finder_result()
   api.nvim_buf_set_option(self.bufnr,'buflisted',false)
   api.nvim_win_set_var(self.winid,'lsp_finder_win_opts',opts)
   api.nvim_win_set_option(self.winid,'cursorline',true)
-
 
   if not self.cursor_line_bg and not self.cursor_line_fg then
     self:get_cursorline_highlight()
