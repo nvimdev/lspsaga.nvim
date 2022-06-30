@@ -33,19 +33,17 @@ local function open_float_terminal(command,border_style)
     enter = true
   }
 
-  local bufnr,winid = window.open_shadow_float_win(content_opts,opts)
+  local cb,cw,_,ow = window.open_shadow_float_win(content_opts,opts)
   api.nvim_command('terminal '..cmd)
   api.nvim_command('setlocal nobuflisted')
   api.nvim_command('startinsert!')
-  api.nvim_buf_set_var(bufnr,'float_terminal_win',{bufnr,winid})
+  api.nvim_buf_set_var(cb,'float_terminal_win',{cw,ow})
 end
 
 local function close_float_terminal()
   local has_var,float_terminal_win = pcall(api.nvim_buf_get_var,0,'float_terminal_win')
   if not has_var then return end
-  if api.nvim_win_is_valid(float_terminal_win[2]) then
-    api.nvim_win_close(float_terminal_win[2],true)
-  end
+  window.nvim_close_valid_window(float_terminal_win)
 end
 
 return {
