@@ -13,7 +13,7 @@ local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
   local file_name = ''
-  if config.winbar_file_format ~= nil and type(config.winbar_file_format) == 'function' then
+  if type(config.winbar_file_format) == 'function' then
     file_name = config.winbar_file_format()
   else
     file_name = vim.fn.expand('%:t')
@@ -153,6 +153,8 @@ function symbar:clear_cache()
   end
 end
 
+local filetype_exclude = {'NvimTree','terminal'}
+
 function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('BufDelete',{
     pattern = '*',
@@ -165,6 +167,10 @@ function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd({'LspAttach','CursorHold','CursorHoldI'},{
     group = saga_group,
     callback = function()
+      if libs.has_value(filetype_exclude,vim.bo.filetype) then
+        return
+      end
+
       if not libs.check_lsp_active() then
         return
       end
