@@ -53,7 +53,7 @@ for group,conf in pairs(highlights) do
 end
 
 api.nvim_create_user_command('Lspsaga',function(args)
-  require('lspsaga.command').load_command(args.args)
+  require('lspsaga.command').load_command(unpack(args.fargs))
 end,{
   nargs = "+",
   complete = require('lspsaga.command').command_list,
