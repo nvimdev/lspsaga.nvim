@@ -65,6 +65,7 @@ function codelens.handler(_, result, ctx, _)
 
   codelens.bufnr, codelens.winid = window.create_win_with_border(content_opts)
   api.nvim_win_set_cursor(codelens.winid, { 3, 1 })
+  -- TODO add highlight
   api.nvim_create_autocmd('QuitPre', {
     buffer = codelens.bufnr,
     callback = codelens.quit_lens_window
@@ -78,7 +79,7 @@ function codelens.handler(_, result, ctx, _)
   --   local option = codelens.options[1]
   --   codelens.execute_lens(option.lens, bufnr, option.client_id)
   -- else
-  --   -- handler lspsaga window
+  --   -- TODO handler lspsaga window
   -- end
 end
 
@@ -89,7 +90,7 @@ function codelens.quit_lens_window()
   window.nvim_close_valid_window(codelens.winid)
   codelens.winid = 0
   codelens.bufnr = 0
-  codelens.options = {}
+  codelens.options = {} -- TODO maybe also do this other place
 end
 
 local apply_keys = libs.apply_keys("codelens")

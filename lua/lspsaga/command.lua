@@ -22,6 +22,7 @@ local subcommands = {
   open_floaterm = floaterm.open_float_terminal,
   close_floaterm = floaterm.close_float_terminal,
   implement = implement.lspsaga_implementation,
+  codelens = require('lspsaga.codelens').run,
 }
 
 function command.command_list()
