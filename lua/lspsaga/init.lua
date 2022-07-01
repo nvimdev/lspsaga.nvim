@@ -38,7 +38,7 @@ saga.config_values = {
   definition_preview_icon = '  ',
   -- winbar must nightly
   symbol_in_winbar = false,
-  winbar_separator = '>',
+  winbar_separator = ' ',
   winbar_show_file = true,
   winbar_file_format = '',
   server_filetype_map = {}
