@@ -9,7 +9,7 @@
                           ⚡ designed for convenience and efficiency ⚡
 ```
 
-A light-weight lsp plugin based on neovim built-in lsp with highly a performant UI.
+A light-weight lsp plugin based on neovim's built-in lsp with a highly performant UI.
 
 1. [Install](#install)
    - [Vim Plug](#vim-plug)
