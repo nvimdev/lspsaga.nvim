@@ -3,7 +3,7 @@ local window = require 'lspsaga.window'
 local M = {}
 
 function M.open_float_terminal(command,border_style)
-  local cmd = command or ''
+  local cmd = command or os.getenv("SHELL")
   border_style = border_style or 0
 
   -- get dimensions
