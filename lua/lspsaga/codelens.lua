@@ -5,6 +5,7 @@ local config = require('lspsaga').config_values
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local method = 'textDocument/codeLens'
+local saga_augroup = require('lspsaga').saga_augroup
 
 local codelens = {}
 
@@ -65,11 +66,26 @@ function codelens.handler(_, result, ctx, _)
 
   codelens.bufnr, codelens.winid = window.create_win_with_border(content_opts)
   api.nvim_win_set_cursor(codelens.winid, { 3, 1 })
-  -- TODO add highlight
+  api.nvim_create_autocmd('CursorMoved',{
+    group = saga_augroup,
+    buffer = codelens.bufnr,
+    callback = function()
+      codelens.set_cursor()
+    end
+  })
   api.nvim_create_autocmd('QuitPre', {
     buffer = codelens.bufnr,
     callback = codelens.quit_lens_window
   })
+  local a
+
+  api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
+  api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionTrunCateLine",1,0,-1)
+  for i=1,#contents-2,1 do
+    api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
+  end
+  -- dsiable some move keys in codeaction
+  libs.disable_move_keys(codelens.bufnr)
 
   codelens.apply_action_keys()
 
@@ -81,6 +97,19 @@ function codelens.handler(_, result, ctx, _)
   -- else
   --   -- TODO handler lspsaga window
   -- end
+end
+
+function codelens.set_cursor ()
+  local col = 1
+  local current_line = api.nvim_win_get_cursor(codelens.winid)[1]
+
+  if current_line == 1 then
+    api.nvim_win_set_cursor(codelens.winid,{3,col})
+  elseif current_line == 2 then
+    api.nvim_win_set_cursor(codelens.winid,{2+#codelens.options,col})
+  elseif current_line == #codelens.options + 3 then
+    api.nvim_win_set_cursor(codelens.winid,{3,col})
+  end
 end
 
 function codelens.quit_lens_window()
