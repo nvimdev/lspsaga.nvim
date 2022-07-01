@@ -23,6 +23,10 @@ function def.preview_definition(timeout_ms)
   result = vim.tbl_values(result)
 
   if vim.tbl_islist(result) and not vim.tbl_isempty(result[1]) then
+    if result[1].result[1] == nil or vim.tbl_isempty(result[1].result[1]) then
+      print('No definitions found')
+      return
+    end
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
     if #uri == 0 then return end
     local bufnr = vim.uri_to_bufnr(uri)
