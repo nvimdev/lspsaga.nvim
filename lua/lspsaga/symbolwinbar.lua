@@ -63,8 +63,11 @@ local render_symbol_winbar = function()
 
   local winbar_val = show_file and symbar:get_file_name() or ''
 
-  local symbols = symbar.symbol_cache[current_buf][2] or nil
-  if symbols == nil then return end
+  local symbols = {}
+  if symbar.symbol_cache[current_buf] == nil then
+    return
+  end
+  symbols = symbar.symbol_cache[current_buf][2]
 
   local winbar_elements = {}
   find_in_node(symbols,current_line - 1,winbar_elements)
