@@ -55,6 +55,11 @@ end
 api.nvim_create_user_command('Lspsaga',function(args)
   require('lspsaga.command').load_command(unpack(args.fargs))
 end,{
-  nargs = "+",
-  complete = require('lspsaga.command').command_list,
-})
+    nargs = "+",
+    complete = function (arg)
+      local list = require('lspsaga.command').command_list()
+      return vim.tbl_filter(function (s)
+        return string.match(s, "^" .. arg)
+      end,list)
+    end,
+  })
