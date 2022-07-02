@@ -236,11 +236,9 @@ function Finder:render_finder_result()
   api.nvim_win_set_var(self.winid,'lsp_finder_win_opts',opts)
   api.nvim_win_set_option(self.winid,'cursorline',true)
 
-  if not self.cursor_line_bg and not self.cursor_line_fg then
-    self:get_cursorline_highlight()
-  end
+  self:get_cursorline_highlight()
 
-  api.nvim_command('highlight! link CursorLine LspSagaFinderSelection')
+  api.nvim_set_hl(0,'CursorLine',{link = 'LspSagaFinderSelection'})
 
   api.nvim_create_autocmd('CursorMoved',{
     group = saga_augroup,
@@ -354,9 +352,7 @@ function Finder:set_cursor()
 end
 
 function Finder:get_cursorline_highlight()
-  local cursorline_color = api.nvim_get_hl_by_name('Cursorline',true)
-  self.cursor_line_bg = cursorline_color.background
-  self.cursor_line_fg = cursorline_color.foreground
+  self.cursorline_color = api.nvim_get_hl_by_name('Cursorline',true)
 end
 
 function Finder:auto_open_preview()
@@ -485,10 +481,7 @@ function Finder:clear_tmp_data()
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
-  api.nvim_command('hi! CursorLine  guibg='..self.cursor_line_bg)
-  if self.cursor_line_fg == '' then
-    api.nvim_command('hi! CursorLine  guifg=NONE')
-  end
+  api.nvim_set_hl(0,'CursorLine',self.cursorline_color)
 end
 
 function Finder.lsp_finder()
