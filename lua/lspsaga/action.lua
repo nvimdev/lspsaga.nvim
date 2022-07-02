@@ -20,6 +20,10 @@ function action.smart_scroll_with_saga(direction, ...)
     local args = {...}
     local key = api.nvim_replace_termcodes(args[1],true,false,true)
     api.nvim_feedkeys(key,'n',true)
+  else
+    local map = direction == 1 and "<C-f>" or "<C-b>"
+    local key = api.nvim_replace_termcodes(map,true,false,true)
+    api.nvim_feedkeys(key,'n',true)
   end
 end
 
