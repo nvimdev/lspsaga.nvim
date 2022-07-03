@@ -10,8 +10,6 @@ local saga_augroup = require('lspsaga').saga_augroup
 local codelens = {}
 
 function codelens.execute_lens(lens, bufnr, client_id)
-  print(vim.inspect(lens))
-
   local client = vim.lsp.get_client_by_id(client_id)
   local command = lens.command
   local fn = client.commands[command.command] or vim.lsp.commands[command.command]
@@ -54,49 +52,46 @@ function codelens.handler(_, result, ctx, _)
     end
   end
 
-  local truncate_line = wrap.add_truncate_line(contents)
-  table.insert(contents, 2, truncate_line)
-
-  local content_opts = {
-    contents = contents,
-    filetype = 'sagacodelens',
-    enter = true,
-    highlight = 'LspSagaCodeActionBorder'
-  }
-
-  codelens.bufnr, codelens.winid = window.create_win_with_border(content_opts)
-  api.nvim_win_set_cursor(codelens.winid, { 3, 1 })
-  api.nvim_create_autocmd('CursorMoved',{
-    group = saga_augroup,
-    buffer = codelens.bufnr,
-    callback = function()
-      codelens.set_cursor()
-    end
-  })
-  api.nvim_create_autocmd('QuitPre', {
-    buffer = codelens.bufnr,
-    callback = codelens.quit_lens_window
-  })
-  local a
-
-  api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
-  api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionTrunCateLine",1,0,-1)
-  for i=1,#contents-2,1 do
-    api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
-  end
-  -- dsiable some move keys in codeaction
-  libs.disable_move_keys(codelens.bufnr)
-
-  codelens.apply_action_keys()
-
-  -- if #codelens.options == 0 then
-  --   vim.notify('No executable codelens found at current line')
+  if #codelens.options == 0 then
+    vim.notify('No executable codelens found at current line')
   -- elseif #codelens.options == 1 then
   --   local option = codelens.options[1]
   --   codelens.execute_lens(option.lens, bufnr, option.client_id)
-  -- else
-  --   -- TODO handler lspsaga window
-  -- end
+  else
+    local truncate_line = wrap.add_truncate_line(contents)
+    table.insert(contents, 2, truncate_line)
+
+    local content_opts = {
+      contents = contents,
+      filetype = 'sagacodelens',
+      enter = true,
+      highlight = 'LspSagaCodeActionBorder'
+    }
+
+    codelens.bufnr, codelens.winid = window.create_win_with_border(content_opts)
+    api.nvim_win_set_cursor(codelens.winid, { 3, 1 })
+    api.nvim_create_autocmd('CursorMoved',{
+      group = saga_augroup,
+      buffer = codelens.bufnr,
+      callback = function()
+        codelens.set_cursor()
+      end
+    })
+    api.nvim_create_autocmd('QuitPre', {
+      buffer = codelens.bufnr,
+      callback = codelens.quit_lens_window
+    })
+
+    api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionTitle",0,0,-1)
+    api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionTrunCateLine",1,0,-1)
+    for i=1,#contents-2,1 do
+      api.nvim_buf_add_highlight(codelens.bufnr,-1,"LspSagaCodeActionContent",1+i,0,-1)
+    end
+    -- dsiable some move keys in codeaction
+    libs.disable_move_keys(codelens.bufnr)
+
+    codelens.apply_action_keys()
+  end
 end
 
 function codelens.set_cursor ()
@@ -143,11 +138,11 @@ function codelens.do_code_lens(num)
 end
 
 function codelens.run()
-  -- local bufnr = api.nvim_get_current_buf()
+  local bufnr = api.nvim_get_current_buf()
   local params = {
     textDocument = vim.lsp.util.make_text_document_params()
   }
-  vim.lsp.buf_request(0, method, params, codelens.handler)
+  vim.lsp.buf_request(bufnr, method, params, codelens.handler)
 end
 
 return codelens
