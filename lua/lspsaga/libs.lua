@@ -145,7 +145,7 @@ function libs.close_preview_autocmd(bufnr,winid,events)
 end
 
 function libs.disable_move_keys(bufnr)
-  local keys = { 'h','j','k','l','w','b','<Bs>'}
+  local keys = { 'h','ge','e','0','$','l','w','b','<Bs>'}
   local opts = { nowait = true,noremap = true,silent = true}
   for _,key in pairs(keys) do
     api.nvim_buf_set_keymap(bufnr,'n',key,'',opts)
