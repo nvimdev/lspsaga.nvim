@@ -102,7 +102,7 @@ function symbar:get_buf_symbol(force,...)
   end
 
   if client_id == nil then
-    vim.nofity('All servers of this buffer does not support '..method)
+    vim.notify('All servers of this buffer does not support '..method)
     return
   end
 
