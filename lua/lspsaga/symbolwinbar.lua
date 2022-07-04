@@ -38,20 +38,43 @@ local do_symbol_request = function(callback)
 end
 
 --@private
-local function find_in_node(tbl,line,elements)
-  local type,icon = '',''
-  for _,node in pairs(tbl) do
-    if line >= node.range.start.line and line <= node.range['end'].line then
-      type = kind[node.kind][1]
-      icon = kind[node.kind][2]
-      table.insert(elements,ns_prefix .. type .. '#' .. icon .. node.name)
+local function binary_search(tbl,line)
+  local left = 1
+  local right = #tbl
+  local mid = 0
 
-      if node.children ~= nil then
-        find_in_node(node.children,line,elements)
-      else
-        break
+  while true do
+    mid = math.floor( (left + right) / 2)
+    if line >= tbl[mid].range.start.line and line <= tbl[mid].range['end'].line then
+      return mid
+    elseif line < tbl[mid].range.start.line then
+      right = mid -1
+      if left > right then
+        return nil
+      end
+    else
+      left = mid + 1
+      if left > right then
+        return nil
       end
     end
+  end
+end
+
+--@private
+local function find_in_node(tbl,line,elements)
+  local mid = binary_search(tbl,line)
+  if mid == nil then return end
+
+  local node = tbl[mid]
+  local type,icon = '',''
+
+  type = kind[node.kind][1]
+  icon = kind[node.kind][2]
+  table.insert(elements,ns_prefix .. type .. '#' .. icon .. node.name)
+
+  if node.children ~= nil then
+    find_in_node(node.children,line,elements)
   end
 end
 
@@ -70,6 +93,7 @@ local render_symbol_winbar = function()
   symbols = symbar.symbol_cache[current_buf][2]
 
   local winbar_elements = {}
+
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
