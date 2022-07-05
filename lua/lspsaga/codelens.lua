@@ -91,6 +91,14 @@ function codelens.handler(_, result, ctx, _)
     libs.disable_move_keys(codelens.bufnr)
 
     codelens.apply_action_keys()
+    if config.code_action_num_shortcut then
+      local opts = {nowait = true,silent = true,noremap =true}
+      for num,_ in pairs(codelens.options) do
+        num = tostring(num)
+        local rhs = string.format("<cmd>lua require('lspsaga.codelens').do_code_lens('%s')<CR>", num)
+        api.nvim_buf_set_keymap(codelens.bufnr,'n',num,rhs,opts)
+      end
+    end
   end
 end
 
