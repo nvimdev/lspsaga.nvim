@@ -191,7 +191,7 @@ function symbar.config_symbol_autocmd()
     desc = 'Lspsaga clear document symbol cache'
   })
 
-  api.nvim_create_autocmd({'LspAttach','CursorHold','CursorHoldI'},{
+  api.nvim_create_autocmd({'LspAttach','CursorHold','CursorMoved'},{
     group = saga_group,
     callback = function()
       if libs.has_value(filetype_exclude,vim.bo.filetype) then
@@ -235,17 +235,6 @@ function symbar.config_symbol_autocmd()
       end
       symbar:get_buf_symbol(true,render_symbol_winbar)
     end
-  })
-
-  api.nvim_create_autocmd('CursorMoved',{
-    group = saga_group,
-    callback = function()
-      if not libs.check_lsp_active() then
-        return
-      end
-      vim.lsp.buf.clear_references()
-    end,
-    desc = 'Lspsaga Clear All References'
   })
 end
 

@@ -28,6 +28,7 @@ function def.preview_definition(timeout_ms)
       return
     end
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
+    print(uri)
     if #uri == 0 then return end
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri)
