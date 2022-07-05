@@ -73,7 +73,7 @@ local function find_in_node(tbl,line,elements)
   icon = kind[node.kind][2]
   table.insert(elements,ns_prefix .. type .. '#' .. icon .. node.name)
 
-  if node.children ~= nil then
+  if node.children ~= nil and next(node.children) ~= nil then
     find_in_node(node.children,line,elements)
   end
 end
