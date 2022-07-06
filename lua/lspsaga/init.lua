@@ -67,7 +67,9 @@ end
 
 function saga.init_lsp_saga(opts)
   extend_config(opts)
-  if saga.config_values.code_action_lightbulb.enable then
+  local conf = saga.config_values
+
+  if conf.code_action_lightbulb.enable then
     api.nvim_create_autocmd({'CursorHold','CursorHoldI'},{
       group = saga.saga_augroup,
       pattern = '*',
@@ -75,7 +77,7 @@ function saga.init_lsp_saga(opts)
     })
   end
 
-  if saga.config_values.symbol_in_winbar then
+  if conf.symbol_in_winbar.enable or conf.symbol_in_winbar.in_custom then
     require('lspsaga.lspkind').gen_symbol_winbar_hi()
     require('lspsaga.symbolwinbar').config_symbol_autocmd()
   end
