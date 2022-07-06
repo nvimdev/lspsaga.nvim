@@ -14,7 +14,7 @@ end
 local function check_server_support_codeaction()
   local clients = vim.lsp.buf_get_clients()
     for _,client in pairs(clients) do
-      if client.server_capabilities.codeActionProvider then
+      if client.supports_method("textDocument/codeAction") then
         return true
       end
     end
