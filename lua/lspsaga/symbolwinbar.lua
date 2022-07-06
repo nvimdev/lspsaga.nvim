@@ -12,7 +12,7 @@ local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
   local file_name = vim.fn.expand('%:t')
-	local ok,devicons = pcall(require,'nvim-web-devicons')
+  local ok,devicons = pcall(require,'nvim-web-devicons')
   local f_icon = ''
   local color = ''
   if ok then
@@ -55,6 +55,16 @@ local function binary_search(tbl,line)
   end
 end
 
+local click_node = {}
+local click_node_cnt = 0
+-- @v:lua@ in the tabline only supports global functions, so this is
+-- the only way to add click handlers without autoloaded vimscript functions
+function _G.___lspsaga_winbar_click(id, clicks, button, modifiers)
+  local up = click_node[id].start.line + 1
+  local down = click_node[id]['end'].line + 1
+  config.click_support(up, down, clicks, button, modifiers)
+end
+
 --@private
 local function find_in_node(tbl,line,elements)
   local mid = binary_search(tbl,line)
@@ -65,7 +75,16 @@ local function find_in_node(tbl,line,elements)
 
   type = kind[node.kind][1]
   icon = kind[node.kind][2]
-  table.insert(elements,ns_prefix .. type .. '#' .. icon .. node.name)
+
+  local click = ""
+  if config.click_support ~= false then
+    click_node_cnt = click_node_cnt + 1
+    click_node[click_node_cnt] = node.range
+    click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
+  end
+
+  local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
+  table.insert(elements, node_context)
 
   if node.children ~= nil and next(node.children) ~= nil then
     find_in_node(node.children,line,elements)
@@ -88,6 +107,9 @@ local render_symbol_winbar = function()
 
   local winbar_elements = {}
 
+  if config.click_support ~= false then
+    click_node = {}
+  end
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
