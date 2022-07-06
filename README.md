@@ -123,11 +123,11 @@ symbol_in_winbar = {
     enable = false,
     separator = ' ',
     show_file = true,
-		click_support = false,
-		-- https://neovim.io/doc/user/options.html#'statusline'
-		-- Search for "Start of execute function label"
-		-- minwid will be replaced with current node's range = [line_start, line_end]
-		-- click_support = function(line_start, line_end, clicks, button, flags)
+    click_support = false,
+    -- https://neovim.io/doc/user/options.html#'statusline'
+    -- Search for "Start of execute function label"
+    -- minwid will be replaced with current node's range = [line_start, line_end]
+    -- click_support = function(line_start, line_end, clicks, button, flags)
     --     if button == "l" then
     --         if clicks == 2 then
     --             vim.cmd(":" .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
