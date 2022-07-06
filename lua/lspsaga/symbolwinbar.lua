@@ -103,7 +103,7 @@ local render_symbol_winbar = function()
   local current_buf = api.nvim_get_current_buf()
   local current_line = api.nvim_win_get_cursor(current_win)[1]
 
-	local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name() or ''
+  local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name() or ''
 
   local symbols = {}
   if symbar.symbol_cache[current_buf] == nil then
