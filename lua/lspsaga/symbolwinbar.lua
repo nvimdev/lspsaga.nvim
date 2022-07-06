@@ -10,10 +10,6 @@ local ns_prefix = '%#LspSagaWinbar'
 local winbar_sep = '%#LspSagaWinbarSep#'..config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
--- @v:lua@ in the tabline only supports global functions, so this is
--- the only way to add click handlers without autoloaded vimscript functions
-_G.___lspsaga_private = _G.___lspsaga_private or {} -- to guard against reloads
-
 function symbar:get_file_name()
   local file_name = ''
   if type(config.winbar_file_format) == 'function' then
@@ -64,13 +60,15 @@ local function binary_search(tbl,line)
   end
 end
 
+-- @v:lua@ in the tabline only supports global functions, so this is
+-- the only way to add click handlers without autoloaded vimscript functions
+_G.___lspsaga_private = _G.___lspsaga_private or {} -- to guard against reloads
 local click_node = {}
 local click_node_cnt = 0
-
 function _G.___lspsaga_private.handle_click(id, clicks, button, flags)
 	local up = click_node[id].range.start.line + 1
 	local down = click_node[id].range['end'].line + 1
-	config.click(up, down, clicks, button, flags)
+	config.click_support(up, down, clicks, button, flags)
 end
 
 --@private
@@ -85,7 +83,7 @@ local function find_in_node(tbl,line,elements)
   icon = kind[node.kind][2]
 
 	local click = ""
-	if config.click ~= false then
+	if config.click_support ~= false then
 		click_node_cnt = click_node_cnt + 1
 		click_node[click_node_cnt] = node
 		click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
@@ -115,7 +113,7 @@ local render_symbol_winbar = function()
 
   local winbar_elements = {}
 
-	if config.click ~= false then
+	if config.click_support ~= false then
 		click_node_cnt = 0
 	end
   find_in_node(symbols,current_line - 1,winbar_elements)
