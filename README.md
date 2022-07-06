@@ -124,14 +124,14 @@ symbol_in_winbar = {
     separator = ' ',
     show_file = true,
     click_support = false,
-    -- To enable click support for winbar define a function as stated in
-    -- https://neovim.io/doc/user/options.html#'statusline' (Search for "Start of execute function label")
+    -- To enable click support for winbar define a function similar to
+    -- https://neovim.io/doc/user/options.html#'statusline' (Search for "Start of execute function label" part)
     -- minwid will be replaced with current node's range = [line_start, line_end]. For example:
     -- click_support = function(line_start, line_end, clicks, button, modifiers)
     --     if button == "l" then
     --         if clicks == 2 then
     --             -- double left click to visual select node
-    --             vim.cmd(":" .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
+    --             vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
     --         else
     --             vim.cmd(":" .. line_start) -- jump to node's starting line
     --         end
@@ -143,7 +143,7 @@ symbol_in_winbar = {
     --         vim.cmd(":" .. line_end) -- jump to node's ending line
     --     elseif button == "m" then
     --         -- middle click to visual select node
-    --         vim.cmd(":" .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
+    --         vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
     --     end
     -- end,
 },
