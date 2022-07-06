@@ -11,6 +11,10 @@ local ns_prefix = '%#LspSagaWinbar'
 local winbar_sep = '%#LspSagaWinbarSep#'..config.winbar_separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
+-- @v:lua@ in the tabline only supports global functions, so this is
+-- the only way to add click handlers without autoloaded vimscript functions
+_G.___lspsaga_private = _G.___lspsaga_private or {} -- to guard against reloads
+
 function symbar:get_file_name()
   local file_name = ''
   if type(config.winbar_file_format) == 'function' then
@@ -61,6 +65,14 @@ local function binary_search(tbl,line)
   end
 end
 
+function _G.___lspsaga_private.handle_click(num, _, button)
+	if button == "l" then
+		vim.cmd(":" .. num + 1)
+	elseif button == "r" then
+		-- Right click to jump down I think?
+	end
+end
+
 --@private
 local function find_in_node(tbl,line,elements)
   local mid = binary_search(tbl,line)
@@ -71,7 +83,9 @@ local function find_in_node(tbl,line,elements)
 
   type = kind[node.kind][1]
   icon = kind[node.kind][2]
-  table.insert(elements,ns_prefix .. type .. '#' .. icon .. node.name)
+	local click = '%' .. tostring(tbl[mid].range.start.line) .. '@v:lua.___lspsaga_private.handle_click@'
+	local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
+  table.insert(elements, node_context)
 
   if node.children ~= nil and next(node.children) ~= nil then
     find_in_node(node.children,line,elements)
