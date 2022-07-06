@@ -1,6 +1,5 @@
 local lsp,api = vim.lsp,vim.api
-local config = require('lspsaga').config_values
-local show_file = config.winbar_show_file
+local config = require('lspsaga').config_values.symbol_in_winbar
 local saga_group = require('lspsaga').saga_augroup
 local libs = require('lspsaga.libs')
 local symbar = {
@@ -8,7 +7,7 @@ local symbar = {
 }
 local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
-local winbar_sep = '%#LspSagaWinbarSep#'..config.winbar_separator .. '%*'
+local winbar_sep = '%#LspSagaWinbarSep#'..config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
 -- @v:lua@ in the tabline only supports global functions, so this is
@@ -71,7 +70,7 @@ local click_node_cnt = 0
 function _G.___lspsaga_private.handle_click(id, clicks, button, flags)
 	local up = click_node[id].range.start.line + 1
 	local down = click_node[id].range['end'].line + 1
-	config.click_in_winbar(up, down, clicks, button, flags)
+	config.click(up, down, clicks, button, flags)
 end
 
 --@private
@@ -86,7 +85,7 @@ local function find_in_node(tbl,line,elements)
   icon = kind[node.kind][2]
 
 	local click = ""
-	if config.click_in_winbar ~= false then
+	if config.click ~= false then
 		click_node_cnt = click_node_cnt + 1
 		click_node[click_node_cnt] = node
 		click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
@@ -106,7 +105,7 @@ local render_symbol_winbar = function()
   local current_buf = api.nvim_get_current_buf()
   local current_line = api.nvim_win_get_cursor(current_win)[1]
 
-  local winbar_val = show_file and symbar:get_file_name() or ''
+  local winbar_val = config.show_file and symbar:get_file_name() or ''
 
   local symbols = {}
   if symbar.symbol_cache[current_buf] == nil then
@@ -116,13 +115,13 @@ local render_symbol_winbar = function()
 
   local winbar_elements = {}
 
-	if config.click_in_winbar ~= false then
+	if config.click ~= false then
 		click_node_cnt = 0
 	end
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
-  if show_file and next(winbar_elements) ~= nil then
+  if config.show_file and next(winbar_elements) ~= nil then
     str = winbar_sep .. str
   end
 

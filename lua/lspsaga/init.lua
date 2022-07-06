@@ -37,11 +37,13 @@ saga.config_values = {
   rename_action_quit = '<C-c>',
   definition_preview_icon = '  ',
   -- winbar must nightly
-  symbol_in_winbar = false,
-  winbar_separator = ' ',
-  winbar_show_file = true,
-	click_in_winbar = false,
-  winbar_file_format = '',
+	symbol_in_winbar = {
+    in_custom = false,
+    enable = false,
+    separator = ' ',
+    show_file = true,
+		click = false
+  },
   server_filetype_map = {}
 }
 
