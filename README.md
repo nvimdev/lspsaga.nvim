@@ -11,6 +11,8 @@
 
 A light-weight lsp plugin based on neovim's built-in lsp with a highly performant UI.
 
+[![](https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white)](https://matrix.to/#/#lspsaga-nvim:matrix.org)
+
 1. [Install](#install)
    - [Vim Plug](#vim-plug)
    - [Packer](#packer)
