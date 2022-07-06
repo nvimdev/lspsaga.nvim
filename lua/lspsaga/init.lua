@@ -38,7 +38,7 @@ saga.config_values = {
   definition_preview_icon = '  ',
   -- winbar must nightly
   symbol_in_winbar = {
-    in_custom = true,
+    in_custom = false,
     enable = false,
     separator = ' ',
     show_file = true,
