@@ -86,11 +86,7 @@ local render_symbol_winbar = function()
 
   local winbar_val = show_file and symbar:get_file_name() or ''
 
-  local symbols = {}
-  if symbar.symbol_cache[current_buf] == nil then
-    return
-  end
-  symbols = symbar.symbol_cache[current_buf][2]
+  local symbols = symbar.symbol_cache[current_buf][2]
 
   local winbar_elements = {}
 
@@ -180,61 +176,48 @@ function symbar:clear_cache()
   end
 end
 
-local filetype_exclude = {'NvimTree','terminal'}
+local function symbol_events()
+  local current_buf = api.nvim_get_current_buf()
+  local cache = symbar.symbol_cache
 
-function symbar.config_symbol_autocmd()
+  local update_symbols = function()
+    if cache[current_buf] == nil or next(cache[current_buf]) == nil then
+      symbar:get_buf_symbol(true,render_symbol_winbar)
+    else
+      render_symbol_winbar()
+    end
+  end
+
+  api.nvim_create_autocmd({'CursorHold','CursorMoved'},{
+    group = saga_group,
+    buffer = current_buf,
+    callback = update_symbols
+  })
+
+  api.nvim_create_autocmd({'TextChanged','InsertLeave'},{
+    group = saga_group,
+    buffer = current_buf,
+    callback = function()
+      symbar:get_buf_symbol(true,render_symbol_winbar)
+    end
+  })
+
   api.nvim_create_autocmd('BufDelete',{
-    pattern = '*',
+    group = saga_group,
+    buffer = current_buf,
     callback = function()
       symbar:clear_cache()
     end,
     desc = 'Lspsaga clear document symbol cache'
   })
 
-  api.nvim_create_autocmd({'LspAttach','CursorHold','CursorMoved'},{
+end
+
+function symbar.config_symbol_autocmd()
+  api.nvim_create_autocmd('LspAttach',{
     group = saga_group,
-    callback = function()
-      if libs.has_value(filetype_exclude,vim.bo.filetype) then
-        return
-      end
-
-      if not libs.check_lsp_active() then
-        return
-      end
-      local current_buf = api.nvim_get_current_buf()
-      local cache = symbar.symbol_cache
-      if cache[current_buf] == nil or next(cache[current_buf]) == nil then
-        symbar:get_buf_symbol(true,render_symbol_winbar)
-      else
-        render_symbol_winbar()
-      end
-    end,
-    desc = 'Lspsaga Document Highlight'
-  })
-
-  -- make sure when open file we see the winbar not wait get responses
-  -- from server
-  if config.winbar_show_file and config.symbol_in_winbar then
-    api.nvim_create_autocmd('BufWinEnter',{
-      group = saga_group,
-      pattern = '*',
-      callback = function()
-        if vim.bo.filetype == 'help' then return end
-        local winbar_str = symbar:get_file_name()
-        api.nvim_win_set_option(0,'winbar',winbar_str)
-      end,
-      desc = 'Lspsaga Add filename into winbar'
-    })
-  end
-
-  api.nvim_create_autocmd({'TextChanged','InsertLeave'},{
-    group = saga_group,
-    callback = function()
-      if not libs.check_lsp_active() then
-        return
-      end
-      symbar:get_buf_symbol(true,render_symbol_winbar)
-    end
+    callback = symbol_events,
+    desc = 'Lspsaga get and show symbols'
   })
 end
 
