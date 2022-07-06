@@ -115,7 +115,10 @@ local render_symbol_winbar = function()
   end
 
   winbar_val = winbar_val .. str
-  api.nvim_win_set_option(0,'winbar',winbar_val)
+	if not config.in_custom then
+    api.nvim_win_set_option(0,'winbar',winbar_val)
+  end
+  return winbar_val
 end
 
 function symbar:get_buf_symbol(force,...)
