@@ -80,9 +80,8 @@ end
 
 --@private
 local render_symbol_winbar = function()
-  local current_win = api.nvim_get_current_win()
   local current_buf = api.nvim_get_current_buf()
-  local current_line = api.nvim_win_get_cursor(current_win)[1]
+  local current_line = api.nvim_win_get_cursor(0)[1]
 
   local winbar_val = show_file and symbar:get_file_name() or ''
 
@@ -102,7 +101,7 @@ local render_symbol_winbar = function()
   end
 
   winbar_val = winbar_val .. str
-  api.nvim_win_set_option(current_win,'winbar',winbar_val)
+  api.nvim_win_set_option(0,'winbar',winbar_val)
 end
 
 function symbar:get_buf_symbol(force,...)
