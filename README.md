@@ -127,7 +127,7 @@ symbol_in_winbar = {
     -- To enable click support for winbar define a function as stated in
     -- https://neovim.io/doc/user/options.html#'statusline' (Search for "Start of execute function label")
     -- minwid will be replaced with current node's range = [line_start, line_end]. For example:
-		-- click_support = function(line_start, line_end, clicks, button, modifiers)
+    -- click_support = function(line_start, line_end, clicks, button, modifiers)
     --     if button == "l" then
     --         if clicks == 2 then
     --             -- double left click to visual select node
