@@ -49,7 +49,7 @@ local highlights = {
 }
 
 for group,conf in pairs(highlights) do
-  api.nvim_set_hl(0,group,conf)
+  api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
 end
 
 api.nvim_create_user_command('Lspsaga',function(args)

@@ -44,7 +44,7 @@ local function binary_search(tbl,line)
   local mid = 0
 
   while true do
-    mid = math.floor( (left + right) / 2)
+    mid = bit.rshift(left + right, 1)
     if line >= tbl[mid].range.start.line and line <= tbl[mid].range['end'].line then
       return mid
     elseif line < tbl[mid].range.start.line then
@@ -93,7 +93,7 @@ local render_symbol_winbar = function()
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
-  if show_file and #winbar_elements > 0 then
+  if show_file and next(winbar_elements) ~= nil then
     str = winbar_sep .. str
   end
 
@@ -128,7 +128,7 @@ function symbar:get_buf_symbol(force,...)
 
   local arg = {...}
   local fn
-  if #arg > 0 then
+  if next(arg) ~= nil then
     fn = unpack(arg)
   end
 
