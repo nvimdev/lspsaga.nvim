@@ -69,12 +69,14 @@ local click_node = {}
 local click_node_cnt = 0
 
 function _G.___lspsaga_private.handle_click(id, _, button)
+	local up = click_node[id].range.start.line + 1
+	local down = click_node[id].range['end'].line + 1
 	if button == "l" then
-		vim.cmd(":" .. click_node[id].range.start.line + 1)
-	elseif button == "m" then
-		vim.cmd(":" .. click_node[id].range['end'].line + 1)
+		vim.cmd(":" .. up)
+	elseif button == "r" then
+		vim.cmd(":" .. down)
 	else
-		vim.cmd("")
+		vim.cmd(":" .. up .. "mark < | " .. down .. "mark > | normal gvV")
 	end
 end
 
@@ -88,9 +90,11 @@ local function find_in_node(tbl,line,elements)
 
   type = kind[node.kind][1]
   icon = kind[node.kind][2]
+
 	click_node_cnt = click_node_cnt + 1
 	click_node[click_node_cnt] = node
 	local click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
+
 	local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
   table.insert(elements, node_context)
 
