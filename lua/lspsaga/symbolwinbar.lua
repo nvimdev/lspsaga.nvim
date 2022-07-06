@@ -55,12 +55,11 @@ local function binary_search(tbl,line)
   end
 end
 
--- @v:lua@ in the tabline only supports global functions, so this is
--- the only way to add click handlers without autoloaded vimscript functions
-_G.___lspsaga_private = _G.___lspsaga_private or {} -- to guard against reloads
 local click_node = {}
 local click_node_cnt = 0
-function _G.___lspsaga_private.handle_click(id, clicks, button, flags)
+-- @v:lua@ in the tabline only supports global functions, so this is
+-- the only way to add click handlers without autoloaded vimscript functions
+function _G.___lspsaga_winbar_click(id, clicks, button, flags)
   local up = click_node[id].range.start.line + 1
   local down = click_node[id].range['end'].line + 1
   config.click_support(up, down, clicks, button, flags)
@@ -81,7 +80,7 @@ local function find_in_node(tbl,line,elements)
   if config.click_support ~= false then
     click_node_cnt = click_node_cnt + 1
     click_node[click_node_cnt] = node
-    click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
+    click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
   end
 
   local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
