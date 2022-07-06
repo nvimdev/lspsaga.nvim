@@ -12,7 +12,7 @@ local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
   local file_name = vim.fn.expand('%:t')
-	local ok,devicons = pcall(require,'nvim-web-devicons')
+  local ok,devicons = pcall(require,'nvim-web-devicons')
   local f_icon = ''
   local color = ''
   if ok then
@@ -61,9 +61,9 @@ _G.___lspsaga_private = _G.___lspsaga_private or {} -- to guard against reloads
 local click_node = {}
 local click_node_cnt = 0
 function _G.___lspsaga_private.handle_click(id, clicks, button, flags)
-	local up = click_node[id].range.start.line + 1
-	local down = click_node[id].range['end'].line + 1
-	config.click_support(up, down, clicks, button, flags)
+  local up = click_node[id].range.start.line + 1
+  local down = click_node[id].range['end'].line + 1
+  config.click_support(up, down, clicks, button, flags)
 end
 
 --@private
@@ -77,14 +77,14 @@ local function find_in_node(tbl,line,elements)
   type = kind[node.kind][1]
   icon = kind[node.kind][2]
 
-	local click = ""
-	if config.click_support ~= false then
-		click_node_cnt = click_node_cnt + 1
-		click_node[click_node_cnt] = node
-		click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
-	end
+  local click = ""
+  if config.click_support ~= false then
+    click_node_cnt = click_node_cnt + 1
+    click_node[click_node_cnt] = node
+    click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
+  end
 
-	local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
+  local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
   table.insert(elements, node_context)
 
   if node.children ~= nil and next(node.children) ~= nil then
@@ -108,9 +108,9 @@ local render_symbol_winbar = function()
 
   local winbar_elements = {}
 
-	if config.click_support ~= false then
-		click_node_cnt = 0
-	end
+  if config.click_support ~= false then
+    click_node_cnt = 0
+  end
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
