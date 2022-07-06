@@ -102,14 +102,14 @@ local function move_cursor(entry)
   render_diagnostic_window(entry)
 end
 
-function diag.goto_next()
-  local next = vim.diagnostic.get_next()
+function diag.goto_next(opts)
+  local next = vim.diagnostic.get_next(opts)
   if next == nil then return end
   move_cursor(next)
 end
 
-function diag.goto_prev()
-  local prev = vim.diagnostic.get_prev()
+function diag.goto_prev(opts)
+  local prev = vim.diagnostic.get_prev(opts)
   if not prev then
     return false
   end
