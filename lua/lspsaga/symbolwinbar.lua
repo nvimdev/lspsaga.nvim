@@ -1,6 +1,5 @@
 local lsp,api = vim.lsp,vim.api
-local config = require('lspsaga').config_values
-local show_file = config.winbar_show_file
+local config = require('lspsaga').config_values.symbol_in_winbar
 local saga_group = require('lspsaga').saga_augroup
 local libs = require('lspsaga.libs')
 local symbar = {
@@ -8,16 +7,11 @@ local symbar = {
 }
 local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
-local winbar_sep = '%#LspSagaWinbarSep#'..config.winbar_separator .. '%*'
+local winbar_sep = '%#LspSagaWinbarSep#'..config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
-  local file_name = ''
-  if type(config.winbar_file_format) == 'function' then
-    file_name = config.winbar_file_format()
-  else
-    file_name = vim.fn.expand('%:t')
-  end
+  local file_name = vim.fn.expand('%:t')
 	local ok,devicons = pcall(require,'nvim-web-devicons')
   local f_icon = ''
   local color = ''
@@ -84,7 +78,7 @@ local render_symbol_winbar = function()
   local current_buf = api.nvim_get_current_buf()
   local current_line = api.nvim_win_get_cursor(current_win)[1]
 
-  local winbar_val = show_file and symbar:get_file_name() or ''
+  local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name() or ''
 
   local symbols = {}
   if symbar.symbol_cache[current_buf] == nil then
@@ -97,12 +91,15 @@ local render_symbol_winbar = function()
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
-  if show_file and next(winbar_elements) ~= nil then
+  if config.show_file and next(winbar_elements) ~= nil then
     str = winbar_sep .. str
   end
 
   winbar_val = winbar_val .. str
-  api.nvim_win_set_option(current_win,'winbar',winbar_val)
+  if not config.in_custom then
+    api.nvim_win_set_option(current_win,'winbar',winbar_val)
+  end
+  return winbar_val
 end
 
 function symbar:get_buf_symbol(force,...)
@@ -195,15 +192,21 @@ local function symbol_events()
   api.nvim_create_autocmd({'CursorHold','CursorMoved'},{
     group = saga_group,
     buffer = current_buf,
-    callback = update_symbols
+    callback = update_symbols,
+    desc = 'Lspsaga symbols'
   })
 
   api.nvim_create_autocmd({'TextChanged','InsertLeave'},{
     group = saga_group,
     buffer = current_buf,
     callback = function()
-      symbar:get_buf_symbol(true,render_symbol_winbar)
-    end
+      if config.in_custom then
+        symbar:get_buf_symbol(true)
+      else
+        symbar:get_buf_symbol(true,render_symbol_winbar)
+      end
+    end,
+    desc = 'Lspsaga update symbols'
   })
 
   api.nvim_create_autocmd('BufDelete',{
@@ -214,7 +217,6 @@ local function symbol_events()
     end,
     desc = 'Lspsaga clear document symbol cache'
   })
-
 end
 
 function symbar.config_symbol_autocmd()
@@ -223,6 +225,12 @@ function symbar.config_symbol_autocmd()
     callback = symbol_events,
     desc = 'Lspsaga get and show symbols'
   })
+end
+
+-- work with custom winbar
+function symbar.get_symbol_node()
+--   symbar.config_symbol_autocmd()
+  return render_symbol_winbar()
 end
 
 return symbar
