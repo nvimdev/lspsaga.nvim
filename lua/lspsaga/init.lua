@@ -40,6 +40,7 @@ saga.config_values = {
   symbol_in_winbar = false,
   winbar_separator = ' ',
   winbar_show_file = true,
+	click_in_winbar = false,
   winbar_file_format = '',
   server_filetype_map = {}
 }

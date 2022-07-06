@@ -68,16 +68,10 @@ end
 local click_node = {}
 local click_node_cnt = 0
 
-function _G.___lspsaga_private.handle_click(id, _, button)
+function _G.___lspsaga_private.handle_click(id, clicks, button, flags)
 	local up = click_node[id].range.start.line + 1
 	local down = click_node[id].range['end'].line + 1
-	if button == "l" then
-		vim.cmd(":" .. up)
-	elseif button == "r" then
-		vim.cmd(":" .. down)
-	else
-		vim.cmd(":" .. up .. "mark < | " .. down .. "mark > | normal gvV")
-	end
+	config.click_in_winbar(up, down, clicks, button, flags)
 end
 
 --@private
@@ -91,9 +85,12 @@ local function find_in_node(tbl,line,elements)
   type = kind[node.kind][1]
   icon = kind[node.kind][2]
 
-	click_node_cnt = click_node_cnt + 1
-	click_node[click_node_cnt] = node
-	local click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
+	local click = ""
+	if config.click_in_winbar ~= false then
+		click_node_cnt = click_node_cnt + 1
+		click_node[click_node_cnt] = node
+		click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_private.handle_click@'
+	end
 
 	local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
   table.insert(elements, node_context)
@@ -119,6 +116,9 @@ local render_symbol_winbar = function()
 
   local winbar_elements = {}
 
+	if config.click_in_winbar ~= false then
+		click_node_cnt = 0
+	end
   find_in_node(symbols,current_line - 1,winbar_elements)
   local str = table.concat(winbar_elements,winbar_sep)
 
