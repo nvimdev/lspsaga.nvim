@@ -42,7 +42,7 @@ saga.config_values = {
     enable = false,
     separator = ' ',
     show_file = true,
-		click_support = true
+    click_support = false
   },
   server_filetype_map = {}
 }
