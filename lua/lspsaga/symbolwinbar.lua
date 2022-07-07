@@ -118,6 +118,9 @@ local render_symbol_winbar = function()
   end
 
   winbar_val = winbar_val .. str
+  if config.right_align then
+    winbar_val = '%=' .. winbar_val
+  end
   if not config.in_custom then
     api.nvim_win_set_option(current_win,'winbar',winbar_val)
   end

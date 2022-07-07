@@ -40,6 +40,7 @@ saga.config_values = {
   symbol_in_winbar = {
     in_custom = false,
     enable = false,
+    right_align = false,
     separator = ' ',
     show_file = true,
     click_support = false
