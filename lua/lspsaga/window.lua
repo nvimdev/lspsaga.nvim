@@ -209,6 +209,8 @@ local function get_valid_screen_width()
     local special_win = {
       ['NvimTree'] = true,
       ['NerdTree'] = true,
+      ['defx'] = true,
+      ['NeoTree'] = true
     }
     local first_win_id = api.nvim_list_wins()[1]
     local bufnr = vim.fn.winbufnr(first_win_id)
@@ -225,9 +227,11 @@ local function get_max_content_length(contents)
   vim.validate({
     contents = { contents, 't' },
   })
+
   if next(contents) == nil then
-    return 0
+    return
   end
+
   if #contents == 1 then
     return #contents[1]
   end
@@ -239,7 +243,6 @@ local function get_max_content_length(contents)
   return tmp[#tmp]
 end
 
--- TODO: better doc render
 function M.fancy_floating_markdown(contents, opts)
   vim.validate({
     contents = { contents, 't' },
@@ -247,51 +250,16 @@ function M.fancy_floating_markdown(contents, opts)
   })
   opts = opts or {}
 
-  local stripped = {}
-  local highlights = {}
-  do
-    local i = 1
-    while i <= #contents do
-      local line = contents[i]
-      -- TODO(ashkan): use a more strict regex for filetype?
-      local ft = line:match('^```([a-zA-Z0-9_]*)$')
-      -- local ft = line:match("^```(.*)$")
-      -- TODO(ashkan): validate the filetype here.
-      if ft then
-        local start = #stripped
-        i = i + 1
-        while i <= #contents do
-          line = contents[i]
-          if line == '```' then
-            i = i + 1
-            break
-          end
-          table.insert(stripped, line)
-          i = i + 1
-        end
-        table.insert(highlights, {
-          ft = ft,
-          start = start + 1,
-          finish = #stripped + 1 - 1,
-        })
-      else
-        table.insert(stripped, line)
-        i = i + 1
-      end
-    end
-  end
   -- Clean up and add padding
-  stripped = vim.lsp.util._trim(stripped)
+  contents = vim.lsp.util._trim(contents)
 
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo['wrap'] and api.nvim_win_get_width(0))
-  -- record the first line
-  local firstline = stripped[1]
 
   -- current window height
   local WIN_HEIGHT = vim.fn.winheight(0)
 
-  local width = get_max_content_length(stripped)
+  local width = get_max_content_length(contents)
   -- the max width of doc float window keep has 20 pad
   local WIN_WIDTH = get_valid_screen_width()
 
@@ -302,78 +270,23 @@ function M.fancy_floating_markdown(contents, opts)
     width = math.floor(WIN_WIDTH * 0.6)
   end
 
+  print(vim.inspect(contents))
+
   local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
 
-  if #stripped + 4 > max_height then
-    opts.height = max_height
-  end
-
-  stripped = wrap.wrap_contents(stripped, width)
-
-  local wrapped_index = #wrap.wrap_text(firstline, width)
-
-  -- if only has one line do not insert truncate line
-  if #stripped ~= 1 then
-    local truncate_line = wrap.add_truncate_line(stripped)
-    if stripped[1]:find('{%s$') then
-      for idx, text in ipairs(stripped) do
-        if text == '} ' or text == '}' then
-          wrapped_index = idx
-          break
-        end
-      end
-    end
-    if wrapped_index ~= #stripped then
-      table.insert(stripped, wrapped_index + 1, truncate_line)
-    end
-  end
-
   local content_opts = {
-    contents = stripped,
+    contents = contents,
     filetype = 'markdown',
     highlight = 'LspSagaHoverBorder',
   }
 
   -- Make the floating window.
   local bufnr, winid = M.create_win_with_border(content_opts, opts)
-  local height = opts.height or #stripped
-  api.nvim_win_set_var(0, 'lspsaga_hoverwin_data', { winid, height, height, #stripped })
+  local height = opts.height or #contents
+  api.nvim_win_set_var(0, 'lspsaga_hoverwin_data', { winid, height, height, #contents})
 
-  api.nvim_buf_add_highlight(bufnr, -1, 'LspSagaHoverTrunCateLine', wrapped_index, 0, -1)
+--   api.nvim_buf_add_highlight(bufnr, -1, 'LspSagaHoverTrunCateLine', wrapped_index, 0, -1)
 
-  -- Switch to the floating window to apply the syntax highlighting.
-  -- This is because the syntax command doesn't accept a target.
-  local cwin = vim.api.nvim_get_current_win()
-  vim.api.nvim_set_current_win(winid)
-
-  vim.cmd('ownsyntax markdown')
-  local idx = 1
-  --@private
-  local function apply_syntax_to_region(ft, start, finish)
-    if ft == '' then
-      return
-    end
-    local name = ft .. idx
-    idx = idx + 1
-    local lang = '@' .. ft:upper()
-    -- TODO(ashkan): better validation before this.
-    if not pcall(vim.cmd, string.format('syntax include %s syntax/%s.vim', lang, ft)) then
-      return
-    end
-    vim.cmd(string.format('syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s', name, start, finish + 1, lang))
-  end
-  -- Previous highlight region.
-  -- TODO(ashkan): this wasn't working for some reason, but I would like to
-  -- make sure that regions between code blocks are definitely markdown.
-  -- local ph = {start = 0; finish = 1;}
-  for _, h in ipairs(highlights) do
-    h.finish = wrapped_index
-    -- apply_syntax_to_region('markdown', ph.finish, h.start)
-    apply_syntax_to_region(h.ft, h.start, h.finish)
-    -- ph = h
-  end
-
-  vim.api.nvim_set_current_win(cwin)
   return bufnr, winid
 end
 
