@@ -197,9 +197,11 @@ click_support = function(node, clicks, button, modifiers)
         vim.fn.cursor(en.line + 1, en.character)
     elseif button == "m" then
         -- middle click to visual select node
-        vim.cmd("execute 'normal vv'  | " .. st.line + 1 .. "mark < | " .. en.line + 1 .. "mark > | normal gvV")
+        vim.fn.cursor(st.line + 1, st.character)
+        vim.cmd("execute 'normal v'")
+        vim.fn.cursor(en.line + 1, en.character)
     end
-end,
+end
 ```
 
 ## Mappings
