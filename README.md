@@ -178,23 +178,24 @@ To enable click support for winbar define a function similar to
 minwid will be replaced with current node's range = [line_start, line_end]. For example:
 
 ```lua
--- click_support = function(line_start, line_end, clicks, button, modifiers)
-if button == "l" then
-    if clicks == 2 then
-        -- double left click to visual select node
+click_support = function(line_start, line_end, clicks, button, modifiers)
+    if button == "l" then
+        if clicks == 2 then
+            -- double left click to visual select node
+            vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
+        else
+            vim.cmd(":" .. line_start) -- jump to node's starting line
+        end
+    elseif button == "r" then
+        if modifiers == "s" then
+            -- shift right click to print "lspsaga"
+            print "lspsaga"
+        end
+        vim.cmd(":" .. line_end) -- jump to node's ending line
+    elseif button == "m" then
+        -- middle click to visual select node
         vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
-    else
-        vim.cmd(":" .. line_start) -- jump to node's starting line
     end
-elseif button == "r" then
-    if modifiers == "s" then
-        -- shift right click to print "lspsaga"
-        print "lspsaga"
-    end
-    vim.cmd(":" .. line_end) -- jump to node's ending line
-elseif button == "m" then
-    -- middle click to visual select node
-    vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
 end
 ```
 
