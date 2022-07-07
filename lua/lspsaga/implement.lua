@@ -36,12 +36,8 @@ function implement.lspsaga_implementation(timeout_ms)
       start_line = range.start.line
     end
 
-    local content = vim.api.nvim_buf_get_lines(
-      bufnr,
-      start_line,
-      range['end'].line + 1 + config.max_preview_lines,
-      false
-    )
+    local content =
+      vim.api.nvim_buf_get_lines(bufnr, start_line, range['end'].line + 1 + config.max_preview_lines, false)
     content = vim.list_extend({ config.definition_preview_icon .. 'Lsp Implements', '' }, content)
     local filetype = vim.api.nvim_buf_get_option(bufnr, 'filetype')
 
