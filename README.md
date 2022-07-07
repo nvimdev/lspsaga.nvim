@@ -149,11 +149,11 @@ saga.init_lsp_saga({
 ```lua
 -- Example:
 local function get_file_name(include_path)
-	local file_name = require("lspsaga.symbolwinbar").get_file_name()
-	if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
-	-- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
+  local file_name = require("lspsaga.symbolwinbar").get_file_name()
+  if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
+  -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
   local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
-	local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
+  local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
   return file_path .. file_name
 end
 
