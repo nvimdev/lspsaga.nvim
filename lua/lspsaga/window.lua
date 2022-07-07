@@ -199,30 +199,6 @@ function M.get_max_float_width()
   return max_width
 end
 
--- get the valid the screen_width
--- if have the file tree in left
--- use vim.o.column - file tree win width
-local function get_valid_screen_width()
-  local screen_width = vim.o.columns
-
-  if vim.fn.winnr('$') > 1 then
-    local special_win = {
-      ['NvimTree'] = true,
-      ['NerdTree'] = true,
-      ['defx'] = true,
-      ['NeoTree'] = true
-    }
-    local first_win_id = api.nvim_list_wins()[1]
-    local bufnr = vim.fn.winbufnr(first_win_id)
-    local buf_ft = api.nvim_buf_get_option(bufnr, 'filetype')
-    if special_win[buf_ft] then
-      screen_width = screen_width - vim.fn.winwidth(first_win_id)
-    end
-    return screen_width
-  end
-  return screen_width
-end
-
 local function get_max_content_length(contents)
   vim.validate({
     contents = { contents, 't' },
@@ -253,6 +229,13 @@ function M.fancy_floating_markdown(contents, opts)
   -- Clean up and add padding
   contents = vim.lsp.util._trim(contents)
 
+  -- clean up again
+  for idx,line in pairs(contents) do
+    if string.len(line) == 0 then
+      table.remove(contents,idx)
+    end
+  end
+
   -- Compute size of float needed to show (wrapped) lines
   opts.wrap_at = opts.wrap_at or (vim.wo['wrap'] and api.nvim_win_get_width(0))
 
@@ -261,7 +244,7 @@ function M.fancy_floating_markdown(contents, opts)
 
   local width = get_max_content_length(contents)
   -- the max width of doc float window keep has 20 pad
-  local WIN_WIDTH = get_valid_screen_width()
+  local WIN_WIDTH = vim.o.columns
 
   local _pad = width / WIN_WIDTH
   if _pad < 1 then
