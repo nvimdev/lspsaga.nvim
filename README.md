@@ -149,38 +149,27 @@ saga.init_lsp_saga({
 ```lua
 -- Example:
 local function get_file_name(include_path)
-	-- Get filetype's icon through nvim-web-devicons
-  local ok, devicons = pcall(require, 'nvim-web-devicons') local f_icon = '' local f_hl = '' if ok then f_icon, f_hl = devicons.get_icon_by_filetype(vim.bo.filetype) end f_icon = f_icon == nil and '' or (f_icon .. ' ') f_hl = f_hl == nil and '' or f_hl
-	-- We will use expand('%:t') for filename
-	local file_name = vim.fn.expand('%:t') if file_name == "" then return "" end -- Check for empty buffer
-	local file_icon_name = '%#' .. f_hl .. '#' .. f_icon .. '%*' .. '%#LspSagaWinbarFile#' .. file_name .. '%*'
-	if include_path == false then return file_icon_name end
-	-- Else include path: ./lsp/saga.lua -> lsp > saga.lua
-  local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/') local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
+	local file_name = require("lspsaga.symbolwinbar").get_file_name()
+	if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
+	-- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
+  local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
+	local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
   return file_path .. file_name
 end
 
 local function config_winbar()
-  local ok,lspsaga = pcall(require,'lspsaga.symbolwinbar')
+  local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
   local sym
-  if ok then
-    sym = lspsaga.get_symbol_node()
-  end
+  if ok then sym = lspsaga.get_symbol_node() end
   local win_val = ''
   win_val = get_file_name(false) -- set to true to include path
-  if sym ~= nil then
-    win_val = win_val .. sym
-  end
+  if sym ~= nil then win_val = win_val .. sym end
   vim.wo.winbar = win_val
 end
 
 vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter', 'CursorMoved','WinLeave' }, {
   pattern = '*',
-  callback = function()
-    if vim.fn.winheight(0) > 1 then
-      config_winbar()
-    end
-  end
+  callback = function() if vim.fn.winheight(0) > 1 then config_winbar() end end
 })
 ```
 
