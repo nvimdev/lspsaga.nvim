@@ -20,6 +20,7 @@ function symbar:get_file_name()
   end
   -- if filetype doesn't match devicon will set f_icon to nil so add a patch
   f_icon = f_icon == nil and '' or f_icon
+  f_hl = f_hl == nil and '' or f_hl
   return '%#' .. f_hl .. '#' .. f_icon .. ' ' .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
 end
 
