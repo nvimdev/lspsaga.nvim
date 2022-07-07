@@ -147,9 +147,25 @@ saga.init_lsp_saga({
 - use `require('lspsaga.symbolwinbar').get_symbol_node` this function in your custom winbar
 
 ```lua
--- example
-
-local ns_prefix = '%#MyWinbar#test%*'
+-- example show file with directory
+-- lua > config > lsp >  saga.lua >  symbol_in_winbar >  click_support >  clicks
+  local function get_file_name()
+  local path_list = vim.split(vim.fn.expand('%:~:.:h'),vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
+  local file_path = ""
+  -- Then generate winbar string. For example:
+  for _, cur in ipairs(path_list) do
+    file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*'
+  end
+  local ok, devicons = pcall(require, 'nvim-web-devicons')
+  local f_icon = ''
+  local f_hl = ''
+  if ok then
+    f_icon, f_hl = devicons.get_icon_by_filetype(vim.bo.filetype)
+  end -- if filetype doesn't match devicon will set f_icon to nil so add a patch
+  f_icon = f_icon == nil and '' or (f_icon .. ' ') -- No icon no space after separator
+  f_hl = f_hl == nil and '' or f_hl
+  return file_path .. '%#' .. f_hl .. '#' .. f_icon .. '%*' .. '%#LspSagaWinbarFile#' .. vim.fn.expand('%:t') .. '%*'
+end
 
 local function config_winbar()
   local ok,lspsaga = pcall(require,'lspsaga.symbolwinbar')
@@ -158,15 +174,15 @@ local function config_winbar()
     sym = lspsaga.get_symbol_node()
   end
   local win_val = ''
-  win_val = ns_prefix
+  win_val = get_file_name()
   if sym ~= nil then
     win_val = win_val .. sym
   end
-  api.nvim_win_set_option(0,'winbar',win_val)
+  vim.wo.winbar = win_val
 end
 
 api.nvim_create_autocmd({'BufEnter','BufWinEnter','CursorMoved'},{
-  pattern = '*.lua',
+  pattern = '*',
   callback = config_winbar
 })
 ```
@@ -378,10 +394,10 @@ vim.keymap.set("n", "[e", require("lspsaga.diagnostic").goto_prev, { silent = tr
 vim.keymap.set("n", "]e", require("lspsaga.diagnostic").goto_next, { silent = true, noremap =true })
 -- or jump to error
 vim.keymap.set("n", "[E", function()
-	require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
+  require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
 end, { silent = true, noremap = true })
 vim.keymap.set("n", "]E", function()
-	require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
+  require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
 end, { silent = true, noremap = true })
 -- or use command
 vim.keymap.set("n", "[e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true, noremap = true })
