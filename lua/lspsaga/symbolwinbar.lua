@@ -41,7 +41,7 @@ local function binary_search(tbl, line)
     mid = bit.rshift(left + right, 1)
     local range
 
-    if tbl[mid].location.range ~= nil then
+    if tbl[mid].location ~= nil then
       range = tbl[mid].location.range
     elseif tbl[mid].range ~= nil then
       range = tbl[mid].range
