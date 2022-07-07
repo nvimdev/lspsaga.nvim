@@ -121,7 +121,7 @@ local render_symbol_winbar = function()
 
   winbar_val = winbar_val .. str
   if not config.in_custom then
-    api.nvim_win_set_option(current_win, 'winbar', winbar_val)
+    vim.wo.winbar = winbar_val
   end
   return winbar_val
 end
