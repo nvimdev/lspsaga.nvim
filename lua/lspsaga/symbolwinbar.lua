@@ -162,6 +162,8 @@ function symbar:get_buf_symbol(force, ...)
 
     self.symbol_cache[current_buf] = { true, results[client_id].result }
 
+		vim.cmd "doautocmd CursorMoved"
+
     if fn ~= nil then
       fn()
     end
