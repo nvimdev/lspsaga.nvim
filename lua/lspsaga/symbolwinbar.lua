@@ -14,14 +14,13 @@ function symbar:get_file_name()
   local file_name = vim.fn.expand('%:t')
   local ok, devicons = pcall(require, 'nvim-web-devicons')
   local f_icon = ''
-  local color = ''
+  local f_hl = ''
   if ok then
-    f_icon, color = devicons.get_icon_color(file_name, vim.bo.filetype)
+    f_icon, f_hl = devicons.get_icon_by_filetype(vim.bo.filetype)
   end
   -- if filetype doesn't match devicon will set f_icon to nil so add a patch
   f_icon = f_icon == nil and '' or f_icon
-  api.nvim_set_hl(0, 'LspSagaWinbarFIcon', { fg = color })
-  return ns_prefix .. 'FIcon#' .. f_icon .. ' ' .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
+  return '%#' .. f_hl .. '#' .. f_icon .. ' ' .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
 end
 
 --@private
