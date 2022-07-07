@@ -39,9 +39,19 @@ local function binary_search(tbl, line)
 
   while true do
     mid = bit.rshift(left + right, 1)
-    if line >= tbl[mid].range.start.line and line <= tbl[mid].range['end'].line then
+    local range
+
+    if tbl[mid].location.range ~= nil then
+      range = tbl[mid].location.range
+    elseif tbl[mid].range ~= nil then
+      range = tbl[mid].range
+    else
+      return nil
+    end
+
+    if line >= range.start.line and line <= range['end'].line then
       return mid
-    elseif line < tbl[mid].range.start.line then
+    elseif line < range.start.line then
       right = mid - 1
       if left > right then
         return nil
