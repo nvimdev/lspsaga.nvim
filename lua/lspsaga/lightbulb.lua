@@ -4,20 +4,20 @@ local config = require('lspsaga').config_values
 local method = 'textDocument/codeAction'
 local lb = {}
 
-local SIGN_GROUP = "sagalightbulb"
-local SIGN_NAME = "LspSagaLightBulb"
+local SIGN_GROUP = 'sagalightbulb'
+local SIGN_NAME = 'LspSagaLightBulb'
 
 if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = "LspSagaLightBulb" })
+  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = 'LspSagaLightBulb' })
 end
 
 local function check_server_support_codeaction()
   local clients = vim.lsp.buf_get_clients()
-    for _,client in pairs(clients) do
-      if client.supports_method("textDocument/codeAction") then
-        return true
-      end
+  for _, client in pairs(clients) do
+    if client.supports_method('textDocument/codeAction') then
+      return true
     end
+  end
   return false
 end
 
@@ -27,34 +27,36 @@ local function _update_virtual_text(line)
 
   if line then
     local icon_with_indent = '  ' .. config.code_action_icon
-    api.nvim_buf_set_extmark(0,namespace,line,-1,{
-        virt_text = { {icon_with_indent,'LspSagaLightBulb'} },
-        virt_text_pos = 'overlay',
-        hl_mode = "combine"
-      })
+    api.nvim_buf_set_extmark(0, namespace, line, -1, {
+      virt_text = { { icon_with_indent, 'LspSagaLightBulb' } },
+      virt_text_pos = 'overlay',
+      hl_mode = 'combine',
+    })
   end
 end
 
 local function _update_sign(line)
-
   local current_buf = api.nvim_get_current_buf()
-  if vim.w.lightbulb_line == 0 then vim.w.lightbulb_line = 1 end
+  if vim.w.lightbulb_line == 0 then
+    vim.w.lightbulb_line = 1
+  end
   if vim.w.lightbulb_line ~= 0 then
-    vim.fn.sign_unplace(
-      SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = current_buf }
-    )
+    vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = current_buf })
   end
 
   if line then
     vim.fn.sign_place(
-      line, SIGN_GROUP, SIGN_NAME, current_buf,
+      line,
+      SIGN_GROUP,
+      SIGN_NAME,
+      current_buf,
       { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
     )
     vim.w.lightbulb_line = line
   end
 end
 
-local function render_action_virtual_text(line,diagnostics,actions)
+local function render_action_virtual_text(line, diagnostics, actions)
   if next(actions) == nil and next(diagnostics) == nil then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(nil)
@@ -68,7 +70,7 @@ local function render_action_virtual_text(line,diagnostics,actions)
     end
 
     if config.code_action_lightbulb.virtual_text then
-        _update_virtual_text(line)
+      _update_virtual_text(line)
     end
   elseif next(actions) ~= nil and next(diagnostics) ~= nil then
     if config.code_action_lightbulb.sign then
@@ -76,7 +78,7 @@ local function render_action_virtual_text(line,diagnostics,actions)
     end
 
     if config.code_action_lightbulb.virtual_text then
-        _update_virtual_text(line)
+      _update_virtual_text(line)
     end
   else
     if config.code_action_lightbulb.virtual_text then
@@ -88,40 +90,42 @@ local function render_action_virtual_text(line,diagnostics,actions)
   end
 end
 
-local send_request  = coroutine.create(function()
+local send_request = coroutine.create(function()
   local current_buf = api.nvim_get_current_buf()
   vim.w.lightbulb_line = vim.w.lightbulb_line or 0
 
   while true do
     local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(current_buf)
-    local context =  { diagnostics = diagnostics }
+    local context = { diagnostics = diagnostics }
     local params = vim.lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
-    vim.lsp.buf_request_all(current_buf,method, params,function(results)
+    vim.lsp.buf_request_all(current_buf, method, params, function(results)
       if libs.result_isempty(results) then
-        results = { { result = {}}}
+        results = { { result = {} } }
       end
       local actions = {}
-      for _,res in pairs(results) do
+      for _, res in pairs(results) do
         if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
-          table.insert(actions,res.result)
+          table.insert(actions, res.result)
         end
       end
-      render_action_virtual_text(line,diagnostics,actions)
+      render_action_virtual_text(line, diagnostics, actions)
     end)
     current_buf = coroutine.yield()
   end
 end)
 
-local render_bulb  = function()
+local render_bulb = function()
   local current_buf = api.nvim_get_current_buf()
-  coroutine.resume(send_request,current_buf)
+  coroutine.resume(send_request, current_buf)
 end
 
 function lb.action_lightbulb()
   local has_code_action = check_server_support_codeaction()
-  if not has_code_action then return end
+  if not has_code_action then
+    return
+  end
   render_bulb()
 end
 

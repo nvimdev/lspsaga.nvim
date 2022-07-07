@@ -1,38 +1,38 @@
-local lsp,api = vim.lsp,vim.api
+local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config_values.symbol_in_winbar
 local saga_group = require('lspsaga').saga_augroup
 local libs = require('lspsaga.libs')
 local symbar = {
-  symbol_cache = {}
+  symbol_cache = {},
 }
 local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
-local winbar_sep = '%#LspSagaWinbarSep#'..config.separator .. '%*'
+local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
   local file_name = vim.fn.expand('%:t')
-  local ok,devicons = pcall(require,'nvim-web-devicons')
+  local ok, devicons = pcall(require, 'nvim-web-devicons')
   local f_icon = ''
   local color = ''
   if ok then
-    f_icon,color = devicons.get_icon_color(file_name,vim.bo.filetype)
+    f_icon, color = devicons.get_icon_color(file_name, vim.bo.filetype)
   end
   -- if filetype doesn't match devicon will set f_icon to nil so add a patch
   f_icon = f_icon == nil and '' or f_icon
-  api.nvim_set_hl(0,'LspSagaWinbarFIcon',{fg=color})
-  return ns_prefix..'FIcon#'..f_icon..' ' ..'%*'.. ns_prefix ..'File#'.. file_name .. '%*'
+  api.nvim_set_hl(0, 'LspSagaWinbarFIcon', { fg = color })
+  return ns_prefix .. 'FIcon#' .. f_icon .. ' ' .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
 end
 
 --@private
 local do_symbol_request = function(callback)
   local current_buf = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
-  lsp.buf_request_all(current_buf,method,params,callback)
+  lsp.buf_request_all(current_buf, method, params, callback)
 end
 
 --@private
-local function binary_search(tbl,line)
+local function binary_search(tbl, line)
   local left = 1
   local right = #tbl
   local mid = 0
@@ -42,7 +42,7 @@ local function binary_search(tbl,line)
     if line >= tbl[mid].range.start.line and line <= tbl[mid].range['end'].line then
       return mid
     elseif line < tbl[mid].range.start.line then
-      right = mid -1
+      right = mid - 1
       if left > right then
         return nil
       end
@@ -66,17 +66,19 @@ function _G.___lspsaga_winbar_click(id, clicks, button, modifiers)
 end
 
 --@private
-local function find_in_node(tbl,line,elements)
-  local mid = binary_search(tbl,line)
-  if mid == nil then return end
+local function find_in_node(tbl, line, elements)
+  local mid = binary_search(tbl, line)
+  if mid == nil then
+    return
+  end
 
   local node = tbl[mid]
-  local type,icon = '',''
+  local type, icon = '', ''
 
   type = kind[node.kind][1]
   icon = kind[node.kind][2]
 
-  local click = ""
+  local click = ''
   if config.click_support ~= false then
     click_node_cnt = click_node_cnt + 1
     click_node[click_node_cnt] = node.range
@@ -87,7 +89,7 @@ local function find_in_node(tbl,line,elements)
   table.insert(elements, node_context)
 
   if node.children ~= nil and next(node.children) ~= nil then
-    find_in_node(node.children,line,elements)
+    find_in_node(node.children, line, elements)
   end
 end
 
@@ -110,8 +112,8 @@ local render_symbol_winbar = function()
   if config.click_support ~= false then
     click_node = {}
   end
-  find_in_node(symbols,current_line - 1,winbar_elements)
-  local str = table.concat(winbar_elements,winbar_sep)
+  find_in_node(symbols, current_line - 1, winbar_elements)
+  local str = table.concat(winbar_elements, winbar_sep)
 
   if config.show_file and next(winbar_elements) ~= nil then
     str = winbar_sep .. str
@@ -119,12 +121,12 @@ local render_symbol_winbar = function()
 
   winbar_val = winbar_val .. str
   if not config.in_custom then
-    api.nvim_win_set_option(current_win,'winbar',winbar_val)
+    api.nvim_win_set_option(current_win, 'winbar', winbar_val)
   end
   return winbar_val
 end
 
-function symbar:get_buf_symbol(force,...)
+function symbar:get_buf_symbol(force, ...)
   if not libs.check_lsp_active() then
     return
   end
@@ -137,7 +139,7 @@ function symbar:get_buf_symbol(force,...)
 
   local clients = vim.lsp.buf_get_clients()
   local client_id
-  for id,conf in pairs(clients) do
+  for id, conf in pairs(clients) do
     if conf.server_capabilities.documentHighlightProvider then
       client_id = id
       break
@@ -145,11 +147,11 @@ function symbar:get_buf_symbol(force,...)
   end
 
   if client_id == nil then
-    vim.notify('All servers of this buffer does not support '..method)
+    vim.notify('All servers of this buffer does not support ' .. method)
     return
   end
 
-  local arg = {...}
+  local arg = { ... }
   local fn
   if next(arg) ~= nil then
     fn = unpack(arg)
@@ -160,7 +162,7 @@ function symbar:get_buf_symbol(force,...)
       return
     end
 
-    self.symbol_cache[current_buf] = {true,results[client_id].result}
+    self.symbol_cache[current_buf] = { true, results[client_id].result }
 
     if fn ~= nil then
       fn()
@@ -171,31 +173,31 @@ function symbar:get_buf_symbol(force,...)
 end
 
 --@private
-local function removeElementByKey(tbl,key)
-  local tmp ={}
+local function removeElementByKey(tbl, key)
+  local tmp = {}
 
   for i in pairs(tbl) do
-    table.insert(tmp,i)
+    table.insert(tmp, i)
   end
 
   local newTbl = {}
   local i = 1
   while i <= #tmp do
-    local val = tmp [i]
+    local val = tmp[i]
     if val == key then
-      table.remove(tmp,i)
-     else
+      table.remove(tmp, i)
+    else
       newTbl[val] = tbl[val]
       i = i + 1
-     end
-   end
+    end
+  end
   return newTbl
 end
 
 function symbar:clear_cache()
   local current_buf = api.nvim_get_current_buf()
   if self.symbol_cache[current_buf] then
-    self.symbol_cache = removeElementByKey(self.symbol_cache,current_buf)
+    self.symbol_cache = removeElementByKey(self.symbol_cache, current_buf)
   end
 end
 
@@ -205,53 +207,53 @@ local function symbol_events()
 
   local update_symbols = function()
     if cache[current_buf] == nil or next(cache[current_buf]) == nil then
-      symbar:get_buf_symbol(true,render_symbol_winbar)
+      symbar:get_buf_symbol(true, render_symbol_winbar)
     else
       render_symbol_winbar()
     end
   end
 
-  api.nvim_create_autocmd({'CursorHold','CursorMoved'},{
+  api.nvim_create_autocmd({ 'CursorHold', 'CursorMoved' }, {
     group = saga_group,
     buffer = current_buf,
     callback = update_symbols,
-    desc = 'Lspsaga symbols'
+    desc = 'Lspsaga symbols',
   })
 
-  api.nvim_create_autocmd({'TextChanged','InsertLeave'},{
+  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
     group = saga_group,
     buffer = current_buf,
     callback = function()
       if config.in_custom then
         symbar:get_buf_symbol(true)
       else
-        symbar:get_buf_symbol(true,render_symbol_winbar)
+        symbar:get_buf_symbol(true, render_symbol_winbar)
       end
     end,
-    desc = 'Lspsaga update symbols'
+    desc = 'Lspsaga update symbols',
   })
 
-  api.nvim_create_autocmd('BufDelete',{
+  api.nvim_create_autocmd('BufDelete', {
     group = saga_group,
     buffer = current_buf,
     callback = function()
       symbar:clear_cache()
     end,
-    desc = 'Lspsaga clear document symbol cache'
+    desc = 'Lspsaga clear document symbol cache',
   })
 end
 
 function symbar.config_symbol_autocmd()
-  api.nvim_create_autocmd('LspAttach',{
+  api.nvim_create_autocmd('LspAttach', {
     group = saga_group,
     callback = symbol_events,
-    desc = 'Lspsaga get and show symbols'
+    desc = 'Lspsaga get and show symbols',
   })
 end
 
 -- work with custom winbar
 function symbar.get_symbol_node()
---   symbar.config_symbol_autocmd()
+  --   symbar.config_symbol_autocmd()
   return render_symbol_winbar()
 end
 
