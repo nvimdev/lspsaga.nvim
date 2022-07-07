@@ -149,27 +149,27 @@ saga.init_lsp_saga({
 ```lua
 -- Example:
 local function get_file_name(include_path)
-  local file_name = require("lspsaga.symbolwinbar").get_file_name()
-  if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
-  -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-  local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
-  local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
-  return file_path .. file_name
+    local file_name = require("lspsaga.symbolwinbar").get_file_name()
+    if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
+    -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
+    local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
+    local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
+    return file_path .. file_name
 end
 
 local function config_winbar()
-  local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
-  local sym
-  if ok then sym = lspsaga.get_symbol_node() end
-  local win_val = ''
-  win_val = get_file_name(false) -- set to true to include path
-  if sym ~= nil then win_val = win_val .. sym end
-  vim.wo.winbar = win_val
+    local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
+    local sym
+    if ok then sym = lspsaga.get_symbol_node() end
+    local win_val = ''
+    win_val = get_file_name(false) -- set to true to include path
+    if sym ~= nil then win_val = win_val .. sym end
+    vim.wo.winbar = win_val
 end
 
 vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter', 'CursorMoved','WinLeave' }, {
-  pattern = '*',
-  callback = function() if vim.fn.winheight(0) > 1 then config_winbar() end end
+    pattern = '*',
+    callback = function() if vim.fn.winheight(0) > 1 then config_winbar() end end
 })
 ```
 
@@ -180,25 +180,26 @@ To enable click support for winbar define a function similar to
 minwid will be replaced with current node's range = [line_start, line_end]. For example:
 
 ```lua
-click_support = function(line_start, line_end, clicks, button, modifiers)
+click_support = function(node, clicks, button, modifiers)
+    -- To see all avaiable defails: vim.pretty_print(node)
+    local st = node.range.start
+    local en = node.range['end']
     if button == "l" then
         if clicks == 2 then
-            -- double left click to visual select node
-            vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
-        else
-            vim.cmd(":" .. line_start) -- jump to node's starting line
+            -- double left click to do nothing
+        else -- jump to node's starting line+char
+            vim.fn.cursor(st.line + 1, st.character)
         end
     elseif button == "r" then
         if modifiers == "s" then
-            -- shift right click to print "lspsaga"
-            print "lspsaga"
-        end
-        vim.cmd(":" .. line_end) -- jump to node's ending line
+            print "lspsaga" -- shift right click to print "lspsaga"
+        end -- jump to node's ending line+char
+        vim.fn.cursor(en.line + 1, en.character)
     elseif button == "m" then
         -- middle click to visual select node
-        vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
+        vim.cmd("execute 'normal vv'  | " .. st.line + 1 .. "mark < | " .. en.line + 1 .. "mark > | normal gvV")
     end
-end
+end,
 ```
 
 ## Mappings

@@ -60,9 +60,7 @@ local click_node_cnt = 0
 -- @v:lua@ in the tabline only supports global functions, so this is
 -- the only way to add click handlers without autoloaded vimscript functions
 function _G.___lspsaga_winbar_click(id, clicks, button, modifiers)
-  local up = click_node[id].range.start.line + 1
-  local down = click_node[id]['end'].range.line + 1
-  config.click_support(up, down, clicks, button, modifiers)
+  config.click_support(click_node[id], clicks, button, modifiers)
 end
 
 --@private
@@ -110,7 +108,7 @@ local render_symbol_winbar = function()
   local winbar_elements = {}
 
   if config.click_support ~= false then
-    click_node = {}
+    click_node_cnt = 0
   end
   find_in_node(symbols, current_line - 1, winbar_elements)
   local str = table.concat(winbar_elements, winbar_sep)
