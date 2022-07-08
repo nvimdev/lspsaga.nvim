@@ -145,6 +145,7 @@ saga.init_lsp_saga({
 ```
 
 - use `require('lspsaga.symbolwinbar').get_symbol_node` this function in your custom winbar
+to get symbols node and set `User LspsagaUpdateSymbol` event in your autocmds
 
 ```lua
 -- Example:

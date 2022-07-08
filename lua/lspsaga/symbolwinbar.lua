@@ -175,6 +175,10 @@ function symbar:get_buf_symbol(force, ...)
     if fn ~= nil then
       fn()
     end
+
+    api.nvim_exec_autocmds('User LspsagaUpdateSymbol',{
+      modeline = false
+    })
   end
 
   do_symbol_request(_callback)
