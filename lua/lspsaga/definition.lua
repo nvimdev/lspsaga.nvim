@@ -61,8 +61,12 @@ function def.preview_definition(timeout_ms)
       start_line = range.start.line
     end
 
-    local content =
-      vim.api.nvim_buf_get_lines(bufnr, start_line, range['end'].line + 1 + config.max_preview_lines, false)
+    local content = vim.api.nvim_buf_get_lines(
+      bufnr,
+      start_line,
+      range['end'].line + 1 + config.max_preview_lines,
+      false
+    )
     content = vim.list_extend({ config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' }, content)
 
     local opts = {

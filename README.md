@@ -151,34 +151,33 @@ to get symbols node and set `User LspsagaUpdateSymbol` event in your autocmds
 -- Example:
 local function get_file_name(include_path)
     local file_name = require("lspsaga.symbolwinbar").get_file_name()
-    if vim.fn.bufname("%") == "" then return "" end
+    if vim.fn.bufname "%" == "" then return "" end
     if include_path == false then return file_name end
     -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-    local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
-    local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
+    local path_list = vim.split(vim.fn.expand "%:~:.:h", vim.loop.os_uname().sysname == "Windows" and "\\" or "/")
+    local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. " " .. "%#LspSagaWinbarSep#>%*" .. " %*" end
     return file_path .. file_name
 end
 
 local function config_winbar()
-    local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
+    local ok, lspsaga = pcall(require, "lspsaga.symbolwinbar")
     local sym
     if ok then sym = lspsaga.get_symbol_node() end
-    local win_val = ''
+    local win_val = ""
     win_val = get_file_name(false) -- set to true to include path
     if sym ~= nil then win_val = win_val .. sym end
     vim.wo.winbar = win_val
 end
 
-vim.api.nvim_create_autocmd({ 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }, {
-    pattern = '*',
-    callback = function()
-        if vim.api.nvim_win_get_config(0).zindex then -- Ignore float windows
-            vim.wo.winbar = ""
-        else
-            config_winbar()
-        end
-    end
-})
+vim.api.nvim_create_autocmd( { "CursorHold", "BufEnter", "BufWinEnter", "CursorMoved", "WinLeave", "User LspasgaUpdateSymbol" }, {
+        pattern = "*",
+        callback = function()
+            if vim.api.nvim_win_get_config(0).zindex or vim.bo.buftype == "terminal" then -- Ignore float windows and terminal
+                vim.wo.winbar = ""
+            else config_winbar() end
+        end,
+    }
+)
 ```
 
 ## Support Click in symbols winbar
