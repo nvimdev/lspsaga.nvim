@@ -172,17 +172,15 @@ function symbar:get_buf_symbol(force, ...)
 
     self.symbol_cache[current_buf] = { true, results[client_id].result }
 
-    if config.in_custom then
-      vim.cmd('doautocmd User LspasgaUpdateSymbol')
-    end
-
     if fn ~= nil then
       fn()
     end
 
-    api.nvim_exec_autocmds('User LspsagaUpdateSymbol', {
-      modeline = false,
-    })
+    if config.in_custom then
+      api.nvim_exec_autocmds('User LspsagaUpdateSymbol', {
+        modeline = false,
+      })
+    end
   end
 
   do_symbol_request(_callback)
@@ -269,7 +267,6 @@ end
 
 -- work with custom winbar
 function symbar.get_symbol_node()
-  --   symbar.config_symbol_autocmd()
   return render_symbol_winbar()
 end
 
