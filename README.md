@@ -168,9 +168,13 @@ local function config_winbar()
     vim.wo.winbar = win_val
 end
 
-api.nvim_create_autocmd({'BufEnter','BufWinEnter','CursorMoved','User LspsagaUpdateSymbol'},{
-  pattern = '*.lua',
-  callback = config_winbar
+vim.api.nvim_create_autocmd({ 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }, {
+  pattern = '*',
+  callback = function()
+        if vim.fn.winheight(0) > 1 then -- Important if you use telescope
+            config_winbar()
+        end
+    end
 })
 ```
 
