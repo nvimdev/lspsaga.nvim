@@ -175,13 +175,13 @@ vim.api.nvim_create_autocmd({ 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMo
 
 ## Support Click in symbols winbar
 
-To enable click support for winbar define a function similar to
-[statusline](https://neovim.io/doc/user/options.html#'statusline') ( Search for "Start of execute function label" part)
+To enable click support for winbar define a function similar to [statusline](https://neovim.io/doc/user/options.html#'statusline') (Search for "Start of execute function label")
+
 minwid will be replaced with current node. For example:
 
 ```lua
 click_support = function(node, clicks, button, modifiers)
-    -- To see all avaiable defails: vim.pretty_print(node)
+    -- To see all avaiable details: vim.pretty_print(node)
     local st = node.range.start
     local en = node.range['end']
     if button == "l" then
