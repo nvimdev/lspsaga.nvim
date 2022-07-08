@@ -167,7 +167,7 @@ local function config_winbar()
     vim.wo.winbar = win_val
 end
 
-vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter', 'CursorHold', 'CursorMoved', 'WinLeave' }, {
+vim.api.nvim_create_autocmd({ 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave' }, {
     pattern = '*',
     callback = function() if vim.fn.winheight(0) > 1 then config_winbar() end end
 })
@@ -202,7 +202,6 @@ click_support = function(node, clicks, button, modifiers)
         vim.fn.cursor(en.line + 1, en.character + 1)
     end
 end
-},
 ```
 
 ## Mappings
