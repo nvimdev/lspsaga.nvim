@@ -150,11 +150,17 @@ to get symbols node and set `User LspsagaUpdateSymbol` event in your autocmds
 ```lua
 -- Example:
 local function get_file_name(include_path)
-    local file_name = require("lspsaga.symbolwinbar").get_file_name()
-    if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
+    local file_name = require('lspsaga.symbolwinbar').get_file_name()
+    if vim.fn.bufname '%' == '' then return '' end
+    if include_path == false then return file_name end
+    local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
     -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-    local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
-    local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
+    local path_list = vim.split(vim.fn.expand '%:~:.:h', sep)
+    local file_path = ''
+    for _, cur in ipairs(path_list) do
+      file_path = (cur == '.' or cur == '~') and '' or
+                    file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*'
+    end
     return file_path .. file_name
 end
 
@@ -168,13 +174,23 @@ local function config_winbar()
     vim.wo.winbar = win_val
 end
 
-vim.api.nvim_create_autocmd({ 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }, {
+local events = { 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }
+
+local exclude = {
+    ['teminal'] = true,
+    ['prompt'] = true
+}
+
+vim.api.nvim_create_autocmd(events, {
     pattern = '*',
     callback = function()
-        if vim.fn.winheight(0) > 1 then -- Important if you use telescope
+        -- Ignore float windows and exclude filetype
+        if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
+            vim.wo.winbar = ''
+        else
             config_winbar()
         end
-    end
+    end,
 })
 ```
 
