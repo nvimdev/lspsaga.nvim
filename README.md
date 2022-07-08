@@ -145,56 +145,66 @@ saga.init_lsp_saga({
 ```
 
 - use `require('lspsaga.symbolwinbar').get_symbol_node` this function in your custom winbar
+to get symbols node and set `User LspsagaUpdateSymbol` event in your autocmds
 
 ```lua
--- example
-
-local ns_prefix = '%#MyWinbar#test%*'
-
-local function config_winbar()
-  local ok,lspsaga = pcall(require,'lspsaga.symbolwinbar')
-  local sym
-  if ok then
-    sym = lspsaga.get_symbol_node()
-  end
-  local win_val = ''
-  win_val = ns_prefix
-  if sym ~= nil then
-    win_val = win_val .. sym
-  end
-  api.nvim_win_set_option(0,'winbar',win_val)
+-- Example:
+local function get_file_name(include_path)
+    local file_name = require("lspsaga.symbolwinbar").get_file_name()
+    if include_path == false then return require("lspsaga.symbolwinbar").get_file_name() end
+    -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
+    local path_list = vim.split(vim.fn.expand('%:~:.:h'), vim.loop.os_uname().sysname == "Windows" and '\\' or '/')
+    local file_path = "" for _, cur in ipairs(path_list) do file_path = (cur == "." or cur == "~") and "" or file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*' end
+    return file_path .. file_name
 end
 
-api.nvim_create_autocmd({'BufEnter','BufWinEnter','CursorMoved'},{
-  pattern = '*.lua',
-  callback = config_winbar
+local function config_winbar()
+    local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
+    local sym
+    if ok then sym = lspsaga.get_symbol_node() end
+    local win_val = ''
+    win_val = get_file_name(false) -- set to true to include path
+    if sym ~= nil then win_val = win_val .. sym end
+    vim.wo.winbar = win_val
+end
+
+vim.api.nvim_create_autocmd({ 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }, {
+    pattern = '*',
+    callback = function()
+        if vim.fn.winheight(0) > 1 then -- Important if you use telescope
+            config_winbar()
+        end
+    end
 })
 ```
 
 ## Support Click in symbols winbar
 
-To enable click support for winbar define a function similar to
-[statusline](https://neovim.io/doc/user/options.html#'statusline') ( Search for "Start of execute function label" part)
-minwid will be replaced with current node's range = [line_start, line_end]. For example:
+To enable click support for winbar define a function similar to [statusline](https://neovim.io/doc/user/options.html#'statusline') (Search for "Start of execute function label")
+
+minwid will be replaced with current node. For example:
 
 ```lua
-click_support = function(line_start, line_end, clicks, button, modifiers)
+click_support = function(node, clicks, button, modifiers)
+    -- To see all avaiable details: vim.pretty_print(node)
+    local st = node.range.start
+    local en = node.range['end']
     if button == "l" then
         if clicks == 2 then
-            -- double left click to visual select node
-            vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
-        else
-            vim.cmd(":" .. line_start) -- jump to node's starting line
+            -- double left click to do nothing
+        else -- jump to node's starting line+char
+            vim.fn.cursor(st.line + 1, st.character + 1)
         end
     elseif button == "r" then
         if modifiers == "s" then
-            -- shift right click to print "lspsaga"
-            print "lspsaga"
-        end
-        vim.cmd(":" .. line_end) -- jump to node's ending line
+            print "lspsaga" -- shift right click to print "lspsaga"
+        end -- jump to node's ending line+char
+        vim.fn.cursor(en.line + 1, en.character + 1)
     elseif button == "m" then
         -- middle click to visual select node
-        vim.cmd("execute 'normal vv' | " .. line_start .. "mark < | " .. line_end .. "mark > | normal gvV")
+        vim.fn.cursor(st.line + 1, st.character + 1)
+        vim.cmd "normal v"
+        vim.fn.cursor(en.line + 1, en.character + 1)
     end
 end
 ```
@@ -378,10 +388,10 @@ vim.keymap.set("n", "[e", require("lspsaga.diagnostic").goto_prev, { silent = tr
 vim.keymap.set("n", "]e", require("lspsaga.diagnostic").goto_next, { silent = true, noremap =true })
 -- or jump to error
 vim.keymap.set("n", "[E", function()
-	require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
+  require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
 end, { silent = true, noremap = true })
 vim.keymap.set("n", "]E", function()
-	require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
+  require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
 end, { silent = true, noremap = true })
 -- or use command
 vim.keymap.set("n", "[e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true, noremap = true })
