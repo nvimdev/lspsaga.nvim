@@ -145,6 +145,7 @@ saga.init_lsp_saga({
 ```
 
 - use `require('lspsaga.symbolwinbar').get_symbol_node` this function in your custom winbar
+to get symbols node and set `User LspsagaUpdateSymbol` event in your autocmds
 
 ```lua
 -- example
@@ -165,7 +166,7 @@ local function config_winbar()
   api.nvim_win_set_option(0,'winbar',win_val)
 end
 
-api.nvim_create_autocmd({'BufEnter','BufWinEnter','CursorMoved'},{
+api.nvim_create_autocmd({'BufEnter','BufWinEnter','CursorMoved','User LspsagaUpdateSymbol'},{
   pattern = '*.lua',
   callback = config_winbar
 })
