@@ -173,7 +173,11 @@ end
 vim.api.nvim_create_autocmd( { 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }, {
     pattern = '*',
     callback = function()
-        if vim.api.nvim_win_get_config(0).zindex or vim.bo.buftype == 'terminal' then -- Ignore float windows and terminal
+        local exclude = {
+            ['teminal'] = true,
+            ['prompt'] = true
+        } -- Ignore float windows and exclude filetype
+        if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
             vim.wo.winbar = ''
         else
             config_winbar()
