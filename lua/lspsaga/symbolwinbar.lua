@@ -162,9 +162,9 @@ function symbar:get_buf_symbol(force, ...)
 
     self.symbol_cache[current_buf] = { true, results[client_id].result }
 
-		if config.in_custom == true then
-			vim.cmd "doautocmd CursorHold"
-		end
+    if config.in_custom == true then
+      vim.cmd('doautocmd CursorHold')
+    end
 
     if fn ~= nil then
       fn()
