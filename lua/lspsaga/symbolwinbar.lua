@@ -19,9 +19,9 @@ function symbar:get_file_name()
     f_icon, f_hl = devicons.get_icon_by_filetype(vim.bo.filetype)
   end
   -- if filetype doesn't match devicon will set f_icon to nil so add a patch
-  f_icon = f_icon == nil and '' or f_icon
+	f_icon = f_icon == nil and '' or (f_icon .. ' ')
   f_hl = f_hl == nil and '' or f_hl
-  return '%#' .. f_hl .. '#' .. f_icon .. ' ' .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
+  return '%#' .. f_hl .. '#' .. f_icon .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
 end
 
 --@private
