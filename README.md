@@ -168,8 +168,8 @@ local function config_winbar()
 end
 
 api.nvim_create_autocmd({'BufEnter','BufWinEnter','CursorMoved','User LspsagaUpdateSymbol'},{
-    pattern = '*',
-    callback = function() if vim.fn.winheight(0) > 1 then config_winbar() end end
+  pattern = '*.lua',
+  callback = config_winbar
 })
 ```
 
