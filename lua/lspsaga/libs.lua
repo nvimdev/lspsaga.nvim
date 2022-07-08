@@ -7,7 +7,7 @@ function libs.is_windows()
   return vim.loop.os_uname().sysname:find('Windows', 1, true) and true
 end
 
-local path_sep = libs.is_windows() and '\\' or '/'
+libs.path_sep = libs.is_windows() and '\\' or '/'
 
 function libs.get_home_dir()
   if libs.is_windows() then
@@ -73,23 +73,6 @@ function libs.result_isempty(res)
     end
   end
   return false
-end
-
-function libs.split_by_pathsep(text, start_pos)
-  local pattern = libs.is_windows() and path_sep or '/' .. path_sep
-  local short_text = ''
-  local split_table = {}
-  for word in text:gmatch('[^' .. pattern .. ']+') do
-    table.insert(split_table, word)
-  end
-
-  for i = start_pos, #split_table, 1 do
-    short_text = short_text .. split_table[i]
-    if i ~= #split_table then
-      short_text = short_text .. path_sep
-    end
-  end
-  return short_text
 end
 
 function libs.get_lsp_root_dir()

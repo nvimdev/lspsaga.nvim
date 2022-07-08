@@ -3,10 +3,10 @@ local kind = require('lspsaga.lspkind')
 local api, lsp, fn, co = vim.api, vim.lsp, vim.fn, coroutine
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
-local home_dir = libs.get_home_dir()
 local scroll_in_win = require('lspsaga.action').scroll_in_win
 local saga_augroup = require('lspsaga').saga_augroup
 local symbar = require('lspsaga.symbolwinbar')
+local path_sep = libs.path_sep
 
 local methods = { 'textDocument/definition', 'textDocument/references' }
 
@@ -166,14 +166,11 @@ function Finder:create_finder_contents(result, method, root_dir)
     -- reduce filename length by root_dir or home dir
     if link:find(root_dir, 1, true) then
       short_name = link:sub(root_dir:len() + 2)
-    elseif link:find(home_dir, 1, true) then
-      short_name = link:sub(home_dir:len() + 2)
-      -- some definition still has a too long path prefix
-      if #short_name > 40 then
-        short_name = libs.split_by_pathsep(short_name, 4)
-      end
     else
-      short_name = libs.split_by_pathsep(link, 4)
+      local _split = vim.split(link,path_sep)
+      if #_split > 5 then
+        short_name = table.concat(_split,path_sep,#_split - 2,#_split)
+      end
     end
 
     local target_line = '[' .. index .. ']' .. ' ' .. short_name
