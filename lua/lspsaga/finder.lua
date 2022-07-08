@@ -432,7 +432,7 @@ function Finder:auto_open_preview()
       self:close_auto_preview_win()
       local bufnr, winid = window.create_win_with_border(content_opts, opts)
       api.nvim_buf_set_option(bufnr, 'buflisted', false)
-      if config.symbol_in_winbar then
+      if config.symbol_in_winbar.enable then
         api.nvim_win_set_option(winid, 'winbar', '')
       end
       local last_lnum = #content > config.max_preview_lines and config.max_preview_lines or #content
