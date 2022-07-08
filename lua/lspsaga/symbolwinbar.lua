@@ -70,9 +70,7 @@ local click_node_cnt = 0
 -- @v:lua@ in the tabline only supports global functions, so this is
 -- the only way to add click handlers without autoloaded vimscript functions
 function _G.___lspsaga_winbar_click(id, clicks, button, modifiers)
-  local up = click_node[id].start.line + 1
-  local down = click_node[id]['end'].line + 1
-  config.click_support(up, down, clicks, button, modifiers)
+  config.click_support(click_node[id], clicks, button, modifiers)
 end
 
 --@private
@@ -91,7 +89,7 @@ local function find_in_node(tbl, line, elements)
   local click = ''
   if config.click_support ~= false then
     click_node_cnt = click_node_cnt + 1
-    click_node[click_node_cnt] = node.range
+    click_node[click_node_cnt] = node
     click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
   end
 
@@ -120,7 +118,7 @@ local render_symbol_winbar = function()
   local winbar_elements = {}
 
   if config.click_support ~= false then
-    click_node = {}
+    click_node_cnt = 0
   end
   find_in_node(symbols, current_line - 1, winbar_elements)
   local str = table.concat(winbar_elements, winbar_sep)
@@ -174,12 +172,16 @@ function symbar:get_buf_symbol(force, ...)
 
     self.symbol_cache[current_buf] = { true, results[client_id].result }
 
+    if config.in_custom then
+      vim.cmd('doautocmd User LspasgaUpdateSymbol')
+    end
+
     if fn ~= nil then
       fn()
     end
 
-    api.nvim_exec_autocmds('User LspsagaUpdateSymbol',{
-      modeline = false
+    api.nvim_exec_autocmds('User LspsagaUpdateSymbol', {
+      modeline = false,
     })
   end
 
