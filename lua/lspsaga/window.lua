@@ -231,9 +231,15 @@ function M.fancy_floating_markdown(contents, opts)
 
   -- clean up again
   for idx,line in pairs(contents) do
-    if string.len(line) == 0 then
+    if line:len() == 0 then
       table.remove(contents,idx)
     end
+
+    if line:find('\\.') then
+      print(line)
+      line = line:gsub('\\.','')
+    end
+
   end
 
   -- Compute size of float needed to show (wrapped) lines
@@ -253,7 +259,7 @@ function M.fancy_floating_markdown(contents, opts)
     width = math.floor(WIN_WIDTH * 0.6)
   end
 
-  print(vim.inspect(contents))
+--   print(vim.inspect(contents))
 
   local max_height = math.ceil((WIN_HEIGHT - 4) * 0.5)
 

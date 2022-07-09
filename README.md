@@ -132,10 +132,10 @@ symbol_in_winbar = {
 server_filetype_map = {},
 ```
 
-## symbolbar with your custom winbar
+### symbolbar with your custom winbar
 
 - enable in custom
-  
+
 ```lua
 saga.init_lsp_saga({
     symbol_in_winbar = {
@@ -194,7 +194,7 @@ vim.api.nvim_create_autocmd(events, {
 })
 ```
 
-## Support Click in symbols winbar
+### Support Click in symbols winbar
 
 To enable click support for winbar define a function similar to [statusline](https://neovim.io/doc/user/options.html#'statusline') (Search for "Start of execute function label")
 
