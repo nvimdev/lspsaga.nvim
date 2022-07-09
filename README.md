@@ -64,7 +64,7 @@ saga.init_lsp_saga()
 
 -- use custom config
 saga.init_lsp_saga({
-    -- put optionin there
+    -- put modified options in there
 })
 
 -- Options with default value
@@ -132,9 +132,10 @@ symbol_in_winbar = {
 server_filetype_map = {},
 ```
 
-## symbolbar with your custom winbar
+## Show symbols in winbar need neovim 0.8+
 
-- enable in custom
+<details>
+<summary> work with custom winbar </summary>
   
 ```lua
 saga.init_lsp_saga({
@@ -194,36 +195,43 @@ vim.api.nvim_create_autocmd(events, {
 })
 ```
 
-## Support Click in symbols winbar
+</details>
+
+<details>
+
+<summary>Support Click in symbols winbar</summary>
 
 To enable click support for winbar define a function similar to [statusline](https://neovim.io/doc/user/options.html#'statusline') (Search for "Start of execute function label")
 
 minwid will be replaced with current node. For example:
 
 ```lua
-click_support = function(node, clicks, button, modifiers)
-    -- To see all avaiable details: vim.pretty_print(node)
-    local st = node.range.start
-    local en = node.range['end']
-    if button == "l" then
-        if clicks == 2 then
-            -- double left click to do nothing
-        else -- jump to node's starting line+char
+symbol_in_bar = {
+    click_support = function(node, clicks, button, modifiers)
+        -- To see all avaiable details: vim.pretty_print(node)
+        local st = node.range.start
+        local en = node.range['end']
+        if button == "l" then
+            if clicks == 2 then
+                -- double left click to do nothing
+            else -- jump to node's starting line+char
+                vim.fn.cursor(st.line + 1, st.character + 1)
+            end
+        elseif button == "r" then
+            if modifiers == "s" then
+                print "lspsaga" -- shift right click to print "lspsaga"
+            end -- jump to node's ending line+char
+            vim.fn.cursor(en.line + 1, en.character + 1)
+        elseif button == "m" then
+            -- middle click to visual select node
             vim.fn.cursor(st.line + 1, st.character + 1)
+            vim.cmd "normal v"
+            vim.fn.cursor(en.line + 1, en.character + 1)
         end
-    elseif button == "r" then
-        if modifiers == "s" then
-            print "lspsaga" -- shift right click to print "lspsaga"
-        end -- jump to node's ending line+char
-        vim.fn.cursor(en.line + 1, en.character + 1)
-    elseif button == "m" then
-        -- middle click to visual select node
-        vim.fn.cursor(st.line + 1, st.character + 1)
-        vim.cmd "normal v"
-        vim.fn.cursor(en.line + 1, en.character + 1)
     end
-end
+}
 ```
+</details>
 
 ## Mappings
 
