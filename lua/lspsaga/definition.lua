@@ -1,10 +1,10 @@
 local libs, window = require('lspsaga.libs'), require('lspsaga.window')
-local home_dir = libs.get_home_dir()
 local config = require('lspsaga').config_values
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local scroll_in_win = require('lspsaga.action').scroll_in_win
 local def = {}
 local saga_augroup = require('lspsaga').saga_augroup
+local path_sep = libs.path_sep
 
 function def.preview_definition(timeout_ms)
   if not libs.check_lsp_active() then
@@ -40,14 +40,11 @@ function def.preview_definition(timeout_ms)
     -- reduce filename length by root_dir or home dir
     if link:find(root_dir, 1, true) then
       short_name = link:sub(root_dir:len() + 2)
-    elseif link:find(home_dir, 1, true) then
-      short_name = link:sub(home_dir:len() + 2)
-      -- some definition still has a too long path prefix
-      if #short_name > 40 then
-        short_name = libs.split_by_pathsep(short_name, 4)
-      end
     else
-      short_name = libs.split_by_pathsep(link, 4)
+      local _split = vim.split(link,path_sep)
+      if #_split > 5 then
+        short_name = table.concat(_split,path_sep,#_split - 2,#_split)
+      end
     end
 
     if not vim.api.nvim_buf_is_loaded(bufnr) then
