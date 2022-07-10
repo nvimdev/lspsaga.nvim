@@ -219,15 +219,18 @@ local function symbol_events()
   local current_buf = api.nvim_get_current_buf()
   local cache = symbar.symbol_cache
 
-  local update_symbols = function()
-    if cache[current_buf] == nil or next(cache[current_buf]) == nil then
-      symbar:get_buf_symbol(true, render_symbol_winbar)
+  local update_symbols = function(force)
+    force = force or true
+    if cache[current_buf] == nil or next(cache[current_buf]) == nil or force then
+      symbar:get_buf_symbol(force, render_symbol_winbar)
     else
       render_symbol_winbar()
     end
   end
 
-  api.nvim_create_autocmd({ 'CursorHold', 'CursorMoved' }, {
+  update_symbols(true)
+
+  api.nvim_create_autocmd('CursorMoved', {
     group = saga_group,
     buffer = current_buf,
     callback = update_symbols,
