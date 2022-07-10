@@ -41,9 +41,9 @@ function def.preview_definition(timeout_ms)
     if link:find(root_dir, 1, true) then
       short_name = link:sub(root_dir:len() + 2)
     else
-      local _split = vim.split(link,path_sep)
+      local _split = vim.split(link, path_sep)
       if #_split > 5 then
-        short_name = table.concat(_split,path_sep,#_split - 2,#_split)
+        short_name = table.concat(_split, path_sep, #_split - 2, #_split)
       end
     end
 
