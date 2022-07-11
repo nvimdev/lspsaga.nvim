@@ -5,6 +5,7 @@ local scroll_in_win = require('lspsaga.action').scroll_in_win
 local def = {}
 local saga_augroup = require('lspsaga').saga_augroup
 local path_sep = libs.path_sep
+local method = 'textDocument/definition'
 
 function def.preview_definition(timeout_ms)
   if not libs.check_lsp_active() then
@@ -13,7 +14,6 @@ function def.preview_definition(timeout_ms)
 
   local filetype = vim.api.nvim_buf_get_option(0, 'filetype')
 
-  local method = 'textDocument/definition'
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0, method, params, timeout_ms or 1000)
   if result == nil or vim.tbl_isempty(result) then
