@@ -9,6 +9,7 @@ local colors = {
   cyan = '#36d0e0',
   blue = '#61afef',
   violet = '#CBA6F7',
+  teal = '#1abc9c'
 }
 
 local kind = {
@@ -19,7 +20,7 @@ local kind = {
   [5] = { 'Class', ' ', colors.violet },
   [6] = { 'Method', ' ', colors.violet },
   [7] = { 'Property', ' ', colors.cyan },
-  [8] = { 'Field', ' ', colors.cyan },
+  [8] = { 'Field', ' ', colors.teal },
   [9] = { 'Constructor', ' ', colors.blue },
   [10] = { 'Enum', '了', colors.green },
   [11] = { 'Interface', '練', colors.orange },
