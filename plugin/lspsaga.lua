@@ -45,6 +45,8 @@ local highlights = {
   SagaShadow = { fg = 'black' },
   -- float
   LspSagaBorderTitle = { link = 'String' },
+  -- Outline
+  LSOutlinePreviewBorder = {fg = '#52ad70'}
 }
 
 for group, conf in pairs(highlights) do
