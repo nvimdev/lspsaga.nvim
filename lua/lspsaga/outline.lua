@@ -3,7 +3,6 @@ local api, lsp = vim.api, vim.lsp
 local cache = require('lspsaga.symbolwinbar').symbol_cache
 local kind = require('lspsaga.lspkind')
 local hi_prefix = 'LSOutline'
-local fold_prefix = 'LSOutlinePrefix'
 local space = '  '
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
@@ -71,8 +70,8 @@ local function set_local()
     cursorcolumn = false,
     cursorline = false,
     foldmethod = 'expr',
-    foldexpr = 'v:lua.require("lspsaga.outline").set_fold()',
-    foldtext = 'v:lua.require("lspsaga.outline").set_foldtext()',
+    foldexpr = "v:lua.require'lspsaga.outline'.set_fold()",
+    foldtext = "v:lua.require'lspsaga.outline'.set_foldtext()",
     fillchars = { eob = '-', fold = ' ' },
   }
   for opt, val in pairs(local_options) do
@@ -84,17 +83,17 @@ local function gen_outline_hi()
   for _, v in pairs(kind) do
     api.nvim_set_hl(0, hi_prefix .. v[1], { fg = v[3] })
   end
-  api.nvim_set_hl(0, fold_prefix, { fg = '#FF8700' })
 end
 
 function ot.set_foldtext()
   local line = vim.fn.getline(vim.v.foldstart)
-  return line
+  return outline_conf.fold_prefix .. line
 end
 
 function ot.set_fold()
   local cur_indent = vim.fn.indent(vim.v.lnum)
   local next_indent = vim.fn.indent(vim.v.lnum + 1)
+
   if cur_indent == next_indent then
     return (cur_indent / vim.bo.shiftwidth) - 1
   elseif next_indent < cur_indent then
@@ -125,15 +124,21 @@ function ot:auto_preview(bufnr)
     max_height = max_preview_lines
   end
 
+
   local opts = {
     relative = 'editor',
     style = 'minimal',
     height = max_height,
     width = max_width,
-    row = current_line - 1,
     col = WIN_WIDTH - outline_conf.win_width,
     anchor = 'NE',
   }
+
+  local folded = vim.fn.foldclosed(current_line)
+
+  if folded == -1 then
+    opts.row = current_line - 1
+  end
 
   local content_opts = {
     contents = content,
@@ -203,15 +208,15 @@ function ot:update_outline(symbols)
     api.nvim_buf_add_highlight(buf, 0, hi, i - 1, 0, -1)
   end
 
-  --   if outline_conf.auto_preview then
-  --     api.nvim_create_autocmd('CursorMoved', {
-  --       group = group,
-  --       buffer = buf,
-  --       callback = function()
-  --         ot:auto_preview(current_buf)
-  --       end,
-  --     })
-  --   end
+  if outline_conf.auto_preview then
+    api.nvim_create_autocmd('CursorMoved', {
+      group = group,
+      buffer = buf,
+      callback = function()
+        ot:auto_preview(current_buf)
+      end,
+    })
+  end
 end
 
 function ot.render_outline()
