@@ -55,7 +55,7 @@ saga.config_values = {
     win_width = 30,
     auto_enter = true,
     auto_preview = true,
-    fold_prefix = '  '
+    fold_prefix = '  ',
   },
   server_filetype_map = {},
 }
