@@ -1,15 +1,17 @@
 local ot = {}
-local api = vim.api
+local api,lsp = vim.api,vim.lsp
 local cache = require('lspsaga.symbolwinbar').symbol_cache
 local kind = require('lspsaga.lspkind')
 local hi_prefix = 'LSOutline'
-local fold_prefix = 'LSOutlinePrefix'
+-- local fold_prefix = 'LSOutlinePrefix'
 local space = '  '
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local group = require('lspsaga').saga_group
-local max_preview_lines = require('lspsaga').config_values.max_preview_lines
-local outline_width = 30
+local config = require('lspsaga').config_values
+local max_preview_lines = config.max_preview_lines
+local outline_conf = config.show_outline
+local method = 'textDocument/documentSymbol'
 
 local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   local current_buf = api.nvim_get_current_buf()
@@ -40,10 +42,11 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   end
 end
 
-local function get_all_nodes()
-  local symbols, nodes, hi_tbl = {}, {}, {}
+local function get_all_nodes(symbols)
+  symbols = symbols or nil
+  local nodes, hi_tbl = {}, {}
   local current_buf = api.nvim_get_current_buf()
-  if cache[current_buf] ~= nil and next(cache[current_buf][2]) ~= nil then
+  if cache[current_buf] ~= nil and next(cache[current_buf][2]) ~= nil and symbols == nil then
     symbols = cache[current_buf][2]
   end
 
@@ -81,7 +84,7 @@ local function gen_outline_hi()
   for _, v in pairs(kind) do
     api.nvim_set_hl(0, hi_prefix .. v[1], { fg = v[3] })
   end
-  api.nvim_set_hl(0, fold_prefix, { fg = '#FF8700' })
+--   api.nvim_set_hl(0, fold_prefix, { fg = '#FF8700' })
 end
 
 function ot.set_foldtext()
@@ -128,14 +131,14 @@ function ot:auto_preview(bufnr)
     height = max_height,
     width = max_width,
     row = current_line - 1,
-    col = WIN_WIDTH - outline_width,
+    col = WIN_WIDTH - outline_conf.win_width,
     anchor = 'NE',
   }
 
   local content_opts = {
     contents = content,
     filetype = self[bufnr].ft,
-    highlight = 'LSOutlinePreview',
+    highlight = 'LSOutlinePreviewBorder',
   }
 
   local preview_bufnr, preview_winid = window.create_win_with_border(content_opts, opts)
@@ -148,14 +151,44 @@ function ot:auto_preview(bufnr)
   end, 0)
 end
 
-function ot.render_outline()
-  local current_buf = api.nvim_get_current_buf()
-  ot[current_buf] = { ft = vim.bo.filetype }
+local create_outline_window = function()
+  if outline_conf.win_position == 'right' then
+    vim.cmd('noautocmd vsplit')
+    vim.cmd('vertical resize ' .. config.show_outline.win_width)
+    return
+  end
+end
 
+---@private
+local do_symbol_request = function()
+  local params = { textDocument = lsp.util.make_text_document_params() }
+  lsp.buf_request_all(0, method, params, function(result)
+    if libs.result_isempty(result) then
+      return
+    end
+
+    local clients = vim.lsp.buf_get_clients()
+    local client_id
+    for id, conf in pairs(clients) do
+      if conf.server_capabilities.documentHighlightProvider then
+        client_id = id
+        break
+      end
+    end
+
+    local symbols = result[client_id].result
+    ot:update_outline(symbols)
+  end)
+end
+
+function ot:update_outline(symbols)
+  local current_buf = api.nvim_get_current_buf()
+  self[current_buf] = { ft = vim.bo.filetype }
+
+  create_outline_window()
   gen_outline_hi()
-  local nodes, hi_tbl = get_all_nodes()
-  vim.cmd('vsplit')
-  vim.cmd('vertical resize ' .. outline_width)
+
+  local nodes, hi_tbl = get_all_nodes(symbols)
   local win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_create_buf(true, true)
   api.nvim_win_set_buf(win, buf)
@@ -170,13 +203,24 @@ function ot.render_outline()
     api.nvim_buf_add_highlight(buf, 0, hi, i - 1, 0, -1)
   end
 
-  api.nvim_create_autocmd('CursorMoved', {
-    group = group,
-    buffer = buf,
-    callback = function()
-      ot:auto_preview(current_buf)
-    end,
-  })
+  if outline_conf.auto_preview then
+    api.nvim_create_autocmd('CursorMoved', {
+      group = group,
+      buffer = buf,
+      callback = function()
+        ot:auto_preview(current_buf)
+      end,
+    })
+  end
+end
+
+function ot.render_outline()
+  if not config.symbol_in_winbar.enable or not config.symbol_in_winbar.in_custom then
+    do_symbol_request()
+    return
+  end
+
+  ot:update_outline()
 end
 
 return ot

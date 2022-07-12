@@ -24,7 +24,7 @@ function symbar:get_file_name()
   return '%#' .. f_hl .. '#' .. f_icon .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
 end
 
---@private
+---@private
 local do_symbol_request = function(callback)
   local current_buf = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
