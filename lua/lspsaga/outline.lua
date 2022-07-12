@@ -9,6 +9,7 @@ local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local group = require('lspsaga').saga_group
 local max_preview_lines = require('lspsaga').config_values.max_preview_lines
+local outline_width = 30
 
 local function nodes_with_icon(tbl,nodes,hi_tbl,level)
   local current_buf = api.nvim_get_current_buf()
@@ -29,7 +30,6 @@ local function nodes_with_icon(tbl,nodes,hi_tbl,level)
       end
       local range = node.location ~= nil and node.location.range or node.range
       local _end_line = range['end'].line + 1
-      _end_line = _end_line - max_preview_lines > 0 and max_preview_lines or _end_line
       local content = api.nvim_buf_get_lines(current_buf,range.start.line,_end_line,false)
       table.insert(ot[current_buf].preview_contents,content)
     end
@@ -114,17 +114,23 @@ function ot:auto_preview(bufnr)
   local current_line = api.nvim_win_get_cursor(0)[1]
   local content = self[bufnr].preview_contents[current_line]
 
+  local WIN_WIDTH = api.nvim_get_option('columns')
+  local max_width = math.floor(WIN_WIDTH * 0.5)
+  local max_height = #content
+
+  if max_height > max_preview_lines then
+    max_height = max_preview_lines
+  end
+
   local opts = {
     relative = 'editor',
     style = 'minimal',
+    height = max_height,
+    width = max_width,
+    row = current_line - 1,
+    col = WIN_WIDTH - outline_width,
+    anchor = 'NE'
   }
-  local WIN_WIDTH = api.nvim_get_option('columns')
-  local max_width = math.floor(WIN_WIDTH * 0.5)
-  local width, _ = vim.lsp.util._make_floating_popup_size(content, opts)
-
-  if width > max_width then
-    opts.width = max_width
-  end
 
   local content_opts = {
     contents = content,
@@ -136,8 +142,9 @@ function ot:auto_preview(bufnr)
   api.nvim_win_set_var(0,'outline_preview_win',{preview_bufnr,preview_winid})
 
   local events = {'CursorMoved','BufLeave'}
+  local outline_bufnr = api.nvim_get_current_buf()
   vim.defer_fn(function()
-    libs.close_preview_autocmd(preview_bufnr,preview_winid,events)
+    libs.close_preview_autocmd(outline_bufnr,preview_winid,events)
   end,0)
 end
 
@@ -148,7 +155,7 @@ function ot.render_outline()
   gen_outline_hi()
   local nodes,hi_tbl = get_all_nodes()
   vim.cmd('vsplit')
-  vim.cmd('vertical resize 30')
+  vim.cmd('vertical resize '.. outline_width)
   local win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_create_buf(true, true)
   api.nvim_win_set_buf(win, buf)
