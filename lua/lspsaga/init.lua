@@ -50,6 +50,11 @@ saga.config_values = {
     show_file = true,
     click_support = false,
   },
+  show_outline = {
+    win_position = 'right',
+    win_width = 30,
+    auto_preview = true,
+  },
   server_filetype_map = {},
 }
 

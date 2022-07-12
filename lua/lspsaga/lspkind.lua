@@ -9,7 +9,7 @@ local colors = {
   cyan = '#36d0e0',
   blue = '#61afef',
   violet = '#CBA6F7',
-  teal = '#1abc9c'
+  teal = '#1abc9c',
 }
 
 local kind = {
