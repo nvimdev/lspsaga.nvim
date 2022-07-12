@@ -3,7 +3,7 @@ local api,lsp = vim.api,vim.lsp
 local cache = require('lspsaga.symbolwinbar').symbol_cache
 local kind = require('lspsaga.lspkind')
 local hi_prefix = 'LSOutline'
--- local fold_prefix = 'LSOutlinePrefix'
+local fold_prefix = 'LSOutlinePrefix'
 local space = '  '
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
@@ -84,7 +84,7 @@ local function gen_outline_hi()
   for _, v in pairs(kind) do
     api.nvim_set_hl(0, hi_prefix .. v[1], { fg = v[3] })
   end
---   api.nvim_set_hl(0, fold_prefix, { fg = '#FF8700' })
+  api.nvim_set_hl(0, fold_prefix, { fg = '#FF8700' })
 end
 
 function ot.set_foldtext()
@@ -203,15 +203,15 @@ function ot:update_outline(symbols)
     api.nvim_buf_add_highlight(buf, 0, hi, i - 1, 0, -1)
   end
 
-  if outline_conf.auto_preview then
-    api.nvim_create_autocmd('CursorMoved', {
-      group = group,
-      buffer = buf,
-      callback = function()
-        ot:auto_preview(current_buf)
-      end,
-    })
-  end
+--   if outline_conf.auto_preview then
+--     api.nvim_create_autocmd('CursorMoved', {
+--       group = group,
+--       buffer = buf,
+--       callback = function()
+--         ot:auto_preview(current_buf)
+--       end,
+--     })
+--   end
 end
 
 function ot.render_outline()
