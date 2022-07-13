@@ -137,6 +137,24 @@ function libs.disable_move_keys(bufnr)
   end
 end
 
+function libs.find_buffer_by_filetype(ft)
+  local all_bufs = vim.fn.getbufinfo()
+  local filetype = ''
+  for _, bufinfo in pairs(all_bufs) do
+    filetype = api.nvim_buf_get_option(bufinfo['bufnr'], 'filetype')
+
+    if type(ft) == 'table' and libs.has_value(ft, filetype) then
+      return true, bufinfo['bufnr']
+    end
+
+    if filetype == ft then
+      return true, bufinfo['bufnr']
+    end
+  end
+
+  return false, nil
+end
+
 function libs.async(routine, ...)
   local f = coroutine.create(function(await, ...)
     routine(await, ...)

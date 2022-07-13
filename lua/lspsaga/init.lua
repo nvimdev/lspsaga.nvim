@@ -51,10 +51,11 @@ saga.config_values = {
     click_support = false,
   },
   show_outline = {
-    win_position = 'right',
+    win_position = 'left',
+    left_with = 'NvimTree',
     win_width = 30,
     auto_enter = true,
-    auto_preview = true,
+    auto_preview = false,
     fold_prefix = ' ',
     jump_key = 'o',
   },

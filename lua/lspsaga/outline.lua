@@ -13,6 +13,8 @@ local max_preview_lines = config.max_preview_lines
 local outline_conf = config.show_outline
 local method = 'textDocument/documentSymbol'
 
+---TODO: better ui of outline
+
 local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   local current_buf = api.nvim_get_current_buf()
   local icon, hi = '', ''
@@ -35,7 +37,7 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
       local _end_line = range['end'].line + 1
       local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
       table.insert(ot[current_buf].preview_contents, content)
-      table.insert(ot[current_buf].link,{range.start.line + 1,range.start.character})
+      table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
     end
 
     if node.children ~= nil and next(node.children) ~= nil then
@@ -132,9 +134,15 @@ function ot:auto_preview(bufnr)
     style = 'minimal',
     height = max_height,
     width = max_width,
-    col = WIN_WIDTH - outline_conf.win_width,
-    anchor = 'NE',
   }
+
+  if outline_conf.win_position == 'right' then
+    opts.anchor = 'NE'
+    opts.col = WIN_WIDTH - outline_conf.win_width
+  else
+    opts.anchor = 'NW'
+    opts.col = outline_conf.win_width + 1
+  end
 
   local folded = vim.fn.foldclosed(current_line)
 
@@ -163,7 +171,7 @@ function ot:jump_to_line(bufnr)
   local pos = self[bufnr].link[current_line]
   local win = vim.fn.win_findbuf(bufnr)[1]
   api.nvim_set_current_win(win)
-  api.nvim_win_set_cursor(win,pos)
+  api.nvim_win_set_cursor(win, pos)
 end
 
 local create_outline_window = function()
@@ -172,6 +180,27 @@ local create_outline_window = function()
     vim.cmd('vertical resize ' .. config.show_outline.win_width)
     return
   end
+
+  local user_option = vim.opt.splitright:get()
+
+  if user_option then
+    vim.opt.splitright = false
+  end
+
+  if string.len(outline_conf.left_with) > 0 then
+    local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.left_with)
+
+    if ok then
+      local winid = vim.fn.win_findbuf(sp_buf)[1]
+      api.nvim_set_current_win(winid)
+      vim.cmd('noautocmd sp vnew')
+      return
+    end
+  end
+
+  vim.cmd('noautocmd vnew')
+  vim.cmd('vertical resize ' .. config.show_outline.win_width)
+  vim.opt.splitright = user_option
 end
 
 ---@private
@@ -192,11 +221,11 @@ end
 function ot:update_outline(symbols)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
+  local nodes, hi_tbl = get_all_nodes(symbols)
 
-  create_outline_window()
   gen_outline_hi()
 
-  local nodes, hi_tbl = get_all_nodes(symbols)
+  create_outline_window()
   local win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_create_buf(true, true)
   api.nvim_win_set_buf(win, buf)
@@ -221,10 +250,10 @@ function ot:update_outline(symbols)
     })
   end
 
-  vim.keymap.set('n',outline_conf.jump_key,function()
+  vim.keymap.set('n', outline_conf.jump_key, function()
     ot:jump_to_line(current_buf)
-  end,{
-    buffer = buf
+  end, {
+    buffer = buf,
   })
 end
 
