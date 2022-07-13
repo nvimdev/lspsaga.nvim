@@ -56,6 +56,7 @@ saga.config_values = {
     auto_enter = true,
     auto_preview = true,
     fold_prefix = ' ',
+    jump_key = 'o',
   },
   server_filetype_map = {},
 }

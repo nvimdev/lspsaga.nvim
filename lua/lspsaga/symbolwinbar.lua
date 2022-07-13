@@ -134,6 +134,18 @@ local render_symbol_winbar = function()
   return winbar_val
 end
 
+function symbar.get_clientid()
+  local client_id
+  local clients = vim.lsp.buf_get_clients()
+  for id, conf in pairs(clients) do
+    if conf.server_capabilities.documentHighlightProvider then
+      client_id = id
+      break
+    end
+  end
+  return client_id
+end
+
 function symbar:get_buf_symbol(force, ...)
   if not libs.check_lsp_active() then
     return
@@ -145,14 +157,7 @@ function symbar:get_buf_symbol(force, ...)
     return
   end
 
-  local clients = vim.lsp.buf_get_clients()
-  local client_id
-  for id, conf in pairs(clients) do
-    if conf.server_capabilities.documentHighlightProvider then
-      client_id = id
-      break
-    end
-  end
+  local client_id = self.get_clientid()
 
   if client_id == nil then
     vim.notify('All servers of this buffer does not support ' .. method)

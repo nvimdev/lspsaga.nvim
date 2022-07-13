@@ -1,6 +1,7 @@
 local ot = {}
 local api, lsp = vim.api, vim.lsp
-local cache = require('lspsaga.symbolwinbar').symbol_cache
+local symbar = require('lspsaga.symbolwinbar')
+local cache = symbar.symbol_cache
 local kind = require('lspsaga.lspkind')
 local hi_prefix = 'LSOutline'
 local space = '  '
@@ -28,11 +29,13 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
       table.insert(hi_tbl, hi)
       if ot[current_buf].preview_contents == nil then
         ot[current_buf].preview_contents = {}
+        ot[current_buf].link = {}
       end
       local range = node.location ~= nil and node.location.range or node.range
       local _end_line = range['end'].line + 1
       local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
       table.insert(ot[current_buf].preview_contents, content)
+      table.insert(ot[current_buf].link,{range.start.line + 1,range.start.character})
     end
 
     if node.children ~= nil and next(node.children) ~= nil then
@@ -124,7 +127,6 @@ function ot:auto_preview(bufnr)
     max_height = max_preview_lines
   end
 
-
   local opts = {
     relative = 'editor',
     style = 'minimal',
@@ -156,6 +158,14 @@ function ot:auto_preview(bufnr)
   end, 0)
 end
 
+function ot:jump_to_line(bufnr)
+  local current_line = api.nvim_win_get_cursor(0)[1]
+  local pos = self[bufnr].link[current_line]
+  local win = vim.fn.win_findbuf(bufnr)[1]
+  api.nvim_set_current_win(win)
+  api.nvim_win_set_cursor(win,pos)
+end
+
 local create_outline_window = function()
   if outline_conf.win_position == 'right' then
     vim.cmd('noautocmd vsplit')
@@ -172,14 +182,7 @@ local do_symbol_request = function()
       return
     end
 
-    local clients = vim.lsp.buf_get_clients()
-    local client_id
-    for id, conf in pairs(clients) do
-      if conf.server_capabilities.documentHighlightProvider then
-        client_id = id
-        break
-      end
-    end
+    local client_id = symbar.get_clientid()
 
     local symbols = result[client_id].result
     ot:update_outline(symbols)
@@ -217,6 +220,12 @@ function ot:update_outline(symbols)
       end,
     })
   end
+
+  vim.keymap.set('n',outline_conf.jump_key,function()
+    ot:jump_to_line(current_buf)
+  end,{
+    buffer = buf
+  })
 end
 
 function ot.render_outline()
