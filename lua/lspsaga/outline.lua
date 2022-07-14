@@ -138,16 +138,22 @@ function ot:auto_preview(bufnr)
 
   if outline_conf.win_position == 'right' then
     opts.anchor = 'NE'
-    opts.col = WIN_WIDTH - outline_conf.win_width
+    opts.col = WIN_WIDTH - outline_conf.win_width - 1
+    local folded = vim.fn.foldclosed(current_line)
+
+    if folded < 0 and vim.v.foldstart == 0 then
+      opts.row = current_line - 1
+    elseif folded > 0 then
+      if current_line == vim.v.foldstart then
+        opts.row = current_line - 1
+      end
+    elseif folded < 0 and vim.v.foldstart > 0 then
+      opts.row = current_line - vim.v.foldend + vim.v.foldstart
+    end
+
   else
     opts.anchor = 'NW'
     opts.col = outline_conf.win_width + 1
-  end
-
-  local folded = vim.fn.foldclosed(current_line)
-
-  if folded == -1 then
-    opts.row = current_line - 1
   end
 
   local content_opts = {
