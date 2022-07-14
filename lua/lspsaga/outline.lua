@@ -141,6 +141,7 @@ function ot:auto_preview(bufnr)
     opts.col = WIN_WIDTH - outline_conf.win_width - 1
     local folded = vim.fn.foldclosed(current_line)
 
+    ---TODO: smart previe row with fold
     if folded < 0 and vim.v.foldstart == 0 then
       opts.row = current_line - 1
     elseif folded > 0 then
