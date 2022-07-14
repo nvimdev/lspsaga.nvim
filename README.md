@@ -156,7 +156,7 @@ local function get_file_name(include_path)
     if include_path == false then return file_name end
     local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
     -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-    local path_list = vim.split(vim.fn.expand '%:~:.:h', sep)
+    local path_list = vim.split(string.gsub(vim.fn.expand '%:~:.:h','%%',''), sep)
     local file_path = ''
     for _, cur in ipairs(path_list) do
       file_path = (cur == '.' or cur == '~') and '' or
