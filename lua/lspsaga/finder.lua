@@ -7,6 +7,7 @@ local scroll_in_win = require('lspsaga.action').scroll_in_win
 local saga_augroup = require('lspsaga').saga_augroup
 local symbar = require('lspsaga.symbolwinbar')
 local path_sep = libs.path_sep
+local icons = config.finder_icons
 
 local methods = { 'textDocument/definition', 'textDocument/references' }
 
@@ -88,7 +89,7 @@ function Finder:word_symbol_kind()
   end
 
   local icon = index ~= 0 and kind[result[index].kind][2] or ' '
-  self.param = icon .. ' ' .. current_word
+  self.param = icon .. current_word
 end
 
 function Finder:lsp_finder_request()
@@ -120,36 +121,42 @@ end
 
 function Finder:create_finder_contents(result, method, root_dir)
   local target_lnum = 0
-  local method_option = {
-    [methods[1]] = ' ' .. #result .. ' Definitions',
-    [methods[2]] = ' ' .. #result .. ' References',
-  }
+  -- remove definition in references
+  if self.short_link ~= nil and self.short_link[3] ~= nil then
+    local start = result[1].range.start
+    if start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col - 1 then
+      table.remove(result, 1)
+    end
+  end
 
-  local title = self.param .. config.finder_separator .. method_option[method]
+  local titles = {
+    [methods[1]] = icons.def .. 'Definitions ' .. #result .. ' results',
+    [methods[2]] = icons.ref .. 'References  ' .. #result .. ' results',
+  }
 
   if method == methods[1] then
     self.definition_uri = result.saga_msg and 1 or #result
-    table.insert(self.contents, title)
+    table.insert(self.contents, titles[method])
     target_lnum = 2
     if result.saga_msg then
       table.insert(self.contents, ' ')
-      table.insert(self.contents, '[1] ' .. result.saga_msg)
+      table.insert(self.contents, icons.link .. result.saga_msg)
       return
     end
   else
     self.reference_uri = result.saga_msg and 1 or #result
     target_lnum = target_lnum + self.definition_uri + 5
     table.insert(self.contents, ' ')
-    table.insert(self.contents, title)
+    table.insert(self.contents, titles[method])
     if result.saga_msg then
       table.insert(self.contents, ' ')
-      table.insert(self.contents, '[1] ' .. result.saga_msg)
+      table.insert(self.contents, icons.link .. result.saga_msg)
       return
     end
   end
 
-  for index, _ in ipairs(result) do
-    local uri = result[index].targetUri or result[index].uri
+  for index, res in ipairs(result) do
+    local uri = res.targetUri or res.uri
     if uri == nil then
       return
     end
@@ -173,8 +180,8 @@ function Finder:create_finder_contents(result, method, root_dir)
       end
     end
 
-    local target_line = '[' .. index .. ']' .. ' ' .. short_name
-    local range = result[index].targetRange or result[index].range
+    local target_line = icons.link .. short_name
+    local range = res.targetRange or res.range
     if index == 1 then
       table.insert(self.contents, ' ')
     end
@@ -232,6 +239,21 @@ function Finder:render_finder_result()
   api.nvim_buf_set_option(self.bufnr, 'buflisted', false)
   api.nvim_win_set_var(self.winid, 'lsp_finder_win_opts', opts)
   api.nvim_win_set_option(self.winid, 'cursorline', true)
+
+  if vim.v.version >= 800 then
+    -- create winbar of finder
+    local prefix = '%#LSFinderBarFind# Find: %*'
+    local titlebr = '%#LSFinderBarParam#' .. self.param .. ' %*'
+    opts.row = opts.row - 1
+    opts.col = opts.col + 1
+    self.titlebar_bufnr, self.titlebar_winid = window.create_win_with_border({
+      contents = { string.rep(' ', #self.param + 7), '' },
+      filetype = 'lspsagafindertitlebar',
+      border = 'none',
+    }, opts)
+
+    api.nvim_win_set_option(self.titlebar_winid, 'winbar', prefix .. titlebr)
+  end
 
   self:get_cursorline_highlight()
 
@@ -311,26 +333,20 @@ end
 
 function Finder:lsp_finder_highlight()
   local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
-  local sp_length = #config.finder_separator
+  local def_len = string.len('Definitions')
+  local ref_len = string.len('References')
   -- add syntax
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetWord', 0, 0, #self.param)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderSeparator', 0, #self.param + 1, #self.param + 1 + sp_length)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #self.param + 1 + sp_length, -1)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetWord', 3 + def_uri_count, 0, #self.param)
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'FinderSeparator',
-    3 + def_uri_count,
-    #self.param,
-    #self.param + 1 + sp_length
-  )
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesCount', 3 + def_uri_count, #self.param + sp_length, -1)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.def)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', 3 + def_uri_count, 0, #icons.ref)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'References', 3 + def_uri_count, #icons.ref, #icons.ref + ref_len)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesCount', 3 + def_uri_count, #icons.ref + ref_len, -1)
 end
 
 function Finder:set_cursor()
   local current_line = fn.line('.')
-  local column = 2
+  local column = #icons.link + 1
 
   local first_def_uri_lnum = self.definition_uri ~= 0 and 3 or 5
   local last_def_uri_lnum = 3 + self.definition_uri - 1
@@ -448,15 +464,14 @@ end
 -- action 4 mean tabe
 function Finder:open_link(action_type)
   local action = { 'edit ', 'vsplit ', 'split ', 'tabe ' }
-  local current_line = fn.line('.')
+  local current_line = api.nvim_win_get_cursor(0)[1]
 
   if self.short_link[current_line] == nil then
     error('[LspSaga] target file uri not exist')
     return
   end
 
-  self:close_auto_preview_win()
-  api.nvim_win_close(self.winid, true)
+  self:quit_float_window(false)
   api.nvim_command(action[action_type] .. self.short_link[current_line].link)
   fn.cursor(self.short_link[current_line].row, self.short_link[current_line].col)
   self:clear_tmp_data()
@@ -476,12 +491,25 @@ function Finder:scroll_in_preview(direction)
   api.nvim_win_set_var(0, 'saga_finder_preview', { pdata[1], current_win_lnum, last_lnum })
 end
 
-function Finder:quit_float_window()
+function Finder:quit_float_window(...)
   self:close_auto_preview_win()
   if self.winid ~= 0 then
     window.nvim_close_valid_window(self.winid)
+    if vim.v.version >= 800 then
+      window.nvim_close_valid_window(self.titlebar_winid)
+    end
   end
-  self:clear_tmp_data()
+
+  local args = { ... }
+  local clear = true
+
+  if #args > 0 then
+    clear = args[1]
+  end
+
+  if clear then
+    self:clear_tmp_data()
+  end
 end
 
 function Finder:clear_tmp_data()

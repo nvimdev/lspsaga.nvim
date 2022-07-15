@@ -98,8 +98,12 @@ code_action_lightbulb = {
     sign_priority = 20,
     virtual_text = true,
 },
--- separator in finder
-finder_separator = "  ",
+-- finder icons
+finder_icons = {
+  def = '  ',
+  ref = '諭 ',
+  link = '  ',
+},
 -- preview lines of lsp_finder and definition preview
 max_preview_lines = 10,
 finder_action_keys = {
@@ -254,6 +258,7 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 <details>
 <summary>Async lsp finder</summary>
 
+Finder Title work with neovim 0.8 +
 
 **Lua**
 
@@ -266,7 +271,7 @@ vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true,noremap
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-4053-b671-303df4e94a19.gif" />
+src="https://user-images.githubusercontent.com/41671631/179228004-e3c2ef1e-1126-4468-9351-7d7be1ff44e7.gif" />
 </div>
 
 </details>

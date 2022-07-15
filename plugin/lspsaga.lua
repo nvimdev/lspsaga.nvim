@@ -10,10 +10,15 @@ local highlights = {
   LspSagaAutoPreview = { fg = '#ecbe7b' },
   LspSagaFinderSelection = { fg = '#89d957', bold = true },
   TargetFileName = { link = 'Comment' },
+
+  DefinitionsIcon = { fg = '#e3e346' },
+  Definitions = { fg = '#CBA6F7', bold = true },
+  ReferencesIcon = { fg = '#e3e346' },
+  References = { fg = '#CBA6F7', bold = true },
   DefinitionCount = { link = 'Title' },
   ReferencesCount = { link = 'Title' },
-  TargetWord = { fg = '#1abc9c', bold = true },
-  FinderSeparator = { fg = '#36d0e0' },
+  LSFinderBarFind = { fg = '#3af2dd', bg = '#a579b8', bold = true },
+  LSFinderBarParam = { fg = '#3af2dd', bg = '#a579b8', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
   DefinitionPreviewTitle = { link = 'Title' },
