@@ -130,7 +130,7 @@ function Finder:create_finder_contents(result, method, root_dir)
   end
 
   local titles = {
-    [methods[1]] = icons.define .. 'Definitions ' .. #result .. ' results',
+    [methods[1]] = icons.def .. 'Definitions ' .. #result .. ' results',
     [methods[2]] = icons.ref .. 'References  ' .. #result .. ' results',
   }
 
@@ -247,7 +247,7 @@ function Finder:render_finder_result()
     opts.row = opts.row - 1
     opts.col = opts.col + 1
     self.titlebar_bufnr, self.titlebar_winid = window.create_win_with_border({
-      contents = { '                     ', '' },
+      contents ={ string.rep(' ',#self.param + 7), '' },
       filetype = 'lspsagafindertitlebar',
       border = 'none',
     }, opts)
@@ -336,9 +336,9 @@ function Finder:lsp_finder_highlight()
   local def_len = string.len('Definitions')
   local ref_len = string.len('References')
   -- add syntax
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.define)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.define, #icons.define + def_len)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.define + def_len, -1)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.def)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', 3 + def_uri_count, 0, #icons.ref)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'References', 3 + def_uri_count, #icons.ref, #icons.ref + ref_len)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesCount', 3 + def_uri_count, #icons.ref + ref_len, -1)
@@ -464,15 +464,14 @@ end
 -- action 4 mean tabe
 function Finder:open_link(action_type)
   local action = { 'edit ', 'vsplit ', 'split ', 'tabe ' }
-  local current_line = fn.line('.')
+  local current_line = api.nvim_win_get_cursor(0)[1]
 
   if self.short_link[current_line] == nil then
     error('[LspSaga] target file uri not exist')
     return
   end
 
-  self:close_auto_preview_win()
-  api.nvim_win_close(self.winid, true)
+  self:quit_float_window(false)
   api.nvim_command(action[action_type] .. self.short_link[current_line].link)
   fn.cursor(self.short_link[current_line].row, self.short_link[current_line].col)
   self:clear_tmp_data()
@@ -492,7 +491,7 @@ function Finder:scroll_in_preview(direction)
   api.nvim_win_set_var(0, 'saga_finder_preview', { pdata[1], current_win_lnum, last_lnum })
 end
 
-function Finder:quit_float_window()
+function Finder:quit_float_window(...)
   self:close_auto_preview_win()
   if self.winid ~= 0 then
     window.nvim_close_valid_window(self.winid)
@@ -501,7 +500,16 @@ function Finder:quit_float_window()
     end
   end
 
-  self:clear_tmp_data()
+  local args = {...}
+  local clear = true
+
+  if #args > 0 then
+    clear = args[1]
+  end
+
+  if clear then
+    self:clear_tmp_data()
+  end
 end
 
 function Finder:clear_tmp_data()
