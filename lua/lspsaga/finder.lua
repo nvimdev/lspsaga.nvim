@@ -121,6 +121,14 @@ end
 
 function Finder:create_finder_contents(result, method, root_dir)
   local target_lnum = 0
+  -- remove definition in references
+  if  self.short_link ~= nil and self.short_link[3] ~= nil then
+    local start = result[1].range.start
+    if start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col -1 then
+      table.remove(result,1)
+    end
+  end
+
   local titles = {
     [methods[1]] = icons.define .. 'Definitions ' .. #result .. ' results',
     [methods[2]] = icons.ref .. 'References  ' .. #result .. ' results',
@@ -132,7 +140,7 @@ function Finder:create_finder_contents(result, method, root_dir)
     target_lnum = 2
     if result.saga_msg then
       table.insert(self.contents, ' ')
-      table.insert(self.contents, '[1] ' .. result.saga_msg)
+      table.insert(self.contents, icons.link .. result.saga_msg)
       return
     end
   else
@@ -142,13 +150,13 @@ function Finder:create_finder_contents(result, method, root_dir)
     table.insert(self.contents, titles[method])
     if result.saga_msg then
       table.insert(self.contents, ' ')
-      table.insert(self.contents, '[1] ' .. result.saga_msg)
+      table.insert(self.contents, icons.link .. result.saga_msg)
       return
     end
   end
 
-  for index, _ in ipairs(result) do
-    local uri = result[index].targetUri or result[index].uri
+  for index, res in ipairs(result) do
+    local uri = res.targetUri or res.uri
     if uri == nil then
       return
     end
@@ -173,7 +181,7 @@ function Finder:create_finder_contents(result, method, root_dir)
     end
 
     local target_line = icons.link .. short_name
-    local range = result[index].targetRange or result[index].range
+    local range = res.targetRange or res.range
     if index == 1 then
       table.insert(self.contents, ' ')
     end
