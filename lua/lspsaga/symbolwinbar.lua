@@ -11,7 +11,7 @@ local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
-  local file_name = string.gsub(vim.fn.expand('%:t'),'%%','')
+  local file_name = string.gsub(vim.fn.expand('%:t'), '%%', '')
   local ok, devicons = pcall(require, 'nvim-web-devicons')
   local f_icon = ''
   local f_hl = ''

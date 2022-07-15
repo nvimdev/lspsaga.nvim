@@ -6,6 +6,7 @@ local wrap = require('lspsaga.wrap')
 local function get_border_style(style, highlight)
   highlight = highlight or 'FloatBorder'
   local border_style = {
+    ['none'] = 'none',
     ['single'] = 'single',
     ['double'] = 'double',
     ['rounded'] = 'rounded',
@@ -145,7 +146,7 @@ function M.create_win_with_border(content_opts, opts)
   local highlight = content_opts.highlight or 'LspFloatWinBorder'
   opts = opts or {}
   opts = generate_win_opts(contents, opts)
-  opts.border = get_border_style(config.border_style, highlight)
+  opts.border = content_opts.border or get_border_style(config.border_style, highlight)
 
   -- create contents buffer
   local bufnr = api.nvim_create_buf(false, true)

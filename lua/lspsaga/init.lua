@@ -26,8 +26,12 @@ saga.config_values = {
     sign_priority = 40,
     virtual_text = true,
   },
-  finder_separator = '  ',
   max_preview_lines = 10,
+  finder_icons = {
+    define = '  ',
+    ref = '諭 ',
+    link = '  ',
+  },
   finder_action_keys = {
     open = 'o',
     vsplit = 's',
