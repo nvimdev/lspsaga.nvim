@@ -122,10 +122,10 @@ end
 function Finder:create_finder_contents(result, method, root_dir)
   local target_lnum = 0
   -- remove definition in references
-  if  self.short_link ~= nil and self.short_link[3] ~= nil then
+  if self.short_link ~= nil and self.short_link[3] ~= nil then
     local start = result[1].range.start
-    if start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col -1 then
-      table.remove(result,1)
+    if start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col - 1 then
+      table.remove(result, 1)
     end
   end
 
@@ -247,7 +247,7 @@ function Finder:render_finder_result()
     opts.row = opts.row - 1
     opts.col = opts.col + 1
     self.titlebar_bufnr, self.titlebar_winid = window.create_win_with_border({
-      contents ={ string.rep(' ',#self.param + 7), '' },
+      contents = { string.rep(' ', #self.param + 7), '' },
       filetype = 'lspsagafindertitlebar',
       border = 'none',
     }, opts)
@@ -500,7 +500,7 @@ function Finder:quit_float_window(...)
     end
   end
 
-  local args = {...}
+  local args = { ... }
   local clear = true
 
   if #args > 0 then
