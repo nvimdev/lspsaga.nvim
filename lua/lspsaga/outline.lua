@@ -14,7 +14,6 @@ local outline_conf = config.show_outline
 local method = 'textDocument/documentSymbol'
 
 ---TODO: better ui of outline
-
 local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   local current_buf = api.nvim_get_current_buf()
   local icon, hi = '', ''
@@ -181,10 +180,16 @@ function ot:jump_to_line(bufnr)
   api.nvim_win_set_cursor(win, pos)
 end
 
+function ot:render_status()
+  self.winid = api.nvim_get_current_win()
+  self.status = true
+end
+
 local create_outline_window = function()
   if outline_conf.win_position == 'right' then
     vim.cmd('noautocmd vsplit')
     vim.cmd('vertical resize ' .. config.show_outline.win_width)
+    ot:render_status()
     return
   end
 
@@ -201,6 +206,7 @@ local create_outline_window = function()
       local winid = vim.fn.win_findbuf(sp_buf)[1]
       api.nvim_set_current_win(winid)
       vim.cmd('noautocmd sp vnew')
+      ot:render_status()
       return
     end
   end
@@ -208,6 +214,7 @@ local create_outline_window = function()
   vim.cmd('noautocmd vnew')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
   vim.opt.splitright = user_option
+  ot:render_status()
 end
 
 ---@private
@@ -264,13 +271,20 @@ function ot:update_outline(symbols)
   })
 end
 
-function ot.render_outline()
+function ot:render_outline()
+  if self.status ~= nil and self.status then
+    window.nvim_close_valid_window(self.winid)
+    self.winid = 0
+    self.status = false
+    return
+  end
+
   if not config.symbol_in_winbar.enable or not config.symbol_in_winbar.in_custom then
     do_symbol_request()
     return
   end
 
-  ot:update_outline()
+  self:update_outline()
 end
 
 return ot
