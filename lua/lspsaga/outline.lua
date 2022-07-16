@@ -107,6 +107,54 @@ function ot.set_fold()
   end
 end
 
+local virt_id =  api.nvim_create_namespace('lspsaga_outline')
+local hi_tbl = {'OutlineFoldPrefix', 'OutlineIndentOdd','OutlineIndentEvn'}
+
+function ot:fold_virt_text(tbl)
+  local level = 0
+  for index,node in pairs(tbl) do
+    level = vim.fn.foldlevel(index)
+    if level > 0 then
+      for i=1,level do
+        local _,cur_spaces =node:find('%s+')
+        local next = index + 1 > #tbl and index or index+1
+        local _,next_spaces = tbl[next]:find('%s+')
+
+        if bit.band(i,1) == 1 then
+          if cur_spaces < next_spaces then
+            api.nvim_buf_set_extmark(0,virt_id,index - 1,i - 1,{
+              virt_text = { {outline_conf.fold_prefix[2],hi_tbl[1]}},
+              virt_text_pos = 'overlay'
+            })
+          else
+            api.nvim_buf_set_extmark(0,virt_id,index - 1,i - 1,{
+              virt_text = { {outline_conf.virt_text,hi_tbl[2]}},
+              virt_text_pos = 'overlay'
+            })
+          end
+        else
+          if cur_spaces < next_spaces then
+            api.nvim_buf_set_extmark(0,virt_id,index - 1,i,{
+              virt_text = { {outline_conf.fold_prefix[2],hi_tbl[1]}},
+              virt_text_pos = 'overlay'
+            })
+
+            api.nvim_buf_set_extmark(0,virt_id,index - 1,i - 2,{
+              virt_text = { {outline_conf.virt_text,hi_tbl[2]}},
+              virt_text_pos = 'overlay'
+            })
+          else
+            api.nvim_buf_set_extmark(0,virt_id,index - 1,i + 1,{
+              virt_text = { {outline_conf.virt_text,hi_tbl[3]}},
+              virt_text_pos = 'overlay'
+            })
+          end
+        end
+      end
+    end
+  end
+end
+
 function ot:auto_preview(bufnr)
   if self[bufnr] == nil and next(self[bufnr]) == nil then
     return
@@ -247,6 +295,8 @@ function ot:update_outline(symbols)
   set_local()
 
   api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
+
+  self:fold_virt_text(nodes)
 
   api.nvim_buf_set_option(buf, 'modifiable', false)
 
