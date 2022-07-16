@@ -240,7 +240,7 @@ function Finder:render_finder_result()
   api.nvim_win_set_var(self.winid, 'lsp_finder_win_opts', opts)
   api.nvim_win_set_option(self.winid, 'cursorline', true)
 
-  if vim.v.version >= 800 then
+  if vim.fn.has('nvim-0.8') == 1 then
     -- create winbar of finder
     local prefix = '%#LSFinderBarFind# Find: %*'
     local titlebr = '%#LSFinderBarParam#' .. self.param .. ' %*'
@@ -495,7 +495,7 @@ function Finder:quit_float_window(...)
   self:close_auto_preview_win()
   if self.winid ~= 0 then
     window.nvim_close_valid_window(self.winid)
-    if vim.v.version >= 800 then
+    if vim.fn.has('nvim-0.8') == 1 then
       window.nvim_close_valid_window(self.titlebar_winid)
     end
   end
