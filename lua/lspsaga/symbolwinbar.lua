@@ -177,7 +177,8 @@ function symbar:get_buf_symbol(force, ...)
     end
 
     if config.in_custom then
-      api.nvim_exec_autocmds('User LspsagaUpdateSymbol', {
+      api.nvim_exec_autocmds('User', {
+        pattern = 'LspsagaUpdateSymbol',
         modeline = false,
       })
     end
