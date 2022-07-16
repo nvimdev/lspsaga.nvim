@@ -98,8 +98,12 @@ code_action_lightbulb = {
     sign_priority = 20,
     virtual_text = true,
 },
--- separator in finder
-finder_separator = "  ",
+-- finder icons
+finder_icons = {
+  def = '  ',
+  ref = '諭 ',
+  link = '  ',
+},
 -- preview lines of lsp_finder and definition preview
 max_preview_lines = 10,
 finder_action_keys = {
@@ -154,44 +158,48 @@ local function get_file_name(include_path)
     local file_name = require('lspsaga.symbolwinbar').get_file_name()
     if vim.fn.bufname '%' == '' then return '' end
     if include_path == false then return file_name end
-    local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
     -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-    local path_list = vim.split(vim.fn.expand '%:~:.:h', sep)
+    local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
+    local path_list = vim.split(string.gsub(vim.fn.expand '%:~:.:h', '%%', ''), sep)
     local file_path = ''
     for _, cur in ipairs(path_list) do
-      file_path = (cur == '.' or cur == '~') and '' or
+        file_path = (cur == '.' or cur == '~') and '' or
                     file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*'
     end
     return file_path .. file_name
 end
 
 local function config_winbar()
-    local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
-    local sym
-    if ok then sym = lspsaga.get_symbol_node() end
-    local win_val = ''
-    win_val = get_file_name(false) -- set to true to include path
-    if sym ~= nil then win_val = win_val .. sym end
-    vim.wo.winbar = win_val
+    local exclude = {
+        ['teminal'] = true,
+        ['toggleterm'] = true,
+        ['prompt'] = true,
+        ['NvimTree'] = true,
+        ['help'] = true,
+    } -- Ignore float windows and exclude filetype
+    if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
+        vim.wo.winbar = ''
+    else
+        local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
+        local sym
+        if ok then sym = lspsaga.get_symbol_node() end
+        local win_val = ''
+        win_val = get_file_name(true) -- set to true to include path
+        if sym ~= nil then win_val = win_val .. sym end
+        vim.wo.winbar = win_val
+    end
 end
 
-local events = { 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }
-
-local exclude = {
-    ['teminal'] = true,
-    ['prompt'] = true
-}
+local events = { 'BufEnter', 'BufWinEnter', 'CursorMoved' }
 
 vim.api.nvim_create_autocmd(events, {
     pattern = '*',
-    callback = function()
-        -- Ignore float windows and exclude filetype
-        if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
-            vim.wo.winbar = ''
-        else
-            config_winbar()
-        end
-    end,
+    callback = function() config_winbar() end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+    pattern = 'LspsagaUpdateSymbol',
+    callback = function() config_winbar() end,
 })
 ```
 
@@ -254,6 +262,7 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 <details>
 <summary>Async lsp finder</summary>
 
+Finder Title work with neovim 0.8 +
 
 **Lua**
 
@@ -266,7 +275,7 @@ vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true,noremap
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-4053-b671-303df4e94a19.gif" />
+src="https://user-images.githubusercontent.com/41671631/179228004-e3c2ef1e-1126-4468-9351-7d7be1ff44e7.gif" />
 </div>
 
 </details>
