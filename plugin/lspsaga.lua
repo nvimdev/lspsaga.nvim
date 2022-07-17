@@ -50,6 +50,12 @@ local highlights = {
   SagaShadow = { fg = 'black' },
   -- float
   LspSagaBorderTitle = { link = 'String' },
+  -- Outline
+  LSOutlinePreviewBorder = { fg = '#52ad70' },
+  OutlineIndentEvn = { fg = '#c955ae' },
+  OutlineIndentOdd = { fg = '#b8733e' },
+  OutlineFoldPrefix = { fg = '#bf4537' },
+  OutlineDetail = { fg = '#73797e' },
 }
 
 for group, conf in pairs(highlights) do
@@ -67,3 +73,7 @@ end, {
     end, list)
   end,
 })
+
+api.nvim_create_user_command('LSoutlineToggle', function()
+  require('lspsaga.outline'):render_outline()
+end, {})

@@ -54,6 +54,15 @@ saga.config_values = {
     show_file = true,
     click_support = false,
   },
+  show_outline = {
+    win_position = 'right',
+    left_with = '',
+    win_width = 30,
+    auto_enter = true,
+    auto_preview = true,
+    virt_text = '┃',
+    jump_key = 'o',
+  },
   server_filetype_map = {},
 }
 
