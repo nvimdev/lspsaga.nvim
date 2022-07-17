@@ -189,9 +189,7 @@ function ot:auto_preview(bufnr)
     opts.anchor = 'NW'
     opts.col = outline_conf.win_width + 1
     local win_height = vim.fn.winheight(0)
-    print(win_height, _height)
     if win_height < _height then
-      print(_height - win_height)
       opts.row = (_height - win_height) + vim.fn.winline()
     else
       opts.row = vim.fn.winline()

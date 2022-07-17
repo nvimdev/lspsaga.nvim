@@ -55,17 +55,13 @@ saga.config_values = {
     click_support = false,
   },
   show_outline = {
-    win_position = 'left',
+    win_position = 'right',
     left_with = 'NvimTree',
-    win_width = 30,
+    win_width = 40,
     auto_enter = true,
     auto_preview = true,
-    fold_prefix = { '', '' },
     virt_text = '┃',
     jump_key = 'o',
-    test_data = {
-      data = 'test',
-    },
   },
   server_filetype_map = {},
 }

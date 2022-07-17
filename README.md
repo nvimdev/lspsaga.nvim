@@ -129,7 +129,16 @@ symbol_in_winbar = {
     show_file = true,
     click_support = false,
 },
-
+-- show outline
+show_outline = {
+  win_position = 'right',
+  left_with = '',
+  win_width = 30,
+  auto_enter = true,
+  auto_preview = true,
+  virt_text = '┃',
+  jump_key = 'o',
+},
 -- if you don't use nvim-lspconfig you must pass your server name and
 -- the related filetypes into this table
 -- like server_filetype_map = { metals = { "sbt", "scala" } }
@@ -444,6 +453,17 @@ src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-
 <div align="center">
 <img
 src="https://user-images.githubusercontent.com/41671631/176679585-9485676b-ddea-44ca-bc88-b0eb04d450b1.gif" />
+</div>
+
+</details>
+
+<details>
+<summary>Float terminal</summary>
+
+Work fast when lspsaga symbol winbar `in_custom = true` or `enable = true`
+
+<img
+src="https://user-images.githubusercontent.com/41671631/179402610-75814cd5-170e-42a9-8f4f-4539ff12e1a4.png"/>
 </div>
 
 </details>
