@@ -61,8 +61,11 @@ saga.config_values = {
     auto_enter = true,
     auto_preview = true,
     fold_prefix = {'',''},
-    virt_text = '│',
+    virt_text = '┃',
     jump_key = 'o',
+    test_data = {
+      data = 'test'
+    }
   },
   server_filetype_map = {},
 }

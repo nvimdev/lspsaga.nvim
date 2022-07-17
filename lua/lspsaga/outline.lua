@@ -13,7 +13,6 @@ local max_preview_lines = config.max_preview_lines
 local outline_conf = config.show_outline
 local method = 'textDocument/documentSymbol'
 
----TODO: better ui of outline
 local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   local current_buf = api.nvim_get_current_buf()
   local icon, hi = '', ''
@@ -111,45 +110,31 @@ local virt_id =  api.nvim_create_namespace('lspsaga_outline')
 local hi_tbl = {'OutlineFoldPrefix', 'OutlineIndentOdd','OutlineIndentEvn'}
 
 function ot:fold_virt_text(tbl)
-  local level = 0
-  for index,node in pairs(tbl) do
+  local level,col = 0,0
+  for index,_ in pairs(tbl) do
     level = vim.fn.foldlevel(index)
     if level > 0 then
       for i=1,level do
-        local _,cur_spaces =node:find('%s+')
-        local next = index + 1 > #tbl and index or index+1
-        local _,next_spaces = tbl[next]:find('%s+')
+--         local _,cur_spaces =node:find('%s+')
+--         local next_idx = index + 1 > #tbl and index or index+1
+--         local _,next_spaces = tbl[next_idx]:find('%s+')
 
         if bit.band(i,1) == 1 then
-          if cur_spaces < next_spaces then
-            api.nvim_buf_set_extmark(0,virt_id,index - 1,i - 1,{
-              virt_text = { {outline_conf.fold_prefix[2],hi_tbl[1]}},
-              virt_text_pos = 'overlay'
-            })
-          else
-            api.nvim_buf_set_extmark(0,virt_id,index - 1,i - 1,{
-              virt_text = { {outline_conf.virt_text,hi_tbl[2]}},
-              virt_text_pos = 'overlay'
-            })
-          end
+          col = i == 1 and i -1 or col + 2
+          api.nvim_buf_set_extmark(0,virt_id,index - 1,col,{
+            virt_text = { {outline_conf.virt_text,hi_tbl[2]}},
+            virt_text_pos = 'overlay',
+            virt_lines_above = false
+          })
         else
-          if cur_spaces < next_spaces then
-            api.nvim_buf_set_extmark(0,virt_id,index - 1,i,{
-              virt_text = { {outline_conf.fold_prefix[2],hi_tbl[1]}},
-              virt_text_pos = 'overlay'
-            })
-
-            api.nvim_buf_set_extmark(0,virt_id,index - 1,i - 2,{
-              virt_text = { {outline_conf.virt_text,hi_tbl[2]}},
-              virt_text_pos = 'overlay'
-            })
-          else
-            api.nvim_buf_set_extmark(0,virt_id,index - 1,i + 1,{
-              virt_text = { {outline_conf.virt_text,hi_tbl[3]}},
-              virt_text_pos = 'overlay'
-            })
-          end
+          col = col + 2
+          api.nvim_buf_set_extmark(0,virt_id,index - 1,col,{
+            virt_text = { {outline_conf.virt_text,hi_tbl[3]}},
+            virt_text_pos = 'overlay',
+            virt_lines_above = false
+          })
         end
+
       end
     end
   end
