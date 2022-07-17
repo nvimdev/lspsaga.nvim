@@ -107,7 +107,7 @@ function ot.set_fold()
 end
 
 local virt_id =  api.nvim_create_namespace('lspsaga_outline')
-local hi_tbl = {'OutlineFoldPrefix', 'OutlineIndentOdd','OutlineIndentEvn'}
+local virt_hi = {'OutlineIndentOdd','OutlineIndentEvn'}
 
 function ot:fold_virt_text(tbl)
   local level,col = 0,0
@@ -122,14 +122,14 @@ function ot:fold_virt_text(tbl)
         if bit.band(i,1) == 1 then
           col = i == 1 and i -1 or col + 2
           api.nvim_buf_set_extmark(0,virt_id,index - 1,col,{
-            virt_text = { {outline_conf.virt_text,hi_tbl[2]}},
+            virt_text = { {outline_conf.virt_text,virt_hi[1]}},
             virt_text_pos = 'overlay',
             virt_lines_above = false
           })
         else
           col = col + 2
           api.nvim_buf_set_extmark(0,virt_id,index - 1,col,{
-            virt_text = { {outline_conf.virt_text,hi_tbl[3]}},
+            virt_text = { {outline_conf.virt_text,virt_hi[2]}},
             virt_text_pos = 'overlay',
             virt_lines_above = false
           })
@@ -173,7 +173,6 @@ function ot:auto_preview(bufnr)
     opts.col = WIN_WIDTH - outline_conf.win_width - 1
     local folded = vim.fn.foldclosed(current_line)
 
-    ---TODO: smart previe row with fold
     if folded < 0 and vim.v.foldstart == 0 then
       opts.row = current_line - 1
     elseif folded > 0 then
