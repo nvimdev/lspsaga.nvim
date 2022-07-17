@@ -15,7 +15,7 @@ local method = 'textDocument/documentSymbol'
 
 local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   local current_buf = api.nvim_get_current_buf()
-  local icon, hi = '', ''
+  local icon, hi, line = '', '', ''
 
   for _, node in pairs(tbl) do
     level = level or 1
@@ -25,17 +25,20 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
 
     -- I think no need to show function param
     if node.kind ~= 14 then
-      table.insert(nodes, indent .. icon .. node.name)
+      line = indent .. icon .. node.name
+      table.insert(nodes, line)
       table.insert(hi_tbl, hi)
       if ot[current_buf].preview_contents == nil then
         ot[current_buf].preview_contents = {}
         ot[current_buf].link = {}
+        ot[current_buf].details = {}
       end
       local range = node.location ~= nil and node.location.range or node.range
       local _end_line = range['end'].line + 1
       local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
       table.insert(ot[current_buf].preview_contents, content)
       table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
+      table.insert(ot[current_buf].details, node.detail)
     end
 
     if node.children ~= nil and next(node.children) ~= nil then
@@ -106,37 +109,44 @@ function ot.set_fold()
   end
 end
 
-local virt_id =  api.nvim_create_namespace('lspsaga_outline')
-local virt_hi = {'OutlineIndentOdd','OutlineIndentEvn'}
+local virt_id = api.nvim_create_namespace('lspsaga_outline')
+local virt_hi = { 'OutlineIndentOdd', 'OutlineIndentEvn' }
 
 function ot:fold_virt_text(tbl)
-  local level,col = 0,0
-  for index,_ in pairs(tbl) do
+  local level, col = 0, 0
+  local virt_with_hi = {}
+  for index, _ in pairs(tbl) do
     level = vim.fn.foldlevel(index)
     if level > 0 then
-      for i=1,level do
---         local _,cur_spaces =node:find('%s+')
---         local next_idx = index + 1 > #tbl and index or index+1
---         local _,next_spaces = tbl[next_idx]:find('%s+')
+      for i = 1, level do
+        --         local _,cur_spaces =node:find('%s+')
+        --         local next_idx = index + 1 > #tbl and index or index+1
+        --         local _,next_spaces = tbl[next_idx]:find('%s+')
 
-        if bit.band(i,1) == 1 then
-          col = i == 1 and i -1 or col + 2
-          api.nvim_buf_set_extmark(0,virt_id,index - 1,col,{
-            virt_text = { {outline_conf.virt_text,virt_hi[1]}},
-            virt_text_pos = 'overlay',
-            virt_lines_above = false
-          })
+        if bit.band(i, 1) == 1 then
+          col = i == 1 and i - 1 or col + 2
+          virt_with_hi = { { outline_conf.virt_text, virt_hi[1] } }
         else
           col = col + 2
-          api.nvim_buf_set_extmark(0,virt_id,index - 1,col,{
-            virt_text = { {outline_conf.virt_text,virt_hi[2]}},
-            virt_text_pos = 'overlay',
-            virt_lines_above = false
-          })
+          virt_with_hi = { { outline_conf.virt_text, virt_hi[2] } }
         end
 
+        api.nvim_buf_set_extmark(0, virt_id, index - 1, col, {
+          virt_text = virt_with_hi,
+          virt_text_pos = 'overlay',
+          virt_lines_above = false,
+        })
       end
     end
+  end
+end
+
+function ot:detail_virt_text(bufnr)
+  for i, detail in pairs(self[bufnr].details) do
+    api.nvim_buf_set_extmark(0, virt_id, i - 1, 0, {
+      virt_text = { { detail, 'OutlineDetail' } },
+      virt_text_pos = 'eol',
+    })
   end
 end
 
@@ -168,24 +178,24 @@ function ot:auto_preview(bufnr)
     width = max_width,
   }
 
+  local winid = vim.fn.bufwinid(bufnr)
+  local _height = vim.fn.winheight(winid)
+
   if outline_conf.win_position == 'right' then
     opts.anchor = 'NE'
     opts.col = WIN_WIDTH - outline_conf.win_width - 1
-    local folded = vim.fn.foldclosed(current_line)
-
-    if folded < 0 and vim.v.foldstart == 0 then
-      opts.row = current_line - 1
-    elseif folded > 0 then
-      if current_line == vim.v.foldstart then
-        opts.row = current_line - 1
-      end
-    elseif folded < 0 and vim.v.foldstart > 0 then
-      opts.row = current_line - vim.v.foldend + vim.v.foldstart
-    end
-
+    opts.row = vim.fn.winline()
   else
     opts.anchor = 'NW'
     opts.col = outline_conf.win_width + 1
+    local win_height = vim.fn.winheight(0)
+    print(win_height, _height)
+    if win_height < _height then
+      print(_height - win_height)
+      opts.row = (_height - win_height) + vim.fn.winline()
+    else
+      opts.row = vim.fn.winline()
+    end
   end
 
   local content_opts = {
@@ -268,10 +278,12 @@ function ot:update_outline(symbols)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
   local nodes, hi_tbl = get_all_nodes(symbols)
+  --   vim.notify(vim.inspect(symbols))
 
   gen_outline_hi()
 
   create_outline_window()
+
   local win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_create_buf(true, true)
   api.nvim_win_set_buf(win, buf)
@@ -281,6 +293,8 @@ function ot:update_outline(symbols)
   api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
 
   self:fold_virt_text(nodes)
+
+  self:detail_virt_text(current_buf)
 
   api.nvim_buf_set_option(buf, 'modifiable', false)
 
