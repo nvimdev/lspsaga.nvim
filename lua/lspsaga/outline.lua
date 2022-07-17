@@ -119,10 +119,6 @@ function ot:fold_virt_text(tbl)
     level = vim.fn.foldlevel(index)
     if level > 0 then
       for i = 1, level do
-        --         local _,cur_spaces =node:find('%s+')
-        --         local next_idx = index + 1 > #tbl and index or index+1
-        --         local _,next_spaces = tbl[next_idx]:find('%s+')
-
         if bit.band(i, 1) == 1 then
           col = i == 1 and i - 1 or col + 2
           virt_with_hi = { { outline_conf.virt_text, virt_hi[1] } }
