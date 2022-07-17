@@ -459,9 +459,15 @@ src="https://user-images.githubusercontent.com/41671631/176679585-9485676b-ddea-
 </details>
 
 <details>
-<summary>Float terminal</summary>
+<summary>Outline</summary>
 
 Work fast when lspsaga symbol winbar `in_custom = true` or `enable = true`
+
+**Lua**
+
+```
+:LSoutlineToggle
+```
 
 <img
 src="https://user-images.githubusercontent.com/41671631/179402610-75814cd5-170e-42a9-8f4f-4539ff12e1a4.png"/>
