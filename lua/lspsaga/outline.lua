@@ -282,9 +282,9 @@ function ot:update_outline(ctx)
 
   gen_outline_hi()
 
-  local win,buf
+  local win, buf
 
-  if self.winid == 0 or self.winid == nil then
+  if self.winid == nil then
     create_outline_window()
     win = vim.api.nvim_get_current_win()
     buf = vim.api.nvim_create_buf(true, true)
@@ -327,13 +327,13 @@ end
 
 function ot:refresh_events()
   if outline_conf.auto_refresh then
-    self.refresh_au = api.nvim_create_augroup('OutlineRefresh',{clear =true})
-    api.nvim_create_autocmd('BufWinEnter',{
+    self.refresh_au = api.nvim_create_augroup('OutlineRefresh', { clear = true })
+    api.nvim_create_autocmd('BufWinEnter', {
       group = self.refresh_au,
       callback = function()
         self:auto_refresh()
       end,
-      desc = 'Outline refresh'
+      desc = 'Outline refresh',
     })
   end
 end
@@ -348,7 +348,8 @@ end
 function ot:render_outline(ctx)
   if self.status ~= nil and self.status then
     window.nvim_close_valid_window(self.winid)
-    self.winid = 0
+    self.winid = nil
+    self.winbuf = nil
     self.status = false
     self:remove_events()
     return
@@ -365,7 +366,7 @@ end
 
 function ot:auto_refresh()
   local ctx = {
-    bufnr = api.nvim_get_current_buf()
+    bufnr = api.nvim_get_current_buf(),
   }
   self:update_outline(ctx)
 end
