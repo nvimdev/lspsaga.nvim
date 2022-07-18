@@ -178,7 +178,7 @@ function M.create_win_with_border(content_opts, opts)
   end
 
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
-  api.nvim_win_set_option(winid, 'winblend', 0)
+  api.nvim_win_set_option(winid, 'winblend', config.saga_winblend)
   api.nvim_win_set_option(winid, 'foldlevel', 100)
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
