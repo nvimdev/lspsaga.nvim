@@ -47,11 +47,11 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   end
 end
 
-local function get_all_nodes(symbols)
-  symbols = symbols or nil
+local function get_all_nodes(ctx)
+  local symbols = next(ctx) ~= nil and ctx.symbols or {}
   local nodes, hi_tbl = {}, {}
   local current_buf = api.nvim_get_current_buf()
-  if cache[current_buf] ~= nil and next(cache[current_buf][2]) ~= nil and symbols == nil then
+  if cache[current_buf] ~= nil and next(cache[current_buf][2]) ~= nil then
     symbols = cache[current_buf][2]
   end
 
@@ -273,9 +273,11 @@ local do_symbol_request = function(ctx)
 end
 
 function ot:update_outline(ctx)
+  ctx = ctx or {}
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
-  local nodes, hi_tbl = get_all_nodes(ctx.symbols)
+
+  local nodes, hi_tbl = get_all_nodes(ctx)
   --   vim.notify(vim.inspect(symbols))
 
   gen_outline_hi()
@@ -329,8 +331,9 @@ function ot:refresh_events()
     api.nvim_create_autocmd('BufWinEnter',{
       group = self.refresh_au,
       callback = function()
-        self:auto_preview()
-      end
+        self:auto_refresh()
+      end,
+      desc = 'Outline refresh'
     })
   end
 end
@@ -338,6 +341,7 @@ end
 function ot:remove_events()
   if outline_conf.auto_refresh then
     api.nvim_del_augroup_by_id(self.refresh_au)
+    self.refresh_au = 0
   end
 end
 
@@ -346,23 +350,24 @@ function ot:render_outline(ctx)
     window.nvim_close_valid_window(self.winid)
     self.winid = 0
     self.status = false
-    self:refresh_events()
+    self:remove_events()
     return
   end
 
-  if not config.symbol_in_winbar.enable or not config.symbol_in_winbar.in_custom then
+  if not config.symbol_in_winbar.enable and not config.symbol_in_winbar.in_custom then
     do_symbol_request(ctx)
     return
   end
 
   self:update_outline(ctx)
+  self:refresh_events()
 end
 
 function ot:auto_refresh()
   local ctx = {
     bufnr = api.nvim_get_current_buf()
   }
-  self:render_outline(ctx)
+  self:update_outline(ctx)
 end
 
 return ot
