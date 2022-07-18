@@ -218,6 +218,7 @@ end
 
 function ot:render_status()
   self.winid = api.nvim_get_current_win()
+  print(api.nvim_get_current_buf())
   self.winbuf = api.nvim_get_current_buf()
   self.status = true
 end
@@ -226,7 +227,6 @@ local create_outline_window = function()
   if outline_conf.win_position == 'right' then
     vim.cmd('noautocmd vsplit')
     vim.cmd('vertical resize ' .. config.show_outline.win_width)
-    ot:render_status()
     return
   end
 
@@ -243,7 +243,6 @@ local create_outline_window = function()
       local winid = vim.fn.win_findbuf(sp_buf)[1]
       api.nvim_set_current_win(winid)
       vim.cmd('noautocmd sp vnew')
-      ot:render_status()
       return
     end
   end
@@ -251,7 +250,6 @@ local create_outline_window = function()
   vim.cmd('noautocmd vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
   vim.opt.splitright = user_option
-  ot:render_status()
 end
 
 ---@private
@@ -294,6 +292,8 @@ function ot:update_outline(ctx)
     buf = self.winbuf
   end
 
+  self:render_status()
+
   set_local()
 
   api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
@@ -331,7 +331,9 @@ function ot:refresh_events()
     api.nvim_create_autocmd('BufWinEnter', {
       group = self.refresh_au,
       callback = function()
-        self:auto_refresh()
+        if vim.bo.filetype ~= 'lspsagaoutline' then
+          self:auto_refresh()
+        end
       end,
       desc = 'Outline refresh',
     })
@@ -343,6 +345,23 @@ function ot:remove_events()
     api.nvim_del_augroup_by_id(self.refresh_au)
     self.refresh_au = 0
   end
+
+  if self.close_au_id ~= 0 then
+    api.nvim_del_augroup_by_id(self.close_au_id)
+    self.close_au_id = 0
+  end
+end
+
+function ot:close_when_latest()
+  self.close_au_id = api.nvim_create_augroup('OutlineCloseEvent',{clear = true})
+  api.nvim_create_autocmd('WinEnter',{
+    group = self.close_au_id,
+    callback = function()
+      if vim.bo.filetype == 'lspsagaoutline' and vim.fn.winnr('$') == 1 then
+        api.nvim_buf_delete(self.winbuf,{force = true})
+      end
+    end
+  })
 end
 
 function ot:render_outline(ctx)
@@ -362,6 +381,7 @@ function ot:render_outline(ctx)
 
   self:update_outline(ctx)
   self:refresh_events()
+  self:close_when_latest()
 end
 
 function ot:auto_refresh()
