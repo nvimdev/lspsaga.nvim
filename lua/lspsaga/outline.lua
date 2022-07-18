@@ -247,7 +247,7 @@ local create_outline_window = function()
     end
   end
 
-  vim.cmd('noautocmd vnew')
+  vim.cmd('noautocmd vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
   vim.opt.splitright = user_option
   ot:render_status()
