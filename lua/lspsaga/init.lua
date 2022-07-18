@@ -62,6 +62,7 @@ saga.config_values = {
     auto_preview = true,
     virt_text = '┃',
     jump_key = 'o',
+    auto_refresh = true,
   },
   server_filetype_map = {},
 }

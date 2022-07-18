@@ -155,6 +155,27 @@ function libs.find_buffer_by_filetype(ft)
   return false, nil
 end
 
+function libs.removeElementByKey(tbl, key)
+  local tmp = {}
+
+  for i in pairs(tbl) do
+    table.insert(tmp, i)
+  end
+
+  local newTbl = {}
+  local i = 1
+  while i <= #tmp do
+    local val = tmp[i]
+    if val == key then
+      table.remove(tmp, i)
+    else
+      newTbl[val] = tbl[val]
+      i = i + 1
+    end
+  end
+  return newTbl
+end
+
 function libs.async(routine, ...)
   local f = coroutine.create(function(await, ...)
     routine(await, ...)

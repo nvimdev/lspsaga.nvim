@@ -246,6 +246,9 @@ function Finder:render_finder_result()
     local titlebr = '%#LSFinderBarParam#' .. self.param .. ' %*'
     opts.row = opts.row - 1
     opts.col = opts.col + 1
+    opts.width = #self.param + 8
+    opts.height = 2
+    opts.no_size_override = true
     self.titlebar_bufnr, self.titlebar_winid = window.create_win_with_border({
       contents = { string.rep(' ', #self.param + 7), '' },
       filetype = 'lspsagafindertitlebar',
@@ -496,7 +499,7 @@ function Finder:quit_float_window(...)
   if self.winid ~= 0 then
     window.nvim_close_valid_window(self.winid)
     if vim.fn.has('nvim-0.8') == 1 then
-      window.nvim_close_valid_window(self.titlebar_winid)
+--       window.nvim_close_valid_window(self.titlebar_winid)
     end
   end
 

@@ -218,6 +218,7 @@ end
 
 function ot:render_status()
   self.winid = api.nvim_get_current_win()
+  self.winbuf = api.nvim_get_current_buf()
   self.status = true
 end
 
@@ -254,8 +255,10 @@ local create_outline_window = function()
 end
 
 ---@private
-local do_symbol_request = function()
-  local params = { textDocument = lsp.util.make_text_document_params() }
+local do_symbol_request = function(ctx)
+  ctx = ctx or {}
+  local bufnr = ctx ~= nil and ctx.bufnr or api.nvim_get_current_buf()
+  local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
   lsp.buf_request_all(0, method, params, function(result)
     if libs.result_isempty(result) then
       return
@@ -264,23 +267,30 @@ local do_symbol_request = function()
     local client_id = symbar.get_clientid()
 
     local symbols = result[client_id].result
-    ot:update_outline(symbols)
+    ctx.symbols = symbols
+    ot:update_outline(ctx)
   end)
 end
 
-function ot:update_outline(symbols)
+function ot:update_outline(ctx)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
-  local nodes, hi_tbl = get_all_nodes(symbols)
+  local nodes, hi_tbl = get_all_nodes(ctx.symbols)
   --   vim.notify(vim.inspect(symbols))
 
   gen_outline_hi()
 
-  create_outline_window()
+  local win,buf
 
-  local win = vim.api.nvim_get_current_win()
-  local buf = vim.api.nvim_create_buf(true, true)
-  api.nvim_win_set_buf(win, buf)
+  if self.winid == 0 or self.winid == nil then
+    create_outline_window()
+    win = vim.api.nvim_get_current_win()
+    buf = vim.api.nvim_create_buf(true, true)
+    api.nvim_win_set_buf(win, buf)
+  else
+    win = self.winid
+    buf = self.winbuf
+  end
 
   set_local()
 
@@ -313,20 +323,46 @@ function ot:update_outline(symbols)
   })
 end
 
-function ot:render_outline()
+function ot:refresh_events()
+  if outline_conf.auto_refresh then
+    self.refresh_au = api.nvim_create_augroup('OutlineRefresh',{clear =true})
+    api.nvim_create_autocmd('BufWinEnter',{
+      group = self.refresh_au,
+      callback = function()
+        self:auto_preview()
+      end
+    })
+  end
+end
+
+function ot:remove_events()
+  if outline_conf.auto_refresh then
+    api.nvim_del_augroup_by_id(self.refresh_au)
+  end
+end
+
+function ot:render_outline(ctx)
   if self.status ~= nil and self.status then
     window.nvim_close_valid_window(self.winid)
     self.winid = 0
     self.status = false
+    self:refresh_events()
     return
   end
 
   if not config.symbol_in_winbar.enable or not config.symbol_in_winbar.in_custom then
-    do_symbol_request()
+    do_symbol_request(ctx)
     return
   end
 
-  self:update_outline()
+  self:update_outline(ctx)
+end
+
+function ot:auto_refresh()
+  local ctx = {
+    bufnr = api.nvim_get_current_buf()
+  }
+  self:render_outline(ctx)
 end
 
 return ot
