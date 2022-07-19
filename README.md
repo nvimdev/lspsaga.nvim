@@ -142,6 +142,8 @@ show_outline = {
   auto_preview = true,
   virt_text = '┃',
   jump_key = 'o',
+  -- auto refresh when change buffer
+  auto_refresh = true,
 },
 -- if you don't use nvim-lspconfig you must pass your server name and
 -- the related filetypes into this table
@@ -464,7 +466,7 @@ src="https://user-images.githubusercontent.com/41671631/176679585-9485676b-ddea-
 <details>
 <summary>Outline</summary>
 
-Work fast when lspsaga symbol winbar `in_custom = true` or `enable = true`
+work fast when lspsaga symbol winbar `in_custom = true` or `enable = true`,
 
 **Lua**
 
