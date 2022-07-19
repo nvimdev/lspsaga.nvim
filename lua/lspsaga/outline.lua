@@ -271,7 +271,7 @@ function ot:update_outline(symbols)
 
   gen_outline_hi()
 
-  local win, buf,cwin
+  local win, buf, cwin
 
   if self.winid == nil then
     create_outline_window()
@@ -321,12 +321,18 @@ end
 
 function ot:preview_events(current_buf)
   if outline_conf.auto_preview and not self.preview_au then
-    self.preview_au = api.nvim_create_augroup('OutlinePreview',{clear = true})
+    self.preview_au = api.nvim_create_augroup('OutlinePreview', { clear = true })
     api.nvim_create_autocmd('CursorMoved', {
       group = self.preview_au,
       buffer = self.winbuf,
       callback = function()
-        ot:auto_preview(current_buf)
+        vim.defer_fn(function()
+          local cwin = api.nvim_get_current_win()
+          if cwin ~= self.winid then
+            return
+          end
+          ot:auto_preview(current_buf)
+        end, 0.5)
       end,
     })
   end
@@ -372,17 +378,15 @@ function ot:refresh_events()
   end
 end
 
-function ot:remove_preview_events()
-  if not self.preview_au then
-    api.nvim_del_augroup_by_id(self.preview_au)
-    self.preview_au = nil
-  end
-end
-
 function ot:remove_events()
   if outline_conf.auto_refresh then
     api.nvim_del_augroup_by_id(self.refresh_au)
     self.refresh_au = nil
+  end
+
+  if not self.preview_au then
+    api.nvim_del_augroup_by_id(self.preview_au)
+    self.preview_au = nil
   end
 end
 
