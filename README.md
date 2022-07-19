@@ -475,7 +475,7 @@ work fast when lspsaga symbol winbar `in_custom = true` or `enable = true`,
 ```
 
 <img
-src="https://user-images.githubusercontent.com/41671631/179402610-75814cd5-170e-42a9-8f4f-4539ff12e1a4.png"/>
+src="https://user-images.githubusercontent.com/41671631/179864315-3ec84106-bcd4-43db-8590-2fb07f4055d9.gif"/>
 </div>
 
 </details>
