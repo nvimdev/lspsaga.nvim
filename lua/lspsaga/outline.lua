@@ -109,8 +109,7 @@ end
 local virt_id = api.nvim_create_namespace('lspsaga_outline')
 local virt_hi = { 'OutlineIndentOdd', 'OutlineIndentEvn' }
 
-function ot:fold_indent_virt(tbl, outline_buf)
-  outline_buf = outline_buf or 0
+function ot:fold_indent_virt(tbl)
   local level, col = 0, 0
   local virt_with_hi = {}
   for index, _ in pairs(tbl) do
@@ -125,7 +124,7 @@ function ot:fold_indent_virt(tbl, outline_buf)
           virt_with_hi = { { outline_conf.virt_text, virt_hi[2] } }
         end
 
-        api.nvim_buf_set_extmark(outline_buf, virt_id, index - 1, col, {
+        api.nvim_buf_set_extmark(0, virt_id, index - 1, col, {
           virt_text = virt_with_hi,
           virt_text_pos = 'overlay',
         })
@@ -134,10 +133,9 @@ function ot:fold_indent_virt(tbl, outline_buf)
   end
 end
 
-function ot:detail_virt_text(bufnr, outline_buf)
-  outline_buf = outline_buf or 0
+function ot:detail_virt_text(bufnr)
   for i, detail in pairs(self[bufnr].details) do
-    api.nvim_buf_set_extmark(outline_buf, virt_id, i - 1, 0, {
+    api.nvim_buf_set_extmark(0, virt_id, i - 1, 0, {
       virt_text = { { detail, 'OutlineDetail' } },
       virt_text_pos = 'eol',
     })
@@ -273,7 +271,7 @@ function ot:update_outline(symbols)
 
   gen_outline_hi()
 
-  local win, buf
+  local win, buf,cwin
 
   if self.winid == nil then
     create_outline_window()
@@ -287,15 +285,17 @@ function ot:update_outline(symbols)
     if not api.nvim_buf_get_option(buf, 'modifiable') then
       api.nvim_buf_set_option(buf, 'modifiable', true)
     end
+    cwin = api.nvim_get_current_win()
+    api.nvim_set_current_win(self.winid)
   end
 
   self:render_status()
 
   api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
 
-  self:fold_indent_virt(nodes, buf)
+  self:fold_indent_virt(nodes)
 
-  self:detail_virt_text(current_buf, buf)
+  self:detail_virt_text(current_buf)
 
   api.nvim_buf_set_option(buf, 'modifiable', false)
 
@@ -303,31 +303,32 @@ function ot:update_outline(symbols)
     api.nvim_buf_add_highlight(buf, 0, hi, i - 1, 0, -1)
   end
 
+  if cwin ~= nil then
+    api.nvim_set_current_win(cwin)
+  end
+
   self[current_buf].in_render = true
 
-  for k, v in pairs(self) do
-    if type(v) == 'table' and v.in_render then
-      if k ~= current_buf then
-        v.in_render = false
-      end
-    end
-  end
-
-  if outline_conf.auto_preview then
-    api.nvim_create_autocmd('CursorMoved', {
-      group = group,
-      buffer = buf,
-      callback = function()
-        ot:auto_preview(current_buf)
-      end,
-    })
-  end
+  self:preview_events(current_buf)
 
   vim.keymap.set('n', outline_conf.jump_key, function()
     ot:jump_to_line(current_buf)
   end, {
     buffer = buf,
   })
+end
+
+function ot:preview_events(current_buf)
+  if outline_conf.auto_preview and not self.preview_au then
+    self.preview_au = api.nvim_create_augroup('OutlinePreview',{clear = true})
+    api.nvim_create_autocmd('CursorMoved', {
+      group = self.preview_au,
+      buffer = self.winbuf,
+      callback = function()
+        ot:auto_preview(current_buf)
+      end,
+    })
+  end
 end
 
 local outline_exclude = {
@@ -345,7 +346,7 @@ local outline_exclude = {
 function ot:refresh_events()
   if outline_conf.auto_refresh and not self.refresh_au then
     self.refresh_au = api.nvim_create_augroup('OutlineRefresh', { clear = true })
-    api.nvim_create_autocmd('WinEnter', {
+    api.nvim_create_autocmd('BufEnter', {
       group = self.refresh_au,
       callback = function()
         local current_buf = api.nvim_get_current_buf()
@@ -367,6 +368,13 @@ function ot:refresh_events()
       end,
       desc = 'Outline refresh',
     })
+  end
+end
+
+function ot:remove_preview_events()
+  if not self.preview_au then
+    api.nvim_del_augroup_by_id(self.preview_au)
+    self.preview_au = nil
   end
 end
 
@@ -402,6 +410,17 @@ function ot:render_outline(refresh)
   end
 
   self:update_outline()
+
+  if refresh then
+    for k, v in pairs(self) do
+      if type(v) == 'table' and v.in_render then
+        if k ~= current_buf then
+          v.in_render = false
+        end
+      end
+    end
+  end
+
   self:refresh_events()
 end
 
