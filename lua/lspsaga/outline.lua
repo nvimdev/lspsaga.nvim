@@ -48,12 +48,9 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
 end
 
 local function get_all_nodes(symbols)
-  symbols = symbols or nil
   local nodes, hi_tbl = {}, {}
   local current_buf = api.nvim_get_current_buf()
-  if cache[current_buf] ~= nil and next(cache[current_buf][2]) ~= nil and symbols == nil then
-    symbols = cache[current_buf][2]
-  end
+  symbols = symbols or cache[current_buf][2]
 
   nodes_with_icon(symbols, nodes, hi_tbl)
 
@@ -112,17 +109,13 @@ end
 local virt_id = api.nvim_create_namespace('lspsaga_outline')
 local virt_hi = { 'OutlineIndentOdd', 'OutlineIndentEvn' }
 
-function ot:fold_virt_text(tbl)
+function ot:fold_indent_virt(tbl)
   local level, col = 0, 0
   local virt_with_hi = {}
   for index, _ in pairs(tbl) do
     level = vim.fn.foldlevel(index)
     if level > 0 then
       for i = 1, level do
-        --         local _,cur_spaces =node:find('%s+')
-        --         local next_idx = index + 1 > #tbl and index or index+1
-        --         local _,next_spaces = tbl[next_idx]:find('%s+')
-
         if bit.band(i, 1) == 1 then
           col = i == 1 and i - 1 or col + 2
           virt_with_hi = { { outline_conf.virt_text, virt_hi[1] } }
@@ -134,7 +127,6 @@ function ot:fold_virt_text(tbl)
         api.nvim_buf_set_extmark(0, virt_id, index - 1, col, {
           virt_text = virt_with_hi,
           virt_text_pos = 'overlay',
-          virt_lines_above = false,
         })
       end
     end
@@ -222,6 +214,7 @@ end
 
 function ot:render_status()
   self.winid = api.nvim_get_current_win()
+  self.winbuf = api.nvim_get_current_buf()
   self.status = true
 end
 
@@ -229,7 +222,6 @@ local create_outline_window = function()
   if outline_conf.win_position == 'right' then
     vim.cmd('noautocmd vsplit')
     vim.cmd('vertical resize ' .. config.show_outline.win_width)
-    ot:render_status()
     return
   end
 
@@ -246,7 +238,6 @@ local create_outline_window = function()
       local winid = vim.fn.win_findbuf(sp_buf)[1]
       api.nvim_set_current_win(winid)
       vim.cmd('noautocmd sp vnew')
-      ot:render_status()
       return
     end
   end
@@ -254,12 +245,12 @@ local create_outline_window = function()
   vim.cmd('noautocmd vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
   vim.opt.splitright = user_option
-  ot:render_status()
 end
 
 ---@private
 local do_symbol_request = function()
-  local params = { textDocument = lsp.util.make_text_document_params() }
+  local bufnr = api.nvim_get_current_buf()
+  local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
   lsp.buf_request_all(0, method, params, function(result)
     if libs.result_isempty(result) then
       return
@@ -275,22 +266,35 @@ end
 function ot:update_outline(symbols)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
+
   local nodes, hi_tbl = get_all_nodes(symbols)
-  --   vim.notify(vim.inspect(symbols))
 
   gen_outline_hi()
 
-  create_outline_window()
+  local win, buf, cwin
 
-  local win = vim.api.nvim_get_current_win()
-  local buf = vim.api.nvim_create_buf(true, true)
-  api.nvim_win_set_buf(win, buf)
+  if self.winid == nil then
+    create_outline_window()
+    win = vim.api.nvim_get_current_win()
+    buf = vim.api.nvim_create_buf(true, true)
+    api.nvim_win_set_buf(win, buf)
+    set_local()
+  else
+    win = self.winid
+    buf = self.winbuf
+    if not api.nvim_buf_get_option(buf, 'modifiable') then
+      api.nvim_buf_set_option(buf, 'modifiable', true)
+    end
+    cwin = api.nvim_get_current_win()
+    api.nvim_set_current_win(self.winid)
+    set_local()
+  end
 
-  set_local()
+  self:render_status()
 
   api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
 
-  self:fold_virt_text(nodes)
+  self:fold_indent_virt(nodes)
 
   self:detail_virt_text(current_buf)
 
@@ -300,15 +304,13 @@ function ot:update_outline(symbols)
     api.nvim_buf_add_highlight(buf, 0, hi, i - 1, 0, -1)
   end
 
-  if outline_conf.auto_preview then
-    api.nvim_create_autocmd('CursorMoved', {
-      group = group,
-      buffer = buf,
-      callback = function()
-        ot:auto_preview(current_buf)
-      end,
-    })
+  if cwin ~= nil then
+    api.nvim_set_current_win(cwin)
   end
+
+  self[current_buf].in_render = true
+
+  self:preview_events(current_buf)
 
   vim.keymap.set('n', outline_conf.jump_key, function()
     ot:jump_to_line(current_buf)
@@ -317,19 +319,117 @@ function ot:update_outline(symbols)
   })
 end
 
-function ot:render_outline()
-  if self.status ~= nil and self.status then
+function ot:preview_events(current_buf)
+  if outline_conf.auto_preview and not self.preview_au then
+    self.preview_au = api.nvim_create_augroup('OutlinePreview', { clear = true })
+    api.nvim_create_autocmd('CursorMoved', {
+      group = self.preview_au,
+      buffer = self.winbuf,
+      callback = function()
+        vim.defer_fn(function()
+          local cwin = api.nvim_get_current_win()
+          if cwin ~= self.winid then
+            return
+          end
+          ot:auto_preview(current_buf)
+        end, 0.5)
+      end,
+    })
+  end
+end
+
+local outline_exclude = {
+  ['lspsagaoutline'] = true,
+  ['lspsagafinder'] = true,
+  ['lspsagahover'] = true,
+  ['sagasignature'] = true,
+  ['sagacodeaction'] = true,
+  ['sagarename'] = true,
+  ['NvimTree'] = true,
+  ['NeoTree'] = true,
+  ['TelescopePrompt'] = true,
+}
+
+function ot:refresh_events()
+  if outline_conf.auto_refresh and not self.refresh_au then
+    self.refresh_au = api.nvim_create_augroup('OutlineRefresh', { clear = true })
+    api.nvim_create_autocmd('BufEnter', {
+      group = self.refresh_au,
+      callback = function()
+        local current_buf = api.nvim_get_current_buf()
+        local in_render = function()
+          if self[current_buf] == nil then
+            return false
+          end
+
+          if self[current_buf].in_render == nil then
+            return false
+          end
+
+          return self[current_buf].in_render == true
+        end
+
+        if not outline_exclude[vim.bo.filetype] and not in_render() then
+          self:render_outline(true)
+        end
+      end,
+      desc = 'Outline refresh',
+    })
+  end
+end
+
+function ot:remove_events()
+  if outline_conf.auto_refresh then
+    api.nvim_del_augroup_by_id(self.refresh_au)
+    self.refresh_au = nil
+  end
+
+  if not self.preview_au then
+    api.nvim_del_augroup_by_id(self.preview_au)
+    self.preview_au = nil
+  end
+end
+
+function ot:render_outline(refresh)
+  refresh = refresh or false
+
+  if self.status ~= nil and self.status and not refresh then
     window.nvim_close_valid_window(self.winid)
-    self.winid = 0
+    self.winid = nil
+    self.winbuf = nil
     self.status = false
+    self:remove_events()
     return
   end
 
-  if not config.symbol_in_winbar.enable or not config.symbol_in_winbar.in_custom then
+  if not config.symbol_in_winbar.enable and not config.symbol_in_winbar.in_custom then
     do_symbol_request()
     return
   end
 
+  local current_buf = api.nvim_get_current_buf()
+  --if cache does not have value also do request
+  if cache[current_buf] == nil or next(cache[current_buf][2]) == nil then
+    do_symbol_request()
+    return
+  end
+
+  self:update_outline()
+
+  if refresh then
+    for k, v in pairs(self) do
+      if type(v) == 'table' and v.in_render then
+        if k ~= current_buf then
+          v.in_render = false
+        end
+      end
+    end
+  end
+
+  self:refresh_events()
+end
+
+function ot:auto_refresh()
   self:update_outline()
 end
 

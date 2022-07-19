@@ -192,32 +192,10 @@ function symbar:get_buf_symbol(force, ...)
   do_symbol_request(_callback)
 end
 
---@private
-local function removeElementByKey(tbl, key)
-  local tmp = {}
-
-  for i in pairs(tbl) do
-    table.insert(tmp, i)
-  end
-
-  local newTbl = {}
-  local i = 1
-  while i <= #tmp do
-    local val = tmp[i]
-    if val == key then
-      table.remove(tmp, i)
-    else
-      newTbl[val] = tbl[val]
-      i = i + 1
-    end
-  end
-  return newTbl
-end
-
 function symbar:clear_cache()
   local current_buf = api.nvim_get_current_buf()
   if self.symbol_cache[current_buf] then
-    self.symbol_cache = removeElementByKey(self.symbol_cache, current_buf)
+    self.symbol_cache = libs.removeElementByKey(self.symbol_cache, current_buf)
   end
 end
 
