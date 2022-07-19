@@ -287,6 +287,7 @@ function ot:update_outline(symbols)
     end
     cwin = api.nvim_get_current_win()
     api.nvim_set_current_win(self.winid)
+    set_local()
   end
 
   self:render_status()
