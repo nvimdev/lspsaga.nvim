@@ -114,7 +114,7 @@ local lsp_rename = function()
 
   local content_opts = {
     contents = {},
-    filetype = '',
+    filetype = 'sagarename',
     enter = true,
     highlight = 'LspSagaRenameBorder',
   }
