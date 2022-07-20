@@ -219,13 +219,18 @@ function ot:render_status()
 end
 
 local create_outline_window = function()
+  local user_option = vim.opt.splitright:get()
+
   if outline_conf.win_position == 'right' then
+    if not user_option then
+      vim.opt.splitright = true
+    end
+
     vim.cmd('noautocmd vsplit')
     vim.cmd('vertical resize ' .. config.show_outline.win_width)
+    vim.opt.splitright = user_option
     return
   end
-
-  local user_option = vim.opt.splitright:get()
 
   if user_option then
     vim.opt.splitright = false
