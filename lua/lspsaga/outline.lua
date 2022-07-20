@@ -310,7 +310,7 @@ function ot:update_outline(symbols)
 
   self[current_buf].in_render = true
 
-  self:preview_events(current_buf)
+  self:preview_events()
 
   vim.keymap.set('n', outline_conf.jump_key, function()
     ot:jump_to_line(current_buf)
@@ -319,19 +319,26 @@ function ot:update_outline(symbols)
   })
 end
 
-function ot:preview_events(current_buf)
+function ot:preview_events()
   if outline_conf.auto_preview and not self.preview_au then
     self.preview_au = api.nvim_create_augroup('OutlinePreview', { clear = true })
     api.nvim_create_autocmd('CursorMoved', {
       group = self.preview_au,
       buffer = self.winbuf,
       callback = function()
+        local buf
+        for k, v in pairs(self) do
+          if type(v) == 'table' and v.in_render then
+            buf = k
+          end
+        end
+
         vim.defer_fn(function()
           local cwin = api.nvim_get_current_win()
           if cwin ~= self.winid then
             return
           end
-          ot:auto_preview(current_buf)
+          ot:auto_preview(buf)
         end, 0.5)
       end,
     })

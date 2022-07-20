@@ -229,13 +229,13 @@ function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
 end
 
 local function get_diagnostic_start(diagnostic_entry)
-  local start_pos = diagnostic_entry["range"]["start"]
-  return start_pos["line"], start_pos["character"]
+  local start_pos = diagnostic_entry['range']['start']
+  return start_pos['line'], start_pos['character']
 end
 
 local function get_diagnostic_end(diagnostic_entry)
-  local end_pos = diagnostic_entry["range"]["end"]
-  return end_pos["line"], end_pos["character"]
+  local end_pos = diagnostic_entry['range']['end']
+  return end_pos['line'], end_pos['character']
 end
 
 local function in_range(cursor_line, cursor_char)
@@ -256,7 +256,7 @@ local function in_range(cursor_line, cursor_char)
         return true
       elseif cursor_line == end_line and cursor_char < end_char then
         return true
-      elseif cursor_line > start_line and cursor_line < end_line  then
+      elseif cursor_line > start_line and cursor_line < end_line then
         return true
       end
     end
@@ -273,9 +273,7 @@ function diag.show_cursor_diagnostics(opts, bufnr, client_id)
     local line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
     local column_nr = vim.api.nvim_win_get_cursor(0)[2]
 
-    return vim.tbl_filter(
-      in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id)
-    )
+    return vim.tbl_filter(in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id))
   end
 
   return show_diagnostics(opts, get_cursor_diagnostics)
