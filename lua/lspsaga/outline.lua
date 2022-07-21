@@ -280,7 +280,7 @@ function ot:update_outline(symbols)
   if self.winid == nil then
     create_outline_window()
     win = vim.api.nvim_get_current_win()
-    buf = vim.api.nvim_create_buf(true, true)
+    buf = vim.api.nvim_create_buf(false, true)
     api.nvim_win_set_buf(win, buf)
     set_local()
   else
