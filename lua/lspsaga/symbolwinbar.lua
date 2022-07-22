@@ -138,7 +138,7 @@ function symbar.get_clientid()
   local client_id
   local clients = vim.lsp.buf_get_clients()
   for id, conf in pairs(clients) do
-    if conf.server_capabilities.documentHighlightProvider then
+    if conf.server_capabilities.documentSymbolProvider then
       client_id = id
       break
     end
