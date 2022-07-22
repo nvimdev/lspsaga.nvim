@@ -216,6 +216,12 @@ local function show_diagnostics(opts, get_diagnostics)
 end
 
 function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
+  local ok, diag_winid = pcall(api.nvim_win_get_var, 0, 'show_line_diag_winids')
+  if ok and api.nvim_win_is_valid(diag_winid) then
+    api.nvim_set_current_win(diag_winid)
+    return
+  end
+
   opts = opts or {}
 
   local get_line_diagnostics = function()
