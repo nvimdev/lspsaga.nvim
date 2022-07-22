@@ -10,13 +10,13 @@ local path_sep = libs.path_sep
 local icons = config.finder_icons
 
 local methods = { 'textDocument/definition', 'textDocument/references' }
+local msgs = {
+  [methods[1]] = 'No Definitions Found',
+  [methods[2]] = 'No References  Found',
+}
 
 local do_request = co.create(function(method)
   local timeout = 1000
-  local msgs = {
-    [methods[1]] = '0 Definitions Found',
-    [methods[2]] = '0 References  Found',
-  }
 
   while true do
     local win = api.nvim_get_current_win()
@@ -27,12 +27,6 @@ local do_request = co.create(function(method)
     end
 
     local resp = lsp.buf_request_sync(bufnr, method, params, timeout)
-    if libs.result_isempty(resp) then
-      resp = {}
-      resp.result = { {
-        saga_msg = msgs[method],
-      } }
-    end
 
     local results = {}
     for _, res in pairs(resp) do
@@ -56,7 +50,7 @@ function Finder:word_symbol_kind()
   local clients = vim.lsp.buf_get_clients()
   local client
   for client_id, conf in pairs(clients) do
-    if conf.server_capabilities.documentHighlightProvider then
+    if conf.server_capabilities.documentSymbolProvider then
       client = client_id
     end
   end
@@ -135,22 +129,22 @@ function Finder:create_finder_contents(result, method, root_dir)
   }
 
   if method == methods[1] then
-    self.definition_uri = result.saga_msg and 1 or #result
+    self.definition_uri = #result == 0 and 1 or #result
     table.insert(self.contents, titles[method])
     target_lnum = 2
-    if result.saga_msg then
+    if #result == 0 then
       table.insert(self.contents, ' ')
-      table.insert(self.contents, icons.link .. result.saga_msg)
+      table.insert(self.contents, icons.link .. msgs[method])
       return
     end
   else
-    self.reference_uri = result.saga_msg and 1 or #result
+    self.reference_uri = #result == 0 and 1 or #result
     target_lnum = target_lnum + self.definition_uri + 5
     table.insert(self.contents, ' ')
     table.insert(self.contents, titles[method])
-    if result.saga_msg then
+    if #result == 0 then
       table.insert(self.contents, ' ')
-      table.insert(self.contents, icons.link .. result.saga_msg)
+      table.insert(self.contents, icons.link .. msgs[method])
       return
     end
   end
