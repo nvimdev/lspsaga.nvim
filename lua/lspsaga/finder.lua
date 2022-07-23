@@ -236,7 +236,7 @@ function Finder:render_finder_result()
 
   if vim.fn.has('nvim-0.8') == 1 then
     local title_bar
-    if type(config.finder_title_bar) == "function" then
+    if type(config.finder_title_bar) == 'function' then
       title_bar = config.finder_title_bar(self.param)
     else
       -- create winbar of finder
@@ -244,7 +244,7 @@ function Finder:render_finder_result()
       local sep_end = '%#LSFinderBarSepEnd#%*'
       local prefix = '%#LSFinderBarFind#Find: %*'
       local titlebr = '%#LSFinderBarParam#' .. self.param .. '%*'
-      title_bar = sep_start ..prefix .. titlebr..sep_end
+      title_bar = sep_start .. prefix .. titlebr .. sep_end
     end
     opts.row = opts.row - 1
     opts.col = opts.col + 1
@@ -307,15 +307,15 @@ function Finder:apply_float_map()
   }
 
   local open_func = function()
-      self:open_link(1)
+    self:open_link(1)
   end
 
   local vsplit_func = function()
-      self:open_link(2)
+    self:open_link(2)
   end
 
   local split_func = function()
-      self:open_link(3)
+    self:open_link(3)
   end
 
   local quit_func = function()
@@ -323,32 +323,42 @@ function Finder:apply_float_map()
   end
 
   local keymaps = {
-    { 'n', move.prev, '<Up>' ,opts},
-    { 'n', move.next, '<Down>',opts},
-    { 'n', action.vsplit, vsplit_func,opts},
-    { 'n', action.split, split_func,opts},
-    { 'n', action.scroll_down, function()
-      self:scroll_in_preview(1)
-    end,opts},
-    {'n', action.scroll_up, function()
-      self:scroll_in_preview(-1)
-    end,opts},
+    { 'n', move.prev, '<Up>', opts },
+    { 'n', move.next, '<Down>', opts },
+    { 'n', action.vsplit, vsplit_func, opts },
+    { 'n', action.split, split_func, opts },
+    {
+      'n',
+      action.scroll_down,
+      function()
+        self:scroll_in_preview(1)
+      end,
+      opts,
+    },
+    {
+      'n',
+      action.scroll_up,
+      function()
+        self:scroll_in_preview(-1)
+      end,
+      opts,
+    },
   }
 
   if type(action.open) == 'table' then
     for _, key in ipairs(action.open) do
-      table.insert(keymaps, {'n', key, open_func,opts})
+      table.insert(keymaps, { 'n', key, open_func, opts })
     end
   elseif type(action.open) == 'string' then
-    table.insert(keymaps, {'n', action.open, open_func,opts})
+    table.insert(keymaps, { 'n', action.open, open_func, opts })
   end
 
   if type(action.quit) == 'table' then
     for _, key in ipairs(action.quit) do
-      table.insert(keymaps, {'n', key, quit_func,opts})
+      table.insert(keymaps, { 'n', key, quit_func, opts })
     end
   elseif type(action.quit) == 'string' then
-    table.insert(keymaps, {'n', action.quit, quit_func,opts})
+    table.insert(keymaps, { 'n', action.quit, quit_func, opts })
   end
   nvim_create_keymap(keymaps)
 end

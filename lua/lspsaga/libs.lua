@@ -37,7 +37,7 @@ end
 
 function libs.nvim_create_keymap(definitions)
   for _, def in pairs(definitions) do
-    vim.keymap.set(def[1], def[2], def[3],def[4])
+    vim.keymap.set(def[1], def[2], def[3], def[4])
   end
 end
 

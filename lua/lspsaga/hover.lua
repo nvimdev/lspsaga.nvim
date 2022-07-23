@@ -42,7 +42,7 @@ function hover.render_hover_doc()
   --if has diagnostic window close
   window.nvim_win_try_close()
   if hover.has_saga_hover() then
-    local winid = api.nvim_win_get_var(0,'lspsaga_hoverwin_data')[1]
+    local winid = api.nvim_win_get_var(0, 'lspsaga_hoverwin_data')[1]
     api.nvim_set_current_win(winid)
     return
   end
