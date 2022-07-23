@@ -341,7 +341,7 @@ src="https://user-images.githubusercontent.com/41671631/175752848-cef8218a-f8e4-
 **Lua**
 
 ```lua
--- show hover doc
+-- show hover doc and press twice will jumpto hover window
 vim.keymap.set("n", "K", require("lspsaga.hover").render_hover_doc, { silent = true })
 -- or use command
 vim.keymap.set("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })

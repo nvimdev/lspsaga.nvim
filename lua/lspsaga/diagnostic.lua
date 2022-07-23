@@ -197,7 +197,9 @@ local function show_diagnostics(opts, get_diagnostics)
     highlight = 'LspSagaDiagnosticBorder',
   }
 
-  local bufnr, winid = window.create_win_with_border(content_opts, opts)
+  local bufnr, winid = window.create_win_with_border(content_opts, {
+    focusable = false
+  })
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)
     -- Start highlight after the prefix
@@ -208,7 +210,7 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
   api.nvim_buf_add_highlight(bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
-  local close_events = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
+  local close_events = { 'CursorMoved', 'CursorMovedI', 'InsertEnter'}
 
   libs.close_preview_autocmd(current_buf, winid, close_events)
   api.nvim_win_set_var(current_win, 'show_line_diag_winids', winid)
