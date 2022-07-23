@@ -235,21 +235,29 @@ function Finder:render_finder_result()
   api.nvim_win_set_option(self.winid, 'cursorline', true)
 
   if vim.fn.has('nvim-0.8') == 1 then
-    -- create winbar of finder
-    local prefix = '%#LSFinderBarFind# Find: %*'
-    local titlebr = '%#LSFinderBarParam#' .. self.param .. ' %*'
+    local title_bar
+    if type(config.finder_title_bar) == "function" then
+      title_bar = config.finder_title_bar(self.param)
+    else
+      -- create winbar of finder
+      local sep_start = '%#LSFinderBarSepStart#%*'
+      local sep_end = '%#LSFinderBarSepEnd#%*'
+      local prefix = '%#LSFinderBarFind#Find: %*'
+      local titlebr = '%#LSFinderBarParam#' .. self.param .. '%*'
+      title_bar = sep_start ..prefix .. titlebr..sep_end
+    end
     opts.row = opts.row - 1
     opts.col = opts.col + 1
     opts.width = #self.param + 8
     opts.height = 2
     opts.no_size_override = true
     self.titlebar_bufnr, self.titlebar_winid = window.create_win_with_border({
-      contents = { string.rep(' ', #self.param + 7), '' },
+      contents = { string.rep(' ', #self.param + 12), '' },
       filetype = 'lspsagafindertitlebar',
       border = 'none',
     }, opts)
 
-    api.nvim_win_set_option(self.titlebar_winid, 'winbar', prefix .. titlebr)
+    api.nvim_win_set_option(self.titlebar_winid, 'winbar', title_bar)
   end
 
   self:get_cursorline_highlight()

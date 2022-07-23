@@ -33,6 +33,7 @@ saga.config_values = {
     ref = '諭 ',
     link = '  ',
   },
+  finder_title_bar = false,
   finder_action_keys = {
     open = 'o',
     vsplit = 's',

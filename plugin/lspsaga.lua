@@ -17,8 +17,10 @@ local highlights = {
   References = { fg = '#CBA6F7', bold = true },
   DefinitionCount = { link = 'Title' },
   ReferencesCount = { link = 'Title' },
-  LSFinderBarFind = { fg = '#3af2dd', bg = '#a579b8', bold = true },
-  LSFinderBarParam = { fg = '#3af2dd', bg = '#a579b8', bold = true },
+  LSFinderBarSepStart = {fg='#031a66'},
+  LSFinderBarSepEnd = {fg='#031a66'},
+  LSFinderBarFind = { fg = '#3af2dd', bg = '#031a66', bold = true },
+  LSFinderBarParam = { fg = '#3af2dd', bg = '#031a66', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
   DefinitionPreviewTitle = { link = 'Title' },

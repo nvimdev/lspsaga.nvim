@@ -90,6 +90,8 @@ diagnostic_header = { " ", " ", " ", "ﴞ " },
 show_diagnostic_source = true,
 -- add bracket or something with diagnostic source, just have 2 elements
 diagnostic_source_bracket = {},
+-- preview lines of lsp_finder and definition preview
+max_preview_lines = 10,
 -- use emoji lightbulb in default
 code_action_icon = "💡",
 -- if true can press number to execute the codeaction in codeaction window
@@ -107,8 +109,10 @@ finder_icons = {
   ref = '諭 ',
   link = '  ',
 },
--- preview lines of lsp_finder and definition preview
-max_preview_lines = 10,
+-- custom finder title winbar function type
+-- param is current word with symbol icon string type
+-- return a winbar format string like `%#CustomFinder#Test%*`
+finder_title_bar = function(param) do your stuff here end,
 finder_action_keys = {
     open = "o",
     vsplit = "s",
