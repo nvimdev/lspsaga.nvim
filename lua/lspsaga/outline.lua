@@ -294,6 +294,12 @@ function ot:update_outline(symbols)
     set_local()
   end
 
+  api.nvim_buf_attach(buf, false, {
+    on_detach = function()
+      self:remove_events()
+    end,
+  })
+
   self:render_status()
 
   api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
@@ -325,10 +331,6 @@ end
 
 function ot:preview_events()
   if outline_conf.auto_preview then
-    if self.preview_au ~= nil then
-      api.nvim_del_augroup_by_id(self.preview_au)
-    end
-
     self.preview_au = api.nvim_create_augroup('OutlinePreview', { clear = true })
 
     api.nvim_create_autocmd('CursorMoved', {
@@ -368,10 +370,6 @@ local outline_exclude = {
 
 function ot:refresh_events()
   if outline_conf.auto_refresh then
-    if self.refresh_au ~= nil then
-      api.nvim_del_augroup_by_id(self.refresh_au)
-    end
-
     self.refresh_au = api.nvim_create_augroup('OutlineRefresh', { clear = true })
     api.nvim_create_autocmd('BufEnter', {
       group = self.refresh_au,
@@ -399,12 +397,12 @@ function ot:refresh_events()
 end
 
 function ot:remove_events()
-  if outline_conf.auto_refresh then
+  if self.refresh_au ~= nil and self.refresh_au > 0 then
     api.nvim_del_augroup_by_id(self.refresh_au)
     self.refresh_au = nil
   end
 
-  if not self.preview_au then
+  if self.preview_au ~= nil and self.preview_au > 0 then
     api.nvim_del_augroup_by_id(self.preview_au)
     self.preview_au = nil
   end
@@ -414,11 +412,14 @@ function ot:render_outline(refresh)
   refresh = refresh or false
 
   if self.status ~= nil and self.status and not refresh then
+    if api.nvim_buf_is_loaded(self.winbuf) then
+      api.nvim_buf_delete(self.winbuf, { force = true })
+    end
+
     window.nvim_close_valid_window(self.winid)
     self.winid = nil
     self.winbuf = nil
     self.status = false
-    self:remove_events()
     return
   end
 
