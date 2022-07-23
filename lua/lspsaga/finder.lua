@@ -265,10 +265,12 @@ function Finder:render_finder_result()
     end,
   })
 
-  api.nvim_buf_attach(self.bufnr,false,{
-    on_detach = function()
+  api.nvim_create_autocmd('QuitPre', {
+    group = saga_augroup,
+    buffer = self.bufnr,
+    callback = function()
       self:quit_float_window()
-    end
+    end,
   })
 
   for i = 1, self.definition_uri, 1 do
