@@ -35,13 +35,9 @@ function libs.has_value(tbl, val)
   return false
 end
 
-function libs.nvim_create_keymap(definitions, lhs)
+function libs.nvim_create_keymap(definitions)
   for _, def in pairs(definitions) do
-    local bufnr = def[1]
-    local mode = def[2]
-    local key = def[3]
-    local rhs = def[4]
-    api.nvim_buf_set_keymap(bufnr, mode, key, rhs, lhs)
+    vim.keymap.set(def[1], def[2], def[3],def[4])
   end
 end
 
