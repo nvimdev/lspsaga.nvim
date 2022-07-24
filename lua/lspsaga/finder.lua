@@ -63,7 +63,7 @@ function Finder:word_symbol_kind()
     local method = 'textDocument/documentSymbol'
     if client ~= nil then
       local params = { textDocument = lsp.util.make_text_document_params() }
-      local results = lsp.buf_request_sync(current_buf, method, params, 500)
+      local results = lsp.buf_request_sync(current_buf, method, params, 800)
       if results ~= nil then
         result = results[client].result
       end
@@ -73,7 +73,7 @@ function Finder:word_symbol_kind()
   end
 
   local index = 0
-  if next(result) ~= nil then
+  if result ~= nil and next(result) ~= nil then
     for i, val in pairs(result) do
       if val.name:find(current_word) then
         index = i
@@ -118,7 +118,9 @@ function Finder:create_finder_contents(result, method, root_dir)
   -- remove definition in references
   if self.short_link ~= nil and self.short_link[3] ~= nil then
     local start = result[1].range.start
-    if start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col - 1 then
+    if
+      start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col - 1
+    then
       table.remove(result, 1)
     end
   end
@@ -183,7 +185,12 @@ function Finder:create_finder_contents(result, method, root_dir)
     target_lnum = target_lnum + 1
     -- max_preview_lines
     local max_preview_lines = config.max_preview_lines
-    local lines = api.nvim_buf_get_lines(bufnr, range.start.line - 0, range['end'].line + 1 + max_preview_lines, false)
+    local lines = api.nvim_buf_get_lines(
+      bufnr,
+      range.start.line - 0,
+      range['end'].line + 1 + max_preview_lines,
+      false
+    )
 
     self.short_link[target_lnum] = {
       link = link,
@@ -372,8 +379,22 @@ function Finder:lsp_finder_highlight()
   api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', 3 + def_uri_count, 0, #icons.ref)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'References', 3 + def_uri_count, #icons.ref, #icons.ref + ref_len)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesCount', 3 + def_uri_count, #icons.ref + ref_len, -1)
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'References',
+    3 + def_uri_count,
+    #icons.ref,
+    #icons.ref + ref_len
+  )
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'ReferencesCount',
+    3 + def_uri_count,
+    #icons.ref + ref_len,
+    -1
+  )
 end
 
 function Finder:set_cursor()
@@ -519,7 +540,8 @@ function Finder:scroll_in_preview(direction)
   end
 
   local current_win_lnum, last_lnum = pdata[2], pdata[3]
-  current_win_lnum = scroll_in_win(pdata[1], direction, current_win_lnum, last_lnum, config.max_preview_lines)
+  current_win_lnum =
+    scroll_in_win(pdata[1], direction, current_win_lnum, last_lnum, config.max_preview_lines)
   api.nvim_win_set_var(0, 'saga_finder_preview', { pdata[1], current_win_lnum, last_lnum })
 end
 

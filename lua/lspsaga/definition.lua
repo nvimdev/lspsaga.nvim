@@ -58,9 +58,16 @@ function def.preview_definition(timeout_ms)
       start_line = range.start.line
     end
 
-    local content =
-      vim.api.nvim_buf_get_lines(bufnr, start_line, range['end'].line + 1 + config.max_preview_lines, false)
-    content = vim.list_extend({ config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' }, content)
+    local content = vim.api.nvim_buf_get_lines(
+      bufnr,
+      start_line,
+      range['end'].line + 1 + config.max_preview_lines,
+      false
+    )
+    content = vim.list_extend(
+      { config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' },
+      content
+    )
 
     local opts = {
       relative = 'cursor',
@@ -112,8 +119,13 @@ function def.scroll_in_def_preview(direction)
   if not has_preview then
     return
   end
-  local current_win_lnum = scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
-  api.nvim_buf_set_var(0, 'lspsaga_def_preview', { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] })
+  local current_win_lnum =
+    scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
+  api.nvim_buf_set_var(
+    0,
+    'lspsaga_def_preview',
+    { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] }
+  )
 end
 
 return def

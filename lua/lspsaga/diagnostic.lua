@@ -141,7 +141,9 @@ local function show_diagnostics(opts, get_diagnostics)
   -- diagnostic window
   local has_var, diag_float_winid = pcall(api.nvim_buf_get_var, 0, 'diagnostic_float_window')
   if has_var and diag_float_winid ~= nil then
-    if api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2]) then
+    if
+      api.nvim_win_is_valid(diag_float_winid[1]) and api.nvim_win_is_valid(diag_float_winid[2])
+    then
       return
     end
   end
@@ -165,7 +167,8 @@ local function show_diagnostics(opts, get_diagnostics)
     return
   end
 
-  local sorted_diagnostics = severity_sort and table.sort(diagnostics, comp_severity_asc) or diagnostics
+  local sorted_diagnostics = severity_sort and table.sort(diagnostics, comp_severity_asc)
+    or diagnostics
 
   local severities = vim.diagnostic.severity
   for i, diagnostic in ipairs(sorted_diagnostics) do

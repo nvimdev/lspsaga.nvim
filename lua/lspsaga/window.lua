@@ -361,7 +361,15 @@ function M.fancy_floating_markdown(contents, opts)
     if not pcall(vim.cmd, string.format('syntax include %s syntax/%s.vim', lang, ft)) then
       return
     end
-    vim.cmd(string.format('syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s', name, start, finish + 1, lang))
+    vim.cmd(
+      string.format(
+        'syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s',
+        name,
+        start,
+        finish + 1,
+        lang
+      )
+    )
   end
   -- Previous highlight region.
   -- TODO(ashkan): this wasn't working for some reason, but I would like to
