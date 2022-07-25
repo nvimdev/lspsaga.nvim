@@ -39,6 +39,11 @@ local kind = {
   [24] = { 'Event', ' ', colors.violet },
   [25] = { 'Operator', ' ', colors.green },
   [26] = { 'TypeParameter', ' ', colors.green },
+  -- ccls
+  [252] = { 'TypeAlias', ' ', colors.blue },
+  [253] = { 'Parameter', ' ', colors.green },
+  [254] = { 'StaticMethod', 'ﴂ ', colors.green },
+  [255] = { 'Macro', ' ', colors.green },
 }
 
 local function gen_symbol_winbar_hi()
