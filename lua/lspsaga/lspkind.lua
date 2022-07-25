@@ -40,10 +40,10 @@ local kind = {
   [25] = { 'Operator', ' ', colors.green },
   [26] = { 'TypeParameter', ' ', colors.green },
   -- ccls
-  [252] = { 'TypeAlias', ' ', colors.blue },
-  [253] = { 'Parameter', ' ', colors.green },
-  [254] = { 'StaticMethod', 'ﴂ ', colors.green },
-  [255] = { 'Macro', ' ', colors.green },
+  [252] = { 'TypeAlias', ' ', colors.green },
+  [253] = { 'Parameter', ' ', colors.blue },
+  [254] = { 'StaticMethod', 'ﴂ ', colors.orange },
+  [255] = { 'Macro', ' ', colors.red },
 }
 
 local function gen_symbol_winbar_hi()
