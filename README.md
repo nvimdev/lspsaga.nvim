@@ -233,7 +233,7 @@ To enable click support for winbar define a function similar to [statusline](htt
 minwid will be replaced with current node. For example:
 
 ```lua
-symbol_in_bar = {
+symbol_in_winbar = {
     click_support = function(node, clicks, button, modifiers)
         -- To see all avaiable details: vim.pretty_print(node)
         local st = node.range.start
