@@ -8,6 +8,7 @@ local saga_augroup = require('lspsaga').saga_augroup
 local symbar = require('lspsaga.symbolwinbar')
 local path_sep = libs.path_sep
 local icons = config.finder_icons
+local insert = table.insert
 
 local methods = { 'textDocument/definition', 'textDocument/references' }
 local msgs = {
@@ -32,7 +33,7 @@ local do_request = co.create(function(method)
     for _, res in pairs(resp) do
       if res.result and next(res.result) ~= nil then
         for _, v in pairs(res.result) do
-          table.insert(results, v)
+          insert(results, v)
         end
       end
     end
@@ -132,21 +133,21 @@ function Finder:create_finder_contents(result, method, root_dir)
 
   if method == methods[1] then
     self.definition_uri = #result == 0 and 1 or #result
-    table.insert(self.contents, titles[method])
+    insert(self.contents, titles[method])
     target_lnum = 2
     if #result == 0 then
-      table.insert(self.contents, ' ')
-      table.insert(self.contents, icons.link .. msgs[method])
+      insert(self.contents, ' ')
+      insert(self.contents, icons.link .. msgs[method])
       return
     end
   else
     self.reference_uri = #result == 0 and 1 or #result
     target_lnum = target_lnum + self.definition_uri + 5
-    table.insert(self.contents, ' ')
-    table.insert(self.contents, titles[method])
+    insert(self.contents, ' ')
+    insert(self.contents, titles[method])
     if #result == 0 then
-      table.insert(self.contents, ' ')
-      table.insert(self.contents, icons.link .. msgs[method])
+      insert(self.contents, ' ')
+      insert(self.contents, icons.link .. msgs[method])
       return
     end
   end
@@ -179,9 +180,9 @@ function Finder:create_finder_contents(result, method, root_dir)
     local target_line = icons.link .. short_name
     local range = res.targetRange or res.range
     if index == 1 then
-      table.insert(self.contents, ' ')
+      insert(self.contents, ' ')
     end
-    table.insert(self.contents, target_line)
+    insert(self.contents, target_line)
     target_lnum = target_lnum + 1
     -- max_preview_lines
     local max_preview_lines = config.max_preview_lines
@@ -205,7 +206,7 @@ function Finder:render_finder_result()
   if next(self.contents) == nil then
     return
   end
-  table.insert(self.contents, ' ')
+  insert(self.contents, ' ')
   -- get dimensions
   local width = api.nvim_get_option('columns')
   local height = api.nvim_get_option('lines')
@@ -354,18 +355,18 @@ function Finder:apply_float_map()
 
   if type(action.open) == 'table' then
     for _, key in ipairs(action.open) do
-      table.insert(keymaps, { 'n', key, open_func, opts })
+      insert(keymaps, { 'n', key, open_func, opts })
     end
   elseif type(action.open) == 'string' then
-    table.insert(keymaps, { 'n', action.open, open_func, opts })
+    insert(keymaps, { 'n', action.open, open_func, opts })
   end
 
   if type(action.quit) == 'table' then
     for _, key in ipairs(action.quit) do
-      table.insert(keymaps, { 'n', key, quit_func, opts })
+      insert(keymaps, { 'n', key, quit_func, opts })
     end
   elseif type(action.quit) == 'string' then
-    table.insert(keymaps, { 'n', action.quit, quit_func, opts })
+    insert(keymaps, { 'n', action.quit, quit_func, opts })
   end
   nvim_create_keymap(keymaps)
 end
