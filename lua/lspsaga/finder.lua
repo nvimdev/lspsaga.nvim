@@ -99,7 +99,7 @@ function Finder:get_file_icon()
     self.f_icon, self.f_hl = devicons.get_icon_by_filetype(vim.bo.filetype)
   end
   -- if filetype doesn't match devicon will set f_icon to nil so add a patch
-  self.f_icon = self.f_icon == nil and '' or (self.f_icon .. '  ')
+  self.f_icon = self.f_icon == nil and '' or (self.f_icon .. ' ')
   self.f_hl = self.f_hl == nil and '' or self.f_hl
 end
 

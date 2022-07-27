@@ -295,7 +295,7 @@ vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true,noremap
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/181242511-a482fda3-45cb-4813-b672-c95b537a221d.png" />
+src="https://user-images.githubusercontent.com/41671631/181253960-cef49f9d-db8b-4b04-92d8-cb6322749414.png" />
 </div>
 
 </details>
