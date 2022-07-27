@@ -126,6 +126,13 @@ function lb.action_lightbulb()
   if not has_code_action then
     return
   end
+
+  if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == "i" then
+    _update_sign()
+    _update_virtual_text()
+    return
+  end
+
   render_bulb()
 end
 

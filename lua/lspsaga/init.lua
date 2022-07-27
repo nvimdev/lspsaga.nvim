@@ -23,6 +23,7 @@ saga.config_values = {
   code_action_num_shortcut = true,
   code_action_lightbulb = {
     enable = true,
+    enable_in_insert = true,
     sign = true,
     sign_priority = 40,
     virtual_text = true,
