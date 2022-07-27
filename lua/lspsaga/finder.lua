@@ -30,10 +30,13 @@ local do_request = co.create(function(method)
     local resp = lsp.buf_request_sync(bufnr, method, params, timeout)
 
     local results = {}
-    for _, res in pairs(resp) do
-      if res.result and next(res.result) ~= nil then
-        for _, v in pairs(res.result) do
-          insert(results, v)
+
+    if resp ~= nil and type(resp) == 'table' then
+      for _, res in pairs(resp) do
+        if res.result and next(res.result) ~= nil then
+          for _, v in pairs(res.result) do
+            insert(results, v)
+          end
         end
       end
     end
@@ -117,7 +120,7 @@ end
 function Finder:create_finder_contents(result, method, root_dir)
   local target_lnum = 0
   -- remove definition in references
-  if self.short_link ~= nil and self.short_link[3] ~= nil then
+  if self.short_link ~= nil and self.short_link[3] ~= nil and next(result) ~= nil then
     local start = result[1].range.start
     if
       start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col - 1
