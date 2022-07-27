@@ -9,6 +9,7 @@ local symbar = require('lspsaga.symbolwinbar')
 local path_sep = libs.path_sep
 local icons = config.finder_icons
 local insert = table.insert
+local indent = '    '
 
 local methods = { 'textDocument/definition', 'textDocument/references' }
 local msgs = {
@@ -90,6 +91,18 @@ function Finder:word_symbol_kind()
   self.param = icon .. current_word
 end
 
+function Finder:get_file_icon()
+  local ok, devicons = pcall(require, 'nvim-web-devicons')
+  self.f_icon = ''
+  self.f_hl = ''
+  if ok then
+    self.f_icon, self.f_hl = devicons.get_icon_by_filetype(vim.bo.filetype)
+  end
+  -- if filetype doesn't match devicon will set f_icon to nil so add a patch
+  self.f_icon = self.f_icon == nil and '' or (self.f_icon .. '  ')
+  self.f_hl = self.f_hl == nil and '' or self.f_hl
+end
+
 function Finder:lsp_finder_request()
   local root_dir = libs.get_lsp_root_dir()
   if string.len(root_dir) == 0 then
@@ -98,6 +111,7 @@ function Finder:lsp_finder_request()
   end
   -- get current word symbol kind
   self:word_symbol_kind()
+  self:get_file_icon()
 
   self.WIN_WIDTH = fn.winwidth(0)
   self.WIN_HEIGHT = fn.winheight(0)
@@ -130,8 +144,8 @@ function Finder:create_finder_contents(result, method, root_dir)
   end
 
   local titles = {
-    [methods[1]] = icons.def .. 'Definitions ' .. #result .. ' results',
-    [methods[2]] = icons.ref .. 'References  ' .. #result .. ' results',
+    [methods[1]] = icons.def .. 'Definition ' .. #result .. ' results',
+    [methods[2]] = icons.ref .. 'References ' .. #result .. ' results',
   }
 
   if method == methods[1] then
@@ -140,7 +154,8 @@ function Finder:create_finder_contents(result, method, root_dir)
     target_lnum = 2
     if #result == 0 then
       insert(self.contents, ' ')
-      insert(self.contents, icons.link .. msgs[method])
+      insert(self.contents, indent .. msgs[method])
+      self.f_icon = ''
       return
     end
   else
@@ -150,7 +165,8 @@ function Finder:create_finder_contents(result, method, root_dir)
     insert(self.contents, titles[method])
     if #result == 0 then
       insert(self.contents, ' ')
-      insert(self.contents, icons.link .. msgs[method])
+      insert(self.contents, indent .. msgs[method])
+      self.f_icon = ''
       return
     end
   end
@@ -180,7 +196,7 @@ function Finder:create_finder_contents(result, method, root_dir)
       end
     end
 
-    local target_line = icons.link .. short_name
+    local target_line = indent .. self.f_icon .. short_name
     local range = res.targetRange or res.range
     if index == 1 then
       insert(self.contents, ' ')
@@ -204,6 +220,8 @@ function Finder:create_finder_contents(result, method, root_dir)
     }
   end
 end
+
+local ns_id = api.nvim_create_namespace('lspsagafinder')
 
 function Finder:render_finder_result()
   if next(self.contents) == nil then
@@ -243,7 +261,7 @@ function Finder:render_finder_result()
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
   api.nvim_buf_set_option(self.bufnr, 'buflisted', false)
   api.nvim_win_set_var(self.winid, 'lsp_finder_win_opts', opts)
-  api.nvim_win_set_option(self.winid, 'cursorline', true)
+  api.nvim_win_set_option(self.winid, 'cursorline', false)
 
   if vim.fn.has('nvim-0.8') == 1 then
     local title_bar
@@ -271,10 +289,6 @@ function Finder:render_finder_result()
     api.nvim_win_set_option(self.titlebar_winid, 'winbar', title_bar)
   end
 
-  self:get_cursorline_highlight()
-
-  api.nvim_set_hl(0, 'CursorLine', { link = 'LspSagaFinderSelection' })
-
   api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.bufnr,
@@ -292,13 +306,63 @@ function Finder:render_finder_result()
     end,
   })
 
+  local virt_hi = 'FinderVirtText'
+
+  api.nvim_buf_set_extmark(0, ns_id, 1, 0, {
+    virt_text = { { '│', virt_hi } },
+    virt_text_pos = 'overlay',
+  })
+
   for i = 1, self.definition_uri, 1 do
+    local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, 1 + i, 0, #indent + #self.f_icon)
+
+    if i == self.definition_uri then
+      insert(virt_texts, { '└', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    else
+      insert(virt_texts, { '├', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    end
+
+    api.nvim_buf_set_extmark(0, ns_id, i + 1, 0, {
+      virt_text = virt_texts,
+      virt_text_pos = 'overlay',
+    })
   end
 
+  api.nvim_buf_set_extmark(0, ns_id, 4 + self.definition_uri, 0, {
+    virt_text = { { '│', virt_hi } },
+    virt_text_pos = 'overlay',
+  })
+
   for i = 1, self.reference_uri, 1 do
+    local virt_texts = {}
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
     local def_count = self.definition_uri ~= 0 and self.definition_uri or -1
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i + def_count + 4, 0, -1)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      -1,
+      self.f_hl,
+      i + def_count + 4,
+      0,
+      #indent + #self.f_icon
+    )
+
+    if i == self.reference_uri then
+      insert(virt_texts, { '└', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    else
+      insert(virt_texts, { '├', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    end
+
+    api.nvim_buf_set_extmark(0, ns_id, i + def_count + 4, 0, {
+      virt_text = virt_texts,
+      virt_text_pos = 'overlay',
+    })
   end
   -- disable some move keys in finder window
   libs.disable_move_keys(self.bufnr)
@@ -376,7 +440,7 @@ end
 
 function Finder:lsp_finder_highlight()
   local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
-  local def_len = string.len('Definitions')
+  local def_len = string.len('Definition')
   local ref_len = string.len('References')
   -- add syntax
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.def)
@@ -401,9 +465,11 @@ function Finder:lsp_finder_highlight()
   )
 end
 
+local finder_ns = api.nvim_create_namespace('finder_select')
+
 function Finder:set_cursor()
-  local current_line = fn.line('.')
-  local column = #icons.link + 1
+  local current_line = api.nvim_win_get_cursor(0)[1]
+  local column = #indent + #self.f_icon + 1
 
   local first_def_uri_lnum = self.definition_uri ~= 0 and 3 or 5
   local last_def_uri_lnum = 3 + self.definition_uri - 1
@@ -426,10 +492,28 @@ function Finder:set_cursor()
   elseif current_line == first_def_uri_lnum - 1 then
     fn.cursor(last_ref_uri_lnum, column)
   end
-end
 
-function Finder:get_cursorline_highlight()
-  self.cursorline_color = api.nvim_get_hl_by_name('Cursorline', true)
+  local actual_line = api.nvim_win_get_cursor(0)[1]
+  if actual_line == first_def_uri_lnum then
+    api.nvim_buf_add_highlight(
+      0,
+      finder_ns,
+      'LspSagaFinderSelection',
+      2,
+      #indent + #self.f_icon,
+      -1
+    )
+  end
+
+  api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
+  api.nvim_buf_add_highlight(
+    0,
+    finder_ns,
+    'LspSagaFinderSelection',
+    actual_line - 1,
+    #indent + #self.f_icon,
+    -1
+  )
 end
 
 function Finder:auto_open_preview()
@@ -579,7 +663,6 @@ function Finder:clear_tmp_data()
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
-  api.nvim_set_hl(0, 'CursorLine', self.cursorline_color)
 end
 
 function Finder.lsp_finder()

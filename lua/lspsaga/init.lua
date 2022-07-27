@@ -29,9 +29,8 @@ saga.config_values = {
   },
   max_preview_lines = 10,
   finder_icons = {
-    def = '  ',
-    ref = '諭 ',
-    link = '  ',
+    def = 'ﰳ  ',
+    ref = 'ﰳ  ',
   },
   finder_title_bar = false,
   finder_action_keys = {
