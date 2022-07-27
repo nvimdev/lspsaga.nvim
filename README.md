@@ -280,7 +280,7 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 ## Showcase
 
 <details>
-<summary>Async lsp finder</summary>
+<summary>lsp finder</summary>
 
 Finder Title work with neovim 0.8 +
 
@@ -295,7 +295,7 @@ vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true,noremap
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/179228004-e3c2ef1e-1126-4468-9351-7d7be1ff44e7.gif" />
+src="https://user-images.githubusercontent.com/41671631/181242511-a482fda3-45cb-4813-b672-c95b537a221d.png" />
 </div>
 
 </details>

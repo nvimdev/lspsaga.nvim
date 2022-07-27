@@ -127,7 +127,7 @@ function lb.action_lightbulb()
     return
   end
 
-  if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == "i" then
+  if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == 'i' then
     _update_sign()
     _update_virtual_text()
     return
