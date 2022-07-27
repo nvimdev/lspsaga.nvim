@@ -100,6 +100,7 @@ code_action_num_shortcut = true,
 code_action_lightbulb = {
     enable = true,
     sign = true,
+    enable_in_insert = true,
     sign_priority = 20,
     virtual_text = true,
 },
