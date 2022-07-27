@@ -331,7 +331,7 @@ function M.fancy_floating_markdown(contents, opts)
 
   local content_opts = {
     contents = stripped,
-    filetype = 'markdown',
+    filetype = 'sagahover',
     highlight = 'LspSagaHoverBorder',
   }
 
