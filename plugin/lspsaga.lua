@@ -80,7 +80,7 @@ end, {
 api.nvim_create_user_command('LSoutlineToggle', function()
   -- see  https://github.com/neovim/neovim/issues/19458
   -- disable the winbar when first open outline.
-  api.nvim_win_set_option(0,'winbar','')
+  api.nvim_win_set_option(0, 'winbar', '')
   require('lspsaga.outline'):render_outline()
 end, {})
 

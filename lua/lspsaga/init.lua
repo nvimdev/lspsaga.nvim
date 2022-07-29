@@ -57,7 +57,7 @@ saga.config_values = {
     click_support = false,
   },
   show_outline = {
-    win_position = 'left',
+    win_position = 'right',
     left_with = '',
     win_width = 30,
     auto_enter = true,
