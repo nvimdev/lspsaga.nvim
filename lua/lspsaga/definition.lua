@@ -28,7 +28,6 @@ function def.preview_definition(timeout_ms)
       return
     end
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
-    print(uri)
     if #uri == 0 then
       return
     end
