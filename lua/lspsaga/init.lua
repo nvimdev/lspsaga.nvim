@@ -58,7 +58,7 @@ saga.config_values = {
   },
   show_outline = {
     win_position = 'right',
-    left_with = '',
+    win_with = 'NvimTree',
     win_width = 30,
     auto_enter = true,
     auto_preview = true,

@@ -140,8 +140,9 @@ symbol_in_winbar = {
 -- show outline
 show_outline = {
   win_position = 'right',
-  -- set the special filetype in there which in left like nvimtree neotree defx
-  left_with = '',
+  --set special filetype win that outline window split.like NvimTree neotree
+  -- defx, db_ui
+  win_with = '',
   win_width = 30,
   auto_enter = true,
   auto_preview = true,

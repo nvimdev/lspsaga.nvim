@@ -7,7 +7,6 @@ local hi_prefix = 'LSOutline'
 local space = '  '
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local group = require('lspsaga').saga_group
 local config = require('lspsaga').config_values
 local max_preview_lines = config.max_preview_lines
 local outline_conf = config.show_outline
@@ -172,15 +171,22 @@ function ot:auto_preview(bufnr)
 
   local winid = vim.fn.bufwinid(bufnr)
   local _height = vim.fn.winheight(winid)
+  local win_height
 
   if outline_conf.win_position == 'right' then
     opts.anchor = 'NE'
     opts.col = WIN_WIDTH - outline_conf.win_width - 1
     opts.row = vim.fn.winline()
+    win_height = vim.fn.winheight(0)
+    if win_height < _height then
+      opts.row = (_height - win_height) + vim.fn.winline()
+    else
+      opts.row = vim.fn.winline()
+    end
   else
     opts.anchor = 'NW'
     opts.col = outline_conf.win_width + 1
-    local win_height = vim.fn.winheight(0)
+    win_height = vim.fn.winheight(0)
     if win_height < _height then
       opts.row = (_height - win_height) + vim.fn.winline()
     else
@@ -221,22 +227,8 @@ end
 local create_outline_window = function()
   local user_option = vim.opt.splitright:get()
 
-  if outline_conf.win_position == 'right' then
-    if not user_option then
-      vim.opt.splitright = true
-    end
-    vim.cmd('noautocmd vsplit')
-    vim.cmd('vertical resize ' .. config.show_outline.win_width)
-    vim.opt.splitright = user_option
-    return
-  end
-
-  if user_option then
-    vim.opt.splitright = false
-  end
-
-  if string.len(outline_conf.left_with) > 0 then
-    local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.left_with)
+  if string.len(outline_conf.win_with) > 0 then
+    local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
 
     if ok then
       local winid = vim.fn.win_findbuf(sp_buf)[1]
@@ -246,6 +238,7 @@ local create_outline_window = function()
     end
   end
 
+  vim.opt.splitright = outline_conf.win_position == 'right' and true or false
   vim.cmd('noautocmd vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
   vim.opt.splitright = user_option
