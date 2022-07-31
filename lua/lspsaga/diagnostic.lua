@@ -9,6 +9,8 @@ local api = vim.api
 local diag = {}
 local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 
+local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
+
 local jump_diagnostic_header = function(entry)
   if type(config.diagnostic_header) == 'table' then
     local icon = config.diagnostic_header[entry.severity]
@@ -27,6 +29,7 @@ end
 
 local function render_diagnostic_window(entry)
   local current_buffer = api.nvim_get_current_buf()
+  local current_line = api.nvim_win_get_cursor(0)[1]
   local wrap_message = {}
   local max_width = window.get_max_float_width()
 
@@ -57,7 +60,23 @@ local function render_diagnostic_window(entry)
     highlight = hi_name,
   }
 
-  local bufnr, winid = window.create_win_with_border(content_opts)
+  local opts = {
+    relative = 'cursor',
+    style = 'minimal',
+    move_col = 3,
+  }
+
+  local bufnr, winid = window.create_win_with_border(content_opts, opts)
+  local win_config = api.nvim_win_get_config(winid)
+
+  local above = win_config['row'][false] < current_line
+
+  opts.move_col = nil
+  local virt_bufnr, virt_winid = window.create_win_with_border({
+    contents = libs.generate_empty_table(#wrap_message),
+    border = 'none',
+    winblend = 100,
+  }, opts)
 
   local title_icon_length = #header + #diag_type[entry.severity] + 1
   api.nvim_buf_add_highlight(bufnr, -1, hi_name, 0, 0, title_icon_length)
@@ -66,9 +85,35 @@ local function render_diagnostic_window(entry)
   api.nvim_buf_add_highlight(bufnr, -1, truncate_line_hl, 1, 0, -1)
 
   for i, _ in pairs(wrap_message) do
+    local virt_tbl = {}
     if i > 2 then
       api.nvim_buf_add_highlight(bufnr, -1, hi_name, i - 1, 0, -1)
     end
+
+    if not above then
+      if i == #wrap_message then
+        table.insert(virt_tbl, { '┗', hi_name })
+        table.insert(virt_tbl, { '━', hi_name })
+        table.insert(virt_tbl, { '➤', hi_name })
+      else
+        table.insert(virt_tbl, { '┃', hi_name })
+      end
+    else
+      if i == 1 then
+        table.insert(virt_tbl, { '┏', hi_name })
+        table.insert(virt_tbl, { '━', hi_name })
+        table.insert(virt_tbl, { '➤', hi_name })
+      else
+        table.insert(virt_tbl, { '┃', hi_name })
+      end
+    end
+
+    api.nvim_buf_set_extmark(virt_bufnr, virt_ns, i - 1, 0, {
+      id = i + 1,
+      virt_text = virt_tbl,
+      virt_text_pos = 'overlay',
+      virt_lines_above = false,
+    })
   end
 
   if config.show_diagnostic_source then
@@ -79,7 +124,7 @@ local function render_diagnostic_window(entry)
   -- magic to solved the window disappear when trigger CusroMoed
   -- see https://github.com/neovim/neovim/issues/12923
   vim.defer_fn(function()
-    libs.close_preview_autocmd(current_buffer, winid, close_autocmds)
+    libs.close_preview_autocmd(current_buffer, { winid, virt_winid }, close_autocmds)
   end, 0)
 
   api.nvim_buf_set_var(current_buffer, 'saga_diagnostic_floatwin', { bufnr, winid })
@@ -275,6 +320,7 @@ local function in_range(cursor_line, cursor_char)
     return false
   end
 end
+
 function diag.show_cursor_diagnostics(opts, bufnr, client_id)
   opts = opts or {}
 
@@ -289,4 +335,5 @@ function diag.show_cursor_diagnostics(opts, bufnr, client_id)
 
   return show_diagnostics(opts, get_cursor_diagnostics)
 end
+
 return diag

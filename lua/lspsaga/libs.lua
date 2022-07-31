@@ -1,5 +1,6 @@
 local api = vim.api
 local libs = {}
+local window = require('lspsaga.window')
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
@@ -112,15 +113,13 @@ function libs.apply_keys(ns)
   end
 end
 
-function libs.close_preview_autocmd(bufnr, winid, events)
+function libs.close_preview_autocmd(bufnr, winids, events)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
     once = true,
     callback = function()
-      if api.nvim_win_is_valid(winid) then
-        api.nvim_win_close(winid, true)
-      end
+      window.nvim_close_valid_window(winids)
     end,
   })
 end
@@ -170,6 +169,18 @@ function libs.removeElementByKey(tbl, key)
     end
   end
   return newTbl
+end
+
+function libs.generate_empty_table(length)
+  local empty_tbl = {}
+  if length == 0 then
+    return empty_tbl
+  end
+
+  for _ = 1, length do
+    table.insert(empty_tbl, '   ')
+  end
+  return empty_tbl
 end
 
 function libs.async(routine, ...)

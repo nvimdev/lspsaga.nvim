@@ -77,10 +77,10 @@ local function make_floating_popup_options(width, height, opts)
 
     if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = 0
+      new_option.col = opts.move_col and opts.move_col or 0
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = 1
+      new_option.col = opts.move_col and opts.move_col or 1
     end
   else
     new_option.row = opts.row
@@ -178,7 +178,7 @@ function M.create_win_with_border(content_opts, opts)
   end
 
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
-  api.nvim_win_set_option(winid, 'winblend', config.saga_winblend)
+  api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
   api.nvim_win_set_option(winid, 'foldlevel', 100)
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
