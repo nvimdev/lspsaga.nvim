@@ -111,8 +111,9 @@ end
 
 function lb.action_lightbulb()
   if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == 'i' then
-    _update_sign(0, nil)
-    _update_virtual_text(0, nil)
+    local current_buf = api.nvim_get_current_buf()
+    _update_sign(current_buf, nil)
+    _update_virtual_text(current_buf, nil)
     return
   end
   render_bulb()
