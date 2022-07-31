@@ -47,6 +47,7 @@ saga.config_values = {
     exec = '<CR>',
   },
   rename_action_quit = '<C-c>',
+  rename_in_select = false,
   definition_preview_icon = '  ',
   -- winbar must nightly
   symbol_in_winbar = {
