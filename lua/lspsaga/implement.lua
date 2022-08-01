@@ -5,6 +5,17 @@ local libs = require('lspsaga.libs')
 local action = require('lspsaga.action')
 local implement = {}
 
+local function get_client_id()
+  local clients = vim.lsp.buf_get_clients()
+  local client
+  for client_id, conf in pairs(clients) do
+    if conf.server_capabilities.implementationProvider then
+      client = client_id
+    end
+  end
+  return client
+end
+
 function implement.lspsaga_implementation(timeout_ms)
   if not libs.check_lsp_active() then
     return
@@ -18,9 +29,10 @@ function implement.lspsaga_implementation(timeout_ms)
     return nil
   end
   result = { vim.tbl_deep_extend('force', {}, unpack(result)) }
+  local client_id = get_client_id()
 
-  if vim.tbl_islist(result) and not vim.tbl_isempty(result[1]) then
-    local uri = result[1].result[1].uri or result[1].result[1].targetUri
+  if vim.tbl_islist(result) and not vim.tbl_isempty(result[client_id]) then
+    local uri = result[client_id].result[1].uri or result[client_id].result[1].targetUri
     if #uri == 0 then
       return
     end
