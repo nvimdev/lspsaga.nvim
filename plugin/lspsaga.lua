@@ -10,6 +10,7 @@ local highlights = {
   LspSagaAutoPreview = { fg = '#51afef' },
   LspSagaFinderSelection = { fg = '#89d957', bold = true },
   TargetFileName = { fg = '#d1d4cf' },
+  FinderParam = { fg = '#CBA6F7', bg = '#392a52', bold = true },
   FinderVirtText = { fg = '#c95942' },
   DefinitionsIcon = { fg = '#e3e346' },
   Definitions = { fg = '#CBA6F7', bold = true },
@@ -17,11 +18,6 @@ local highlights = {
   References = { fg = '#CBA6F7', bold = true },
   DefinitionCount = { link = 'Title' },
   ReferencesCount = { link = 'Title' },
-  --winbar finder
-  LSFinderBarSepStart = { fg = '#392a52' },
-  LSFinderBarSepEnd = { fg = '#392a52' },
-  LSFinderBarFind = { fg = '#CBA6F7', bg = '#392a52', bold = true },
-  LSFinderBarParam = { fg = '#CBA6F7', bg = '#392a52', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
   DefinitionPreviewTitle = { link = 'Title' },

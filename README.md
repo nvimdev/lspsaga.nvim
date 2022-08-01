@@ -110,10 +110,6 @@ finder_icons = {
   ref = '諭 ',
   link = '  ',
 },
--- custom finder title winbar function type
--- param is current word with symbol icon string type
--- return a winbar format string like `%#CustomFinder#Test%*`
-finder_title_bar = function(param) do your stuff here end,
 finder_action_keys = {
     open = "o",
     vsplit = "s",

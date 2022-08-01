@@ -33,7 +33,6 @@ saga.config_values = {
     def = 'ﰳ  ',
     ref = 'ﰳ  ',
   },
-  finder_title_bar = false,
   finder_action_keys = {
     open = 'o',
     vsplit = 's',
