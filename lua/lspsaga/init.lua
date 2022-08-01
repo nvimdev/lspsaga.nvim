@@ -97,7 +97,13 @@ function saga.init_lsp_saga(opts)
     api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
       group = saga.saga_augroup,
       pattern = '*',
-      callback = require('lspsaga.lightbulb').action_lightbulb,
+      callback = function()
+        local libs = require('lspsaga.libs')
+        if not libs.check_lsp_active() then
+          return
+        end
+        require('lspsaga.lightbulb').action_lightbulb()
+      end,
     })
   end
 

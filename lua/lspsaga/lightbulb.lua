@@ -110,10 +110,6 @@ local render_bulb = function()
 end
 
 function lb.action_lightbulb()
-  if not libs.check_lsp_active() then
-    return
-  end
-
   if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == 'i' then
     local current_buf = api.nvim_get_current_buf()
     _update_sign(current_buf, nil)
