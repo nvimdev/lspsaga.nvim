@@ -114,10 +114,15 @@ local function render_diagnostic_window(entry)
       end
     end
 
+    local pos = 'overlay'
+    if win_config.anchor and text_pos[win_config.anchor] then
+      pos = text_pos[win_config.anchor][1]
+    end
+
     api.nvim_buf_set_extmark(virt_bufnr, virt_ns, i - 1, 0, {
       id = i + 1,
       virt_text = virt_tbl,
-      virt_text_pos = text_pos[win_config.anchor][1],
+      virt_text_pos = pos,
       virt_lines_above = false,
     })
   end
