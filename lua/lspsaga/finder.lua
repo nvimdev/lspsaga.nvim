@@ -631,10 +631,7 @@ end
 function Finder:quit_float_window(...)
   self:close_auto_preview_win()
   if self.winid ~= 0 then
-    window.nvim_close_valid_window(self.winid)
-    if vim.fn.has('nvim-0.8') == 1 then
-      window.nvim_close_valid_window(self.titlebar_winid)
-    end
+    window.nvim_close_valid_window({self.winid,self.titlebar_winid})
   end
 
   local args = { ... }
