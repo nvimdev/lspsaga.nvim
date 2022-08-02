@@ -154,8 +154,7 @@ function Finder:create_finder_contents(result, method, root_dir)
     target_lnum = 2
     if #result == 0 then
       insert(self.contents, ' ')
-      insert(self.contents, indent .. msgs[method])
-      self.f_icon = ''
+      insert(self.contents, indent .. self.f_icon .. msgs[method])
       return
     end
   else
@@ -165,8 +164,7 @@ function Finder:create_finder_contents(result, method, root_dir)
     insert(self.contents, titles[method])
     if #result == 0 then
       insert(self.contents, ' ')
-      insert(self.contents, indent .. msgs[method])
-      self.f_icon = ''
+      insert(self.contents, indent .. self.f_icon .. msgs[method])
       return
     end
   end
@@ -631,7 +629,7 @@ end
 function Finder:quit_float_window(...)
   self:close_auto_preview_win()
   if self.winid ~= 0 then
-    window.nvim_close_valid_window({self.winid,self.titlebar_winid})
+    window.nvim_close_valid_window({ self.winid, self.titlebar_winid })
   end
 
   local args = { ... }
