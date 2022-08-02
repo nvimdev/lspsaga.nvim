@@ -70,8 +70,9 @@ local function render_diagnostic_window(entry)
   local win_config = api.nvim_win_get_config(winid)
 
   local above = win_config['row'][false] < current_line
-
-  opts.move_col = nil
+  if win_config.anchor == 'NW' then
+    opts.move_col = nil
+  end
   local virt_bufnr, virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#wrap_message),
     border = 'none',
@@ -84,6 +85,11 @@ local function render_diagnostic_window(entry)
   local truncate_line_hl = 'LspSaga' .. diag_type[entry.severity] .. 'TrunCateLine'
   api.nvim_buf_add_highlight(bufnr, -1, truncate_line_hl, 1, 0, -1)
 
+  local text_pos = {
+    ['NW'] = { 'overlay', true },
+    ['NE'] = { 'right_align', false },
+  }
+
   for i, _ in pairs(wrap_message) do
     local virt_tbl = {}
     if i > 2 then
@@ -92,9 +98,9 @@ local function render_diagnostic_window(entry)
 
     if not above then
       if i == #wrap_message then
-        table.insert(virt_tbl, { '┗', hi_name })
+        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '┗' or 'ᗕ', hi_name })
         table.insert(virt_tbl, { '━', hi_name })
-        table.insert(virt_tbl, { '➤', hi_name })
+        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '➤' or '┛', hi_name })
       else
         table.insert(virt_tbl, { '┃', hi_name })
       end
@@ -111,7 +117,7 @@ local function render_diagnostic_window(entry)
     api.nvim_buf_set_extmark(virt_bufnr, virt_ns, i - 1, 0, {
       id = i + 1,
       virt_text = virt_tbl,
-      virt_text_pos = 'overlay',
+      virt_text_pos = text_pos[win_config.anchor][1],
       virt_lines_above = false,
     })
   end
