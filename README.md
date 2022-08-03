@@ -110,6 +110,10 @@ finder_icons = {
   ref = '諭 ',
   link = '  ',
 },
+-- finder do lsp request timeout
+-- if your project big enough or your server very slow
+-- you may need to increase this value
+finder_request_timeout = 1500,
 finder_action_keys = {
     open = "o",
     vsplit = "s",
