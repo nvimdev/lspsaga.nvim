@@ -732,7 +732,7 @@ function Finder:clear_tmp_data()
   self.contents = {}
   self.definition_uri = 0
   self.reference_uri = 0
-  self.param_length = 0
+  self.param = nil
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
