@@ -6,10 +6,11 @@ local codeaction = require('lspsaga.codeaction')
 local signature = require('lspsaga.signaturehelp')
 local floaterm = require('lspsaga.floaterm')
 local implement = require('lspsaga.implement')
+local finder = require('lspsaga.finder')
 
 local subcommands = {
   lsp_finder = function()
-    require('lspsaga.finder'):lsp_finder()
+    finder:lsp_finder()
   end,
   preview_definition = require('lspsaga.definition').preview_definition,
   rename = lsprename.lsp_rename,

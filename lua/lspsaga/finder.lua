@@ -1,6 +1,6 @@
 local window = require('lspsaga.window')
 local kind = require('lspsaga.lspkind')
-local api, lsp, fn, co = vim.api, vim.lsp, vim.fn, coroutine
+local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local scroll_in_win = require('lspsaga.action').scroll_in_win
@@ -120,7 +120,8 @@ function Finder:wait_spinner()
 
       if
         (self.request_status[methods[1]] or self.request_status[methods[2]])
-        and not self.spin_timer:is_closing() and self.param ~= nil
+        and not self.spin_timer:is_closing()
+        and self.param ~= nil
       then
         self.spin_timer:stop()
         self.spin_timer:close()
