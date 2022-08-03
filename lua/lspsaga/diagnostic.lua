@@ -341,7 +341,7 @@ function diag.show_cursor_diagnostics(opts, bufnr, client_id)
     local line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
     local column_nr = vim.api.nvim_win_get_cursor(0)[2]
 
-    return vim.tbl_filter(in_range(line_nr, column_nr), lsp.diagnostic.get(bufnr, client_id))
+    return vim.tbl_filter(in_range(line_nr, column_nr), vim.diagnostic.get(bufnr, client_id))
   end
 
   return show_diagnostics(opts, get_cursor_diagnostics)
