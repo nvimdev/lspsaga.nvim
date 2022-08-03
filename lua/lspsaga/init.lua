@@ -33,6 +33,7 @@ saga.config_values = {
     def = 'ﰳ  ',
     ref = 'ﰳ  ',
   },
+  finder_request_timeout = 1500,
   finder_action_keys = {
     open = 'o',
     vsplit = 's',

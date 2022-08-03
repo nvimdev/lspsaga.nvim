@@ -9,6 +9,7 @@ local symbar = require('lspsaga.symbolwinbar')
 local path_sep = libs.path_sep
 local icons = config.finder_icons
 local insert = table.insert
+local uv = vim.loop
 local indent = '    '
 
 local methods = { 'textDocument/definition', 'textDocument/references' }
@@ -17,78 +18,170 @@ local msgs = {
   [methods[2]] = 'No References  Found',
 }
 
-local do_request = co.create(function(method)
-  local timeout = 1000
+local symbol_method = 'textDocument/documentSymbol'
 
-  while true do
-    local win = api.nvim_get_current_win()
-    local bufnr = api.nvim_win_get_buf(win)
-    local params = lsp.util.make_position_params()
-    if method == methods[2] then
-      params.context = { includeDeclaration = true }
-    end
+local Finder = {}
 
-    local resp = lsp.buf_request_sync(bufnr, method, params, timeout)
+function Finder:lsp_finder()
+  if not libs.check_lsp_active() then
+    return
+  end
 
-    local results = {}
+  self:word_symbol_kind()
+  local params = lsp.util.make_position_params()
+  for _, method in pairs(methods) do
+    self:do_request(params, method)
+  end
 
-    if resp ~= nil and type(resp) == 'table' then
-      for _, res in pairs(resp) do
-        if res.result and next(res.result) ~= nil then
-          for _, v in pairs(res.result) do
-            insert(results, v)
-          end
+  self:get_file_icon()
+  -- make a spinner
+  self:wait_spinner()
+end
+
+function Finder:wait_spinner()
+  self.WIN_WIDTH = fn.winwidth(0)
+  self.WIN_HEIGHT = fn.winheight(0)
+
+  -- calculate our floating window size
+  local win_height = math.ceil(self.WIN_HEIGHT * 0.6)
+  local win_width = math.ceil(self.WIN_WIDTH * 0.8)
+
+  -- and its starting position
+  local row = math.ceil((self.WIN_HEIGHT - win_height) / 2 - 1)
+  local col = math.ceil(self.WIN_WIDTH - win_width)
+
+  local opts = {
+    relative = 'editor',
+    height = 2,
+    width = 20,
+    row = row,
+    col = col,
+  }
+
+  local content_opts = {
+    contents = {},
+    highlight = 'FinderSpinnerBorder',
+    enter = false,
+  }
+
+  self.spin_buf, self.spin_win = window.create_win_with_border(content_opts, opts)
+  local spin_config = {
+    spinner = {
+      '█▁▁▁▁▁▁▁▁▁',
+      '██▁▁▁▁▁▁▁▁',
+      '███▁▁▁▁▁▁▁',
+      '████▁▁▁▁▁▁',
+      '█████▁▁▁▁▁',
+      '██████▁▁▁▁',
+      '███████▁▁▁',
+      '████████▁▁ ',
+      '█████████▁',
+      '██████████',
+    },
+    interval = 10,
+    timeout = config.finder_request_timeout,
+  }
+  api.nvim_buf_set_option(self.spin_buf, 'modifiable', true)
+
+  self.request_status = {
+    [methods[1]] = false,
+    [methods[2]] = false,
+  }
+
+  local spin_frame = 1
+  self.spin_timer = uv.new_timer()
+  local start_request = uv.now()
+  self.spin_timer:start(
+    0,
+    spin_config.interval,
+    vim.schedule_wrap(function()
+      for _, method in pairs(methods) do
+        if self.request_result[method] then
+          self.request_status[method] = true
+        end
+      end
+
+      spin_frame = spin_frame == 11 and 1 or spin_frame
+      local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
+      local spinner = ' ' .. spin_config.spinner[spin_frame]
+      api.nvim_buf_set_lines(self.spin_buf, 0, -1, false, { msg, spinner })
+      api.nvim_buf_add_highlight(self.spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
+      api.nvim_buf_add_highlight(self.spin_buf, 0, 'FinderSpinner', 1, 0, -1)
+      spin_frame = spin_frame + 1
+
+      if uv.now() - start_request >= spin_config.timeout and not self.spin_timer:is_closing() then
+        self.spin_timer:stop()
+        self.spin_timer:close()
+        window.nvim_close_valid_window(self.spin_win)
+        vim.notify('request timeout')
+        self.spin_win = nil
+        return
+      end
+
+      if
+        (self.request_status[methods[1]] or self.request_status[methods[2]])
+        and not self.spin_timer:is_closing()
+      then
+        self.spin_timer:stop()
+        self.spin_timer:close()
+        window.nvim_close_valid_window(self.spin_win)
+        self.spin_win = nil
+        self:lsp_finder_request()
+      end
+    end)
+  )
+end
+
+function Finder:do_request(params, method)
+  if method == methods[2] then
+    params.context = { includeDeclaration = true }
+  end
+  self.client.request(method, params, function(_, result)
+    self.request_result[method] = result
+  end, self.current_buf)
+end
+
+function Finder:word_symbol_kind()
+  self.current_buf = api.nvim_get_current_buf()
+  self.request_result = {}
+  local current_word = vim.fn.expand('<cword>')
+
+  local caps = { 'documentSymbolProvider', 'referencesProvider', 'definitionProvider' }
+  self.client = libs.get_client_by_cap(caps)
+  local result = {}
+
+  local param_with_icon = function()
+    local index = 0
+    if result ~= nil and next(result) ~= nil then
+      for i, val in pairs(result) do
+        if val.name:find(current_word) then
+          index = i
+          break
         end
       end
     end
 
-    method = coroutine.yield(results)
-  end
-end)
-
-local Finder = {}
-
-function Finder:word_symbol_kind()
-  local current_buf = api.nvim_get_current_buf()
-  local current_word = vim.fn.expand('<cword>')
-
-  local clients = vim.lsp.buf_get_clients()
-  local client
-  for client_id, conf in pairs(clients) do
-    if conf.server_capabilities.documentSymbolProvider then
-      client = client_id
-    end
+    local icon = index ~= 0 and kind[result[index].kind][2] or ' '
+    self.param = icon .. current_word
   end
 
-  local result = {}
-
-  if symbar.symbol_cache[current_buf] ~= nil then
-    result = symbar.symbol_cache[current_buf][2]
+  if symbar.symbol_cache[self.current_buf] ~= nil then
+    result = symbar.symbol_cache[self.current_buf][2]
+    param_with_icon()
+    return
   else
-    local method = 'textDocument/documentSymbol'
-    if client ~= nil then
+    if self.client ~= nil then
       local params = { textDocument = lsp.util.make_text_document_params() }
-      local results = lsp.buf_request_sync(current_buf, method, params, 800)
-      if results ~= nil then
-        result = results[client].result
-      end
-    else
-      vim.notify('All Servers of this buffer not support ' .. method)
+      self.client.request(symbol_method, params, function(_, results)
+        if results ~= nil then
+          result = results
+        end
+        param_with_icon()
+      end, self.current_buf)
+      return
     end
   end
-
-  local index = 0
-  if result ~= nil and next(result) ~= nil then
-    for i, val in pairs(result) do
-      if val.name:find(current_word) then
-        index = i
-        break
-      end
-    end
-  end
-
-  local icon = index ~= 0 and kind[result[index].kind][2] or ' '
-  self.param = icon .. current_word
+  vim.notify('All Servers of this buffer not support ' .. symbol_method)
 end
 
 function Finder:get_file_icon()
@@ -109,25 +202,15 @@ function Finder:lsp_finder_request()
     vim.notify('[LspSaga] get root dir failed')
     return
   end
-  -- get current word symbol kind
-  self:word_symbol_kind()
-  self:get_file_icon()
 
-  self.WIN_WIDTH = fn.winwidth(0)
-  self.WIN_HEIGHT = fn.winheight(0)
   self.contents = {}
   self.short_link = {}
   self.definition_uri = 0
   self.reference_uri = 0
   self.buf_filetype = api.nvim_buf_get_option(0, 'filetype')
 
-  for _, method in pairs(methods) do
-    local ok, result = co.resume(do_request, method)
-    if not ok then
-      vim.notify('Wrong response in do_request coroutine')
-    end
-    self:create_finder_contents(result, method, root_dir)
-  end
+  self:create_finder_contents(self.request_result[methods[1]] or {}, methods[1], root_dir)
+  self:create_finder_contents(self.request_result[methods[2]] or {}, methods[2], root_dir)
   self:render_finder_result()
 end
 
@@ -653,14 +736,6 @@ function Finder:clear_tmp_data()
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
-end
-
-function Finder.lsp_finder()
-  if not libs.check_lsp_active() then
-    return
-  end
-
-  Finder:lsp_finder_request()
 end
 
 return Finder

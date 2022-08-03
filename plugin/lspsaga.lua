@@ -18,6 +18,10 @@ local highlights = {
   References = { fg = '#CBA6F7', bold = true },
   DefinitionCount = { link = 'Title' },
   ReferencesCount = { link = 'Title' },
+  --finder spinner
+  FinderSpinnerBorder = { fg = '#51afef' },
+  FinderSpinnerTitle = { fg = '#CBA6F7', bold = true },
+  FinderSpinner = { fg = '#89d957', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
   DefinitionPreviewTitle = { link = 'Title' },

@@ -183,6 +183,19 @@ function libs.generate_empty_table(length)
   return empty_tbl
 end
 
+-- get client by capabilities
+function libs.get_client_by_cap(caps)
+  local clients = vim.lsp.buf_get_clients()
+  local client
+  for _, instance in pairs(clients) do
+    local server_cap = instance.server_capabilities
+    if server_cap[caps[1]] and server_cap[caps[2]] and server_cap[caps[3]] then
+      client = instance
+    end
+  end
+  return client
+end
+
 function libs.async(routine, ...)
   local f = coroutine.create(function(await, ...)
     routine(await, ...)
