@@ -120,7 +120,7 @@ function Finder:wait_spinner()
 
       if
         (self.request_status[methods[1]] or self.request_status[methods[2]])
-        and not self.spin_timer:is_closing()
+        and not self.spin_timer:is_closing() and self.param ~= nil
       then
         self.spin_timer:stop()
         self.spin_timer:close()
