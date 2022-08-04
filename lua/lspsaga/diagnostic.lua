@@ -296,13 +296,11 @@ function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
 end
 
 local function get_diagnostic_start(diagnostic_entry)
-  local start_pos = diagnostic_entry['range']['start']
-  return start_pos['line'], start_pos['character']
+  return diagnostic_entry['lnum'], diagnostic_entry['col']
 end
 
 local function get_diagnostic_end(diagnostic_entry)
-  local end_pos = diagnostic_entry['range']['end']
-  return end_pos['line'], end_pos['character']
+  return diagnostic_entry['end_lnum'],diagnostic_entry['end_col']
 end
 
 local function in_range(cursor_line, cursor_char)
