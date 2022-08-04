@@ -264,6 +264,8 @@ vim.keymap.set("n", "gh", require("lspsaga.finder").lsp_finder, { silent = true,
 vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true,noremap = true})
 ```
 
+NOTE: This requires ```filetypes``` and ```root_dir``` set in the  LSP server ```config``` object. So for [nvim-jdtls](https://github.com/mfussenegger/nvim-jdtls) users, even if you are loading the plugin as ```ftplugin``` or with ```FileType java``` autocmd, set ```filetypes``` in the ```config``` object.
+  
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-4053-b671-303df4e94a19.gif" />
