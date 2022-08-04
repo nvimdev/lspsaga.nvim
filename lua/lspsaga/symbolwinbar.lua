@@ -11,7 +11,7 @@ local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 
 function symbar:get_file_name()
-  local file_name = string.gsub(vim.fn.expand('%:t'),'%%','')
+  local file_name = string.gsub(vim.fn.expand('%:t'), '%%', '')
   local ok, devicons = pcall(require, 'nvim-web-devicons')
   local f_icon = ''
   local f_hl = ''
@@ -24,7 +24,7 @@ function symbar:get_file_name()
   return '%#' .. f_hl .. '#' .. f_icon .. '%*' .. ns_prefix .. 'File#' .. file_name .. '%*'
 end
 
---@private
+---@private
 local do_symbol_request = function(callback)
   local current_buf = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
@@ -134,6 +134,18 @@ local render_symbol_winbar = function()
   return winbar_val
 end
 
+function symbar.get_clientid()
+  local client_id
+  local clients = vim.lsp.buf_get_clients()
+  for id, conf in pairs(clients) do
+    if conf.server_capabilities.documentSymbolProvider then
+      client_id = id
+      break
+    end
+  end
+  return client_id
+end
+
 function symbar:get_buf_symbol(force, ...)
   if not libs.check_lsp_active() then
     return
@@ -145,17 +157,9 @@ function symbar:get_buf_symbol(force, ...)
     return
   end
 
-  local clients = vim.lsp.buf_get_clients()
-  local client_id
-  for id, conf in pairs(clients) do
-    if conf.server_capabilities.documentHighlightProvider then
-      client_id = id
-      break
-    end
-  end
+  local client_id = self.get_clientid()
 
   if client_id == nil then
-    vim.notify('All servers of this buffer does not support ' .. method)
     return
   end
 
@@ -177,7 +181,8 @@ function symbar:get_buf_symbol(force, ...)
     end
 
     if config.in_custom then
-      api.nvim_exec_autocmds('User LspsagaUpdateSymbol', {
+      api.nvim_exec_autocmds('User', {
+        pattern = 'LspsagaUpdateSymbol',
         modeline = false,
       })
     end
@@ -186,32 +191,10 @@ function symbar:get_buf_symbol(force, ...)
   do_symbol_request(_callback)
 end
 
---@private
-local function removeElementByKey(tbl, key)
-  local tmp = {}
-
-  for i in pairs(tbl) do
-    table.insert(tmp, i)
-  end
-
-  local newTbl = {}
-  local i = 1
-  while i <= #tmp do
-    local val = tmp[i]
-    if val == key then
-      table.remove(tmp, i)
-    else
-      newTbl[val] = tbl[val]
-      i = i + 1
-    end
-  end
-  return newTbl
-end
-
 function symbar:clear_cache()
   local current_buf = api.nvim_get_current_buf()
   if self.symbol_cache[current_buf] then
-    self.symbol_cache = removeElementByKey(self.symbol_cache, current_buf)
+    self.symbol_cache = libs.removeElementByKey(self.symbol_cache, current_buf)
   end
 end
 

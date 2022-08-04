@@ -114,7 +114,7 @@ local lsp_rename = function()
 
   local content_opts = {
     contents = {},
-    filetype = '',
+    filetype = 'sagarename',
     enter = true,
     highlight = 'LspSagaRenameBorder',
   }
@@ -125,8 +125,10 @@ local lsp_rename = function()
   set_local_options()
   api.nvim_buf_set_lines(bufnr, -2, -1, false, { current_word })
 
-  vim.cmd([[normal! viw]])
-  feedkeys('<C-g>', 'v')
+  if config.rename_in_select then
+    vim.cmd([[normal! viw]])
+    feedkeys('<C-g>', 'v')
+  end
 
   api.nvim_win_set_var(0, unique_name, winid)
   api.nvim_create_autocmd('QuitPre', {

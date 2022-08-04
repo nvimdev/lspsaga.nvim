@@ -62,7 +62,15 @@ local function apply_syntax_to_region(ft, start, finish)
   if not pcall(vim.cmd, string.format('syntax include %s syntax/%s.vim', lang, ft)) then
     return
   end
-  vim.cmd(string.format('syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s', name, start, finish + 1, lang))
+  vim.cmd(
+    string.format(
+      'syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s',
+      name,
+      start,
+      finish + 1,
+      lang
+    )
+  )
 end
 
 local function focusable_preview(unique_name, fn)

@@ -6,6 +6,7 @@ local wrap = require('lspsaga.wrap')
 local function get_border_style(style, highlight)
   highlight = highlight or 'FloatBorder'
   local border_style = {
+    ['none'] = 'none',
     ['single'] = 'single',
     ['double'] = 'double',
     ['rounded'] = 'rounded',
@@ -76,10 +77,10 @@ local function make_floating_popup_options(width, height, opts)
 
     if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = 0
+      new_option.col = opts.move_col and opts.move_col or 0
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = 1
+      new_option.col = opts.move_col and opts.move_col or 1
     end
   else
     new_option.row = opts.row
@@ -145,7 +146,7 @@ function M.create_win_with_border(content_opts, opts)
   local highlight = content_opts.highlight or 'LspFloatWinBorder'
   opts = opts or {}
   opts = generate_win_opts(contents, opts)
-  opts.border = get_border_style(config.border_style, highlight)
+  opts.border = content_opts.border or get_border_style(config.border_style, highlight)
 
   -- create contents buffer
   local bufnr = api.nvim_create_buf(false, true)
@@ -177,7 +178,7 @@ function M.create_win_with_border(content_opts, opts)
   end
 
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
-  api.nvim_win_set_option(winid, 'winblend', 0)
+  api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
   api.nvim_win_set_option(winid, 'foldlevel', 100)
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
@@ -330,7 +331,7 @@ function M.fancy_floating_markdown(contents, opts)
 
   local content_opts = {
     contents = stripped,
-    filetype = 'markdown',
+    filetype = 'sagahover',
     highlight = 'LspSagaHoverBorder',
   }
 
@@ -360,7 +361,15 @@ function M.fancy_floating_markdown(contents, opts)
     if not pcall(vim.cmd, string.format('syntax include %s syntax/%s.vim', lang, ft)) then
       return
     end
-    vim.cmd(string.format('syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s', name, start, finish + 1, lang))
+    vim.cmd(
+      string.format(
+        'syntax region %s start=+\\%%%dl+ end=+\\%%%dl+ contains=%s',
+        name,
+        start,
+        finish + 1,
+        lang
+      )
+    )
   end
   -- Previous highlight region.
   -- TODO(ashkan): this wasn't working for some reason, but I would like to

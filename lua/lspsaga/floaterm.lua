@@ -2,9 +2,8 @@ local api = vim.api
 local window = require('lspsaga.window')
 local M = {}
 
-function M.open_float_terminal(command, border_style)
+function M.open_float_terminal(command)
   local cmd = command or os.getenv('SHELL')
-  border_style = border_style or 0
 
   -- get dimensions
   local width = api.nvim_get_option('columns')
@@ -37,7 +36,7 @@ function M.open_float_terminal(command, border_style)
   local cb, cw, _, ow = window.open_shadow_float_win(content_opts, opts)
   vim.fn.termopen(cmd, {
     on_exit = function(...)
-      M.close_float_terminal()
+      -- M.close_float_terminal()
     end,
   })
   api.nvim_command('setlocal nobuflisted')

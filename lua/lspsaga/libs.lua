@@ -1,5 +1,6 @@
 local api = vim.api
 local libs = {}
+local window = require('lspsaga.window')
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
@@ -35,13 +36,9 @@ function libs.has_value(tbl, val)
   return false
 end
 
-function libs.nvim_create_keymap(definitions, lhs)
+function libs.nvim_create_keymap(definitions)
   for _, def in pairs(definitions) do
-    local bufnr = def[1]
-    local mode = def[2]
-    local key = def[3]
-    local rhs = def[4]
-    api.nvim_buf_set_keymap(bufnr, mode, key, rhs, lhs)
+    vim.keymap.set(def[1], def[2], def[3], def[4])
   end
 end
 
@@ -116,15 +113,13 @@ function libs.apply_keys(ns)
   end
 end
 
-function libs.close_preview_autocmd(bufnr, winid, events)
+function libs.close_preview_autocmd(bufnr, winids, events)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
     once = true,
     callback = function()
-      if api.nvim_win_is_valid(winid) then
-        api.nvim_win_close(winid, true)
-      end
+      window.nvim_close_valid_window(winids)
     end,
   })
 end
@@ -135,6 +130,70 @@ function libs.disable_move_keys(bufnr)
   for _, key in pairs(keys) do
     api.nvim_buf_set_keymap(bufnr, 'n', key, '', opts)
   end
+end
+
+function libs.find_buffer_by_filetype(ft)
+  local all_bufs = vim.fn.getbufinfo()
+  local filetype = ''
+  for _, bufinfo in pairs(all_bufs) do
+    filetype = api.nvim_buf_get_option(bufinfo['bufnr'], 'filetype')
+
+    if type(ft) == 'table' and libs.has_value(ft, filetype) then
+      return true, bufinfo['bufnr']
+    end
+
+    if filetype == ft then
+      return true, bufinfo['bufnr']
+    end
+  end
+
+  return false, nil
+end
+
+function libs.removeElementByKey(tbl, key)
+  local tmp = {}
+
+  for i in pairs(tbl) do
+    table.insert(tmp, i)
+  end
+
+  local newTbl = {}
+  local i = 1
+  while i <= #tmp do
+    local val = tmp[i]
+    if val == key then
+      table.remove(tmp, i)
+    else
+      newTbl[val] = tbl[val]
+      i = i + 1
+    end
+  end
+  return newTbl
+end
+
+function libs.generate_empty_table(length)
+  local empty_tbl = {}
+  if length == 0 then
+    return empty_tbl
+  end
+
+  for _ = 1, length do
+    table.insert(empty_tbl, '   ')
+  end
+  return empty_tbl
+end
+
+-- get client by capabilities
+function libs.get_client_by_cap(caps)
+  local clients = vim.lsp.buf_get_clients()
+  local client
+  for _, instance in pairs(clients) do
+    local server_cap = instance.server_capabilities
+    if server_cap[caps[1]] and server_cap[caps[2]] and server_cap[caps[3]] then
+      client = instance
+    end
+  end
+  return client
 end
 
 function libs.async(routine, ...)

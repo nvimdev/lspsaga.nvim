@@ -5,6 +5,7 @@ local scroll_in_win = require('lspsaga.action').scroll_in_win
 local def = {}
 local saga_augroup = require('lspsaga').saga_augroup
 local path_sep = libs.path_sep
+local method = 'textDocument/definition'
 
 function def.preview_definition(timeout_ms)
   if not libs.check_lsp_active() then
@@ -13,7 +14,6 @@ function def.preview_definition(timeout_ms)
 
   local filetype = vim.api.nvim_buf_get_option(0, 'filetype')
 
-  local method = 'textDocument/definition'
   local params = lsp.util.make_position_params()
   local result = vim.lsp.buf_request_sync(0, method, params, timeout_ms or 1000)
   if result == nil or vim.tbl_isempty(result) then
@@ -28,7 +28,6 @@ function def.preview_definition(timeout_ms)
       return
     end
     local uri = result[1].result[1].uri or result[1].result[1].targetUri
-    print(uri)
     if #uri == 0 then
       return
     end
@@ -58,9 +57,16 @@ function def.preview_definition(timeout_ms)
       start_line = range.start.line
     end
 
-    local content =
-      vim.api.nvim_buf_get_lines(bufnr, start_line, range['end'].line + 1 + config.max_preview_lines, false)
-    content = vim.list_extend({ config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' }, content)
+    local content = vim.api.nvim_buf_get_lines(
+      bufnr,
+      start_line,
+      range['end'].line + 1 + config.max_preview_lines,
+      false
+    )
+    content = vim.list_extend(
+      { config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' },
+      content
+    )
 
     local opts = {
       relative = 'cursor',
@@ -112,8 +118,13 @@ function def.scroll_in_def_preview(direction)
   if not has_preview then
     return
   end
-  local current_win_lnum = scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
-  api.nvim_buf_set_var(0, 'lspsaga_def_preview', { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] })
+  local current_win_lnum =
+    scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
+  api.nvim_buf_set_var(
+    0,
+    'lspsaga_def_preview',
+    { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] }
+  )
 end
 
 return def

@@ -9,6 +9,7 @@ local colors = {
   cyan = '#36d0e0',
   blue = '#61afef',
   violet = '#CBA6F7',
+  teal = '#1abc9c',
 }
 
 local kind = {
@@ -18,13 +19,13 @@ local kind = {
   [4] = { 'Package', ' ', colors.violet },
   [5] = { 'Class', ' ', colors.violet },
   [6] = { 'Method', ' ', colors.violet },
-  [7] = { 'Property', ' ', colors.cyan },
-  [8] = { 'Field', ' ', colors.cyan },
+  [7] = { 'Property', ' ', colors.cyan },
+  [8] = { 'Field', ' ', colors.teal },
   [9] = { 'Constructor', ' ', colors.blue },
   [10] = { 'Enum', '了', colors.green },
   [11] = { 'Interface', '練', colors.orange },
   [12] = { 'Function', ' ', colors.violet },
-  [13] = { 'Variable', ' ', colors.blue },
+  [13] = { 'Variable', ' ', colors.blue },
   [14] = { 'Constant', ' ', colors.cyan },
   [15] = { 'String', ' ', colors.green },
   [16] = { 'Number', ' ', colors.green },
@@ -38,6 +39,11 @@ local kind = {
   [24] = { 'Event', ' ', colors.violet },
   [25] = { 'Operator', ' ', colors.green },
   [26] = { 'TypeParameter', ' ', colors.green },
+  -- ccls
+  [252] = { 'TypeAlias', ' ', colors.green },
+  [253] = { 'Parameter', ' ', colors.blue },
+  [254] = { 'StaticMethod', 'ﴂ ', colors.orange },
+  [255] = { 'Macro', ' ', colors.red },
 }
 
 local function gen_symbol_winbar_hi()

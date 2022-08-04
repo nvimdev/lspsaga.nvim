@@ -7,13 +7,21 @@ local highlights = {
   LspSagaCodeActionContent = { fg = '#98be65', bold = true },
   -- finder
   LspSagaLspFinderBorder = { fg = '#51afef' },
-  LspSagaAutoPreview = { fg = '#ecbe7b' },
+  LspSagaAutoPreview = { fg = '#51afef' },
   LspSagaFinderSelection = { fg = '#89d957', bold = true },
-  TargetFileName = { link = 'Comment' },
+  TargetFileName = { fg = '#d1d4cf' },
+  FinderParam = { fg = '#CBA6F7', bg = '#392a52', bold = true },
+  FinderVirtText = { fg = '#c95942' },
+  DefinitionsIcon = { fg = '#e3e346' },
+  Definitions = { fg = '#CBA6F7', bold = true },
+  ReferencesIcon = { fg = '#e3e346' },
+  References = { fg = '#CBA6F7', bold = true },
   DefinitionCount = { link = 'Title' },
   ReferencesCount = { link = 'Title' },
-  TargetWord = { fg = '#1abc9c', bold = true },
-  FinderSeparator = { fg = '#36d0e0' },
+  --finder spinner
+  FinderSpinnerBorder = { fg = '#51afef' },
+  FinderSpinnerTitle = { fg = '#b33076', bold = true },
+  FinderSpinner = { fg = '#b33076', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
   DefinitionPreviewTitle = { link = 'Title' },
@@ -45,6 +53,12 @@ local highlights = {
   SagaShadow = { fg = 'black' },
   -- float
   LspSagaBorderTitle = { link = 'String' },
+  -- Outline
+  LSOutlinePreviewBorder = { fg = '#52ad70' },
+  OutlineIndentEvn = { fg = '#c955ae' },
+  OutlineIndentOdd = { fg = '#b8733e' },
+  OutlineFoldPrefix = { fg = '#bf4537' },
+  OutlineDetail = { fg = '#73797e' },
 }
 
 for group, conf in pairs(highlights) do
@@ -61,4 +75,19 @@ end, {
       return string.match(s, '^' .. arg)
     end, list)
   end,
+})
+
+api.nvim_create_user_command('LSoutlineToggle', function()
+  -- see  https://github.com/neovim/neovim/issues/19458
+  -- disable the winbar when first open outline.
+  if vim.fn.has('nvim-0.8') == 1 then
+    api.nvim_win_set_option(0, 'winbar', '')
+  end
+  require('lspsaga.outline'):render_outline()
+end, {})
+
+api.nvim_create_user_command('LspsagaFloaterm', function(args)
+  require('lspsaga.floaterm').open_float_terminal(args.args)
+end, {
+  nargs = '+',
 })

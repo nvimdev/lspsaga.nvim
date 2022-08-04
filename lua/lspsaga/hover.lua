@@ -31,7 +31,7 @@ hover.handler = function(_, result, ctx)
     window.nvim_win_try_close()
     local bufnr, winid = window.fancy_floating_markdown(markdown_lines)
 
-    local close_events = { 'CursorMoved', 'BufHidden', 'BufLeave', 'InsertEnter' }
+    local close_events = { 'CursorMoved', 'BufHidden', 'InsertEnter' }
     libs.close_preview_autocmd(buffer, winid, close_events)
 
     return bufnr, winid
@@ -41,6 +41,12 @@ end
 function hover.render_hover_doc()
   --if has diagnostic window close
   window.nvim_win_try_close()
+  if hover.has_saga_hover() then
+    local winid = api.nvim_win_get_var(0, 'lspsaga_hoverwin_data')[1]
+    api.nvim_set_current_win(winid)
+    return
+  end
+
   local params = util.make_position_params()
   vim.lsp.buf_request(0, 'textDocument/hover', params, hover.handler)
 end
@@ -69,12 +75,17 @@ function hover.scroll_in_hover(direction)
   if not has_hover_win then
     return
   end
-  local hover_win, height, current_win_lnum, last_lnum = hover_data[1], hover_data[2], hover_data[3], hover_data[4]
+  local hover_win, height, current_win_lnum, last_lnum =
+    hover_data[1], hover_data[2], hover_data[3], hover_data[4]
   if not api.nvim_win_is_valid(hover_win) then
     return
   end
   current_win_lnum = action.scroll_in_win(hover_win, direction, current_win_lnum, last_lnum, height)
-  api.nvim_win_set_var(0, 'lspsaga_hoverwin_data', { hover_win, height, current_win_lnum, last_lnum })
+  api.nvim_win_set_var(
+    0,
+    'lspsaga_hoverwin_data',
+    { hover_win, height, current_win_lnum, last_lnum }
+  )
 end
 
 return hover

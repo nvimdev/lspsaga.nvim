@@ -6,6 +6,7 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
 
 saga.config_values = {
   border_style = 'single',
+  saga_winblend = 0,
   -- when cusor in saga float window
   -- config these keys to move
   move_in_saga = {
@@ -22,12 +23,17 @@ saga.config_values = {
   code_action_num_shortcut = true,
   code_action_lightbulb = {
     enable = true,
+    enable_in_insert = true,
     sign = true,
     sign_priority = 40,
     virtual_text = true,
   },
-  finder_separator = '  ',
   max_preview_lines = 10,
+  finder_icons = {
+    def = 'ﰳ  ',
+    ref = 'ﰳ  ',
+  },
+  finder_request_timeout = 1500,
   finder_action_keys = {
     open = 'o',
     vsplit = 's',
@@ -41,6 +47,7 @@ saga.config_values = {
     exec = '<CR>',
   },
   rename_action_quit = '<C-c>',
+  rename_in_select = false,
   definition_preview_icon = '  ',
   -- winbar must nightly
   symbol_in_winbar = {
@@ -49,6 +56,16 @@ saga.config_values = {
     separator = ' ',
     show_file = true,
     click_support = false,
+  },
+  show_outline = {
+    win_position = 'right',
+    win_with = 'NvimTree',
+    win_width = 30,
+    auto_enter = true,
+    auto_preview = true,
+    virt_text = '┃',
+    jump_key = 'o',
+    auto_refresh = true,
   },
   server_filetype_map = {},
 }

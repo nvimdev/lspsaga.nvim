@@ -70,6 +70,9 @@ saga.init_lsp_saga({
 -- Options with default value
 -- "single" | "double" | "rounded" | "bold" | "plus"
 border_style = "single",
+--the range of 0 for fully opaque window (disabled) to 100 for fully
+--transparent background. Values between 0-30 are typically most useful.
+saga_winblend = 0,
 -- when cursor in saga window you config these to move
 move_in_saga = { prev = '<C-p>',next = '<C-n>'},
 -- Error, Warn, Info, Hint
@@ -87,6 +90,8 @@ diagnostic_header = { " ", " ", " ", "ﴞ " },
 show_diagnostic_source = true,
 -- add bracket or something with diagnostic source, just have 2 elements
 diagnostic_source_bracket = {},
+-- preview lines of lsp_finder and definition preview
+max_preview_lines = 10,
 -- use emoji lightbulb in default
 code_action_icon = "💡",
 -- if true can press number to execute the codeaction in codeaction window
@@ -95,13 +100,20 @@ code_action_num_shortcut = true,
 code_action_lightbulb = {
     enable = true,
     sign = true,
+    enable_in_insert = true,
     sign_priority = 20,
     virtual_text = true,
 },
--- separator in finder
-finder_separator = "  ",
--- preview lines of lsp_finder and definition preview
-max_preview_lines = 10,
+-- finder icons
+finder_icons = {
+  def = '  ',
+  ref = '諭 ',
+  link = '  ',
+},
+-- finder do lsp request timeout
+-- if your project big enough or your server very slow
+-- you may need to increase this value
+finder_request_timeout = 1500,
 finder_action_keys = {
     open = "o",
     vsplit = "s",
@@ -116,6 +128,7 @@ code_action_keys = {
     exec = "<CR>",
 },
 rename_action_quit = "<C-c>",
+rename_in_select = true,
 definition_preview_icon = "  ",
 -- show symbols in winbar must nightly
 symbol_in_winbar = {
@@ -125,7 +138,20 @@ symbol_in_winbar = {
     show_file = true,
     click_support = false,
 },
-
+-- show outline
+show_outline = {
+  win_position = 'right',
+  --set special filetype win that outline window split.like NvimTree neotree
+  -- defx, db_ui
+  win_with = '',
+  win_width = 30,
+  auto_enter = true,
+  auto_preview = true,
+  virt_text = '┃',
+  jump_key = 'o',
+  -- auto refresh when change buffer
+  auto_refresh = true,
+},
 -- if you don't use nvim-lspconfig you must pass your server name and
 -- the related filetypes into this table
 -- like server_filetype_map = { metals = { "sbt", "scala" } }
@@ -154,44 +180,48 @@ local function get_file_name(include_path)
     local file_name = require('lspsaga.symbolwinbar').get_file_name()
     if vim.fn.bufname '%' == '' then return '' end
     if include_path == false then return file_name end
-    local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
     -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-    local path_list = vim.split(string.gsub(vim.fn.expand '%:~:.:h','%%',''), sep)
+    local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
+    local path_list = vim.split(string.gsub(vim.fn.expand '%:~:.:h', '%%', ''), sep)
     local file_path = ''
     for _, cur in ipairs(path_list) do
-      file_path = (cur == '.' or cur == '~') and '' or
+        file_path = (cur == '.' or cur == '~') and '' or
                     file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*'
     end
     return file_path .. file_name
 end
 
 local function config_winbar()
-    local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
-    local sym
-    if ok then sym = lspsaga.get_symbol_node() end
-    local win_val = ''
-    win_val = get_file_name(false) -- set to true to include path
-    if sym ~= nil then win_val = win_val .. sym end
-    vim.wo.winbar = win_val
+    local exclude = {
+        ['teminal'] = true,
+        ['toggleterm'] = true,
+        ['prompt'] = true,
+        ['NvimTree'] = true,
+        ['help'] = true,
+    } -- Ignore float windows and exclude filetype
+    if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
+        vim.wo.winbar = ''
+    else
+        local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
+        local sym
+        if ok then sym = lspsaga.get_symbol_node() end
+        local win_val = ''
+        win_val = get_file_name(true) -- set to true to include path
+        if sym ~= nil then win_val = win_val .. sym end
+        vim.wo.winbar = win_val
+    end
 end
 
-local events = { 'CursorHold', 'BufEnter', 'BufWinEnter', 'CursorMoved', 'WinLeave', 'User LspasgaUpdateSymbol' }
-
-local exclude = {
-    ['teminal'] = true,
-    ['prompt'] = true
-}
+local events = { 'BufEnter', 'BufWinEnter', 'CursorMoved' }
 
 vim.api.nvim_create_autocmd(events, {
     pattern = '*',
-    callback = function()
-        -- Ignore float windows and exclude filetype
-        if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
-            vim.wo.winbar = ''
-        else
-            config_winbar()
-        end
-    end,
+    callback = function() config_winbar() end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+    pattern = 'LspsagaUpdateSymbol',
+    callback = function() config_winbar() end,
 })
 ```
 
@@ -206,7 +236,7 @@ To enable click support for winbar define a function similar to [statusline](htt
 minwid will be replaced with current node. For example:
 
 ```lua
-symbol_in_bar = {
+symbol_in_winbar = {
     click_support = function(node, clicks, button, modifiers)
         -- To see all avaiable details: vim.pretty_print(node)
         local st = node.range.start
@@ -252,23 +282,24 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 ## Showcase
 
 <details>
-<summary>Async lsp finder</summary>
+<summary>lsp finder</summary>
 
+Finder Title work with neovim 0.8 +
 
 **Lua**
 
 ```lua
 -- lsp finder to find the cursor word definition and reference
-vim.keymap.set("n", "gh", require("lspsaga.finder").lsp_finder, { silent = true,noremap = true })
+vim.keymap.set("n", "gh", require("lspsaga.finder").lsp_finder, { silent = true })
 -- or use command LspSagaFinder
-vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true,noremap = true})
+vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true })
 ```
 
 NOTE: This requires ```filetypes``` and ```root_dir``` set in the  LSP server ```config``` object. So for [nvim-jdtls](https://github.com/mfussenegger/nvim-jdtls) users, even if you are loading the plugin as ```ftplugin``` or with ```FileType java``` autocmd, set ```filetypes``` in the ```config``` object.
   
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-4053-b671-303df4e94a19.gif" />
+src="https://user-images.githubusercontent.com/41671631/181253960-cef49f9d-db8b-4b04-92d8-cb6322749414.png" />
 </div>
 
 </details>
@@ -282,14 +313,14 @@ src="https://user-images.githubusercontent.com/41671631/175801499-4598dbc9-50c1-
 local action = require("lspsaga.codeaction")
 
 -- code action
-vim.keymap.set("n", "<leader>ca", action.code_action, { silent = true,noremap = true })
+vim.keymap.set("n", "<leader>ca", action.code_action, { silent = true })
 vim.keymap.set("v", "<leader>ca", function()
     vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-U>", true, false, true))
     action.range_code_action()
-end, { silent = true,noremap =true })
+end, { silent = true })
 -- or use command
-vim.keymap.set("n", "<leader>ca", "<cmd>Lspsaga code_action<CR>", { silent = true,noremap = true })
-vim.keymap.set("v", "<leader>ca", "<cmd><C-U>Lspsaga range_code_action<CR>", { silent = true,noremap = true })
+vim.keymap.set("n", "<leader>ca", "<cmd>Lspsaga code_action<CR>", { silent = true })
+vim.keymap.set("v", "<leader>ca", "<cmd><C-U>Lspsaga range_code_action<CR>", { silent = true })
 ```
 
 <div align='center'>
@@ -315,7 +346,7 @@ src="https://user-images.githubusercontent.com/41671631/175752848-cef8218a-f8e4-
 **Lua**
 
 ```lua
--- show hover doc
+-- show hover doc and press twice will jumpto hover window
 vim.keymap.set("n", "K", require("lspsaga.hover").render_hover_doc, { silent = true })
 -- or use command
 vim.keymap.set("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
@@ -347,9 +378,9 @@ You also can use `smart_scroll_with_saga` (see [hover doc](#hover-doc)) to scrol
 
 ```lua
 -- show signature help
-vim.keymap.set("n", "gs", require("lspsaga.signaturehelp").signature_help, { silent = true,noremap = true})
+vim.keymap.set("n", "gs", require("lspsaga.signaturehelp").signature_help, { silent = true })
 -- or command
-vim.keymap.set("n", "gs", "<Cmd>Lspsaga signature_help<CR>", { silent = true,noremap = true })
+vim.keymap.set("n", "gs", "<Cmd>Lspsaga signature_help<CR>", { silent = true })
 ```
 
 <div align='center'>
@@ -366,9 +397,9 @@ src="https://user-images.githubusercontent.com/41671631/175306809-755c4624-a5d2-
 
 ```lua
 -- rename
-vim.keymap.set("n", "gr", require("lspsaga.rename").lsp_rename, { silent = true,noremap = true })
+vim.keymap.set("n", "gr", require("lspsaga.rename").lsp_rename, { silent = true })
 -- or command
-vim.keymap.set("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true,noremap = true })
+vim.keymap.set("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true })
 -- close rename win use <C-c> in insert mode or `q` in normal mode or `:q`
 ```
 
@@ -388,7 +419,7 @@ You also can use `smart_scroll_with_saga` (see [hover doc](#hover-doc)) to scrol
 
 ```lua
 -- preview definition
-vim.keymap.set("n", "gd", require("lspsaga.definition").preview_definition, { silent = true,noremap = true })
+vim.keymap.set("n", "gd", require("lspsaga.definition").preview_definition, { silent = true })
 -- or use command
 vim.keymap.set("n", "gd", "<cmd>Lspsaga preview_definition<CR>", { silent = true })
 ```
@@ -406,27 +437,27 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 **Lua**
 
 ```lua
-vim.keymap.set("n", "<leader>cd", require("lspsaga.diagnostic").show_line_diagnostics, { silent = true,noremap = true })
-vim.keymap.set("n", "<leader>cd", "<cmd>Lspsaga show_line_diagnostics<CR>", { silent = true,noremap= true })
+vim.keymap.set("n", "<leader>cd", require("lspsaga.diagnostic").show_line_diagnostics, { silent = true })
+vim.keymap.set("n", "<leader>cd", "<cmd>Lspsaga show_line_diagnostics<CR>", { silent = true })
 
 -- jump diagnostic
-vim.keymap.set("n", "[e", require("lspsaga.diagnostic").goto_prev, { silent = true, noremap =true })
-vim.keymap.set("n", "]e", require("lspsaga.diagnostic").goto_next, { silent = true, noremap =true })
+vim.keymap.set("n", "[e", require("lspsaga.diagnostic").goto_prev, { silent = true })
+vim.keymap.set("n", "]e", require("lspsaga.diagnostic").goto_next, { silent = true })
 -- or jump to error
 vim.keymap.set("n", "[E", function()
   require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
-end, { silent = true, noremap = true })
+end, { silent = true })
 vim.keymap.set("n", "]E", function()
   require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
-end, { silent = true, noremap = true })
+end, { silent = true })
 -- or use command
-vim.keymap.set("n", "[e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true, noremap = true })
-vim.keymap.set("n", "]e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", { silent = true, noremap = true })
+vim.keymap.set("n", "[e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true })
+vim.keymap.set("n", "]e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", { silent = true })
 ```
 
 <div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-4496-b7cb-2a077ab9ecc0.gif"/>
+src="https://user-images.githubusercontent.com/41671631/182015252-c2e8acc1-3833-473d-a375-8093e104dc47.gif"/>
 </div>
 
 </details>
@@ -437,6 +468,23 @@ src="https://user-images.githubusercontent.com/41671631/175304950-f4620c7a-9080-
 <div align="center">
 <img
 src="https://user-images.githubusercontent.com/41671631/176679585-9485676b-ddea-44ca-bc88-b0eb04d450b1.gif" />
+</div>
+
+</details>
+
+<details>
+<summary>Outline</summary>
+
+work fast when lspsaga symbol winbar `in_custom = true` or `enable = true`,
+
+**Lua**
+
+```
+:LSoutlineToggle
+```
+
+<img
+src="https://user-images.githubusercontent.com/41671631/179864315-3ec84106-bcd4-43db-8590-2fb07f4055d9.gif"/>
 </div>
 
 </details>
@@ -453,15 +501,15 @@ local term = require("lspsaga.floaterm")
 -- float terminal also you can pass the cli command in open_float_terminal function
 vim.keymap.set("n", "<A-d>", function()
     term.open_float_terminal("custom_cli_command")
-end, { silent = true,noremap = true })
+end, { silent = true })
 vim.keymap.set("t", "<A-d>", function()
     vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true))
     term.close_float_terminal()
 end, { silent = true })
 
 -- or use command
-vim.keymap.set("n", "<A-d>", "<cmd>Lspsaga open_floaterm custom_cli_command<CR>", { silent = true,noremap = true })
-vim.keymap.set("t", "<A-d>", "<C-\\><C-n><cmd>Lspsaga close_floaterm<CR>", { silent = true,noremap =true })
+vim.keymap.set("n", "<A-d>", "<cmd>Lspsaga open_floaterm custom_cli_command<CR>", { silent = true })
+vim.keymap.set("t", "<A-d>", "<C-\\><C-n><cmd>Lspsaga close_floaterm<CR>", { silent = true })
 ```
 
 <div align='center'>
