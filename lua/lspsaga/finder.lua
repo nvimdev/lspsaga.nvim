@@ -95,12 +95,6 @@ function Finder:loading_bar()
     0,
     spin_config.interval,
     vim.schedule_wrap(function()
-      for _, method in pairs(methods) do
-        if self.request_result[method] then
-          self.request_status[method] = true
-        end
-      end
-
       spin_frame = spin_frame == 11 and 1 or spin_frame
       local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
       local spinner = ' ' .. spin_config.spinner[spin_frame]
@@ -121,7 +115,7 @@ function Finder:loading_bar()
       end
 
       if
-        (self.request_status[methods[1]] or self.request_status[methods[2]])
+        (self.request_status[methods[1]] and self.request_status[methods[2]])
         and not spin_timer:is_closing()
         and self.param ~= nil
       then
@@ -142,7 +136,11 @@ function Finder:do_request(params, method)
     params.context = { includeDeclaration = true }
   end
   self.client.request(method, params, function(_, result)
+    if not result then
+      result = {}
+    end
     self.request_result[method] = result
+    self.request_status[method] = true
   end, self.current_buf)
 end
 
