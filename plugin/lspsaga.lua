@@ -20,8 +20,8 @@ local highlights = {
   ReferencesCount = { link = 'Title' },
   --finder spinner
   FinderSpinnerBorder = { fg = '#51afef' },
-  FinderSpinnerTitle = { fg = '#CBA6F7', bold = true },
-  FinderSpinner = { fg = '#89d957', bold = true },
+  FinderSpinnerTitle = { fg = '#b33076', bold = true },
+  FinderSpinner = { fg = '#b33076', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
   DefinitionPreviewTitle = { link = 'Title' },
