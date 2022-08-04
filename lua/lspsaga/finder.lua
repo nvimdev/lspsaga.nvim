@@ -35,10 +35,10 @@ function Finder:lsp_finder()
 
   self:get_file_icon()
   -- make a spinner
-  self:wait_spinner()
+  self:loading_bar()
 end
 
-function Finder:wait_spinner()
+function Finder:loading_bar()
   self.WIN_WIDTH = fn.winwidth(0)
   self.WIN_HEIGHT = fn.winheight(0)
 
@@ -112,9 +112,13 @@ function Finder:wait_spinner()
       if uv.now() - start_request >= spin_config.timeout and not self.spin_timer:is_closing() then
         self.spin_timer:stop()
         self.spin_timer:close()
+        if api.nvim_buf_is_loaded(self.spin_buf) then
+          api.nvim_buf_delete(self.spin_buf, { force = true })
+        end
         window.nvim_close_valid_window(self.spin_win)
         vim.notify('request timeout')
         self.spin_win = nil
+        self.spin_buf = nil
         return
       end
 
@@ -125,8 +129,12 @@ function Finder:wait_spinner()
       then
         self.spin_timer:stop()
         self.spin_timer:close()
+        if api.nvim_buf_is_loaded(self.spin_buf) then
+          api.nvim_buf_delete(self.spin_buf, { force = true })
+        end
         window.nvim_close_valid_window(self.spin_win)
         self.spin_win = nil
+        self.spin_buf = nil
         self:lsp_finder_request()
       end
     end)
