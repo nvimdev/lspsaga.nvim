@@ -64,7 +64,7 @@ function Finder:loading_bar()
     enter = false,
   }
 
-  self.spin_buf, self.spin_win = window.create_win_with_border(content_opts, opts)
+  local spin_buf, spin_win = window.create_win_with_border(content_opts, opts)
   local spin_config = {
     spinner = {
       '█▁▁▁▁▁▁▁▁▁',
@@ -81,7 +81,7 @@ function Finder:loading_bar()
     interval = 10,
     timeout = config.finder_request_timeout,
   }
-  api.nvim_buf_set_option(self.spin_buf, 'modifiable', true)
+  api.nvim_buf_set_option(spin_buf, 'modifiable', true)
 
   self.request_status = {
     [methods[1]] = false,
@@ -89,9 +89,9 @@ function Finder:loading_bar()
   }
 
   local spin_frame = 1
-  self.spin_timer = uv.new_timer()
+  local spin_timer = uv.new_timer()
   local start_request = uv.now()
-  self.spin_timer:start(
+  spin_timer:start(
     0,
     spin_config.interval,
     vim.schedule_wrap(function()
@@ -104,37 +104,33 @@ function Finder:loading_bar()
       spin_frame = spin_frame == 11 and 1 or spin_frame
       local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
       local spinner = ' ' .. spin_config.spinner[spin_frame]
-      api.nvim_buf_set_lines(self.spin_buf, 0, -1, false, { msg, spinner })
-      api.nvim_buf_add_highlight(self.spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
-      api.nvim_buf_add_highlight(self.spin_buf, 0, 'FinderSpinner', 1, 0, -1)
+      api.nvim_buf_set_lines(spin_buf, 0, -1, false, { msg, spinner })
+      api.nvim_buf_add_highlight(spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
+      api.nvim_buf_add_highlight(spin_buf, 0, 'FinderSpinner', 1, 0, -1)
       spin_frame = spin_frame + 1
 
-      if uv.now() - start_request >= spin_config.timeout and not self.spin_timer:is_closing() then
-        self.spin_timer:stop()
-        self.spin_timer:close()
-        if api.nvim_buf_is_loaded(self.spin_buf) then
-          api.nvim_buf_delete(self.spin_buf, { force = true })
+      if uv.now() - start_request >= spin_config.timeout and not spin_timer:is_closing() then
+        spin_timer:stop()
+        spin_timer:close()
+        if api.nvim_buf_is_loaded(spin_buf) then
+          api.nvim_buf_delete(spin_buf, { force = true })
         end
-        window.nvim_close_valid_window(self.spin_win)
+        window.nvim_close_valid_window(spin_win)
         vim.notify('request timeout')
-        self.spin_win = nil
-        self.spin_buf = nil
         return
       end
 
       if
         (self.request_status[methods[1]] or self.request_status[methods[2]])
-        and not self.spin_timer:is_closing()
+        and not spin_timer:is_closing()
         and self.param ~= nil
       then
-        self.spin_timer:stop()
-        self.spin_timer:close()
-        if api.nvim_buf_is_loaded(self.spin_buf) then
-          api.nvim_buf_delete(self.spin_buf, { force = true })
+        spin_timer:stop()
+        spin_timer:close()
+        if api.nvim_buf_is_loaded(spin_buf) then
+          api.nvim_buf_delete(spin_buf, { force = true })
         end
-        window.nvim_close_valid_window(self.spin_win)
-        self.spin_win = nil
-        self.spin_buf = nil
+        window.nvim_close_valid_window(spin_win)
         self:lsp_finder_request()
       end
     end)
@@ -742,6 +738,7 @@ function Finder:clear_tmp_data()
   self.definition_uri = 0
   self.reference_uri = 0
   self.param = nil
+  self.current_buf = nil
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
   self.WIN_WIDTH = 0
