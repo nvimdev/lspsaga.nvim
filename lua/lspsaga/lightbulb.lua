@@ -16,13 +16,13 @@ local function check_server_support_codeaction(bufnr)
   local supports = {}
   for _, client in pairs(clients) do
     if client.supports_method(code_action_method) then
-      table.insert(supports,true)
+      table.insert(supports, true)
     else
-      table.insert(supports,false)
+      table.insert(supports, false)
     end
   end
 
-  for _,val in pairs(supports) do
+  for _, val in pairs(supports) do
     if val then
       return true
     end
@@ -65,7 +65,7 @@ local function _update_sign(bufnr, line)
   end
 end
 
-local function render_action_virtual_text(bufnr, line,actions)
+local function render_action_virtual_text(bufnr, line, actions)
   if next(actions) == nil then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(bufnr, nil)

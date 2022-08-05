@@ -225,8 +225,6 @@ function ot:render_status()
 end
 
 local create_outline_window = function()
-  local user_option = vim.opt.splitright:get()
-
   if string.len(outline_conf.win_with) > 0 then
     local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
 
@@ -238,10 +236,9 @@ local create_outline_window = function()
     end
   end
 
-  vim.opt.splitright = outline_conf.win_position == 'right' and true or false
-  vim.cmd('noautocmd vsplit')
+  local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
+  vim.cmd('noautocmd ' .. pos .. ' vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
-  vim.opt.splitright = user_option
 end
 
 ---@private
