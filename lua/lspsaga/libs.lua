@@ -99,7 +99,7 @@ function libs.get_lsp_root_dir()
       end
     end
   end
-  return ''
+  return nil
 end
 
 function libs.apply_keys(ns)

@@ -125,7 +125,7 @@ function Finder:loading_bar()
           api.nvim_buf_delete(spin_buf, { force = true })
         end
         window.nvim_close_valid_window(spin_win)
-        self:lsp_finder_request()
+        self:render_finder()
       end
     end)
   )
@@ -199,11 +199,10 @@ function Finder:get_file_icon()
   self.f_hl = self.f_hl == nil and '' or self.f_hl
 end
 
-function Finder:lsp_finder_request()
-  local root_dir = libs.get_lsp_root_dir()
-  if string.len(root_dir) == 0 then
+function Finder:render_finder()
+  self.root_dir = libs.get_lsp_root_dir()
+  if not self.root_dir then
     vim.notify('[LspSaga] get root dir failed')
-    return
   end
 
   self.contents = {}
@@ -212,12 +211,12 @@ function Finder:lsp_finder_request()
   self.reference_uri = 0
   self.buf_filetype = api.nvim_buf_get_option(0, 'filetype')
 
-  self:create_finder_contents(self.request_result[methods[1]] or {}, methods[1], root_dir)
-  self:create_finder_contents(self.request_result[methods[2]] or {}, methods[2], root_dir)
+  self:create_finder_contents(self.request_result[methods[1]] or {}, methods[1])
+  self:create_finder_contents(self.request_result[methods[2]] or {}, methods[2])
   self:render_finder_result()
 end
 
-function Finder:create_finder_contents(result, method, root_dir)
+function Finder:create_finder_contents(result, method)
   local target_lnum = 0
   -- remove definition in references
   if self.short_link ~= nil and self.short_link[3] ~= nil and next(result) ~= nil then
@@ -271,8 +270,8 @@ function Finder:create_finder_contents(result, method, root_dir)
     local short_name
 
     -- reduce filename length by root_dir or home dir
-    if link:find(root_dir, 1, true) then
-      short_name = link:sub(root_dir:len() + 2)
+    if self.root_dir and link:find(self.root_dir, 1, true) then
+      short_name = link:sub(self.root_dir:len() + 2)
     else
       local _split = vim.split(link, path_sep)
       if #_split > 5 then
@@ -736,6 +735,7 @@ function Finder:clear_tmp_data()
   self.definition_uri = 0
   self.reference_uri = 0
   self.param = nil
+  self.root_dir = nil
   self.current_buf = nil
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0
