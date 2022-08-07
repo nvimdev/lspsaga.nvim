@@ -13,17 +13,9 @@ end
 
 local function check_server_support_codeaction(bufnr)
   local clients = vim.lsp.get_active_clients({ bufnr = bufnr })
-  local supports = {}
   for _, client in pairs(clients) do
-    if client.supports_method(code_action_method) then
-      table.insert(supports, true)
-    else
-      table.insert(supports, false)
-    end
-  end
-
-  for _, val in pairs(supports) do
-    if val then
+    if client.server_capabilities.codeActionProvider
+      and libs.has_value(client.config.filetypes,vim.bo[bufnr].filetype) then
       return true
     end
   end
