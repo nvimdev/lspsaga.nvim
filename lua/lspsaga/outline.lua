@@ -37,7 +37,9 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
       local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
       table.insert(ot[current_buf].preview_contents, content)
       table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
-      table.insert(ot[current_buf].details, node.detail)
+      if node.detail then
+        table.insert(ot[current_buf].details, node.detail)
+      end
     end
 
     if node.children ~= nil and next(node.children) ~= nil then
@@ -133,6 +135,10 @@ function ot:fold_indent_virt(tbl)
 end
 
 function ot:detail_virt_text(bufnr)
+  if not self[bufnr].details then
+    return
+  end
+
   for i, detail in pairs(self[bufnr].details) do
     api.nvim_buf_set_extmark(0, virt_id, i - 1, 0, {
       virt_text = { { detail, 'OutlineDetail' } },
