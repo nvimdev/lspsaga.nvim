@@ -22,25 +22,20 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
     hi = hi_prefix .. kind[node.kind][1]
     local indent = string.rep(space, level)
 
-    -- I think no need to show function param
-    if node.kind ~= 14 then
-      line = indent .. icon .. node.name
-      table.insert(nodes, line)
-      table.insert(hi_tbl, hi)
-      if ot[current_buf].preview_contents == nil then
-        ot[current_buf].preview_contents = {}
-        ot[current_buf].link = {}
-        ot[current_buf].details = {}
-      end
-      local range = node.location ~= nil and node.location.range or node.range
-      local _end_line = range['end'].line + 1
-      local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
-      table.insert(ot[current_buf].preview_contents, content)
-      table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
-      if node.detail then
-        table.insert(ot[current_buf].details, node.detail)
-      end
+    line = indent .. icon .. node.name
+    table.insert(nodes, line)
+    table.insert(hi_tbl, hi)
+    if ot[current_buf].preview_contents == nil then
+      ot[current_buf].preview_contents = {}
+      ot[current_buf].link = {}
+      ot[current_buf].details = {}
     end
+    local range = node.location ~= nil and node.location.range or node.range
+    local _end_line = range['end'].line + 1
+    local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
+    table.insert(ot[current_buf].preview_contents, content)
+    table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
+    table.insert(ot[current_buf].details, node.detail)
 
     if node.children ~= nil and next(node.children) ~= nil then
       nodes_with_icon(node.children, nodes, hi_tbl, level + 1)
