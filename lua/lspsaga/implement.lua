@@ -76,9 +76,11 @@ function implement.lspsaga_implementation(timeout_ms)
 
     local bf, wi = window.create_win_with_border(content_opts, opts)
 
+    local current_buf = api.nvim_get_current_buf()
+
     local close_events = { 'CursorMoved', 'CursorMovedI', 'BufHidden', 'BufLeave' }
     vim.defer_fn(function()
-      libs.close_preview_autocmd(bf, wi, close_events)
+      libs.close_preview_autocmd(current_buf, wi, close_events)
     end, 0)
     vim.api.nvim_buf_add_highlight(bf, -1, 'DefinitionPreviewTitle', 0, 0, -1)
 
