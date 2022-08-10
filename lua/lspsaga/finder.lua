@@ -181,8 +181,6 @@ function Finder:render_finder()
 
   self.contents = {}
   self.short_link = {}
-  -- self.definition_uri = 0
-  -- self.reference_uri = 0
   self.buf_filetype = api.nvim_buf_get_option(0, 'filetype')
 
   local lnum, start_lnum = 0, 0
@@ -204,7 +202,6 @@ function Finder:render_finder()
     end
     self:get_uri_scope(method, start_lnum, lnum - 1)
   end
-  -- print(vim.inspect(self.contents),vim.inspect(self.def_scope))
   self:render_finder_result()
 end
 
@@ -685,16 +682,11 @@ function Finder:quit_float_window(...)
 end
 
 function Finder:clear_tmp_data()
-  self.short_link = {}
-  self.contents = {}
-  self.definition_uri = 0
-  self.reference_uri = 0
-  self.param = nil
-  self.root_dir = nil
-  self.current_buf = nil
-  self.buf_filetype = ''
-  self.WIN_HEIGHT = 0
-  self.WIN_WIDTH = 0
+  for key,val in pairs(self) do
+    if type(val) ~= 'function' then
+      self[key] = nil
+    end
+  end
 end
 
 return Finder
