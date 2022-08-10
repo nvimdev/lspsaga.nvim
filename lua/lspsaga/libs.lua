@@ -185,13 +185,23 @@ end
 
 -- get client by capabilities
 function libs.get_client_by_cap(caps)
+  local client_caps = {
+    ['string'] = function(instance)
+      if instance.server_capabilities[caps] then
+        return instance
+      end
+    end,
+    ['table'] = function(instance)
+      if instance.server_capabilities[caps[1]] and instance.server_capabilities[caps[2]] then
+        return instance
+      end
+    end,
+  }
+
   local clients = vim.lsp.buf_get_clients()
   local client
   for _, instance in pairs(clients) do
-    local server_cap = instance.server_capabilities
-    if server_cap[caps[1]] and server_cap[caps[2]] then
-      client = instance
-    end
+    client = client_caps[type(caps)](instance)
   end
   return client
 end
