@@ -85,10 +85,10 @@ function libs.get_lsp_root_dir()
 
   local clients = vim.lsp.get_active_clients()
   for _, client in pairs(clients) do
-    if client.config.filetypes and client.config.root_dir then     
+    if client.config.filetypes and client.config.root_dir then
       if libs.has_value(client.config.filetypes, vim.bo.filetype) then
         return client.config.root_dir
-      end
+        end
     else
       for name, fts in pairs(server_filetype_map) do
         for _, ft in pairs(fts) do
