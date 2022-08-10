@@ -1,24 +1,24 @@
 local window = require('lspsaga.window')
-local kind = require('lspsaga.lspkind')
 local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local scroll_in_win = require('lspsaga.action').scroll_in_win
 local saga_augroup = require('lspsaga').saga_augroup
-local symbar = require('lspsaga.symbolwinbar')
 local path_sep = libs.path_sep
 local icons = config.finder_icons
 local insert = table.insert
 local uv = vim.loop
 local indent = '    '
 
-local methods = { 'textDocument/definition', 'textDocument/references' }
+local methods = {
+  'textDocument/definition',
+  'textDocument/references',
+}
+
 local msgs = {
   [methods[1]] = 'No Definitions Found',
   [methods[2]] = 'No References  Found',
 }
-
-local symbol_method = 'textDocument/documentSymbol'
 
 local Finder = {}
 
@@ -27,7 +27,13 @@ function Finder:lsp_finder()
     return
   end
 
-  self:word_symbol_kind()
+  local caps = { 'referencesProvider', 'definitionProvider' }
+  self.client = libs.get_client_by_cap(caps)
+
+  local current_word = vim.fn.expand('<cword>')
+  self.param = '  ' .. current_word
+
+  self.request_result = {}
   local params = lsp.util.make_position_params()
   for _, method in pairs(methods) do
     self:do_request(params, method)
@@ -117,7 +123,6 @@ function Finder:loading_bar()
       if
         (self.request_status[methods[1]] and self.request_status[methods[2]])
         and not spin_timer:is_closing()
-        and self.param ~= nil
       then
         spin_timer:stop()
         spin_timer:close()
@@ -125,7 +130,7 @@ function Finder:loading_bar()
           api.nvim_buf_delete(spin_buf, { force = true })
         end
         window.nvim_close_valid_window(spin_win)
-        self:lsp_finder_request()
+        self:render_finder()
       end
     end)
   )
@@ -144,49 +149,6 @@ function Finder:do_request(params, method)
   end, self.current_buf)
 end
 
-function Finder:word_symbol_kind()
-  self.current_buf = api.nvim_get_current_buf()
-  self.request_result = {}
-  local current_word = vim.fn.expand('<cword>')
-
-  local caps = { 'documentSymbolProvider', 'referencesProvider', 'definitionProvider' }
-  self.client = libs.get_client_by_cap(caps)
-  local result = {}
-
-  local param_with_icon = function()
-    local index = 0
-    if result ~= nil and next(result) ~= nil then
-      for i, val in pairs(result) do
-        if val.name:find(current_word) then
-          index = i
-          break
-        end
-      end
-    end
-
-    local icon = index ~= 0 and kind[result[index].kind][2] or ' '
-    self.param = icon .. current_word
-  end
-
-  if symbar.symbol_cache[self.current_buf] ~= nil then
-    result = symbar.symbol_cache[self.current_buf][2]
-    param_with_icon()
-    return
-  else
-    if self.client ~= nil then
-      local params = { textDocument = lsp.util.make_text_document_params() }
-      self.client.request(symbol_method, params, function(_, results)
-        if results ~= nil then
-          result = results
-        end
-        param_with_icon()
-      end, self.current_buf)
-      return
-    end
-  end
-  vim.notify('All Servers of this buffer not support ' .. symbol_method)
-end
-
 function Finder:get_file_icon()
   local ok, devicons = pcall(require, 'nvim-web-devicons')
   self.f_icon = ''
@@ -199,11 +161,10 @@ function Finder:get_file_icon()
   self.f_hl = self.f_hl == nil and '' or self.f_hl
 end
 
-function Finder:lsp_finder_request()
-  local root_dir = libs.get_lsp_root_dir()
-  if string.len(root_dir) == 0 then
+function Finder:render_finder()
+  self.root_dir = libs.get_lsp_root_dir()
+  if not self.root_dir then
     vim.notify('[LspSaga] get root dir failed')
-    return
   end
 
   self.contents = {}
@@ -212,12 +173,12 @@ function Finder:lsp_finder_request()
   self.reference_uri = 0
   self.buf_filetype = api.nvim_buf_get_option(0, 'filetype')
 
-  self:create_finder_contents(self.request_result[methods[1]] or {}, methods[1], root_dir)
-  self:create_finder_contents(self.request_result[methods[2]] or {}, methods[2], root_dir)
+  self:create_finder_contents(self.request_result[methods[1]] or {}, methods[1])
+  self:create_finder_contents(self.request_result[methods[2]] or {}, methods[2])
   self:render_finder_result()
 end
 
-function Finder:create_finder_contents(result, method, root_dir)
+function Finder:create_finder_contents(result, method)
   local target_lnum = 0
   -- remove definition in references
   if self.short_link ~= nil and self.short_link[3] ~= nil and next(result) ~= nil then
@@ -271,8 +232,8 @@ function Finder:create_finder_contents(result, method, root_dir)
     local short_name
 
     -- reduce filename length by root_dir or home dir
-    if link:find(root_dir, 1, true) then
-      short_name = link:sub(root_dir:len() + 2)
+    if self.root_dir and link:find(self.root_dir, 1, true) then
+      short_name = link:sub(self.root_dir:len() + 2)
     else
       local _split = vim.split(link, path_sep)
       if #_split > 5 then
@@ -736,6 +697,7 @@ function Finder:clear_tmp_data()
   self.definition_uri = 0
   self.reference_uri = 0
   self.param = nil
+  self.root_dir = nil
   self.current_buf = nil
   self.buf_filetype = ''
   self.WIN_HEIGHT = 0

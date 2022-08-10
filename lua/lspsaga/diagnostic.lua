@@ -300,7 +300,7 @@ local function get_diagnostic_start(diagnostic_entry)
 end
 
 local function get_diagnostic_end(diagnostic_entry)
-  return diagnostic_entry['end_lnum'],diagnostic_entry['end_col']
+  return diagnostic_entry['end_lnum'], diagnostic_entry['end_col']
 end
 
 local function in_range(cursor_line, cursor_char)

@@ -47,7 +47,7 @@ saga.config_values = {
     exec = '<CR>',
   },
   rename_action_quit = '<C-c>',
-  rename_in_select = false,
+  rename_in_select = true,
   definition_preview_icon = '  ',
   -- winbar must nightly
   symbol_in_winbar = {
@@ -59,7 +59,7 @@ saga.config_values = {
   },
   show_outline = {
     win_position = 'right',
-    win_with = 'NvimTree',
+    win_with = '',
     win_width = 30,
     auto_enter = true,
     auto_preview = true,

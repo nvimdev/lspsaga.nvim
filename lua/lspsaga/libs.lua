@@ -99,7 +99,7 @@ function libs.get_lsp_root_dir()
       end
     end
   end
-  return ''
+  return nil
 end
 
 function libs.apply_keys(ns)
@@ -189,7 +189,7 @@ function libs.get_client_by_cap(caps)
   local client
   for _, instance in pairs(clients) do
     local server_cap = instance.server_capabilities
-    if server_cap[caps[1]] and server_cap[caps[2]] and server_cap[caps[3]] then
+    if server_cap[caps[1]] and server_cap[caps[2]] then
       client = instance
     end
   end

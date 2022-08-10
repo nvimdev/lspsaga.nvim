@@ -22,23 +22,20 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
     hi = hi_prefix .. kind[node.kind][1]
     local indent = string.rep(space, level)
 
-    -- I think no need to show function param
-    if node.kind ~= 14 then
-      line = indent .. icon .. node.name
-      table.insert(nodes, line)
-      table.insert(hi_tbl, hi)
-      if ot[current_buf].preview_contents == nil then
-        ot[current_buf].preview_contents = {}
-        ot[current_buf].link = {}
-        ot[current_buf].details = {}
-      end
-      local range = node.location ~= nil and node.location.range or node.range
-      local _end_line = range['end'].line + 1
-      local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
-      table.insert(ot[current_buf].preview_contents, content)
-      table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
-      table.insert(ot[current_buf].details, node.detail)
+    line = indent .. icon .. node.name
+    table.insert(nodes, line)
+    table.insert(hi_tbl, hi)
+    if ot[current_buf].preview_contents == nil then
+      ot[current_buf].preview_contents = {}
+      ot[current_buf].link = {}
+      ot[current_buf].details = {}
     end
+    local range = node.location ~= nil and node.location.range or node.range
+    local _end_line = range['end'].line + 1
+    local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
+    table.insert(ot[current_buf].preview_contents, content)
+    table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
+    table.insert(ot[current_buf].details, node.detail)
 
     if node.children ~= nil and next(node.children) ~= nil then
       nodes_with_icon(node.children, nodes, hi_tbl, level + 1)
@@ -133,6 +130,10 @@ function ot:fold_indent_virt(tbl)
 end
 
 function ot:detail_virt_text(bufnr)
+  if not self[bufnr].details then
+    return
+  end
+
   for i, detail in pairs(self[bufnr].details) do
     api.nvim_buf_set_extmark(0, virt_id, i - 1, 0, {
       virt_text = { { detail, 'OutlineDetail' } },
@@ -225,8 +226,6 @@ function ot:render_status()
 end
 
 local create_outline_window = function()
-  local user_option = vim.opt.splitright:get()
-
   if string.len(outline_conf.win_with) > 0 then
     local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
 
@@ -238,10 +237,9 @@ local create_outline_window = function()
     end
   end
 
-  vim.opt.splitright = outline_conf.win_position == 'right' and true or false
-  vim.cmd('noautocmd vsplit')
+  local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
+  vim.cmd('noautocmd ' .. pos .. ' vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
-  vim.opt.splitright = user_option
 end
 
 ---@private

@@ -289,8 +289,6 @@ Finder Title work with neovim 0.8 +
 **Lua**
 
 ```lua
--- lsp finder to find the cursor word definition and reference
-vim.keymap.set("n", "gh", require("lspsaga.finder").lsp_finder, { silent = true })
 -- or use command LspSagaFinder
 vim.keymap.set("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true })
 ```
@@ -346,8 +344,6 @@ src="https://user-images.githubusercontent.com/41671631/175752848-cef8218a-f8e4-
 **Lua**
 
 ```lua
--- show hover doc and press twice will jumpto hover window
-vim.keymap.set("n", "K", require("lspsaga.hover").render_hover_doc, { silent = true })
 -- or use command
 vim.keymap.set("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
 
@@ -377,8 +373,6 @@ You also can use `smart_scroll_with_saga` (see [hover doc](#hover-doc)) to scrol
 **Lua**
 
 ```lua
--- show signature help
-vim.keymap.set("n", "gs", require("lspsaga.signaturehelp").signature_help, { silent = true })
 -- or command
 vim.keymap.set("n", "gs", "<Cmd>Lspsaga signature_help<CR>", { silent = true })
 ```
@@ -396,8 +390,6 @@ src="https://user-images.githubusercontent.com/41671631/175306809-755c4624-a5d2-
 **Lua**
 
 ```lua
--- rename
-vim.keymap.set("n", "gr", require("lspsaga.rename").lsp_rename, { silent = true })
 -- or command
 vim.keymap.set("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true })
 -- close rename win use <C-c> in insert mode or `q` in normal mode or `:q`
@@ -418,8 +410,6 @@ You also can use `smart_scroll_with_saga` (see [hover doc](#hover-doc)) to scrol
 **Lua**
 
 ```lua
--- preview definition
-vim.keymap.set("n", "gd", require("lspsaga.definition").preview_definition, { silent = true })
 -- or use command
 vim.keymap.set("n", "gd", "<cmd>Lspsaga preview_definition<CR>", { silent = true })
 ```
@@ -437,12 +427,9 @@ src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-
 **Lua**
 
 ```lua
-vim.keymap.set("n", "<leader>cd", require("lspsaga.diagnostic").show_line_diagnostics, { silent = true })
 vim.keymap.set("n", "<leader>cd", "<cmd>Lspsaga show_line_diagnostics<CR>", { silent = true })
+vim.keymap.set("n", "<leader>cd", "<cmd>Lspsaga show_cursor_diagnostics<CR>", { silent = true })
 
--- jump diagnostic
-vim.keymap.set("n", "[e", require("lspsaga.diagnostic").goto_prev, { silent = true })
-vim.keymap.set("n", "]e", require("lspsaga.diagnostic").goto_next, { silent = true })
 -- or jump to error
 vim.keymap.set("n", "[E", function()
   require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })

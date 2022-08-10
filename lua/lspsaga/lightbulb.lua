@@ -14,10 +14,14 @@ end
 local function check_server_support_codeaction(bufnr)
   local clients = vim.lsp.get_active_clients({ bufnr = bufnr })
   for _, client in pairs(clients) do
-    if client.supports_method(code_action_method) then
+    if
+      client.supports_method(code_action_method)
+      and libs.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
+    then
       return true
     end
   end
+
   return false
 end
 
@@ -55,7 +59,7 @@ local function _update_sign(bufnr, line)
   end
 end
 
-local function render_action_virtual_text(bufnr, line, diagnostics, actions)
+local function render_action_virtual_text(bufnr, line, actions)
   if next(actions) == nil then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(bufnr, nil)
@@ -94,19 +98,18 @@ local send_request = coroutine.create(function()
           table.insert(actions, res.result)
         end
       end
-      render_action_virtual_text(current_buf, line, diagnostics, actions)
+      render_action_virtual_text(current_buf, line, actions)
     end)
     current_buf = coroutine.yield()
   end
 end)
 
-local render_bulb = function()
-  local current_buf = api.nvim_get_current_buf()
-  local has_code_action = check_server_support_codeaction(current_buf)
+local render_bulb = function(bufnr)
+  local has_code_action = check_server_support_codeaction(bufnr)
   if not has_code_action then
     return
   end
-  coroutine.resume(send_request, current_buf)
+  coroutine.resume(send_request, bufnr)
 end
 
 function lb.action_lightbulb()
@@ -114,13 +117,13 @@ function lb.action_lightbulb()
     return
   end
 
+  local current_buf = api.nvim_get_current_buf()
   if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == 'i' then
-    local current_buf = api.nvim_get_current_buf()
     _update_sign(current_buf, nil)
     _update_virtual_text(current_buf, nil)
     return
   end
-  render_bulb()
+  render_bulb(current_buf)
 end
 
 return lb
