@@ -9,6 +9,7 @@ local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
 local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
+local cap = 'documentSymbolProvider'
 
 function symbar:get_file_name()
   local file_name = string.gsub(vim.fn.expand('%:t'), '%%', '')
@@ -28,7 +29,9 @@ end
 local do_symbol_request = function(callback)
   local current_buf = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
-  lsp.buf_request_all(current_buf, method, params, callback)
+
+  local client = libs.get_client_by_cap(cap)
+  client.request(method, params, callback,current_buf)
 end
 
 --@private

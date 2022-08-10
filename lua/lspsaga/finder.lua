@@ -141,7 +141,6 @@ function Finder:do_request(params, method)
     params.context = { includeDeclaration = true }
   end
   self.client.request(method, params, function(_, result)
-    print(result, method)
     if not result then
       result = {}
     end
