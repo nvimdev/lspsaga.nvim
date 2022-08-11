@@ -8,3 +8,5 @@
 ### Remove
 
 - remove `Lspsaga implement`.
+- remove `Lspsaga preview_definition`
+- remove option `definition_preview_icon`
