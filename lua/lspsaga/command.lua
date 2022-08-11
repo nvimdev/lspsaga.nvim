@@ -5,7 +5,6 @@ local diagnostic = require('lspsaga.diagnostic')
 local codeaction = require('lspsaga.codeaction')
 local signature = require('lspsaga.signaturehelp')
 local floaterm = require('lspsaga.floaterm')
-local implement = require('lspsaga.implement')
 local finder = require('lspsaga.finder')
 
 local subcommands = {
@@ -24,7 +23,6 @@ local subcommands = {
   signature_help = signature.signature_help,
   open_floaterm = floaterm.open_float_terminal,
   close_floaterm = floaterm.close_float_terminal,
-  implement = implement.lspsaga_implementation,
 }
 
 function command.command_list()

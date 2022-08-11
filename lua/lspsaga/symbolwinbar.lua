@@ -31,6 +31,9 @@ local do_symbol_request = function(callback)
   local params = { textDocument = lsp.util.make_text_document_params() }
 
   local client = libs.get_client_by_cap(cap)
+  if client == nil then
+    return
+  end
   client.request(method, params, callback, current_buf)
 end
 
@@ -137,18 +140,6 @@ local render_symbol_winbar = function()
   return winbar_val
 end
 
-function symbar.get_clientid()
-  local client_id
-  local clients = vim.lsp.buf_get_clients()
-  for id, conf in pairs(clients) do
-    if conf.server_capabilities.documentSymbolProvider then
-      client_id = id
-      break
-    end
-  end
-  return client_id
-end
-
 function symbar:get_buf_symbol(force, ...)
   if not libs.check_lsp_active() then
     return
@@ -160,20 +151,14 @@ function symbar:get_buf_symbol(force, ...)
     return
   end
 
-  local client_id = self.get_clientid()
-
-  if client_id == nil then
-    return
-  end
-
   local arg = { ... }
   local fn
   if next(arg) ~= nil then
     fn = unpack(arg)
   end
 
-  local _callback = function(err, result)
-    if not result and not err then
+  local _callback = function(_, result)
+    if not result then
       return
     end
 

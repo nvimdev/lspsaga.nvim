@@ -31,6 +31,7 @@ saga.config_values = {
   max_preview_lines = 10,
   finder_icons = {
     def = 'ﰳ  ',
+    imp = 'ﰳ  ',
     ref = 'ﰳ  ',
   },
   finder_request_timeout = 1500,

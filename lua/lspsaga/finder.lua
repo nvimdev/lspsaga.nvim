@@ -12,14 +12,14 @@ local indent = '    '
 
 local methods = {
   'textDocument/definition',
+  'textDocument/implementation',
   'textDocument/references',
-  -- 'textDocument/implementation',
 }
 
 local msgs = {
   [methods[1]] = 'No Definitions Found',
-  [methods[2]] = 'No References  Found',
-  -- [methods[3]] = 'No Implements  Found',
+  [methods[2]] = 'No Implements  Found',
+  [methods[3]] = 'No References  Found',
 }
 
 local Finder = {}
@@ -123,8 +123,11 @@ function Finder:loading_bar()
       end
 
       if
-        (self.request_status[methods[1]] and self.request_status[methods[2]])
-        and not spin_timer:is_closing()
+        (
+          self.request_status[methods[1]]
+          and self.request_status[methods[2]]
+          and self.request_status[methods[3]]
+        ) and not spin_timer:is_closing()
       then
         spin_timer:stop()
         spin_timer:close()
@@ -169,6 +172,10 @@ function Finder:get_uri_scope(method, start_lnum, end_lnum)
   end
 
   if method == methods[2] then
+    self.imp_scope = { start_lnum, end_lnum }
+  end
+
+  if method == methods[3] then
     self.ref_scope = { start_lnum, end_lnum }
   end
 end
@@ -184,14 +191,9 @@ function Finder:render_finder()
   self.buf_filetype = api.nvim_buf_get_option(0, 'filetype')
 
   local lnum, start_lnum = 0, 0
-  for i, method in pairs(methods) do
-    local tbl = self:create_finder_contents(self.request_result[method], method)
-    if i == 1 then
-      start_lnum = 0
-    else
-      start_lnum = lnum
-    end
 
+  local generate_contents = function(tbl, method)
+    start_lnum = lnum
     for _, val in pairs(tbl) do
       insert(self.contents, val[1])
       lnum = lnum + 1
@@ -202,12 +204,30 @@ function Finder:render_finder()
     end
     self:get_uri_scope(method, start_lnum, lnum - 1)
   end
+
+  for i, method in pairs(methods) do
+    local tbl = self:create_finder_contents(self.request_result[method], method)
+    -- looksl like the first references is definition
+    -- so remove it
+    if i == 3 then
+      local start_row, start_col = tbl[3][2].row, tbl[3][2].col
+      if
+        self.short_link[3]
+        and start_row == self.short_link[3].row
+        and start_col == self.short_link[3].col
+      then
+        table.remove(tbl, 3)
+      end
+    end
+    generate_contents(tbl, method)
+  end
   self:render_finder_result()
 end
 
 local titles = {
   [methods[1]] = icons.def .. 'Definition ',
-  [methods[2]] = icons.ref .. 'References ',
+  [methods[2]] = icons.ref .. 'Implements ',
+  [methods[3]] = icons.ref .. 'References ',
 }
 
 function Finder:create_finder_contents(result, method)
@@ -218,12 +238,14 @@ function Finder:create_finder_contents(result, method)
 
   if #result == 0 then
     insert(contents, { indent .. self.f_icon .. msgs[method], false })
-    return
+    insert(contents, { ' ', false })
+    return contents
   end
 
   for _, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if uri == nil then
+      vim.notify('miss uri in server response')
       return
     end
     local bufnr = vim.uri_to_bufnr(uri)
@@ -370,6 +392,30 @@ function Finder:render_finder_result()
     })
   end
 
+  api.nvim_buf_set_extmark(0, ns_id, self.imp_scope[1] + 1, 0, {
+    virt_text = { { '│', virt_hi } },
+    virt_text_pos = 'overlay',
+  })
+
+  for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
+    local virt_texts = {}
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
+
+    if i == self.imp_scope[2] - 1 then
+      insert(virt_texts, { '└', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    else
+      insert(virt_texts, { '├', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    end
+
+    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
+      virt_text = virt_texts,
+      virt_text_pos = 'overlay',
+    })
+  end
+
   api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
     virt_text = { { '│', virt_hi } },
     virt_text_pos = 'overlay',
@@ -470,10 +516,30 @@ end
 function Finder:lsp_finder_highlight()
   local def_len = string.len('Definition')
   local ref_len = string.len('References')
+  local imp_len = string.len('Implements')
   -- add syntax
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.def)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
+
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #icons.imp)
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'Implements',
+    self.imp_scope[1],
+    #icons.imp,
+    #icons.imp + imp_len
+  )
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'ImplementsCount',
+    self.imp_scope[1],
+    #icons.imp + imp_len,
+    -1
+  )
+
   api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', self.ref_scope[1], 0, #icons.ref)
   api.nvim_buf_add_highlight(
     self.bufnr,
@@ -501,21 +567,23 @@ function Finder:set_cursor()
 
   local first_def_uri_lnum = self.def_scope[1] + 3
   local last_def_uri_lnum = self.def_scope[2]
+  local first_imp_uri_lnum = self.imp_scope[1] + 3
+  local last_imp_uri_lnum = self.imp_scope[2]
   local first_ref_uri_lnum = self.ref_scope[1] + 3
   local last_ref_uri_lnum = self.ref_scope[2]
 
   if current_line == 1 then
     fn.cursor(first_def_uri_lnum, column)
   elseif current_line == last_def_uri_lnum + 1 then
+    fn.cursor(first_imp_uri_lnum, column)
+  elseif current_line == last_imp_uri_lnum + 1 then
     fn.cursor(first_ref_uri_lnum, column)
   elseif current_line == last_ref_uri_lnum + 1 then
     fn.cursor(first_def_uri_lnum, column)
   elseif current_line == first_ref_uri_lnum - 1 then
-    if self.definition_uri == 0 then
-      fn.cursor(first_def_uri_lnum, column)
-    else
-      fn.cursor(last_def_uri_lnum, column)
-    end
+    fn.cursor(last_imp_uri_lnum, column)
+  elseif current_line == first_imp_uri_lnum - 1 then
+    fn.cursor(last_def_uri_lnum, column)
   elseif current_line == first_def_uri_lnum - 1 then
     fn.cursor(last_ref_uri_lnum, column)
   end
@@ -682,7 +750,7 @@ function Finder:quit_float_window(...)
 end
 
 function Finder:clear_tmp_data()
-  for key,val in pairs(self) do
+  for key, val in pairs(self) do
     if type(val) ~= 'function' then
       self[key] = nil
     end
