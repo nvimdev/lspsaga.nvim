@@ -100,14 +100,6 @@ function libs.get_lsp_root_dir()
       if libs.has_value(client.config.filetypes, vim.bo.filetype) then
         return client.config.root_dir
       end
-    else
-      for name, fts in pairs(server_filetype_map) do
-        for _, ft in pairs(fts) do
-          if ft == vim.bo.filetype and client.config.name == name and client.config.root_dir then
-            return client.config.root_dir
-          end
-        end
-      end
     end
   end
   return nil
