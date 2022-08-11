@@ -67,7 +67,9 @@ saga.config_values = {
     jump_key = 'o',
     auto_refresh = true,
   },
-  server_filetype_map = { ['jdt.ls'] = { "java" } },
+  server_filetype_map = {
+    ['jdt.ls'] = { 'java' },
+  },
 }
 
 local extend_config = function(opts)
