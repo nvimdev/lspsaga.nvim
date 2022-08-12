@@ -69,8 +69,8 @@ for group, conf in pairs(highlights) do
   api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
 end
 
-local normal_bg = api.nvim_get_hl_by_name('Normal',true)
-api.nvim_set_hl(0,'LspFloatWinNormal',normal_bg)
+local normal_bg = api.nvim_get_hl_by_name('Normal', true)
+api.nvim_set_hl(0, 'LspFloatWinNormal', normal_bg)
 
 api.nvim_create_user_command('Lspsaga', function(args)
   require('lspsaga.command').load_command(unpack(args.fargs))
