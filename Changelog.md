@@ -2,8 +2,9 @@
 
 ### New
 
-- support show `implement` in `Lspsaga lsp_finder`
-- add option `imp` in `finder_icons`
+- `Finder:` support show `implement` in `Lspsaga lsp_finder`
+- `Finder:` add option `imp` in `finder_icons`
+- `LightBulb` add api to genreate sign need neovim 0.8 nightly
 
 ### Remove
 

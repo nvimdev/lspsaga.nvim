@@ -67,6 +67,11 @@ saga.init_lsp_saga({
     -- put modified options in there
 })
 
+```
+
+### Default options with value
+
+```lua
 -- Options with default value
 -- "single" | "double" | "rounded" | "bold" | "plus"
 border_style = "single",
@@ -398,25 +403,6 @@ vim.keymap.set("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true })
 <div align="center">
 <img
 src="https://user-images.githubusercontent.com/41671631/175300080-6e72001c-78dd-4d86-8139-bba38befee15.gif" />
-</div>
-
-</details>
-
-<details>
-<summary>Preview definition</summary>
-
-You also can use `smart_scroll_with_saga` (see [hover doc](#hover-doc)) to scroll in preview definition win.
-
-**Lua**
-
-```lua
--- or use command
-vim.keymap.set("n", "gd", "<cmd>Lspsaga preview_definition<CR>", { silent = true })
-```
-
-<div align='center'>
-<img
-src="https://user-images.githubusercontent.com/41671631/105657900-5b387f00-5f00-11eb-8b39-4d3b1433cb75.gif"/>
 </div>
 
 </details>
