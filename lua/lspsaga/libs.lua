@@ -43,7 +43,7 @@ function libs.nvim_create_keymap(definitions)
 end
 
 function libs.check_lsp_active(silent)
-  silent = silent or false
+  silent = silent or true
   local current_buf = api.nvim_get_current_buf()
   local active_clients = vim.lsp.get_active_clients({ buffer = current_buf})
   if next(active_clients) == nil then

@@ -145,7 +145,7 @@ local render_bulb = function(bufnr)
 end
 
 function lb.action_lightbulb()
-  if not libs.check_lsp_active() then
+  if not libs.check_lsp_active(false) then
     return
   end
 

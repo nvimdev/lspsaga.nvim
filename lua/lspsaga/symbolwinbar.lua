@@ -141,10 +141,6 @@ local render_symbol_winbar = function()
 end
 
 function symbar:get_buf_symbol(force, ...)
-  if not libs.check_lsp_active() then
-    return
-  end
-
   force = force or false
   local current_buf = api.nvim_get_current_buf()
   if self.symbol_cache[current_buf] and self.symbol_cache[current_buf][1] and not force then
@@ -187,6 +183,10 @@ function symbar:clear_cache()
 end
 
 local function symbol_events()
+  if not libs.check_lsp_active(false) then
+    return
+  end
+
   local current_buf = api.nvim_get_current_buf()
   local cache = symbar.symbol_cache
 
