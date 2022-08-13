@@ -27,9 +27,15 @@ function libs.has_key(tab, idx)
   return false
 end
 
-function libs.has_value(tbl, val)
-  for _, v in pairs(tbl) do
-    if v == val then
+function libs.has_value(filetypes, val)
+  if type(filetypes) == 'table' then
+    for _, v in pairs(filetypes) do
+      if v == val then
+        return true
+      end
+    end
+  elseif type(filetypes) == 'string' then
+    if filetypes == val then
       return true
     end
   end
@@ -85,14 +91,8 @@ function libs.get_lsp_root_dir()
   local clients = vim.lsp.get_active_clients()
   for _, client in pairs(clients) do
     if client.config.filetypes and client.config.root_dir then
-      if type(client.config.filetypes) == 'table' then
-        if libs.has_value(client.config.filetypes, vim.bo.filetype) then
-          return client.config.root_dir
-        end
-      elseif type(client.config.filetypes) == 'string' then
-        if client.config.filetypes == vim.bo.filetype then
-          return client.config.root_dir
-        end
+      if libs.has_value(client.config.filetypes, vim.bo.filetype) then
+        return client.config.root_dir
       end
     else
       for name, fts in pairs(server_filetype_map) do
