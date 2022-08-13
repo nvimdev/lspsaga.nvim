@@ -140,6 +140,14 @@ local lsp_rename = function()
       require('lspsaga.rename').close_rename_win()
     end,
   })
+
+  api.nvim_create_autocmd('WinLeave',{
+    group = saga_augroup,
+    buffer = bufnr,
+    callback = function()
+      require('lspsaga.rename').close_rename_win()
+    end
+  })
   apply_action_keys(bufnr)
 end
 
