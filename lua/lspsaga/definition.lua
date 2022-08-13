@@ -21,7 +21,7 @@ function def:preview_definition()
   end
 
   local current_buf = api.nvim_get_current_buf()
-  client.request(method,params,function(_,result)
+  client.request(method, params, function(_, result)
     if not result then
       return
     end
@@ -99,9 +99,8 @@ function def:preview_definition()
       end,
     })
     vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
-    self.pdata = {self.winid,1,config.max_preview_lines,10}
-  end,current_buf)
-
+    self.pdata = { self.winid, 1, config.max_preview_lines, 10 }
+  end, current_buf)
 end
 
 function def:has_saga_def_preview()

@@ -251,7 +251,7 @@ function Finder:create_finder_contents(result, method)
       short_name = link:sub(self.root_dir:len() + 2)
     else
       local _split = vim.split(link, path_sep)
-      if #_split > 5 then
+      if #_split >= 4 then
         short_name = table.concat(_split, path_sep, #_split - 2, #_split)
       end
     end
@@ -337,7 +337,8 @@ function Finder:render_finder_result()
     virt_lines_above = false,
   })
 
-  local finder_move_id = api.nvim_create_autocmd('CursorMoved', {
+  local quit_pre_id, finder_move_id, winleave_id
+  finder_move_id = api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
@@ -346,7 +347,6 @@ function Finder:render_finder_result()
     end,
   })
 
-  local quit_pre_id
   quit_pre_id = api.nvim_create_autocmd('QuitPre', {
     group = saga_augroup,
     buffer = self.bufnr,
@@ -360,6 +360,18 @@ function Finder:render_finder_result()
       if quit_pre_id then
         api.nvim_del_autocmd(quit_pre_id)
         quit_pre_id = nil
+      end
+    end,
+  })
+
+  winleave_id = api.nvim_create_autocmd('WinLeave', {
+    group = saga_augroup,
+    buffer = self.bufnr,
+    callback = function()
+      self:close_auto_preview_win()
+      api.nvim_win_close(0, true)
+      if winleave_id then
+        api.nvim_del_autocmd(winleave_id)
       end
     end,
   })

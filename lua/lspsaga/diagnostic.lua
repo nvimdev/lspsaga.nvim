@@ -98,9 +98,9 @@ local function render_diagnostic_window(entry)
 
     if not above then
       if i == #wrap_message then
-        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '┗' or 'ᗕ', hi_name })
+        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '┗' or '━', hi_name })
         table.insert(virt_tbl, { '━', hi_name })
-        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '➤' or '┛', hi_name })
+        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '━' or '┛', hi_name })
       else
         table.insert(virt_tbl, { '┃', hi_name })
       end
