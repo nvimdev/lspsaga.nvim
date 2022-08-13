@@ -45,10 +45,10 @@ end
 function libs.check_lsp_active(silent)
   silent = silent or true
   local current_buf = api.nvim_get_current_buf()
-  local active_clients = vim.lsp.get_active_clients({ buffer = current_buf})
+  local active_clients = vim.lsp.get_active_clients({ buffer = current_buf })
   if next(active_clients) == nil then
     if not silent then
-      vim.notify("[LspSaga] Current buffer does not have any lsp server")
+      vim.notify('[LspSaga] Current buffer does not have any lsp server')
     end
     return false
   end
@@ -192,7 +192,10 @@ end
 function libs.get_client_by_cap(caps)
   local client_caps = {
     ['string'] = function(instance)
-      if instance.server_capabilities[caps] and libs.has_value(instance.config.filetypes,vim.bo.filetype) then
+      if
+        instance.server_capabilities[caps]
+        and libs.has_value(instance.config.filetypes, vim.bo.filetype)
+      then
         return instance
       end
     end,

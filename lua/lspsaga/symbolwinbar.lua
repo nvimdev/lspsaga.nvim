@@ -201,14 +201,14 @@ local function symbol_events()
 
   update_symbols(true)
 
-  api.nvim_create_autocmd('CursorMoved', {
+  local moved_id = api.nvim_create_autocmd('CursorMoved', {
     group = saga_group,
     buffer = current_buf,
     callback = update_symbols,
     desc = 'Lspsaga symbols',
   })
 
-  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+  local update_id = api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
     group = saga_group,
     buffer = current_buf,
     callback = function()
@@ -221,11 +221,15 @@ local function symbol_events()
     desc = 'Lspsaga update symbols',
   })
 
-  api.nvim_create_autocmd('BufDelete', {
+  local delete_id
+  delete_id = api.nvim_create_autocmd('BufDelete', {
     group = saga_group,
     buffer = current_buf,
     callback = function()
       symbar:clear_cache()
+      api.nvim_del_autocmd(moved_id)
+      api.nvim_del_autocmd(update_id)
+      api.nvim_del_autocmd(delete_id)
     end,
     desc = 'Lspsaga clear document symbol cache',
   })

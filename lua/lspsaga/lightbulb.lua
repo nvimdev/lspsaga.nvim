@@ -17,8 +17,8 @@ local function check_server_support_codeaction(bufnr)
   local clients = vim.lsp.get_active_clients({ bufnr = bufnr })
   for _, client in pairs(clients) do
     if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
-      for _,fts in pairs(config.server_filetype_map) do
-        if libs.has_value(fts,vim.bo[bufnr].filetype) then
+      for _, fts in pairs(config.server_filetype_map) do
+        if libs.has_value(fts, vim.bo[bufnr].filetype) then
           client.config.filetypes = fts
           break
         end
