@@ -251,7 +251,7 @@ local do_symbol_request = function()
       return
     end
 
-    local client_id = symbar.get_clientid()
+    local client_id = libs.get_client_by_cap('documentSymbolProvider')
 
     local symbols = result[client_id].result
     ot:update_outline(symbols)

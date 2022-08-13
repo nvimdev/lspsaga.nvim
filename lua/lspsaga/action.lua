@@ -9,8 +9,8 @@ function action.smart_scroll_with_saga(direction, ...)
 
   if hover.has_saga_hover() then
     hover.scroll_in_hover(direction)
-  elseif def.has_saga_def_preview() then
-    def.scroll_in_def_preview(direction)
+  elseif def:has_saga_def_preview() then
+    def:scroll_in_def_preview(direction)
   elseif signature.has_saga_signature() then
     signature.scroll_in_signature(direction)
   elseif next({ ... }) ~= nil then

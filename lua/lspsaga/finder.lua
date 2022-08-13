@@ -143,7 +143,7 @@ end
 
 function Finder:do_request(params, method)
   if method == methods[2] then
-    params.context = { includeDeclaration = true }
+    params.context = { includeDeclaration = false }
   end
   self.client.request(method, params, function(_, result)
     if not result then
@@ -205,20 +205,8 @@ function Finder:render_finder()
     self:get_uri_scope(method, start_lnum, lnum - 1)
   end
 
-  for i, method in pairs(methods) do
+  for _, method in pairs(methods) do
     local tbl = self:create_finder_contents(self.request_result[method], method)
-    -- looksl like the first references is definition
-    -- so remove it
-    if i == 3 then
-      local start_row, start_col = tbl[3][2].row, tbl[3][2].col
-      if
-        self.short_link[3]
-        and start_row == self.short_link[3].row
-        and start_col == self.short_link[3].col
-      then
-        table.remove(tbl, 3)
-      end
-    end
     generate_contents(tbl, method)
   end
   self:render_finder_result()
