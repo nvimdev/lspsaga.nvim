@@ -188,21 +188,35 @@ function libs.generate_empty_table(length)
   return empty_tbl
 end
 
+function libs.add_client_filetypes(client,fts)
+  if not client.config.filetypes then
+    client.config.filetypes = fts
+  end
+end
+
 -- get client by capabilities
 function libs.get_client_by_cap(caps)
   local client_caps = {
     ['string'] = function(instance)
+      libs.add_client_filetypes(instance,{vim.bo.filetype})
       if
         instance.server_capabilities[caps]
         and libs.has_value(instance.config.filetypes, vim.bo.filetype)
       then
         return instance
       end
+      return nil
     end,
     ['table'] = function(instance)
-      if instance.server_capabilities[caps[1]] and instance.server_capabilities[caps[2]] then
+      libs.add_client_filetypes(instance,{vim.bo.filetype})
+      if
+        instance.server_capabilities[caps[1]]
+        and instance.server_capabilities[caps[2]]
+        and libs.has_value(instance.config.filetypes, vim.bo.filetype)
+      then
         return instance
       end
+      return nil
     end,
   }
 
@@ -210,6 +224,9 @@ function libs.get_client_by_cap(caps)
   local client
   for _, instance in pairs(clients) do
     client = client_caps[type(caps)](instance)
+    if client ~= nil then
+      break
+    end
   end
   return client
 end

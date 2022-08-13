@@ -1,4 +1,4 @@
-local api, util, lsp = vim.api, vim.lsp.util, vim.lsp
+local api, util = vim.api, vim.lsp.util
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
@@ -8,6 +8,7 @@ local unique_name = 'textDocument-rename'
 local pos = {}
 
 local method = 'textDocument/references'
+local cap = 'referencesProvider'
 local ns = api.nvim_create_namespace('LspsagaRename')
 
 -- store the CursorWord highlight
@@ -19,7 +20,7 @@ local close_rename_win = function()
   end
   local has, winid = pcall(api.nvim_win_get_var, 0, unique_name)
   if has then
-    window.nvim_close_valid_window(winid)
+    api.nvim_win_close(winid,true)
   end
   api.nvim_win_set_cursor(0, { pos[1], pos[2] })
 
@@ -61,8 +62,13 @@ local find_reference = function()
   local bufnr = api.nvim_get_current_buf()
   local params = util.make_position_params()
   params.context = { includeDeclaration = true }
-  lsp.buf_request_all(bufnr, method, params, function(response)
-    if libs.result_isempty(response) then
+  local client = libs.get_client_by_cap(cap)
+  if client == nil then
+    return
+  end
+
+  client.request(method, params, function(_,result)
+    if not result then
       return
     end
 
@@ -76,21 +82,15 @@ local find_reference = function()
       api.nvim_set_hl(0, 'CursorWord', { fg = 'none', bg = 'none' })
     end
 
-    if next(response) == nil or type(response) ~= 'table' then
-      return
-    end
-
-    for _, res in pairs(response) do
-      for _, v in pairs(res.result) do
-        if v.range then
-          local line = v.range.start.line
-          local start_char = v.range.start.character
-          local end_char = v.range['end'].character
-          api.nvim_buf_add_highlight(bufnr, ns, 'LspSagaRenameMatch', line, start_char, end_char)
-        end
+    for _, v in pairs(result) do
+      if v.range then
+        local line = v.range.start.line
+        local start_char = v.range.start.character
+        local end_char = v.range['end'].character
+        api.nvim_buf_add_highlight(bufnr, ns, 'LspSagaRenameMatch', line, start_char, end_char)
       end
     end
-  end)
+  end,bufnr)
 end
 
 local feedkeys = function(keys, mode)
@@ -141,12 +141,12 @@ local lsp_rename = function()
     end,
   })
 
-  api.nvim_create_autocmd('WinLeave',{
+  api.nvim_create_autocmd('WinLeave', {
     group = saga_augroup,
     buffer = bufnr,
     callback = function()
-      require('lspsaga.rename').close_rename_win()
-    end
+      api.nvim_win_close(0,true)
+    end,
   })
   apply_action_keys(bufnr)
 end
