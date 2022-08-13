@@ -25,7 +25,7 @@ saga.config_values = {
     enable = true,
     enable_in_insert = true,
     sign = true,
-    sign_priority = 100,
+    sign_priority = 40,
     virtual_text = true,
   },
   max_preview_lines = 10,
@@ -49,6 +49,7 @@ saga.config_values = {
   },
   rename_action_quit = '<C-c>',
   rename_in_select = true,
+  definition_preview_icon = '  ',
   -- winbar must nightly
   symbol_in_winbar = {
     in_custom = false,
