@@ -145,7 +145,7 @@ local lsp_rename = function()
     group = saga_augroup,
     buffer = bufnr,
     callback = function()
-      require('lspsaga.rename').close_rename_win()
+      api.nvim_win_close(0,true)
     end
   })
   apply_action_keys(bufnr)
