@@ -349,7 +349,7 @@ function Finder:render_finder_result()
     virt_lines_above = false,
   })
 
-  api.nvim_create_autocmd('CursorMoved', {
+  local finder_move_id = api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
@@ -358,11 +358,21 @@ function Finder:render_finder_result()
     end,
   })
 
-  api.nvim_create_autocmd('QuitPre', {
+  local quit_pre_id
+  quit_pre_id = api.nvim_create_autocmd('QuitPre', {
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
       self:quit_float_window()
+      if finder_move_id then
+        api.nvim_del_autocmd(finder_move_id)
+        finder_move_id = nil
+      end
+
+      if quit_pre_id then
+        api.nvim_del_autocmd(quit_pre_id)
+        quit_pre_id = nil
+      end
     end,
   })
 

@@ -12,7 +12,9 @@ local subcommands = {
     finder:lsp_finder()
   end,
   preview_definition = require('lspsaga.definition').preview_definition,
-  rename = lsprename.lsp_rename,
+  rename = function()
+    lsprename:lsp_rename()
+  end,
   hover_doc = lsphover.render_hover_doc,
   show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
   show_line_diagnostics = diagnostic.show_line_diagnostics,
