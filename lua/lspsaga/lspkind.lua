@@ -61,6 +61,10 @@ kind = setmetatable(kind, {
     if key == 'gen_symbol_winbar_hi' then
       return gen_symbol_winbar_hi
     end
+
+    if key == 'colors' then
+      return colors
+    end
   end,
 })
 
