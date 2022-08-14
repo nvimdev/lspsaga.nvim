@@ -76,7 +76,7 @@ end
 function wrap.add_truncate_line(contents)
   local line_widths = {}
   local width = 0
-  local char = config.border_style == 4 and '-' or '─'
+  local char = '─'
   local truncate_line = char
 
   for i, line in ipairs(contents) do

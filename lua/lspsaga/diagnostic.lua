@@ -5,6 +5,7 @@ local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 local hover = require('lspsaga.hover')
 local api = vim.api
+local insert = table.insert
 
 local diag = {}
 local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
@@ -29,7 +30,6 @@ end
 
 local function render_diagnostic_window(entry)
   local current_buffer = api.nvim_get_current_buf()
-  local current_line = api.nvim_win_get_cursor(0)[1]
   local wrap_message = {}
   local max_width = window.get_max_float_width()
 
@@ -68,11 +68,20 @@ local function render_diagnostic_window(entry)
 
   local bufnr, winid = window.create_win_with_border(content_opts, opts)
   local win_config = api.nvim_win_get_config(winid)
+  -- print(vim.inspect(win_config))
 
-  local above = win_config['row'][false] < current_line
-  if win_config.anchor == 'NW' then
+  local above = win_config['row'][false] < vim.fn.winline()
+
+  if win_config['anchor'] == 'NE' then
+    opts.move_col = -1
+  elseif win_config['anchor'] == 'NW' then
+    opts.move_col = nil
+  elseif win_config['anchor'] == 'SE' then
+    opts.move_col = -2
+  elseif win_config['anchor'] == 'SW' then
     opts.move_col = nil
   end
+
   local virt_bufnr, virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#wrap_message),
     border = 'none',
@@ -85,10 +94,25 @@ local function render_diagnostic_window(entry)
   local truncate_line_hl = 'LspSaga' .. diag_type[entry.severity] .. 'TrunCateLine'
   api.nvim_buf_add_highlight(bufnr, -1, truncate_line_hl, 1, 0, -1)
 
-  local text_pos = {
-    ['NW'] = { 'overlay', true },
-    ['NE'] = { 'right_align', false },
-  }
+  local get_pos_with_char = function()
+    if win_config['anchor'] == 'NE' then
+      return { 'right_align', '━', '┛' }
+    end
+
+    if win_config['anchor'] == 'NW' then
+      return { 'overlay', '┗', '━' }
+    end
+
+    if win_config['anchor'] == 'SE' then
+      return { 'right_align', '━', '┓' }
+    end
+
+    if win_config['anchor'] == 'SW' then
+      return { 'overlay', '┏', '━' }
+    end
+  end
+
+  local pos_char = get_pos_with_char()
 
   for i, _ in pairs(wrap_message) do
     local virt_tbl = {}
@@ -98,31 +122,26 @@ local function render_diagnostic_window(entry)
 
     if not above then
       if i == #wrap_message then
-        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '┗' or '━', hi_name })
-        table.insert(virt_tbl, { '━', hi_name })
-        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '━' or '┛', hi_name })
+        insert(virt_tbl, { pos_char[2], hi_name })
+        insert(virt_tbl, { '━', hi_name })
+        insert(virt_tbl, { pos_char[3], hi_name })
       else
-        table.insert(virt_tbl, { '┃', hi_name })
+        insert(virt_tbl, { '┃', hi_name })
       end
     else
       if i == 1 then
-        table.insert(virt_tbl, { '┏', hi_name })
-        table.insert(virt_tbl, { '━', hi_name })
-        table.insert(virt_tbl, { '➤', hi_name })
+        insert(virt_tbl, { pos_char[2], hi_name })
+        insert(virt_tbl, { '━', hi_name })
+        insert(virt_tbl, { pos_char[3], hi_name })
       else
-        table.insert(virt_tbl, { '┃', hi_name })
+        insert(virt_tbl, { '┃', hi_name })
       end
-    end
-
-    local pos = 'overlay'
-    if win_config.anchor and text_pos[win_config.anchor] then
-      pos = text_pos[win_config.anchor][1]
     end
 
     api.nvim_buf_set_extmark(virt_bufnr, virt_ns, i - 1, 0, {
       id = i + 1,
       virt_text = virt_tbl,
-      virt_text_pos = pos,
+      virt_text_pos = pos_char[1],
       virt_lines_above = false,
     })
   end

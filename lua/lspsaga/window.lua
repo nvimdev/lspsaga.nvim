@@ -77,10 +77,16 @@ local function make_floating_popup_options(width, height, opts)
 
     if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = opts.move_col and opts.move_col or 0
+      new_option.col = 0
+      if opts.move_col then
+        new_option.col = new_option.col + opts.move_col
+      end
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = opts.move_col and opts.move_col or 1
+      new_option.col = 1
+      if opts.move_col then
+        new_option.col = new_option.col - opts.move_col + 1
+      end
     end
   else
     new_option.row = opts.row
@@ -103,6 +109,7 @@ local function generate_win_opts(contents, opts)
   else
     win_width, win_height = vim.lsp.util._make_floating_popup_size(contents, opts)
   end
+
   opts = make_floating_popup_options(win_width, win_height, opts)
   return opts
 end
