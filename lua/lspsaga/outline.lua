@@ -5,6 +5,7 @@ local cache = symbar.symbol_cache
 local kind = require('lspsaga.lspkind')
 local hi_prefix = 'LSOutline'
 local space = '  '
+local saga_group = require('lspsaga').saga_group
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
@@ -260,63 +261,71 @@ end
 
 function ot:update_outline(symbols)
   local current_buf = api.nvim_get_current_buf()
+  local current_win = api.nvim_get_current_win()
   self[current_buf] = { ft = vim.bo.filetype }
 
   local nodes, hi_tbl = get_all_nodes(symbols)
 
   gen_outline_hi()
 
-  local win, buf, cwin
-
   if self.winid == nil then
     create_outline_window()
-    win = vim.api.nvim_get_current_win()
-    buf = vim.api.nvim_create_buf(false, true)
-    api.nvim_win_set_buf(win, buf)
+    self.winid = vim.api.nvim_get_current_win()
+    self.winbuf = vim.api.nvim_create_buf(false, true)
+    api.nvim_win_set_buf(self.winid, self.winbuf)
     set_local()
   else
-    win = self.winid
-    buf = self.winbuf
-    if not api.nvim_buf_get_option(buf, 'modifiable') then
-      api.nvim_buf_set_option(buf, 'modifiable', true)
+    if not api.nvim_buf_get_option(self.winbuf, 'modifiable') then
+      api.nvim_buf_set_option(self.winbuf, 'modifiable', true)
     end
-    cwin = api.nvim_get_current_win()
+    current_win = api.nvim_get_current_win()
     api.nvim_set_current_win(self.winid)
-    set_local()
   end
-
-  api.nvim_buf_attach(buf, false, {
-    on_detach = function()
-      self:remove_events()
-    end,
-  })
 
   self:render_status()
 
-  api.nvim_buf_set_lines(buf, 0, -1, false, nodes)
+  api.nvim_buf_set_lines(self.winbuf, 0, -1, false, nodes)
 
   self:fold_indent_virt(nodes)
 
   self:detail_virt_text(current_buf)
 
-  api.nvim_buf_set_option(buf, 'modifiable', false)
+  api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
 
   for i, hi in pairs(hi_tbl) do
-    api.nvim_buf_add_highlight(buf, 0, hi, i - 1, 0, -1)
+    api.nvim_buf_add_highlight(self.winbuf, 0, hi, i - 1, 0, -1)
   end
 
-  if cwin ~= nil then
-    api.nvim_set_current_win(cwin)
+  if not outline_conf.auto_enter then
+    api.nvim_set_current_win(current_win)
+    self.bufenter_id = api.nvim_create_autocmd('BufEnter', {
+      group = saga_group,
+      callback = function()
+        if vim.bo.filetype == 'lspsagaoutline' then
+          self:preview_events()
+        end
+      end,
+    })
+  else
+    self:preview_events()
   end
 
   self[current_buf].in_render = true
 
-  self:preview_events()
-
   vim.keymap.set('n', outline_conf.jump_key, function()
     ot:jump_to_line(current_buf)
   end, {
-    buffer = buf,
+    buffer = self.winbuf,
+  })
+
+  api.nvim_buf_attach(self.winbuf, false, {
+    on_detach = function()
+      self:remove_events()
+      if self.bufenter_id then
+        api.nvim_del_autocmd(self.bufenter_id)
+        self.bufenter_id = nil
+      end
+    end,
   })
 end
 

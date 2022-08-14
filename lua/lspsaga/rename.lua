@@ -141,12 +141,12 @@ local lsp_rename = function()
     end,
   })
 
-  api.nvim_create_autocmd('WinLeave',{
+  api.nvim_create_autocmd('WinLeave', {
     group = saga_augroup,
     buffer = bufnr,
     callback = function()
-      api.nvim_win_close(0,true)
-    end
+      api.nvim_win_close(0, true)
+    end,
   })
   apply_action_keys(bufnr)
 end
