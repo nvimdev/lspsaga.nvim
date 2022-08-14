@@ -2,7 +2,7 @@ local api = vim.api
 
 local saga = {}
 
-saga.saga_augroup = api.nvim_create_augroup('Lspsaga', {})
+saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 saga.config_values = {
   border_style = 'single',
