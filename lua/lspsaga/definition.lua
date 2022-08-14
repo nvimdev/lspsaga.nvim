@@ -43,7 +43,7 @@ function def:preview_definition()
       short_name = link:sub(root_dir:len() + 2)
     else
       local _split = vim.split(link, path_sep)
-      if #_split > 5 then
+      if #_split >= 4 then
         short_name = table.concat(_split, path_sep, #_split - 2, #_split)
       end
     end
@@ -104,7 +104,7 @@ function def:preview_definition()
 end
 
 function def:has_saga_def_preview()
-  if api.nvim_win_is_valid(self.winid) then
+  if self.winid and api.nvim_win_is_valid(self.winid) then
     return true
   end
   return false
