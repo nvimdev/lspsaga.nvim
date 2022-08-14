@@ -22,7 +22,7 @@ function def:preview_definition()
 
   local current_buf = api.nvim_get_current_buf()
   client.request(method, params, function(_, result)
-    if not result then
+    if not result or next(result) == nil then
       return
     end
 
