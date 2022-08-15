@@ -265,24 +265,24 @@ end
 
 local lspaction = {}
 
-lspaction.code_action = function()
-  Action:code_action()
+lspaction.code_action = function(...)
+  Action:code_action(...)
 end
 
-lspaction.do_code_action = function()
-  Action:do_code_action()
+lspaction.do_code_action = function(...)
+  Action:do_code_action(...)
 end
 
-lspaction.quit_action_window = function()
-  Action:quit_action_window()
+lspaction.quit_action_window = function(...)
+  Action:quit_action_window(...)
 end
 
-lspaction.range_code_action = function()
-  Action:range_code_action()
+lspaction.range_code_action = function(...)
+  Action:range_code_action(...)
 end
 
-lspaction.set_cursor = function()
-  Action:set_cursor()
+lspaction.set_cursor = function(...)
+  Action:set_cursor(...)
 end
 
 return lspaction
