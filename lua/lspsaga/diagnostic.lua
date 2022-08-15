@@ -29,7 +29,7 @@ local jump_diagnostic_header = function(entry)
 end
 
 local function render_diagnostic_window(entry)
-  print(vim.inspect(entry))
+  -- print(vim.inspect(entry))
   local current_buffer = api.nvim_get_current_buf()
   local wrap_message = {}
   local max_width = window.get_max_float_width()
@@ -45,12 +45,10 @@ local function render_diagnostic_window(entry)
   end
   wrap_message[1] = header .. ' ' .. diag_type[entry.severity]
 
-  table.insert(wrap_message, source .. ' ' .. entry.message)
-
-  wrap_message = wrap.wrap_contents(wrap_message, max_width, {
-    fill = true,
-    pad_left = 1,
-  })
+  local msgs = wrap.diagnostic_msg(source .. ' ' .. entry.message, max_width)
+  for _, v in pairs(msgs) do
+    table.insert(wrap_message, v)
+  end
 
   local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message, 2, truncate_line)
@@ -264,10 +262,8 @@ local function show_diagnostics(opts, get_diagnostics)
     end
   end
 
-  local wrap_message = wrap.wrap_contents(lines, max_width, {
-    fill = true,
-    pad_left = 3,
-  })
+  local wrap_message = wrap.wrap_contents(lines, max_width)
+
   local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message, 2, truncate_line)
 

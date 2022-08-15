@@ -1,60 +1,55 @@
 local wrap = {}
+local space = ' '
 
 -- If the content too long.
 -- auto wrap according width
 -- fill the space with wrap text
-function wrap.wrap_text(text, width, opts)
-  opts = opts or {}
+function wrap.wrap_text(text, width)
   local ret = {}
-  local space = ' '
-  local pad_left = opts.pad_left or 0
-  -- if text width < width just return it
+
   if #text <= width then
     table.insert(ret, text)
     return ret
   end
 
-  if text:find('\n') then
-  end
+  local tbl = vim.tbl_filter(function(a)
+    return #a ~= 0
+  end, vim.split(text, '%s'))
 
-  local _truncate = function(t, w)
-    local tmp = t
-    local tbl = {}
-    while true do
-      if #tmp > w then
-        table.insert(tbl, tmp:sub(1, w))
-        if tmp:find('^%c//') then
-          tmp = '\t// ' .. tmp:sub(w + 1)
-        else
-          tmp = tmp:sub(w + 1)
-        end
-      else
-        table.insert(tbl, tmp)
-        break
-      end
+  local start_index, length = 1, 0
+  for i, v in pairs(tbl) do
+    length = length + #v
+    if length > width and i ~= #tbl then
+      table.insert(ret, table.concat(tbl, space, start_index, i - 1))
+      start_index = i
+      length = 0
     end
-    return tbl
-  end
-  ret = _truncate(text, width)
 
-  local pad = ''
-  if pad_left ~= 0 then
-    for _ = 1, pad_left, 1 do
-      pad = pad .. space
+    if length < width and i == #tbl then
+      table.insert(ret, table.concat(tbl, space, start_index))
     end
   end
-
-  if opts.fill then
-    for i = 2, #ret, 1 do
-      ret[i] = pad .. ret[i]
-    end
-  end
-
   return ret
 end
 
-function wrap.wrap_contents(contents, width, opts)
-  opts = opts or {}
+function wrap.diagnostic_msg(msg, width)
+  if msg:find('\n') then
+    local t = vim.tbl_filter(function(s)
+      return string.len(s) ~= 0
+    end, vim.split(msg, '\n'))
+
+    -- local tmp = vim.tbl_deep_extend('force',{},t)
+    return t
+  end
+
+  if #msg < width then
+    return { msg }
+  end
+
+  return wrap.wrap_text(msg, width)
+end
+
+function wrap.wrap_contents(contents, width)
   if type(contents) ~= 'table' then
     error('Wrong params type of function wrap_contents')
     return
@@ -65,7 +60,7 @@ function wrap.wrap_contents(contents, width, opts)
     if #text < width then
       table.insert(stripped, text)
     else
-      local tmp = wrap.wrap_text(text, width, opts)
+      local tmp = wrap.wrap_text(text, width)
       for _, j in ipairs(tmp) do
         table.insert(stripped, j)
       end

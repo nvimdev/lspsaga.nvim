@@ -203,7 +203,7 @@ end
 function M.get_max_float_width()
   -- current window width
   local WIN_WIDTH = vim.fn.winwidth(0)
-  local max_width = math.floor(WIN_WIDTH * 0.5)
+  local max_width = math.floor(WIN_WIDTH * 0.7)
   return max_width
 end
 
