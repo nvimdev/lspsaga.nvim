@@ -47,6 +47,12 @@ function hover.render_hover_doc()
     return
   end
 
+  -- see #439
+  if vim.bo.filetype == 'help' then
+    api.nvim_feedkeys('K', 'ni', true)
+    return
+  end
+
   local params = util.make_position_params()
   vim.lsp.buf_request(0, 'textDocument/hover', params, hover.handler)
 end
