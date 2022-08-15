@@ -1,4 +1,3 @@
-local config = require('lspsaga').config_values
 local wrap = {}
 
 -- If the content too long.
@@ -13,6 +12,9 @@ function wrap.wrap_text(text, width, opts)
   if #text <= width then
     table.insert(ret, text)
     return ret
+  end
+
+  if text:find('\n') then
   end
 
   local _truncate = function(t, w)
