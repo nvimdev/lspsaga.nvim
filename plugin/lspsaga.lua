@@ -48,6 +48,7 @@ local highlights = {
   LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
   LspSagaDiagnosticHeader = { fg = '#afd700' },
   LspSagaDiagnosticTruncateLine = { link = 'LspSagaDiagnosticBorder' },
+  ColInLineDiagnostic = { link = 'Comment' },
   -- signture help
   LspSagaSignatureHelpBorder = { fg = '#98be65' },
   LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder' },

@@ -61,6 +61,12 @@ function libs.check_lsp_active(silent)
   return true
 end
 
+function libs.merge_table(t1, t2)
+  for _, v in pairs(t2) do
+    table.insert(t1, v)
+  end
+end
+
 function libs.result_isempty(res)
   if res == nil then
     return true

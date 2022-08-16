@@ -106,9 +106,9 @@ function Finder:loading_bar()
       spin_frame = spin_frame == 11 and 1 or spin_frame
       local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
       local spinner = ' ' .. spin_config.spinner[spin_frame]
-      api.nvim_buf_set_lines(spin_buf, 0, -1, false, { msg, spinner })
-      api.nvim_buf_add_highlight(spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
-      api.nvim_buf_add_highlight(spin_buf, 0, 'FinderSpinner', 1, 0, -1)
+      pcall(api.nvim_buf_set_lines, spin_buf, 0, -1, false, { msg, spinner })
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinner', 1, 0, -1)
       spin_frame = spin_frame + 1
 
       if uv.now() - start_request >= spin_config.timeout and not spin_timer:is_closing() then
