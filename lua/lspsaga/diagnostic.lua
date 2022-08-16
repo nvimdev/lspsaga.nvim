@@ -224,14 +224,6 @@ local function show_diagnostics(opts, get_diagnostics)
   local show_header = if_nil(opts.show_header, true)
   local current_line = api.nvim_win_get_cursor(current_win)[1]
 
-  local show_diagnostic_ns = api.nvim_create_namespace('LspsagaShowDiagnostic')
-  if opts.show_virtual then
-    api.nvim_buf_set_extmark(0, show_diagnostic_ns, current_line - 1, 0, {
-      virt_lines = { { { '-------------------------------------------', 'DiagnosticError' } } },
-      virt_lines_above = true,
-    })
-  end
-
   local lines = {}
   local highlights = {}
   if show_header then
