@@ -4,24 +4,21 @@ local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local saga_augroup = require('lspsaga').saga_augroup
 
-local unique_name = 'textDocument-rename'
-local pos = {}
+local rename = {}
 
 local method = 'textDocument/references'
+local cap = 'referencesProvider'
 local ns = api.nvim_create_namespace('LspsagaRename')
 
 -- store the CursorWord highlight
 local cursorword_hl = {}
 
-local close_rename_win = function()
+function rename:close_rename_win()
   if vim.fn.mode() == 'i' then
     vim.cmd([[stopinsert]])
   end
-  local has, winid = pcall(api.nvim_win_get_var, 0, unique_name)
-  if has then
-    window.nvim_close_valid_window(winid)
-  end
-  api.nvim_win_set_cursor(0, { pos[1], pos[2] })
+  window.nvim_close_valid_window(self.winid)
+  api.nvim_win_set_cursor(0, { self.pos[1], self.pos[2] })
 
   if next(cursorword_hl) ~= nil then
     api.nvim_set_hl(0, 'CursorWord', cursorword_hl)
@@ -30,22 +27,26 @@ local close_rename_win = function()
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
 end
 
-local apply_action_keys = function(bufnr)
+function rename:apply_action_keys()
   local quit_key = config.rename_action_quit
   local exec_key = '<CR>'
-  local rhs_of_quit = [[<cmd>lua require('lspsaga.rename').close_rename_win()<CR>]]
-  local rhs_of_exec = [[<cmd>lua require("lspsaga.rename").do_rename()<CR>]]
-  local opts = { nowait = true, silent = true, noremap = true }
 
-  api.nvim_buf_set_keymap(bufnr, 'i', exec_key, rhs_of_exec, opts)
-  api.nvim_buf_set_keymap(bufnr, 'n', exec_key, rhs_of_exec, opts)
+  local modes = { 'i', 'n', 'v' }
 
-  api.nvim_buf_set_keymap(bufnr, 'i', quit_key, rhs_of_quit, opts)
-  api.nvim_buf_set_keymap(bufnr, 'n', quit_key, rhs_of_quit, opts)
-  api.nvim_buf_set_keymap(bufnr, 'v', quit_key, rhs_of_quit, opts)
+  for i, mode in pairs(modes) do
+    vim.keymap.set(mode, quit_key, function()
+      self:close_rename_win()
+    end, { buffer = self.bufnr })
+
+    if i ~= 3 then
+      vim.keymap.set(mode, exec_key, function()
+        self:do_rename()
+      end, { buffer = self.bufnr })
+    end
+  end
 end
 
-local set_local_options = function()
+function rename:set_local_options()
   local opt_locals = {
     scrolloff = 0,
     sidescrolloff = 0,
@@ -57,12 +58,17 @@ local set_local_options = function()
   end
 end
 
-local find_reference = function()
+function rename:find_reference()
   local bufnr = api.nvim_get_current_buf()
   local params = util.make_position_params()
   params.context = { includeDeclaration = true }
-  lsp.buf_request_all(bufnr, method, params, function(response)
-    if libs.result_isempty(response) then
+  local client = libs.get_client_by_cap(cap)
+  if client == nil then
+    return
+  end
+
+  client.request(method, params, function(_, result)
+    if not result then
       return
     end
 
@@ -76,36 +82,29 @@ local find_reference = function()
       api.nvim_set_hl(0, 'CursorWord', { fg = 'none', bg = 'none' })
     end
 
-    if next(response) == nil or type(response) ~= 'table' then
-      return
-    end
-
-    for _, res in pairs(response) do
-      for _, v in pairs(res.result) do
-        if v.range then
-          local line = v.range.start.line
-          local start_char = v.range.start.character
-          local end_char = v.range['end'].character
-          api.nvim_buf_add_highlight(bufnr, ns, 'LspSagaRenameMatch', line, start_char, end_char)
-        end
+    for _, v in pairs(result) do
+      if v.range then
+        local line = v.range.start.line
+        local start_char = v.range.start.character
+        local end_char = v.range['end'].character
+        api.nvim_buf_add_highlight(bufnr, ns, 'LspSagaRenameMatch', line, start_char, end_char)
       end
     end
-  end)
+  end, bufnr)
 end
 
 local feedkeys = function(keys, mode)
   api.nvim_feedkeys(api.nvim_replace_termcodes(keys, true, true, true), mode, true)
 end
 
-local lsp_rename = function()
-  if not libs.check_lsp_active() then
+function rename:lsp_rename()
+  if not libs.check_lsp_active(false) then
     return
   end
 
-  --   local current_buf = api.nvim_get_current_buf()
   local current_win = api.nvim_get_current_win()
   local current_word = vim.fn.expand('<cword>')
-  pos = api.nvim_win_get_cursor(current_win)
+  self.pos = api.nvim_win_get_cursor(current_win)
 
   local opts = {
     height = 1,
@@ -119,54 +118,58 @@ local lsp_rename = function()
     highlight = 'LspSagaRenameBorder',
   }
 
-  find_reference()
+  self:find_reference()
 
-  local bufnr, winid = window.create_win_with_border(content_opts, opts)
-  set_local_options()
-  api.nvim_buf_set_lines(bufnr, -2, -1, false, { current_word })
+  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+  self:set_local_options()
+  api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
 
   if config.rename_in_select then
     vim.cmd([[normal! viw]])
-    feedkeys('<C-g>', 'v')
+    feedkeys('<C-g>', 'n')
   end
 
-  api.nvim_win_set_var(0, unique_name, winid)
-  api.nvim_create_autocmd('QuitPre', {
+  local quit_id, close_unfocus
+  quit_id = api.nvim_create_autocmd('QuitPre', {
     group = saga_augroup,
-    buffer = bufnr,
+    buffer = self.bufnr,
     once = true,
     nested = true,
     callback = function()
-      require('lspsaga.rename').close_rename_win()
+      self:close_rename_win()
+      if not quit_id then
+        api.nvim_del_autocmd(quit_id)
+        quit_id = nil
+      end
     end,
   })
 
-  api.nvim_create_autocmd('WinLeave', {
+  close_unfocus = api.nvim_create_autocmd('WinLeave', {
     group = saga_augroup,
-    buffer = bufnr,
+    buffer = self.bufnr,
     callback = function()
       api.nvim_win_close(0, true)
+      if close_unfocus then
+        api.nvim_del_autocmd(close_unfocus)
+        close_unfocus = nil
+      end
     end,
   })
-  apply_action_keys(bufnr)
+  self:apply_action_keys()
 end
 
-local function do_rename()
+function rename:do_rename()
   local new_name = vim.trim(api.nvim_get_current_line())
-  close_rename_win()
+  self:close_rename_win()
   local current_name = vim.fn.expand('<cword>')
   if not (new_name and #new_name > 0) or new_name == current_name then
     return
   end
   local current_win = api.nvim_get_current_win()
-  api.nvim_win_set_cursor(current_win, pos)
-  vim.lsp.buf.rename(new_name)
-  api.nvim_win_set_cursor(current_win, { pos[1], pos[2] + 1 })
-  pos = {}
+  api.nvim_win_set_cursor(current_win, self.pos)
+  lsp.buf.rename(new_name)
+  api.nvim_win_set_cursor(current_win, { self.pos[1], self.pos[2] + 1 })
+  self.pos = nil
 end
 
-return {
-  lsp_rename = lsp_rename,
-  close_rename_win = close_rename_win,
-  do_rename = do_rename,
-}
+return rename

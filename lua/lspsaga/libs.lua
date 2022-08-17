@@ -48,12 +48,23 @@ function libs.nvim_create_keymap(definitions)
   end
 end
 
-function libs.check_lsp_active()
-  local active_clients = vim.lsp.buf_get_clients()
+function libs.check_lsp_active(silent)
+  silent = silent or true
+  local current_buf = api.nvim_get_current_buf()
+  local active_clients = vim.lsp.get_active_clients({ buffer = current_buf })
   if next(active_clients) == nil then
+    if not silent then
+      vim.notify('[LspSaga] Current buffer does not have any lsp server')
+    end
     return false
   end
   return true
+end
+
+function libs.merge_table(t1, t2)
+  for _, v in pairs(t2) do
+    table.insert(t1, v)
+  end
 end
 
 function libs.result_isempty(res)
@@ -102,15 +113,30 @@ function libs.get_lsp_root_dir()
   return nil
 end
 
-function libs.apply_keys(ns)
-  return function(func, keys)
-    keys = type(keys) == 'string' and { keys } or keys
-    local fmt = "nnoremap <buffer><nowait><silent>%s <cmd>lua require('lspsaga.%s').%s()<CR>"
-
-    vim.tbl_map(function(key)
-      api.nvim_command(string.format(fmt, key, ns, func))
-    end, keys)
+function libs.get_config_lsp_filetypes()
+  local ok, lsp_config = pcall(require, 'lspconfig.configs')
+  if not ok then
+    return
   end
+
+  local filetypes = {}
+  for _, config in pairs(lsp_config) do
+    if config.filetypes then
+      for _, ft in pairs(config.filetypes) do
+        table.insert(filetypes, ft)
+      end
+    end
+  end
+
+  if next(server_filetype_map) ~= nil then
+    for _, fts in pairs(server_filetype_map) do
+      for _, ft in pairs(fts) do
+        table.insert(filetypes, ft)
+      end
+    end
+  end
+
+  return filetypes
 end
 
 function libs.close_preview_autocmd(bufnr, winids, events)
@@ -183,14 +209,44 @@ function libs.generate_empty_table(length)
   return empty_tbl
 end
 
+function libs.add_client_filetypes(client, fts)
+  if not client.config.filetypes then
+    client.config.filetypes = fts
+  end
+end
+
 -- get client by capabilities
 function libs.get_client_by_cap(caps)
+  local client_caps = {
+    ['string'] = function(instance)
+      libs.add_client_filetypes(instance, { vim.bo.filetype })
+      if
+        instance.server_capabilities[caps]
+        and libs.has_value(instance.config.filetypes, vim.bo.filetype)
+      then
+        return instance
+      end
+      return nil
+    end,
+    ['table'] = function(instance)
+      libs.add_client_filetypes(instance, { vim.bo.filetype })
+      if
+        instance.server_capabilities[caps[1]]
+        and instance.server_capabilities[caps[2]]
+        and libs.has_value(instance.config.filetypes, vim.bo.filetype)
+      then
+        return instance
+      end
+      return nil
+    end,
+  }
+
   local clients = vim.lsp.buf_get_clients()
   local client
   for _, instance in pairs(clients) do
-    local server_cap = instance.server_capabilities
-    if server_cap[caps[1]] and server_cap[caps[2]] then
-      client = instance
+    client = client_caps[type(caps)](instance)
+    if client ~= nil then
+      break
     end
   end
   return client

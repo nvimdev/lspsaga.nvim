@@ -12,12 +12,14 @@ local indent = '    '
 
 local methods = {
   'textDocument/definition',
+  'textDocument/implementation',
   'textDocument/references',
 }
 
 local msgs = {
   [methods[1]] = 'No Definitions Found',
-  [methods[2]] = 'No References  Found',
+  [methods[2]] = 'No Implements  Found',
+  [methods[3]] = 'No References  Found',
 }
 
 local Finder = {}
@@ -104,9 +106,9 @@ function Finder:loading_bar()
       spin_frame = spin_frame == 11 and 1 or spin_frame
       local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
       local spinner = ' ' .. spin_config.spinner[spin_frame]
-      api.nvim_buf_set_lines(spin_buf, 0, -1, false, { msg, spinner })
-      api.nvim_buf_add_highlight(spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
-      api.nvim_buf_add_highlight(spin_buf, 0, 'FinderSpinner', 1, 0, -1)
+      pcall(api.nvim_buf_set_lines, spin_buf, 0, -1, false, { msg, spinner })
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinner', 1, 0, -1)
       spin_frame = spin_frame + 1
 
       if uv.now() - start_request >= spin_config.timeout and not spin_timer:is_closing() then
@@ -121,8 +123,11 @@ function Finder:loading_bar()
       end
 
       if
-        (self.request_status[methods[1]] and self.request_status[methods[2]])
-        and not spin_timer:is_closing()
+        (
+          self.request_status[methods[1]]
+          and self.request_status[methods[2]]
+          and self.request_status[methods[3]]
+        ) and not spin_timer:is_closing()
       then
         spin_timer:stop()
         spin_timer:close()
@@ -138,7 +143,7 @@ end
 
 function Finder:do_request(params, method)
   if method == methods[2] then
-    params.context = { includeDeclaration = true }
+    params.context = { includeDeclaration = false }
   end
   self.client.request(method, params, function(_, result)
     if not result then
@@ -161,6 +166,20 @@ function Finder:get_file_icon()
   self.f_hl = self.f_hl == nil and '' or self.f_hl
 end
 
+function Finder:get_uri_scope(method, start_lnum, end_lnum)
+  if method == methods[1] then
+    self.def_scope = { start_lnum, end_lnum }
+  end
+
+  if method == methods[2] then
+    self.imp_scope = { start_lnum, end_lnum }
+  end
+
+  if method == methods[3] then
+    self.ref_scope = { start_lnum, end_lnum }
+  end
+end
+
 function Finder:render_finder()
   self.root_dir = libs.get_lsp_root_dir()
   if not self.root_dir then
@@ -169,56 +188,52 @@ function Finder:render_finder()
 
   self.contents = {}
   self.short_link = {}
-  self.definition_uri = 0
-  self.reference_uri = 0
   self.buf_filetype = api.nvim_buf_get_option(0, 'filetype')
 
-  self:create_finder_contents(self.request_result[methods[1]] or {}, methods[1])
-  self:create_finder_contents(self.request_result[methods[2]] or {}, methods[2])
+  local lnum, start_lnum = 0, 0
+
+  local generate_contents = function(tbl, method)
+    start_lnum = lnum
+    for _, val in pairs(tbl) do
+      insert(self.contents, val[1])
+      lnum = lnum + 1
+
+      if val[2] then
+        self.short_link[lnum] = val[2]
+      end
+    end
+    self:get_uri_scope(method, start_lnum, lnum - 1)
+  end
+
+  for _, method in pairs(methods) do
+    local tbl = self:create_finder_contents(self.request_result[method], method)
+    generate_contents(tbl, method)
+  end
   self:render_finder_result()
 end
 
+local titles = {
+  [methods[1]] = icons.def .. 'Definition ',
+  [methods[2]] = icons.ref .. 'Implements ',
+  [methods[3]] = icons.ref .. 'References ',
+}
+
 function Finder:create_finder_contents(result, method)
-  local target_lnum = 0
-  -- remove definition in references
-  if self.short_link ~= nil and self.short_link[3] ~= nil and next(result) ~= nil then
-    local start = result[1].range.start
-    if
-      start.line == self.short_link[3].row - 1 and start.character == self.short_link[3].col - 1
-    then
-      table.remove(result, 1)
-    end
+  local contents = {}
+
+  insert(contents, { titles[method] .. #result .. ' results', false })
+  insert(contents, { ' ', false })
+
+  if #result == 0 then
+    insert(contents, { indent .. self.f_icon .. msgs[method], false })
+    insert(contents, { ' ', false })
+    return contents
   end
 
-  local titles = {
-    [methods[1]] = icons.def .. 'Definition ' .. #result .. ' results',
-    [methods[2]] = icons.ref .. 'References ' .. #result .. ' results',
-  }
-
-  if method == methods[1] then
-    self.definition_uri = #result == 0 and 1 or #result
-    insert(self.contents, titles[method])
-    target_lnum = 2
-    if #result == 0 then
-      insert(self.contents, ' ')
-      insert(self.contents, indent .. self.f_icon .. msgs[method])
-      return
-    end
-  else
-    self.reference_uri = #result == 0 and 1 or #result
-    target_lnum = target_lnum + self.definition_uri + 5
-    insert(self.contents, ' ')
-    insert(self.contents, titles[method])
-    if #result == 0 then
-      insert(self.contents, ' ')
-      insert(self.contents, indent .. self.f_icon .. msgs[method])
-      return
-    end
-  end
-
-  for index, res in ipairs(result) do
+  for _, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if uri == nil then
+      vim.notify('miss uri in server response')
       return
     end
     local bufnr = vim.uri_to_bufnr(uri)
@@ -236,34 +251,31 @@ function Finder:create_finder_contents(result, method)
       short_name = link:sub(self.root_dir:len() + 2)
     else
       local _split = vim.split(link, path_sep)
-      if #_split > 5 then
+      if #_split >= 4 then
         short_name = table.concat(_split, path_sep, #_split - 2, #_split)
       end
     end
 
     local target_line = indent .. self.f_icon .. short_name
+
     local range = res.targetRange or res.range
-    if index == 1 then
-      insert(self.contents, ' ')
-    end
-    insert(self.contents, target_line)
-    target_lnum = target_lnum + 1
-    -- max_preview_lines
-    local max_preview_lines = config.max_preview_lines
     local lines = api.nvim_buf_get_lines(
       bufnr,
       range.start.line - 0,
-      range['end'].line + 1 + max_preview_lines,
+      range['end'].line + 1 + config.max_preview_lines,
       false
     )
 
-    self.short_link[target_lnum] = {
+    local link_with_preview = {
       link = link,
       preview = lines,
       row = range.start.line + 1,
       col = range.start.character + 1,
     }
+    insert(contents, { target_line, link_with_preview })
   end
+  insert(contents, { ' ', false })
+  return contents
 end
 
 local ns_id = api.nvim_create_namespace('lspsagafinder')
@@ -272,7 +284,6 @@ function Finder:render_finder_result()
   if next(self.contents) == nil then
     return
   end
-  insert(self.contents, ' ')
   -- get dimensions
   local width = api.nvim_get_option('columns')
   local height = api.nvim_get_option('lines')
@@ -326,7 +337,8 @@ function Finder:render_finder_result()
     virt_lines_above = false,
   })
 
-  api.nvim_create_autocmd('CursorMoved', {
+  local quit_pre_id, finder_move_id, winleave_id
+  finder_move_id = api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
@@ -335,11 +347,32 @@ function Finder:render_finder_result()
     end,
   })
 
-  api.nvim_create_autocmd('QuitPre', {
+  quit_pre_id = api.nvim_create_autocmd('QuitPre', {
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
       self:quit_float_window()
+      if finder_move_id then
+        api.nvim_del_autocmd(finder_move_id)
+        finder_move_id = nil
+      end
+
+      if quit_pre_id then
+        api.nvim_del_autocmd(quit_pre_id)
+        quit_pre_id = nil
+      end
+    end,
+  })
+
+  winleave_id = api.nvim_create_autocmd('WinLeave', {
+    group = saga_augroup,
+    buffer = self.bufnr,
+    callback = function()
+      self:close_auto_preview_win()
+      api.nvim_win_close(0, true)
+      if winleave_id then
+        api.nvim_del_autocmd(winleave_id)
+      end
     end,
   })
 
@@ -350,12 +383,12 @@ function Finder:render_finder_result()
     virt_text_pos = 'overlay',
   })
 
-  for i = 1, self.definition_uri, 1 do
+  for i = self.def_scope[1] + 2, self.def_scope[2] - 1, 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, 1 + i, 0, #indent + #self.f_icon)
+    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
 
-    if i == self.definition_uri then
+    if i == self.def_scope[2] - 1 then
       insert(virt_texts, { '└', virt_hi })
       insert(virt_texts, { '───', virt_hi })
     else
@@ -363,32 +396,23 @@ function Finder:render_finder_result()
       insert(virt_texts, { '───', virt_hi })
     end
 
-    api.nvim_buf_set_extmark(0, ns_id, i + 1, 0, {
+    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
       virt_text = virt_texts,
       virt_text_pos = 'overlay',
     })
   end
 
-  api.nvim_buf_set_extmark(0, ns_id, 4 + self.definition_uri, 0, {
+  api.nvim_buf_set_extmark(0, ns_id, self.imp_scope[1] + 1, 0, {
     virt_text = { { '│', virt_hi } },
     virt_text_pos = 'overlay',
   })
 
-  for i = 1, self.reference_uri, 1 do
+  for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-    local def_count = self.definition_uri ~= 0 and self.definition_uri or -1
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i + def_count + 4, 0, -1)
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      -1,
-      self.f_hl,
-      i + def_count + 4,
-      0,
-      #indent + #self.f_icon
-    )
+    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
 
-    if i == self.reference_uri then
+    if i == self.imp_scope[2] - 1 then
       insert(virt_texts, { '└', virt_hi })
       insert(virt_texts, { '───', virt_hi })
     else
@@ -396,7 +420,31 @@ function Finder:render_finder_result()
       insert(virt_texts, { '───', virt_hi })
     end
 
-    api.nvim_buf_set_extmark(0, ns_id, i + def_count + 4, 0, {
+    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
+      virt_text = virt_texts,
+      virt_text_pos = 'overlay',
+    })
+  end
+
+  api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
+    virt_text = { { '│', virt_hi } },
+    virt_text_pos = 'overlay',
+  })
+
+  for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
+    local virt_texts = {}
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
+
+    if i == self.ref_scope[2] - 1 then
+      insert(virt_texts, { '└', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    else
+      insert(virt_texts, { '├', virt_hi })
+      insert(virt_texts, { '───', virt_hi })
+    end
+
+    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
       virt_text = virt_texts,
       virt_text_pos = 'overlay',
     })
@@ -476,19 +524,38 @@ function Finder:apply_float_map()
 end
 
 function Finder:lsp_finder_highlight()
-  local def_uri_count = self.definition_uri == 0 and -1 or self.definition_uri
   local def_len = string.len('Definition')
   local ref_len = string.len('References')
+  local imp_len = string.len('Implements')
   -- add syntax
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.def)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', 3 + def_uri_count, 0, #icons.ref)
+
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #icons.imp)
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'Implements',
+    self.imp_scope[1],
+    #icons.imp,
+    #icons.imp + imp_len
+  )
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'ImplementsCount',
+    self.imp_scope[1],
+    #icons.imp + imp_len,
+    -1
+  )
+
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', self.ref_scope[1], 0, #icons.ref)
   api.nvim_buf_add_highlight(
     self.bufnr,
     -1,
     'References',
-    3 + def_uri_count,
+    self.ref_scope[1],
     #icons.ref,
     #icons.ref + ref_len
   )
@@ -496,7 +563,7 @@ function Finder:lsp_finder_highlight()
     self.bufnr,
     -1,
     'ReferencesCount',
-    3 + def_uri_count,
+    self.ref_scope[1],
     #icons.ref + ref_len,
     -1
   )
@@ -508,24 +575,25 @@ function Finder:set_cursor()
   local current_line = api.nvim_win_get_cursor(0)[1]
   local column = #indent + #self.f_icon + 1
 
-  local first_def_uri_lnum = self.definition_uri ~= 0 and 3 or 5
-  local last_def_uri_lnum = 3 + self.definition_uri - 1
-  local first_ref_uri_lnum = 3 + self.definition_uri + 3
-  local count = self.definition_uri == 0 and 1 or 2
-  local last_ref_uri_lnum = 3 + self.definition_uri + count + self.reference_uri
+  local first_def_uri_lnum = self.def_scope[1] + 3
+  local last_def_uri_lnum = self.def_scope[2]
+  local first_imp_uri_lnum = self.imp_scope[1] + 3
+  local last_imp_uri_lnum = self.imp_scope[2]
+  local first_ref_uri_lnum = self.ref_scope[1] + 3
+  local last_ref_uri_lnum = self.ref_scope[2]
 
   if current_line == 1 then
     fn.cursor(first_def_uri_lnum, column)
   elseif current_line == last_def_uri_lnum + 1 then
+    fn.cursor(first_imp_uri_lnum, column)
+  elseif current_line == last_imp_uri_lnum + 1 then
     fn.cursor(first_ref_uri_lnum, column)
   elseif current_line == last_ref_uri_lnum + 1 then
     fn.cursor(first_def_uri_lnum, column)
   elseif current_line == first_ref_uri_lnum - 1 then
-    if self.definition_uri == 0 then
-      fn.cursor(first_def_uri_lnum, column)
-    else
-      fn.cursor(last_def_uri_lnum, column)
-    end
+    fn.cursor(last_imp_uri_lnum, column)
+  elseif current_line == first_imp_uri_lnum - 1 then
+    fn.cursor(last_def_uri_lnum, column)
   elseif current_line == first_def_uri_lnum - 1 then
     fn.cursor(last_ref_uri_lnum, column)
   end
@@ -596,7 +664,7 @@ function Finder:auto_open_preview()
       opts.col = finder_win_opts.col + finder_width + 2
       opts.row = finder_win_opts.row
       opts.width = preview_width
-      opts.height = self.definition_uri + self.reference_uri + 6
+      opts.height = #self.contents
       if opts.height > finder_height then
         opts.height = finder_height
       end
@@ -692,16 +760,11 @@ function Finder:quit_float_window(...)
 end
 
 function Finder:clear_tmp_data()
-  self.short_link = {}
-  self.contents = {}
-  self.definition_uri = 0
-  self.reference_uri = 0
-  self.param = nil
-  self.root_dir = nil
-  self.current_buf = nil
-  self.buf_filetype = ''
-  self.WIN_HEIGHT = 0
-  self.WIN_WIDTH = 0
+  for key, val in pairs(self) do
+    if type(val) ~= 'function' then
+      self[key] = nil
+    end
+  end
 end
 
 return Finder

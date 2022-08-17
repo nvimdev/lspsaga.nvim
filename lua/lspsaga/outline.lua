@@ -247,16 +247,21 @@ end
 local do_symbol_request = function()
   local bufnr = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
-  lsp.buf_request_all(0, method, params, function(result)
-    if libs.result_isempty(result) then
+  local client = libs.get_client_by_cap('documentSymbolProvider')
+
+  if not client then
+    vim.notify('[Lspsaga] Server of this buffer not support ' .. method)
+    return
+  end
+
+  client.request(method, params, function(_, result)
+    if not result or next(result) == nil then
       return
     end
 
-    local client_id = symbar.get_clientid()
-
-    local symbols = result[client_id].result
+    local symbols = result
     ot:update_outline(symbols)
-  end)
+  end, bufnr)
 end
 
 function ot:update_outline(symbols)

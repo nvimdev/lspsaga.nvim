@@ -1,4 +1,5 @@
 local api = vim.api
+
 local highlights = {
   -- code action
   LspSagaCodeActionTitle = { fg = '#da8548', bold = true },
@@ -14,10 +15,13 @@ local highlights = {
   FinderVirtText = { fg = '#c95942' },
   DefinitionsIcon = { fg = '#e3e346' },
   Definitions = { fg = '#CBA6F7', bold = true },
+  DefinitionCount = { link = 'Title' },
   ReferencesIcon = { fg = '#e3e346' },
   References = { fg = '#CBA6F7', bold = true },
-  DefinitionCount = { link = 'Title' },
   ReferencesCount = { link = 'Title' },
+  ImplementsIcon = { fg = '#e3e346' },
+  Implements = { fg = '#CBA6F7', bold = true },
+  ImplementsCount = { link = 'Title' },
   --finder spinner
   FinderSpinnerBorder = { fg = '#51afef' },
   FinderSpinnerTitle = { fg = '#b33076', bold = true },
@@ -44,6 +48,7 @@ local highlights = {
   LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
   LspSagaDiagnosticHeader = { fg = '#afd700' },
   LspSagaDiagnosticTruncateLine = { link = 'LspSagaDiagnosticBorder' },
+  ColInLineDiagnostic = { link = 'Comment' },
   -- signture help
   LspSagaSignatureHelpBorder = { fg = '#98be65' },
   LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder' },
@@ -65,6 +70,9 @@ for group, conf in pairs(highlights) do
   api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
 end
 
+local normal_bg = api.nvim_get_hl_by_name('Normal', true)
+api.nvim_set_hl(0, 'LspFloatWinNormal', normal_bg)
+
 api.nvim_create_user_command('Lspsaga', function(args)
   require('lspsaga.command').load_command(unpack(args.fargs))
 end, {
@@ -78,11 +86,6 @@ end, {
 })
 
 api.nvim_create_user_command('LSoutlineToggle', function()
-  -- see  https://github.com/neovim/neovim/issues/19458
-  -- disable the winbar when first open outline.
-  if vim.fn.has('nvim-0.8') == 1 then
-    api.nvim_win_set_option(0, 'winbar', '')
-  end
   require('lspsaga.outline'):render_outline()
 end, {})
 

@@ -31,6 +31,7 @@ saga.config_values = {
   max_preview_lines = 10,
   finder_icons = {
     def = 'ﰳ  ',
+    imp = 'ﰳ  ',
     ref = 'ﰳ  ',
   },
   finder_request_timeout = 1500,
@@ -67,6 +68,7 @@ saga.config_values = {
     jump_key = 'o',
     auto_refresh = true,
   },
+  custom_kind = {},
   server_filetype_map = {},
 }
 
@@ -95,11 +97,7 @@ function saga.init_lsp_saga(opts)
   local conf = saga.config_values
 
   if conf.code_action_lightbulb.enable then
-    api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-      group = saga.saga_augroup,
-      pattern = '*',
-      callback = require('lspsaga.lightbulb').action_lightbulb,
-    })
+    require('lspsaga.lightbulb').lb_autocmd()
   end
 
   if conf.symbol_in_winbar.enable or conf.symbol_in_winbar.in_custom then

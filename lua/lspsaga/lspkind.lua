@@ -1,4 +1,5 @@
 local api = vim.api
+local custom_kind = require('lspsaga').config_values.custom_kind
 
 local colors = {
   fg = '#bbc2cf',
@@ -26,7 +27,7 @@ local kind = {
   [11] = { 'Interface', '練', colors.orange },
   [12] = { 'Function', ' ', colors.violet },
   [13] = { 'Variable', ' ', colors.blue },
-  [14] = { 'Constant', ' ', colors.cyan },
+  [14] = { 'Constant', ' ', colors.cyan },
   [15] = { 'String', ' ', colors.green },
   [16] = { 'Number', ' ', colors.green },
   [17] = { 'Boolean', '◩ ', colors.orange },
@@ -46,9 +47,37 @@ local kind = {
   [255] = { 'Macro', ' ', colors.red },
 }
 
+local function find_index_by_type(k)
+  for index, opts in pairs(kind) do
+    if opts[1] == k then
+      return index
+    end
+  end
+  return nil
+end
+
 local function gen_symbol_winbar_hi()
   local prefix = 'LspSagaWinbar'
   local winbar_sep = 'LspSagaWinbarSep'
+
+  if next(custom_kind) ~= nil then
+    for k, conf in pairs(custom_kind) do
+      local index = find_index_by_type(k)
+      if not index then
+        vim.notify('Does not find this type in kind')
+      end
+
+      if type(conf) == 'string' then
+        kind[index][3] = conf
+      end
+
+      if type(conf) == 'table' then
+        kind[index][2] = conf[1]
+        kind[index][3] = conf[2]
+      end
+    end
+  end
+
   for _, v in pairs(kind) do
     api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
   end
@@ -60,6 +89,10 @@ kind = setmetatable(kind, {
   __index = function(_, key)
     if key == 'gen_symbol_winbar_hi' then
       return gen_symbol_winbar_hi
+    end
+
+    if key == 'colors' then
+      return colors
     end
   end,
 })

@@ -5,6 +5,8 @@ local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 local hover = require('lspsaga.hover')
 local api = vim.api
+local insert = table.insert
+local space = ' '
 
 local diag = {}
 local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
@@ -27,9 +29,10 @@ local jump_diagnostic_header = function(entry)
   end
 end
 
-local function render_diagnostic_window(entry)
+function diag:render_diagnostic_window(entry, option)
+  option = option or {}
+  -- print(vim.inspect(entry))
   local current_buffer = api.nvim_get_current_buf()
-  local current_line = api.nvim_win_get_cursor(0)[1]
   local wrap_message = {}
   local max_width = window.get_max_float_width()
 
@@ -44,11 +47,10 @@ local function render_diagnostic_window(entry)
   end
   wrap_message[1] = header .. ' ' .. diag_type[entry.severity]
 
-  table.insert(wrap_message, source .. ' ' .. entry.message)
-  wrap_message = wrap.wrap_contents(wrap_message, max_width, {
-    fill = true,
-    pad_left = 1,
-  })
+  local msgs = wrap.diagnostic_msg(source .. ' ' .. entry.message, max_width)
+  for _, v in pairs(msgs) do
+    table.insert(wrap_message, v)
+  end
 
   local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message, 2, truncate_line)
@@ -66,97 +68,108 @@ local function render_diagnostic_window(entry)
     move_col = 3,
   }
 
-  local bufnr, winid = window.create_win_with_border(content_opts, opts)
-  local win_config = api.nvim_win_get_config(winid)
+  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+  local win_config = api.nvim_win_get_config(self.winid)
 
-  local above = win_config['row'][false] < current_line
-  if win_config.anchor == 'NW' then
+  local above = win_config['row'][false] < vim.fn.winline()
+
+  if win_config['anchor'] == 'NE' then
+    opts.move_col = -1
+  elseif win_config['anchor'] == 'NW' then
+    opts.move_col = nil
+  elseif win_config['anchor'] == 'SE' then
+    opts.move_col = -2
+  elseif win_config['anchor'] == 'SW' then
     opts.move_col = nil
   end
-  local virt_bufnr, virt_winid = window.create_win_with_border({
+
+  self.virt_bufnr, self.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#wrap_message),
     border = 'none',
-    winblend = 100,
   }, opts)
 
   local title_icon_length = #header + #diag_type[entry.severity] + 1
-  api.nvim_buf_add_highlight(bufnr, -1, hi_name, 0, 0, title_icon_length)
+  api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, 0, 0, title_icon_length)
 
   local truncate_line_hl = 'LspSaga' .. diag_type[entry.severity] .. 'TrunCateLine'
-  api.nvim_buf_add_highlight(bufnr, -1, truncate_line_hl, 1, 0, -1)
+  api.nvim_buf_add_highlight(self.bufnr, -1, truncate_line_hl, 1, 0, -1)
 
-  local text_pos = {
-    ['NW'] = { 'overlay', true },
-    ['NE'] = { 'right_align', false },
-  }
+  local get_pos_with_char = function()
+    if win_config['anchor'] == 'NE' then
+      return { 'right_align', '━', '┛' }
+    end
+
+    if win_config['anchor'] == 'NW' then
+      return { 'overlay', '┗', '━' }
+    end
+
+    if win_config['anchor'] == 'SE' then
+      return { 'right_align', '━', '┓' }
+    end
+
+    if win_config['anchor'] == 'SW' then
+      return { 'overlay', '┏', '━' }
+    end
+  end
+
+  local pos_char = get_pos_with_char()
 
   for i, _ in pairs(wrap_message) do
     local virt_tbl = {}
     if i > 2 then
-      api.nvim_buf_add_highlight(bufnr, -1, hi_name, i - 1, 0, -1)
+      api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
     end
 
     if not above then
       if i == #wrap_message then
-        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '┗' or 'ᗕ', hi_name })
-        table.insert(virt_tbl, { '━', hi_name })
-        table.insert(virt_tbl, { text_pos[win_config.anchor][2] and '➤' or '┛', hi_name })
+        insert(virt_tbl, { pos_char[2], hi_name })
+        insert(virt_tbl, { '━', hi_name })
+        insert(virt_tbl, { pos_char[3], hi_name })
       else
-        table.insert(virt_tbl, { '┃', hi_name })
+        insert(virt_tbl, { '┃', hi_name })
       end
     else
       if i == 1 then
-        table.insert(virt_tbl, { '┏', hi_name })
-        table.insert(virt_tbl, { '━', hi_name })
-        table.insert(virt_tbl, { '➤', hi_name })
+        insert(virt_tbl, { pos_char[2], hi_name })
+        insert(virt_tbl, { '━', hi_name })
+        insert(virt_tbl, { pos_char[3], hi_name })
       else
-        table.insert(virt_tbl, { '┃', hi_name })
+        insert(virt_tbl, { '┃', hi_name })
       end
     end
 
-    local pos = 'overlay'
-    if win_config.anchor and text_pos[win_config.anchor] then
-      pos = text_pos[win_config.anchor][1]
-    end
-
-    api.nvim_buf_set_extmark(virt_bufnr, virt_ns, i - 1, 0, {
+    api.nvim_buf_set_extmark(self.virt_bufnr, virt_ns, i - 1, 0, {
       id = i + 1,
       virt_text = virt_tbl,
-      virt_text_pos = pos,
+      virt_text_pos = pos_char[1],
       virt_lines_above = false,
     })
   end
 
   if config.show_diagnostic_source then
-    api.nvim_buf_add_highlight(bufnr, -1, 'LspSagaDiagnosticSource', 2, 0, #source)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'LspSagaDiagnosticSource', 2, 0, #source)
   end
 
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
   -- magic to solved the window disappear when trigger CusroMoed
   -- see https://github.com/neovim/neovim/issues/12923
   vim.defer_fn(function()
-    libs.close_preview_autocmd(current_buffer, { winid, virt_winid }, close_autocmds)
+    libs.close_preview_autocmd(current_buffer, { self.winid, self.virt_winid }, close_autocmds)
   end, 0)
-
-  api.nvim_buf_set_var(current_buffer, 'saga_diagnostic_floatwin', { bufnr, winid })
 end
 
-local function move_cursor(entry)
+function diag:move_cursor(entry)
   local current_winid = api.nvim_get_current_win()
-  local current_bufnr = api.nvim_get_current_buf()
 
   -- if has hover window close first
   hover.close_hover_window()
   -- if current position has a diagnostic floatwin when jump to next close
   -- curren diagnostic floatwin ensure only have one diagnostic floatwin in
   -- current buffer
-  local has_var, wininfo = pcall(api.nvim_buf_get_var, current_bufnr, 'saga_diagnostic_floatwin')
-  if has_var and api.nvim_win_is_valid(wininfo[2]) then
-    api.nvim_win_close(wininfo[2], true)
-  end
+  window.nvim_close_valid_window({ self.winid, self.virt_winid })
 
   api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
-  render_diagnostic_window(entry)
+  self:render_diagnostic_window(entry)
 end
 
 function diag.goto_next(opts)
@@ -164,7 +177,7 @@ function diag.goto_next(opts)
   if next == nil then
     return
   end
-  move_cursor(next)
+  diag:move_cursor(next)
 end
 
 function diag.goto_prev(opts)
@@ -172,14 +185,14 @@ function diag.goto_prev(opts)
   if not prev then
     return false
   end
-  move_cursor(prev)
+  diag:move_cursor(prev)
 end
 
 local function comp_severity_asc(diag1, diag2)
   return diag1['severity'] < diag2['severity']
 end
 
-local function show_diagnostics(opts, get_diagnostics)
+function diag:show_diagnostics(opts, get_diagnostics)
   local close_hover = opts.close_hover or false
 
   -- if we have a hover rendered, don't show diagnostics due to this usually
@@ -205,16 +218,14 @@ local function show_diagnostics(opts, get_diagnostics)
   end
 
   local current_buf = api.nvim_get_current_buf()
-  local current_win = api.nvim_get_current_win()
 
   local severity_sort = if_nil(opts.severity_sort, true)
   local show_header = if_nil(opts.show_header, true)
-  local current_line = api.nvim_win_get_cursor(current_win)[1]
 
   local lines = {}
   local highlights = {}
   if show_header then
-    lines[1] = 'Diagnostics in line ' .. current_line
+    lines[1] = opts.header()
     highlights[1] = { 0, 'LspSagaDiagnosticHeader' }
   end
 
@@ -232,67 +243,90 @@ local function show_diagnostics(opts, get_diagnostics)
 
     local hiname = 'Diagnostic' .. severities[diagnostic.severity] or severities[1]
     local message_lines = vim.split(diagnostic.message, '\n', true)
-    table.insert(lines, prefix .. message_lines[1])
-    table.insert(highlights, { #prefix + 1, hiname })
-    if #message_lines[1] + 4 > max_width then
-      table.insert(highlights, { #prefix + 1, hiname })
+
+    if config.show_diagnostic_source then
+      message_lines[1] = prefix .. message_lines[1] .. space .. '[' .. diagnostic.source .. ']'
     end
-    for j = 2, #message_lines do
-      table.insert(lines, '   ' .. message_lines[j])
-      table.insert(highlights, { 0, hiname })
+    local start_col = diagnostic.col or diagnostic.range.start.character
+    local end_col = diagnostic.end_col or diagnostic.range['end'].character
+    local col_scope = 'col:' .. start_col .. '-' .. end_col
+    message_lines[1] = message_lines[1] .. space .. col_scope
+
+    local wrap_text = wrap.wrap_text(message_lines[1], max_width)
+    for j = 1, #wrap_text do
+      local tmp = { j, hiname }
+      if j ~= 1 then
+        wrap_text[j] = space .. space .. wrap_text[j]
+      end
+      if j == #wrap_text then
+        table.insert(tmp, #wrap_text[j] - #col_scope)
+      end
+      table.insert(highlights, tmp)
     end
+    libs.merge_table(lines, wrap_text)
   end
 
-  local wrap_message = wrap.wrap_contents(lines, max_width, {
-    fill = true,
-    pad_left = 3,
-  })
-  local truncate_line = wrap.add_truncate_line(wrap_message)
-  table.insert(wrap_message, 2, truncate_line)
+  local truncate_line = wrap.add_truncate_line(lines)
+  table.insert(lines, 2, truncate_line)
 
   local content_opts = {
-    contents = wrap_message,
-    filetype = 'plaintext',
+    contents = lines,
     highlight = 'LspSagaDiagnosticBorder',
   }
 
-  local bufnr, winid = window.create_win_with_border(content_opts, {
+  self.show_diag_bufnr, self.show_diag_winid = window.create_win_with_border(content_opts, {
     focusable = false,
   })
+
   for i, hi in ipairs(highlights) do
-    local _, hiname = unpack(hi)
+    local _, hiname, col_in_line = unpack(hi)
     -- Start highlight after the prefix
     if i == 1 then
-      api.nvim_buf_add_highlight(bufnr, -1, hiname, 0, 0, -1)
+      api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, 0, 0, -1)
     else
-      api.nvim_buf_add_highlight(bufnr, -1, hiname, i, 0, -1)
+      api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, i, 0, -1)
+    end
+
+    if col_in_line then
+      api.nvim_buf_add_highlight(
+        self.show_diag_bufnr,
+        -1,
+        'ColInLineDiagnostic',
+        i,
+        col_in_line,
+        -1
+      )
     end
   end
-  api.nvim_buf_add_highlight(bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
+
+  api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
   local close_events = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
 
-  libs.close_preview_autocmd(current_buf, winid, close_events)
-  api.nvim_win_set_var(current_win, 'show_line_diag_winids', winid)
-  return winid
+  libs.close_preview_autocmd(current_buf, self.show_diag_winid, close_events)
+  return self.show_diag_winid
 end
 
 function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
-  local ok, diag_winid = pcall(api.nvim_win_get_var, 0, 'show_line_diag_winids')
-  if ok and api.nvim_win_is_valid(diag_winid) then
-    api.nvim_set_current_win(diag_winid)
+  if diag.show_diag_winid and api.nvim_win_is_valid(diag.show_diag_winid) then
+    api.nvim_set_current_win(diag.show_diag_winid)
     return
   end
 
   opts = opts or {}
 
+  local current_line = api.nvim_win_get_cursor(0)[1]
   local get_line_diagnostics = function()
     bufnr = bufnr or api.nvim_get_current_buf()
-    line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+    line_nr = line_nr or (current_line - 1)
 
     return lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
   end
 
-  return show_diagnostics(opts, get_line_diagnostics)
+  opts.show_virtual = true
+  opts.header = function()
+    return 'Diagnostics in line ' .. current_line
+  end
+  return diag:show_diagnostics(opts, get_line_diagnostics)
 end
 
 local function get_diagnostic_start(diagnostic_entry)
@@ -333,16 +367,22 @@ end
 function diag.show_cursor_diagnostics(opts, bufnr, client_id)
   opts = opts or {}
 
+  local pos = api.nvim_win_get_cursor(0)
+
   local get_cursor_diagnostics = function()
     bufnr = bufnr or 0
 
-    local line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
-    local column_nr = vim.api.nvim_win_get_cursor(0)[2]
+    local line_nr = pos[1] - 1
+    local column_nr = pos[2]
 
     return vim.tbl_filter(in_range(line_nr, column_nr), vim.diagnostic.get(bufnr, client_id))
   end
 
-  return show_diagnostics(opts, get_cursor_diagnostics)
+  opts.header = function()
+    return 'Diagnostic in Column ' .. pos[2]
+  end
+
+  return diag:show_diagnostics(opts, get_cursor_diagnostics)
 end
 
 return diag

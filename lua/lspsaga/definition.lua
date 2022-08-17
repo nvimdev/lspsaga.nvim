@@ -7,27 +7,26 @@ local saga_augroup = require('lspsaga').saga_augroup
 local path_sep = libs.path_sep
 local method = 'textDocument/definition'
 
-function def.preview_definition(timeout_ms)
+function def:preview_definition()
   if not libs.check_lsp_active() then
     return
   end
 
   local filetype = vim.api.nvim_buf_get_option(0, 'filetype')
-
   local params = lsp.util.make_position_params()
-  local result = vim.lsp.buf_request_sync(0, method, params, timeout_ms or 1000)
-  if result == nil or vim.tbl_isempty(result) then
-    vim.notify('No location found: ' .. method)
-    return nil
+  local client = libs.get_client_by_cap('definitionProvider')
+  if not client then
+    vim.notify('[Lspsaga] server of current buffer not support ' .. method)
+    return
   end
-  result = vim.tbl_values(result)
 
-  if vim.tbl_islist(result) and not vim.tbl_isempty(result[1]) then
-    if result[1].result[1] == nil or vim.tbl_isempty(result[1].result[1]) then
-      print('No definitions found')
+  local current_buf = api.nvim_get_current_buf()
+  client.request(method, params, function(_, result)
+    if not result or next(result) == nil then
       return
     end
-    local uri = result[1].result[1].uri or result[1].result[1].targetUri
+
+    local uri = result[1].uri or result[1].targetUri
     if #uri == 0 then
       return
     end
@@ -35,13 +34,16 @@ function def.preview_definition(timeout_ms)
     local link = vim.uri_to_fname(uri)
     local short_name
     local root_dir = libs.get_lsp_root_dir()
+    if not root_dir then
+      root_dir = ''
+    end
 
     -- reduce filename length by root_dir or home dir
     if link:find(root_dir, 1, true) then
       short_name = link:sub(root_dir:len() + 2)
     else
       local _split = vim.split(link, path_sep)
-      if #_split > 5 then
+      if #_split >= 4 then
         short_name = table.concat(_split, path_sep, #_split - 2, #_split)
       end
     end
@@ -49,7 +51,7 @@ function def.preview_definition(timeout_ms)
     if not vim.api.nvim_buf_is_loaded(bufnr) then
       fn.bufload(bufnr)
     end
-    local range = result[1].result[1].targetRange or result[1].result[1].range
+    local range = result[1].targetRange or result[1].range
     local start_line = 0
     if range.start.line - 3 >= 1 then
       start_line = range.start.line - 3
@@ -86,38 +88,34 @@ function def.preview_definition(timeout_ms)
       highlight = 'LspSagaDefPreviewBorder',
     }
 
-    local bf, wi = window.create_win_with_border(content_opts, opts)
+    self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
 
-    local current_buf = api.nvim_get_current_buf()
     api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI', 'BufHidden', 'BufLeave' }, {
       group = saga_augroup,
       buffer = current_buf,
       once = true,
       callback = function()
-        if api.nvim_win_is_valid(wi) then
-          api.nvim_win_close(wi, true)
-        end
+        window.nvim_close_valid_window(self.winid)
       end,
     })
-    vim.api.nvim_buf_add_highlight(bf, -1, 'DefinitionPreviewTitle', 0, 0, -1)
-
-    api.nvim_buf_set_var(0, 'lspsaga_def_preview', { wi, 1, config.max_preview_lines, 10 })
-  end
+    vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
+    api.nvim_buf_set_var(0, 'lspsaga_def_preview', { self.winid, 1, config.max_preview_lines, 10 })
+  end, current_buf)
 end
 
-function def.has_saga_def_preview()
-  local has_preview, pdata = pcall(api.nvim_buf_get_var, 0, 'lspsaga_def_preview')
-  if has_preview and api.nvim_win_is_valid(pdata[1]) then
+function def:has_saga_def_preview()
+  if self.winid and api.nvim_win_is_valid(self.winid) then
     return true
   end
   return false
 end
 
-function def.scroll_in_def_preview(direction)
-  local has_preview, pdata = pcall(api.nvim_buf_get_var, 0, 'lspsaga_def_preview')
-  if not has_preview then
+function def:scroll_in_def_preview(direction)
+  if not self:has_saga_def_preview() then
     return
   end
+  local pdata = api.nvim_buf_get_var(0, 'lspsaga_def_preview')
+
   local current_win_lnum =
     scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
   api.nvim_buf_set_var(

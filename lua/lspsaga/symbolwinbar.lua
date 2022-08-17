@@ -9,6 +9,7 @@ local kind = require('lspsaga.lspkind')
 local ns_prefix = '%#LspSagaWinbar'
 local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
+local cap = 'documentSymbolProvider'
 
 function symbar:get_file_name()
   local file_name = string.gsub(vim.fn.expand('%:t'), '%%', '')
@@ -28,7 +29,12 @@ end
 local do_symbol_request = function(callback)
   local current_buf = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
-  lsp.buf_request_all(current_buf, method, params, callback)
+
+  local client = libs.get_client_by_cap(cap)
+  if client == nil then
+    return
+  end
+  client.request(method, params, callback, current_buf)
 end
 
 --@private
@@ -41,9 +47,13 @@ local function binary_search(tbl, line)
     mid = bit.rshift(left + right, 1)
     local range
 
-    if tbl[mid].location ~= nil then
+    if mid == 0 then
+      return nil
+    end
+
+    if tbl[mid].location then
       range = tbl[mid].location.range
-    elseif tbl[mid].range ~= nil then
+    elseif tbl[mid].range then
       range = tbl[mid].range
     else
       return nil
@@ -134,32 +144,10 @@ local render_symbol_winbar = function()
   return winbar_val
 end
 
-function symbar.get_clientid()
-  local client_id
-  local clients = vim.lsp.buf_get_clients()
-  for id, conf in pairs(clients) do
-    if conf.server_capabilities.documentSymbolProvider then
-      client_id = id
-      break
-    end
-  end
-  return client_id
-end
-
 function symbar:get_buf_symbol(force, ...)
-  if not libs.check_lsp_active() then
-    return
-  end
-
   force = force or false
   local current_buf = api.nvim_get_current_buf()
   if self.symbol_cache[current_buf] and self.symbol_cache[current_buf][1] and not force then
-    return
-  end
-
-  local client_id = self.get_clientid()
-
-  if client_id == nil then
     return
   end
 
@@ -169,12 +157,12 @@ function symbar:get_buf_symbol(force, ...)
     fn = unpack(arg)
   end
 
-  local _callback = function(results)
-    if libs.result_isempty(results) then
+  local _callback = function(_, result)
+    if not result then
       return
     end
 
-    self.symbol_cache[current_buf] = { true, results[client_id].result }
+    self.symbol_cache[current_buf] = { true, result }
 
     if fn ~= nil then
       fn()
@@ -199,6 +187,10 @@ function symbar:clear_cache()
 end
 
 local function symbol_events()
+  if not libs.check_lsp_active(false) then
+    return
+  end
+
   local current_buf = api.nvim_get_current_buf()
   local cache = symbar.symbol_cache
 
@@ -213,14 +205,14 @@ local function symbol_events()
 
   update_symbols(true)
 
-  api.nvim_create_autocmd('CursorMoved', {
+  local moved_id = api.nvim_create_autocmd('CursorMoved', {
     group = saga_group,
     buffer = current_buf,
     callback = update_symbols,
     desc = 'Lspsaga symbols',
   })
 
-  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+  local update_id = api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
     group = saga_group,
     buffer = current_buf,
     callback = function()
@@ -233,11 +225,15 @@ local function symbol_events()
     desc = 'Lspsaga update symbols',
   })
 
-  api.nvim_create_autocmd('BufDelete', {
+  local delete_id
+  delete_id = api.nvim_create_autocmd('BufDelete', {
     group = saga_group,
     buffer = current_buf,
     callback = function()
       symbar:clear_cache()
+      api.nvim_del_autocmd(moved_id)
+      api.nvim_del_autocmd(update_id)
+      api.nvim_del_autocmd(delete_id)
     end,
     desc = 'Lspsaga clear document symbol cache',
   })

@@ -2,13 +2,16 @@ local api = vim.api
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local code_action_method = 'textDocument/codeAction'
+local saga_augroup = require('lspsaga').saga_augroup
 local lb = {}
 
 local SIGN_GROUP = 'sagalightbulb'
 local SIGN_NAME = 'LspSagaLightBulb'
 
+local hl_group = 'LspSagaLightBulb'
+
 if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = 'LspSagaLightBulb' })
+  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = hl_group })
 end
 
 local function check_server_support_codeaction(bufnr)
@@ -48,15 +51,15 @@ local function _update_virtual_text(bufnr, line)
   end
 end
 
-local function _update_sign(bufnr, line)
-  if vim.w.lightbulb_line == 0 then
-    vim.w.lightbulb_line = 1
-  end
-  if vim.w.lightbulb_line ~= 0 then
-    vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = bufnr })
-  end
-
-  if line then
+local sign_ns = api.nvim_create_namespace('sagalightbulb_sign')
+local function generate_sign(bufnr, line)
+  if vim.fn.has('nvim-0.8') == 1 then
+    api.nvim_buf_set_extmark(bufnr, sign_ns, line, 0, {
+      sign_text = config.code_action_icon,
+      sign_hl_group = hl_group,
+      priority = config.code_action_lightbulb.sign_priority,
+    })
+  else
     vim.fn.sign_place(
       line,
       SIGN_GROUP,
@@ -64,6 +67,27 @@ local function _update_sign(bufnr, line)
       bufnr,
       { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
     )
+  end
+end
+
+local function remove_sign(bufnr)
+  if vim.fn.has('nvim-0.8') == 1 then
+    api.nvim_buf_clear_namespace(bufnr, sign_ns, 0, -1)
+  else
+    vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = bufnr })
+  end
+end
+
+local function _update_sign(bufnr, line)
+  if vim.w.lightbulb_line == 0 then
+    vim.w.lightbulb_line = 1
+  end
+  if vim.w.lightbulb_line ~= 0 then
+    remove_sign(bufnr)
+  end
+
+  if line then
+    generate_sign(bufnr, line)
     vim.w.lightbulb_line = line
   end
 end
@@ -122,7 +146,7 @@ local render_bulb = function(bufnr)
 end
 
 function lb.action_lightbulb()
-  if not libs.check_lsp_active() then
+  if not libs.check_lsp_active(false) then
     return
   end
 
@@ -133,6 +157,45 @@ function lb.action_lightbulb()
     return
   end
   render_bulb(current_buf)
+end
+
+function lb.lb_autocmd()
+  if vim.fn.has('nvim-0.8') then
+    api.nvim_create_autocmd('LspAttach', {
+      group = saga_augroup,
+      callback = function()
+        local current_buf = api.nvim_get_current_buf()
+        local id = api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+          group = saga_augroup,
+          buffer = current_buf,
+          callback = lb.action_lightbulb,
+        })
+
+        local delete_id
+        delete_id = api.nvim_create_autocmd('BufDelete', {
+          group = saga_augroup,
+          buffer = current_buf,
+          callback = function()
+            api.nvim_del_autocmd(id)
+            api.nvim_del_autocmd(delete_id)
+          end,
+        })
+      end,
+    })
+  else
+    local fts = libs.get_config_lsp_filetypes()
+    ---@deprecated when 0.8 release remove this
+    api.nvim_create_autocmd('FileType', {
+      group = saga_augroup,
+      pattern = fts,
+      callback = function()
+        api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+          group = saga_augroup,
+          callback = lb.action_lightbulb,
+        })
+      end,
+    })
+  end
 end
 
 return lb

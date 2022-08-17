@@ -5,26 +5,32 @@ local diagnostic = require('lspsaga.diagnostic')
 local codeaction = require('lspsaga.codeaction')
 local signature = require('lspsaga.signaturehelp')
 local floaterm = require('lspsaga.floaterm')
-local implement = require('lspsaga.implement')
 local finder = require('lspsaga.finder')
 
 local subcommands = {
   lsp_finder = function()
     finder:lsp_finder()
   end,
-  preview_definition = require('lspsaga.definition').preview_definition,
-  rename = lsprename.lsp_rename,
+  preview_definition = function()
+    require('lspsaga.definition'):preview_definition()
+  end,
+  rename = function()
+    lsprename:lsp_rename()
+  end,
   hover_doc = lsphover.render_hover_doc,
   show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
   show_line_diagnostics = diagnostic.show_line_diagnostics,
   diagnostic_jump_next = diagnostic.goto_next,
   diagnostic_jump_prev = diagnostic.goto_prev,
-  code_action = codeaction.code_action,
-  range_code_action = codeaction.range_code_action,
+  code_action = function()
+    codeaction:code_action()
+  end,
+  range_code_action = function()
+    codeaction:range_code_action()
+  end,
   signature_help = signature.signature_help,
   open_floaterm = floaterm.open_float_terminal,
   close_floaterm = floaterm.close_float_terminal,
-  implement = implement.lspsaga_implementation,
 }
 
 function command.command_list()
