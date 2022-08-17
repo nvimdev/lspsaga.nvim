@@ -54,7 +54,7 @@ function Action:action_callback()
     group = saga_augroup,
     buffer = self.action_bufnr,
     callback = function()
-      require('lspsaga.codeaction'):set_cursor()
+      self:set_cursor()
     end,
   })
 
@@ -62,7 +62,7 @@ function Action:action_callback()
     group = saga_augroup,
     buffer = self.action_bufnr,
     callback = function()
-      require('lspsaga.codeaction'):quit_action_window()
+      self:quit_action_window()
     end,
   })
 
@@ -80,16 +80,14 @@ function Action:action_callback()
   end
 end
 
-local apply_keys = libs.apply_keys('codeaction')
-
 function Action:apply_action_keys()
-  local actions = {
-    ['quit_action_window'] = config.code_action_keys.quit,
-    ['do_code_action'] = config.code_action_keys.exec,
-  }
-  for func, keys in pairs(actions) do
-    apply_keys(func, keys)
-  end
+  vim.keymap.set('n',config.code_action_keys.exec,function()
+    self:do_code_action()
+  end,{ buffer = self.action_bufnr})
+
+  vim.keymap.set('n',config.code_action_keys.quit,function()
+    self:quit_action_window()
+  end,{buffer = self.action_bufnr})
 
   local move = config.move_in_saga
   local opts = { noremap = true, silent = true, nowait = true }
@@ -190,12 +188,10 @@ function Action:set_cursor()
 end
 
 function Action:num_shortcut()
-  local rhs_prefix = "<cmd>lua require('lspsaga.codeaction').do_code_action('"
-  local tail = "')<CR>"
-  local opts = { nowait = true, silent = true, noremap = true }
   for num, _ in pairs(self.actions) do
-    local rhs = rhs_prefix .. num .. tail
-    api.nvim_buf_set_keymap(self.action_bufnr, 'n', tostring(num), rhs, opts)
+    vim.keymap.set('n',tostring(num),function()
+      self:do_code_action(num)
+    end,{buffer = self.action_bufnr})
   end
 end
 
@@ -269,20 +265,8 @@ lspaction.code_action = function()
   Action:code_action()
 end
 
-lspaction.do_code_action = function()
-  Action:do_code_action()
-end
-
-lspaction.quit_action_window = function()
-  Action:quit_action_window()
-end
-
 lspaction.range_code_action = function()
   Action:range_code_action()
-end
-
-lspaction.set_cursor = function()
-  Action:set_cursor()
 end
 
 return lspaction

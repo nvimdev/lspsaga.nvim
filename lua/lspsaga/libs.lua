@@ -113,17 +113,6 @@ function libs.get_lsp_root_dir()
   return nil
 end
 
-function libs.apply_keys(ns)
-  return function(func, keys)
-    keys = type(keys) == 'string' and { keys } or keys
-    local fmt = "nnoremap <buffer><nowait><silent>%s <cmd>lua require('lspsaga.%s').%s()<CR>"
-
-    vim.tbl_map(function(key)
-      api.nvim_command(string.format(fmt, key, ns, func))
-    end, keys)
-  end
-end
-
 function libs.close_preview_autocmd(bufnr, winids, events)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
