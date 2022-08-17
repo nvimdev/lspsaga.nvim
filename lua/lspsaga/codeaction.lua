@@ -81,13 +81,13 @@ function Action:action_callback()
 end
 
 function Action:apply_action_keys()
-  vim.keymap.set('n',config.code_action_keys.exec,function()
+  vim.keymap.set('n', config.code_action_keys.exec, function()
     self:do_code_action()
-  end,{ buffer = self.action_bufnr})
+  end, { buffer = self.action_bufnr })
 
-  vim.keymap.set('n',config.code_action_keys.quit,function()
+  vim.keymap.set('n', config.code_action_keys.quit, function()
     self:quit_action_window()
-  end,{buffer = self.action_bufnr})
+  end, { buffer = self.action_bufnr })
 
   local move = config.move_in_saga
   local opts = { noremap = true, silent = true, nowait = true }
@@ -189,9 +189,9 @@ end
 
 function Action:num_shortcut()
   for num, _ in pairs(self.actions) do
-    vim.keymap.set('n',tostring(num),function()
+    vim.keymap.set('n', tostring(num), function()
       self:do_code_action(num)
-    end,{buffer = self.action_bufnr})
+    end, { buffer = self.action_bufnr })
   end
 end
 
