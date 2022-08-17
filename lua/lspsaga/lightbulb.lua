@@ -2,6 +2,7 @@ local api = vim.api
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local code_action_method = 'textDocument/codeAction'
+local saga_augroup = require('lspsaga').saga_augroup
 local lb = {}
 
 local SIGN_GROUP = 'sagalightbulb'
@@ -156,6 +157,45 @@ function lb.action_lightbulb()
     return
   end
   render_bulb(current_buf)
+end
+
+function lb.lb_autocmd()
+  if vim.fn.has('nvim-0.8') then
+    api.nvim_create_autocmd('LspAttach', {
+      group = saga_augroup,
+      callback = function()
+        local current_buf = api.nvim_get_current_buf()
+        local id = api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+          group = saga_augroup,
+          buffer = current_buf,
+          callback = lb.action_lightbulb,
+        })
+
+        local delete_id
+        delete_id = api.nvim_create_autocmd('BufDelete', {
+          group = saga_augroup,
+          buffer = current_buf,
+          callback = function()
+            api.nvim_del_autocmd(id)
+            api.nvim_del_autocmd(delete_id)
+          end,
+        })
+      end,
+    })
+  else
+    local fts = libs.get_config_lsp_filetypes()
+    ---@deprecated when 0.8 release remove this
+    api.nvim_create_autocmd('FileType', {
+      group = saga_augroup,
+      pattern = fts,
+      callback = function()
+        api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+          group = saga_augroup,
+          callback = lb.action_lightbulb,
+        })
+      end,
+    })
+  end
 end
 
 return lb

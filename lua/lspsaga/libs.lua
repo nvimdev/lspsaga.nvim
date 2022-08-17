@@ -113,6 +113,32 @@ function libs.get_lsp_root_dir()
   return nil
 end
 
+function libs.get_config_lsp_filetypes()
+  local ok, lsp_config = pcall(require, 'lspconfig.configs')
+  if not ok then
+    return
+  end
+
+  local filetypes = {}
+  for _, config in pairs(lsp_config) do
+    if config.filetypes then
+      for _, ft in pairs(config.filetypes) do
+        table.insert(filetypes, ft)
+      end
+    end
+  end
+
+  if next(server_filetype_map) ~= nil then
+    for _, fts in pairs(server_filetype_map) do
+      for _, ft in pairs(fts) do
+        table.insert(filetypes, ft)
+      end
+    end
+  end
+
+  return filetypes
+end
+
 function libs.close_preview_autocmd(bufnr, winids, events)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,

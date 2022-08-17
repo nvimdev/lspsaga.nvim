@@ -126,7 +126,7 @@ function rename:lsp_rename()
 
   if config.rename_in_select then
     vim.cmd([[normal! viw]])
-    feedkeys('<C-g>', 'v')
+    feedkeys('<C-g>', 'n')
   end
 
   local quit_id, close_unfocus

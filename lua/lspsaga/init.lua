@@ -97,27 +97,7 @@ function saga.init_lsp_saga(opts)
   local conf = saga.config_values
 
   if conf.code_action_lightbulb.enable then
-    api.nvim_create_autocmd('LspAttach', {
-      group = saga.saga_augroup,
-      callback = function()
-        local current_buf = api.nvim_get_current_buf()
-        local id = api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-          group = saga.saga_augroup,
-          buffer = current_buf,
-          callback = require('lspsaga.lightbulb').action_lightbulb,
-        })
-
-        local delete_id
-        delete_id = api.nvim_create_autocmd('BufDelete', {
-          group = saga.saga_augroup,
-          buffer = current_buf,
-          callback = function()
-            api.nvim_del_autocmd(id)
-            api.nvim_del_autocmd(delete_id)
-          end,
-        })
-      end,
-    })
+    require('lspsaga.lightbulb').lb_autocmd()
   end
 
   if conf.symbol_in_winbar.enable or conf.symbol_in_winbar.in_custom then
