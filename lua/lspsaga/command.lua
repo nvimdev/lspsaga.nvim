@@ -22,8 +22,12 @@ local subcommands = {
   show_line_diagnostics = diagnostic.show_line_diagnostics,
   diagnostic_jump_next = diagnostic.goto_next,
   diagnostic_jump_prev = diagnostic.goto_prev,
-  code_action = codeaction.code_action,
-  range_code_action = codeaction.range_code_action,
+  code_action = function()
+    codeaction:code_action()
+  end,
+  range_code_action = function()
+    codeaction:range_code_action()
+  end,
   signature_help = signature.signature_help,
   open_floaterm = floaterm.open_float_terminal,
   close_floaterm = floaterm.close_float_terminal,

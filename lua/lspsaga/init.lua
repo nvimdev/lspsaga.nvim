@@ -68,6 +68,7 @@ saga.config_values = {
     jump_key = 'o',
     auto_refresh = true,
   },
+  custom_kind = {},
   server_filetype_map = {},
 }
 

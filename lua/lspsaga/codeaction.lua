@@ -259,14 +259,4 @@ function Action:quit_action_window()
   self:clear_tmp_data()
 end
 
-local lspaction = {}
-
-lspaction.code_action = function()
-  Action:code_action()
-end
-
-lspaction.range_code_action = function()
-  Action:range_code_action()
-end
-
-return lspaction
+return Action
