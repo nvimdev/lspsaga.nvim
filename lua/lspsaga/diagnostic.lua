@@ -222,12 +222,11 @@ local function show_diagnostics(opts, get_diagnostics)
 
   local severity_sort = if_nil(opts.severity_sort, true)
   local show_header = if_nil(opts.show_header, true)
-  local current_line = api.nvim_win_get_cursor(current_win)[1]
 
   local lines = {}
   local highlights = {}
   if show_header then
-    lines[1] = 'Diagnostics in line ' .. current_line
+    lines[1] = opts.header()
     highlights[1] = { 0, 'LspSagaDiagnosticHeader' }
   end
 
@@ -249,8 +248,8 @@ local function show_diagnostics(opts, get_diagnostics)
     if config.show_diagnostic_source then
       message_lines[1] = prefix .. message_lines[1] .. space .. '[' .. diagnostic.source .. ']'
     end
-    local start_col = diagnostic.range.start.character
-    local end_col = diagnostic.range['end'].character
+    local start_col = diagnostic.col or diagnostic.range.start.character
+    local end_col = diagnostic.end_col or diagnostic.range['end'].character
     local col_scope = 'col:' .. start_col .. '-' .. end_col
     message_lines[1] = message_lines[1] .. space .. col_scope
 
@@ -311,14 +310,18 @@ function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
 
   opts = opts or {}
 
+  local current_line = api.nvim_win_get_cursor(0)[1]
   local get_line_diagnostics = function()
     bufnr = bufnr or api.nvim_get_current_buf()
-    line_nr = line_nr or (vim.api.nvim_win_get_cursor(0)[1] - 1)
+    line_nr = line_nr or (current_line - 1)
 
     return lsp.diagnostic.get_line_diagnostics(bufnr, line_nr, opts, client_id)
   end
 
   opts.show_virtual = true
+  opts.header = function()
+    return 'Diagnostics in line ' .. current_line
+  end
   return show_diagnostics(opts, get_line_diagnostics)
 end
 
@@ -360,13 +363,19 @@ end
 function diag.show_cursor_diagnostics(opts, bufnr, client_id)
   opts = opts or {}
 
+  local pos = api.nvim_win_get_cursor(0)
+
   local get_cursor_diagnostics = function()
     bufnr = bufnr or 0
 
-    local line_nr = vim.api.nvim_win_get_cursor(0)[1] - 1
-    local column_nr = vim.api.nvim_win_get_cursor(0)[2]
+    local line_nr = pos[1] - 1
+    local column_nr = pos[2]
 
     return vim.tbl_filter(in_range(line_nr, column_nr), vim.diagnostic.get(bufnr, client_id))
+  end
+
+  opts.header = function()
+    return 'Diagnostic in Column ' .. pos[2]
   end
 
   return show_diagnostics(opts, get_cursor_diagnostics)
