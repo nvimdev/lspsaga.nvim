@@ -200,6 +200,9 @@ show_outline = {
   -- auto refresh when change buffer
   auto_refresh = true,
 },
+-- custom lsp kind
+-- usage { Field = 'color code'} or {Field = {your icon, your color code}}
+custom_kind = {},
 -- if you don't use nvim-lspconfig you must pass your server name and
 -- the related filetypes into this table
 -- like server_filetype_map = { metals = { "sbt", "scala" } }
@@ -316,7 +319,27 @@ symbol_in_winbar = {
 
 ## Customize Appearance
 
+### Custom Lsp Kind Icon and Color
+
+you can use the `custom_kind` option to change the default icon and color
+
+```lua
+
+-- if only change the color you can do it like
+custom_kind = {
+  Field = '#000000',
+}
+
+-- if you  want to change the icon and color
+custom_kind = {
+  Field = {'your icon','your color'},
+}
+
+```
+
+### Highlight Group
 Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
+
 
 ```vim
 highlight link LspSagaFinderSelection Search
