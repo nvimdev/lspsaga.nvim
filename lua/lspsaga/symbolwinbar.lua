@@ -37,21 +37,6 @@ local do_symbol_request = function(callback)
   client.request(method, params, callback, current_buf)
 end
 
-local function get_range(node)
-  if not node then
-    return nil
-  end
-  if node.location then
-    return node.location.range
-  end
-
-  if node.range then
-    return node.range
-  end
-
-  return nil
-end
-
 --@private
 local function binary_search(tbl, line)
   local left = 1
@@ -59,14 +44,18 @@ local function binary_search(tbl, line)
   local mid = 0
 
   while true do
-    mid = bit.rshift(left + right, 1)
+    mid = bit.rshift(left + right , 1)
+    local range
 
     if mid == 0 then
       return nil
     end
 
-    local range = get_range(tbl[mid])
-    if not range then
+    if tbl[mid].location then
+      range = tbl[mid].location.range
+    elseif tbl[mid].range then
+      range = tbl[mid].range
+    else
       return nil
     end
 
@@ -119,15 +108,6 @@ local function find_in_node(tbl, line, elements)
 
   if node.children ~= nil and next(node.children) ~= nil then
     find_in_node(node.children, line, elements)
-  end
-
-  local next_range = get_range(tbl[mid + 1])
-  if next_range and line == next_range.start.line and next_range['end'].line then
-    local n = tbl[mid + 1]
-    table.insert(
-      elements,
-      ns_prefix .. kind[n.kind][1] .. '#' .. click .. kind[n.kind][2] .. n.name
-    )
   end
 end
 
