@@ -99,7 +99,7 @@ function def:preview_definition()
       end,
     })
     vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
-    self.pdata = { self.winid, 1, config.max_preview_lines, 10 }
+     api.nvim_buf_set_var(0, 'lspsaga_def_preview', { self.winid, 1, config.max_preview_lines, 10 })
   end, current_buf)
 end
 
@@ -114,14 +114,15 @@ function def:scroll_in_def_preview(direction)
   if not self:has_saga_def_preview() then
     return
   end
+  local pdata = api.nvim_buf_get_var(0,'lspsaga_def_preview')
 
   local current_win_lnum =
-    scroll_in_win(self.pdata[1], direction, self.pdata[2], config.max_preview_lines, self.pdata[4])
-  api.nvim_buf_set_var(
-    0,
-    'lspsaga_def_preview',
-    { self.pdata[1], current_win_lnum, config.max_preview_lines, self.pdata[4] }
-  )
+      scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
+    api.nvim_buf_set_var(
+      0,
+      'lspsaga_def_preview',
+      { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] }
+    )
 end
 
 return def
