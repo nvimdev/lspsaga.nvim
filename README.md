@@ -324,7 +324,6 @@ symbol_in_winbar = {
 you can use the `custom_kind` option to change the default icon and color
 
 ```lua
-
 -- if only change the color you can do it like
 custom_kind = {
   Field = '#000000',
@@ -334,7 +333,6 @@ custom_kind = {
 custom_kind = {
   Field = {'your icon','your color'},
 }
-
 ```
 
 ### Highlight Group
@@ -348,6 +346,10 @@ highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
 ```
 
 The available highlight groups you can find in [here](./plugin/lspsaga.lua).
+
+## Changelog
+
+- [version 0.2 in 2022-08-18](./Changelog.md)
 
 ## Showcase
 
