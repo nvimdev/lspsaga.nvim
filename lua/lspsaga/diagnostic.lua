@@ -192,7 +192,7 @@ local function comp_severity_asc(diag1, diag2)
   return diag1['severity'] < diag2['severity']
 end
 
-local function show_diagnostics(opts, get_diagnostics)
+function diag:show_diagnostics(opts, get_diagnostics)
   local close_hover = opts.close_hover or false
 
   -- if we have a hover rendered, don't show diagnostics due to this usually
@@ -218,7 +218,6 @@ local function show_diagnostics(opts, get_diagnostics)
   end
 
   local current_buf = api.nvim_get_current_buf()
-  local current_win = api.nvim_get_current_win()
 
   local severity_sort = if_nil(opts.severity_sort, true)
   local show_header = if_nil(opts.show_header, true)
@@ -275,7 +274,7 @@ local function show_diagnostics(opts, get_diagnostics)
     highlight = 'LspSagaDiagnosticBorder',
   }
 
-  local bufnr, winid = window.create_win_with_border(content_opts, {
+  self.show_diag_bufnr, self.show_diag_winid = window.create_win_with_border(content_opts, {
     focusable = false,
   })
 
@@ -283,28 +282,33 @@ local function show_diagnostics(opts, get_diagnostics)
     local _, hiname, col_in_line = unpack(hi)
     -- Start highlight after the prefix
     if i == 1 then
-      api.nvim_buf_add_highlight(bufnr, -1, hiname, 0, 0, -1)
+      api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, 0, 0, -1)
     else
-      api.nvim_buf_add_highlight(bufnr, -1, hiname, i, 0, -1)
+      api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, i, 0, -1)
     end
 
     if col_in_line then
-      api.nvim_buf_add_highlight(bufnr, -1, 'ColInLineDiagnostic', i, col_in_line, -1)
+      api.nvim_buf_add_highlight(
+        self.show_diag_bufnr,
+        -1,
+        'ColInLineDiagnostic',
+        i,
+        col_in_line,
+        -1
+      )
     end
   end
 
-  api.nvim_buf_add_highlight(bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
+  api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
   local close_events = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
 
-  libs.close_preview_autocmd(current_buf, winid, close_events)
-  api.nvim_win_set_var(current_win, 'show_line_diag_winids', winid)
-  return winid
+  libs.close_preview_autocmd(current_buf, self.show_diag_winid, close_events)
+  return self.show_diag_winid
 end
 
 function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
-  local ok, diag_winid = pcall(api.nvim_win_get_var, 0, 'show_line_diag_winids')
-  if ok and api.nvim_win_is_valid(diag_winid) then
-    api.nvim_set_current_win(diag_winid)
+  if diag.show_diag_winid and api.nvim_win_is_valid(diag.show_diag_winid) then
+    api.nvim_set_current_win(diag.show_diag_winid)
     return
   end
 
@@ -322,7 +326,7 @@ function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
   opts.header = function()
     return 'Diagnostics in line ' .. current_line
   end
-  return show_diagnostics(opts, get_line_diagnostics)
+  return diag:show_diagnostics(opts, get_line_diagnostics)
 end
 
 local function get_diagnostic_start(diagnostic_entry)
@@ -378,7 +382,7 @@ function diag.show_cursor_diagnostics(opts, bufnr, client_id)
     return 'Diagnostic in Column ' .. pos[2]
   end
 
-  return show_diagnostics(opts, get_cursor_diagnostics)
+  return diag:show_diagnostics(opts, get_cursor_diagnostics)
 end
 
 return diag
