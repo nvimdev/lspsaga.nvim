@@ -83,6 +83,13 @@ function _G.___lspsaga_winbar_click(id, clicks, button, modifiers)
   config.click_support(click_node[id], clicks, button, modifiers)
 end
 
+local function insert_elements(node, click, elements)
+  local type = kind[node.kind][1]
+  local icon = kind[node.kind][2]
+  local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
+  table.insert(elements, node_context)
+end
+
 --@private
 local function find_in_node(tbl, line, elements)
   local mid = binary_search(tbl, line)
@@ -91,20 +98,23 @@ local function find_in_node(tbl, line, elements)
   end
 
   local node = tbl[mid]
-  local type, icon = '', ''
-
-  type = kind[node.kind][1]
-  icon = kind[node.kind][2]
 
   local click = ''
-  if config.click_support ~= false then
+  if not config.click_support then
     click_node_cnt = click_node_cnt + 1
     click_node[click_node_cnt] = node
     click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
   end
 
-  local node_context = ns_prefix .. type .. '#' .. click .. icon .. node.name
-  table.insert(elements, node_context)
+  if mid > 1 then
+    for i = 1, mid - 1 do
+      if tbl[i].kind < tbl[mid].kind then
+        insert_elements(tbl[i], click, elements)
+      end
+    end
+  end
+
+  insert_elements(tbl[mid], click, elements)
 
   if node.children ~= nil and next(node.children) ~= nil then
     find_in_node(node.children, line, elements)
