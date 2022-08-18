@@ -148,9 +148,8 @@ function ot:auto_preview(bufnr)
     return
   end
 
-  local ok, preview_data = pcall(api.nvim_win_get_var, 0, 'outline_preview_win')
-  if ok then
-    window.nvim_close_valid_window(preview_data[2])
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
   end
 
   local current_line = api.nvim_win_get_cursor(0)[1]
@@ -202,13 +201,13 @@ function ot:auto_preview(bufnr)
     highlight = 'LSOutlinePreviewBorder',
   }
 
-  local preview_bufnr, preview_winid = window.create_win_with_border(content_opts, opts)
-  api.nvim_win_set_var(0, 'outline_preview_win', { preview_bufnr, preview_winid })
+  self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
+  api.nvim_win_set_var(0, 'outline_preview_win', { self.preview_bufnr, self.preview_winid })
 
   local events = { 'CursorMoved', 'BufLeave' }
   local outline_bufnr = api.nvim_get_current_buf()
   vim.defer_fn(function()
-    libs.close_preview_autocmd(outline_bufnr, preview_winid, events)
+    libs.close_preview_autocmd(outline_bufnr, self.preview_winid, events)
   end, 0)
 end
 
@@ -310,6 +309,7 @@ function ot:update_outline(symbols)
           self:preview_events()
         end
       end,
+      desc = 'Lspsaga Outline jump to outline show preview',
     })
   else
     self:preview_events()
@@ -327,7 +327,7 @@ function ot:update_outline(symbols)
     on_detach = function()
       self:remove_events()
       if self.bufenter_id then
-        api.nvim_del_autocmd(self.bufenter_id)
+        pcall(api.nvim_del_autocmd, self.bufenter_id)
         self.bufenter_id = nil
       end
     end,
@@ -336,10 +336,8 @@ end
 
 function ot:preview_events()
   if outline_conf.auto_preview then
-    self.preview_au = api.nvim_create_augroup('OutlinePreview', { clear = true })
-
-    api.nvim_create_autocmd('CursorMoved', {
-      group = self.preview_au,
+    self.preview_au = api.nvim_create_autocmd('CursorMoved', {
+      group = saga_group,
       buffer = self.winbuf,
       callback = function()
         local buf
@@ -357,6 +355,7 @@ function ot:preview_events()
           ot:auto_preview(buf)
         end, 0.5)
       end,
+      desc = 'Lspsaga Outline Preview',
     })
   end
 end
@@ -375,9 +374,8 @@ local outline_exclude = {
 
 function ot:refresh_events()
   if outline_conf.auto_refresh then
-    self.refresh_au = api.nvim_create_augroup('OutlineRefresh', { clear = true })
-    api.nvim_create_autocmd('BufEnter', {
-      group = self.refresh_au,
+    self.refresh_au = api.nvim_create_autocmd('BufEnter', {
+      group = saga_group,
       callback = function()
         local current_buf = api.nvim_get_current_buf()
         local in_render = function()
@@ -402,13 +400,13 @@ function ot:refresh_events()
 end
 
 function ot:remove_events()
-  if self.refresh_au ~= nil and self.refresh_au > 0 then
-    api.nvim_del_augroup_by_id(self.refresh_au)
+  if self.refresh_au and self.refresh_au > 0 then
+    pcall(api.nvim_del_autocmd, self.refresh_au)
     self.refresh_au = nil
   end
 
-  if self.preview_au ~= nil and self.preview_au > 0 then
-    api.nvim_del_augroup_by_id(self.preview_au)
+  if self.preview_au and self.preview_au > 0 then
+    pcall(api.nvim_del_autocmd, self.preview_au)
     self.preview_au = nil
   end
 end
@@ -416,7 +414,7 @@ end
 function ot:render_outline(refresh)
   refresh = refresh or false
 
-  if self.status ~= nil and self.status and not refresh then
+  if self.status and not refresh then
     if api.nvim_buf_is_loaded(self.winbuf) then
       api.nvim_buf_delete(self.winbuf, { force = true })
     end

@@ -179,6 +179,7 @@ function M.create_win_with_border(content_opts, opts)
   api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
   api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
 
+  opts.noautocmd = true
   local winid = api.nvim_open_win(bufnr, enter, opts)
   if filetype == 'markdown' then
     api.nvim_win_set_option(winid, 'conceallevel', 2)

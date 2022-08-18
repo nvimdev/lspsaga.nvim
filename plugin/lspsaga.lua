@@ -65,7 +65,7 @@ local highlights = {
   OutlineFoldPrefix = { fg = '#bf4537' },
   OutlineDetail = { fg = '#73797e' },
   -- all floatwindow of lspsaga
-  LspFloatWinNormal = { link = 'Normal'}
+  LspFloatWinNormal = { link = 'Normal' },
 }
 
 for group, conf in pairs(highlights) do
