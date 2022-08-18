@@ -160,7 +160,7 @@ function lb.action_lightbulb()
 end
 
 function lb.lb_autocmd()
-  if vim.fn.has('nvim-0.8') then
+  if vim.fn.has('nvim-0.8') == 1 then
     api.nvim_create_autocmd('LspAttach', {
       group = saga_augroup,
       callback = function()
