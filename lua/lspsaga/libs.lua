@@ -130,8 +130,12 @@ function libs.get_config_lsp_filetypes()
 
   if next(server_filetype_map) ~= nil then
     for _, fts in pairs(server_filetype_map) do
-      for _, ft in pairs(fts) do
-        table.insert(filetypes, ft)
+      if type(fts) == 'table' then
+        for _, ft in pairs(fts) do
+          table.insert(filetypes, ft)
+        end
+      elseif type(fts) == 'string' then
+        table.insert(filetypes, fts)
       end
     end
   end
