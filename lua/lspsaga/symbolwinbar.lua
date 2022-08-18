@@ -231,9 +231,9 @@ local function symbol_events()
     buffer = current_buf,
     callback = function()
       symbar:clear_cache()
-      api.nvim_del_autocmd(moved_id)
-      api.nvim_del_autocmd(update_id)
-      api.nvim_del_autocmd(delete_id)
+      pcall(api.nvim_del_autocmd, moved_id)
+      pcall(api.nvim_del_autocmd, update_id)
+      pcall(api.nvim_del_autocmd, delete_id)
     end,
     desc = 'Lspsaga clear document symbol cache',
   })

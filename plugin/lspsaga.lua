@@ -1,5 +1,5 @@
 local api = vim.api
-vim.g.lspsaga_version = "0.2.0"
+vim.g.lspsaga_version = '0.2.0'
 
 local highlights = {
   -- code action
