@@ -122,11 +122,8 @@ local send_request = coroutine.create(function()
     params.context = context
     local line = params.range.start.line
     vim.lsp.buf_request_all(current_buf, code_action_method, params, function(results)
-      if libs.result_isempty(results) then
-        results = { { result = {} } }
-      end
       local actions = {}
-      for _, res in pairs(results) do
+      for _, res in pairs(results or {}) do
         if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
           table.insert(actions, res.result)
         end

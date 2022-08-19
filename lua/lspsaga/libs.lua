@@ -67,28 +67,6 @@ function libs.merge_table(t1, t2)
   end
 end
 
-function libs.result_isempty(res)
-  if res == nil then
-    return true
-  end
-  if type(res) ~= 'table' then
-    vim.notify('[Lspsaga] Server return wrong response')
-    return
-  end
-  for _, v in pairs(res) do
-    if next(v) == nil then
-      return true
-    end
-    if not v.result then
-      return true
-    end
-    if next(v.result) == nil then
-      return true
-    end
-  end
-  return false
-end
-
 function libs.get_lsp_root_dir()
   if not libs.check_lsp_active() then
     return
