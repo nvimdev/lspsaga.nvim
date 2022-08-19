@@ -91,7 +91,8 @@ local function insert_elements(node, click, elements)
 end
 
 --@private
-local function find_in_node(tbl, line, elements)
+local function find_in_node(tbl, line, elements, in_child)
+  in_child = in_child or false
   local mid = binary_search(tbl, line)
   if mid == nil then
     return
@@ -108,7 +109,7 @@ local function find_in_node(tbl, line, elements)
 
   if mid > 1 then
     for i = 1, mid - 1 do
-      if tbl[i].kind < tbl[mid].kind then
+      if tbl[i].kind < tbl[mid].kind and in_child then
         insert_elements(tbl[i], click, elements)
       end
     end
@@ -117,7 +118,7 @@ local function find_in_node(tbl, line, elements)
   insert_elements(tbl[mid], click, elements)
 
   if node.children ~= nil and next(node.children) ~= nil then
-    find_in_node(node.children, line, elements)
+    find_in_node(node.children, line, elements, true)
   end
 end
 
