@@ -106,13 +106,13 @@ local function find_in_node(tbl, line, elements)
     click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
   end
 
-  if mid > 1 then
-    for i = 1, mid - 1 do
-      if tbl[i].kind == 6 then
-        insert_elements(tbl[i], click, elements)
-      end
-    end
-  end
+  -- if mid > 1 then
+  --   for i = 1, mid - 1 do
+  --     if tbl[i].kind == 6 then
+  --       insert_elements(tbl[i], click, elements)
+  --     end
+  --   end
+  -- end
 
   insert_elements(tbl[mid], click, elements)
 

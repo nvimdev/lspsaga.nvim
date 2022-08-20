@@ -32,7 +32,13 @@ function Finder:lsp_finder()
   local caps = { 'referencesProvider', 'definitionProvider' }
   self.client = libs.get_client_by_cap(caps)
 
+  -- push a tag stack
+  local pos = api.nvim_win_get_cursor(0)
   local current_word = vim.fn.expand('<cword>')
+  local from = { api.nvim_get_current_buf(), pos[1], pos[2], 0 }
+  local items = { { tagname = current_word, from = from } }
+  vim.fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
+
   self.param = '  ' .. current_word
 
   self.request_result = {}
@@ -478,6 +484,10 @@ function Finder:apply_float_map()
     self:open_link(3)
   end
 
+  local tabe_func = function()
+    self:open_link(4)
+  end
+
   local quit_func = function()
     self:quit_float_window()
   end
@@ -487,6 +497,7 @@ function Finder:apply_float_map()
     { 'n', move.next, '<Down>', opts },
     { 'n', action.vsplit, vsplit_func, opts },
     { 'n', action.split, split_func, opts },
+    { 'n', action.tabe, tabe_func, opts },
     {
       'n',
       action.scroll_down,
@@ -718,6 +729,8 @@ function Finder:open_link(action_type)
   end
 
   self:quit_float_window(false)
+
+  -- if buffer not saved save it before jump
   if vim.bo.modified then
     vim.cmd('write')
   end
