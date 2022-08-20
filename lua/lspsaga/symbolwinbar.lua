@@ -37,6 +37,17 @@ local do_symbol_request = function(callback)
   client.request(method, params, callback, current_buf)
 end
 
+local function get_node_range(node)
+  if node.localtion then
+    return node.localtion.range
+  end
+
+  if node.range then
+    return node.range
+  end
+  return nil
+end
+
 --@private
 local function binary_search(tbl, line)
   local left = 1
@@ -45,17 +56,13 @@ local function binary_search(tbl, line)
 
   while true do
     mid = bit.rshift(left + right, 1)
-    local range
 
     if mid == 0 then
       return nil
     end
 
-    if tbl[mid].location then
-      range = tbl[mid].location.range
-    elseif tbl[mid].range then
-      range = tbl[mid].range
-    else
+    local range = get_node_range(tbl[mid])
+    if not range then
       return nil
     end
 
@@ -106,13 +113,21 @@ local function find_in_node(tbl, line, elements)
     click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
   end
 
-  -- if mid > 1 then
-  --   for i = 1, mid - 1 do
-  --     if tbl[i].kind == 6 then
-  --       insert_elements(tbl[i], click, elements)
-  --     end
-  --   end
-  -- end
+  local range = get_node_range(tbl[mid]) or {}
+
+  if mid > 1 then
+    for i = 1, mid - 1 do
+      local prev_range = get_node_range(tbl[i]) or {}
+      if
+        -- not sure there should be 6 or other kind can be used in here
+        tbl[i].kind == 6
+        and range.start.line > prev_range.start.line
+        and range['end'].line <= prev_range['end'].line
+      then
+        insert_elements(tbl[i], click, elements)
+      end
+    end
+  end
 
   insert_elements(tbl[mid], click, elements)
 
