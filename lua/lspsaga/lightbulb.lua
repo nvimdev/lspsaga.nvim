@@ -51,15 +51,16 @@ local function _update_virtual_text(bufnr, line)
   end
 end
 
-local sign_ns = api.nvim_create_namespace('sagalightbulb_sign')
+-- local sign_ns = api.nvim_create_namespace('sagalightbulb_sign')
 local function generate_sign(bufnr, line)
-  if vim.fn.has('nvim-0.8') == 1 then
-    api.nvim_buf_set_extmark(bufnr, sign_ns, line, 0, {
-      sign_text = config.code_action_icon,
-      sign_hl_group = hl_group,
-      priority = config.code_action_lightbulb.sign_priority,
-    })
-  else
+  -- this will make neovim crash
+  -- if vim.fn.has('nvim-0.8') == 1 then
+  --   api.nvim_buf_set_extmark(bufnr, sign_ns, line, 0, {
+  --     sign_text = config.code_action_icon,
+  --     sign_hl_group = hl_group,
+  --     priority = config.code_action_lightbulb.sign_priority,
+  --   })
+  -- else
     vim.fn.sign_place(
       line,
       SIGN_GROUP,
@@ -67,15 +68,15 @@ local function generate_sign(bufnr, line)
       bufnr,
       { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
     )
-  end
+  -- end
 end
 
 local function remove_sign(bufnr)
-  if vim.fn.has('nvim-0.8') == 1 then
-    api.nvim_buf_clear_namespace(bufnr, sign_ns, 0, -1)
-  else
+  -- if vim.fn.has('nvim-0.8') == 1 then
+  --   api.nvim_buf_clear_namespace(bufnr, sign_ns, 0, -1)
+  -- else
     vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = bufnr })
-  end
+  -- end
 end
 
 local function _update_sign(bufnr, line)
