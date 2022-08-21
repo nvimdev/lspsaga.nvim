@@ -263,7 +263,7 @@ function M.fancy_floating_markdown(contents, opts)
     while i <= #contents do
       local line = contents[i]
       -- TODO(ashkan): use a more strict regex for filetype?
-      local ft = line:match('^```([a-zA-Z0-9_]*)$')
+      local ft = line:match('^```([a-zA-Z0-9_-]*)$')
       -- local ft = line:match("^```(.*)$")
       -- TODO(ashkan): validate the filetype here.
       if ft then
@@ -279,7 +279,8 @@ function M.fancy_floating_markdown(contents, opts)
           i = i + 1
         end
         table.insert(highlights, {
-          ft = ft,
+          -- objective-c/objective-cpp -> objc/objcpp 
+          ft = ft:gsub('objective--', 'obj'),
           start = start + 1,
           finish = #stripped + 1 - 1,
         })
