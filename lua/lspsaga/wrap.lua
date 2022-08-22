@@ -16,19 +16,27 @@ function wrap.wrap_text(text, width)
     return #a ~= 0
   end, vim.split(text, '%s'))
 
-  local start_index, length = 1, 0
-  for i, v in pairs(tbl) do
-    length = length + #v
-    if length > width and i ~= #tbl then
-      table.insert(ret, table.concat(tbl, space, start_index, i - 1))
-      start_index = i
+  local start_index, length = 1, 1
+
+  for i = 1, #tbl do
+    length = length + #tbl[i] + 1
+    if length == width then
+      table.insert(ret, table.concat(tbl, space, start_index, i))
+      start_index = i + 1
       length = 0
     end
 
+    if length > width and length - #tbl[i] <= width then
+      table.insert(ret, table.concat(tbl, space, start_index, i - 1))
+      start_index = i
+      length = #tbl[i]
+    end
+
     if length < width and i == #tbl then
-      table.insert(ret, table.concat(tbl, space, start_index))
+      table.insert(ret, table.concat(tbl, space, start_index, i))
     end
   end
+
   return ret
 end
 
@@ -37,8 +45,6 @@ function wrap.diagnostic_msg(msg, width)
     local t = vim.tbl_filter(function(s)
       return string.len(s) ~= 0
     end, vim.split(msg, '\n'))
-
-    -- local tmp = vim.tbl_deep_extend('force',{},t)
     return t
   end
 

@@ -61,13 +61,13 @@ local function generate_sign(bufnr, line)
   --     priority = config.code_action_lightbulb.sign_priority,
   --   })
   -- else
-    vim.fn.sign_place(
-      line,
-      SIGN_GROUP,
-      SIGN_NAME,
-      bufnr,
-      { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
-    )
+  vim.fn.sign_place(
+    line,
+    SIGN_GROUP,
+    SIGN_NAME,
+    bufnr,
+    { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
+  )
   -- end
 end
 
@@ -75,7 +75,7 @@ local function remove_sign(bufnr)
   -- if vim.fn.has('nvim-0.8') == 1 then
   --   api.nvim_buf_clear_namespace(bufnr, sign_ns, 0, -1)
   -- else
-    vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = bufnr })
+  vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = bufnr })
   -- end
 end
 
