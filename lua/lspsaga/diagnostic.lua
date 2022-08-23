@@ -168,7 +168,13 @@ function diag:move_cursor(entry)
   -- current buffer
   window.nvim_close_valid_window({ self.winid, self.virt_winid })
 
-  api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
+  vim.api.nvim_win_call(current_winid, function()
+    -- Save position in the window's jumplist
+    vim.cmd("normal! m'")
+    api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
+    -- Open folds under the cursor
+    vim.cmd('normal! zv')
+  end)
   self:render_diagnostic_window(entry)
 end
 
