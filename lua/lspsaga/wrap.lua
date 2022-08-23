@@ -16,6 +16,13 @@ function wrap.wrap_text(text, width)
     return #a ~= 0
   end, vim.split(text, '%s'))
 
+  if #tbl == 1 then
+    if tbl[1]:find('──') then
+      table.insert(ret, wrap.generate_spe_line(width))
+      return ret
+    end
+  end
+
   local start_index, length = 1, 1
 
   for i = 1, #tbl do
@@ -29,7 +36,7 @@ function wrap.wrap_text(text, width)
     if length > width and length - #tbl[i] <= width then
       table.insert(ret, table.concat(tbl, space, start_index, i - 1))
       start_index = i
-      length = #tbl[i]
+      length = 0
     end
 
     if length < width and i == #tbl then
@@ -74,6 +81,15 @@ function wrap.wrap_contents(contents, width)
   end
 
   return stripped
+end
+
+function wrap.generate_spe_line(width)
+  local char = '─'
+  local line = ''
+  for _ = 1, width, 1 do
+    line = line .. char
+  end
+  return line
 end
 
 function wrap.add_truncate_line(contents)

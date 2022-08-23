@@ -99,6 +99,10 @@ local function open_floating_preview(contents, syntax, opts)
   local floating_winnr
   floating_bufnr, floating_winnr = window.create_win_with_border(contents_opt, float_option)
 
+  if do_stylize then
+    api.nvim_win_set_option(floating_winnr, 'conceallevel', 2)
+    api.nvim_win_set_option(floating_winnr, 'concealcursor', 'n')
+  end
   -- disable folding
   api.nvim_win_set_option(floating_winnr, 'foldenable', false)
   -- soft wrapping
