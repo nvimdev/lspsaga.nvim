@@ -59,8 +59,8 @@ local saga = require('lspsaga')
 
 saga.init_lsp_saga()
 
--- Lsp finder find the symbol definition implmement reference
--- when you use action in finder like open vsplit then your can
+-- Lsp finder find the symbol definition implement reference
+-- when you use action in finder like open vsplit then you can
 -- use <C-t> to jump back
 keymap("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true })
 
