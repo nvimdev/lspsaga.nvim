@@ -3,7 +3,6 @@ local lsprename = require('lspsaga.rename')
 local lsphover = require('lspsaga.hover')
 local diagnostic = require('lspsaga.diagnostic')
 local codeaction = require('lspsaga.codeaction')
-local signature = require('lspsaga.signaturehelp')
 local floaterm = require('lspsaga.floaterm')
 local finder = require('lspsaga.finder')
 
@@ -28,7 +27,6 @@ local subcommands = {
   range_code_action = function()
     codeaction:range_code_action()
   end,
-  signature_help = signature.signature_help,
   open_floaterm = floaterm.open_float_terminal,
   close_floaterm = floaterm.close_float_terminal,
 }
