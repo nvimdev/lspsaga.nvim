@@ -14,17 +14,19 @@ function def:preview_definition()
 
   local filetype = vim.api.nvim_buf_get_option(0, 'filetype')
   local params = lsp.util.make_position_params()
-  local client = libs.get_client_by_cap('definitionProvider')
-  if not client then
-    vim.notify('[Lspsaga] server of current buffer not support ' .. method)
-    return
-  end
 
   local current_buf = api.nvim_get_current_buf()
-  client.request(method, params, function(_, result)
-    if not result or next(result) == nil then
-      vim.notify('[Lspsaga] response of request method ' .. method ..' is nil from '..client.name)
+  lsp.buf_request_all(current_buf, method, params, function(results)
+    if not results or next(results) == nil then
+      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil from ')
       return
+    end
+
+    local result = {}
+    for _, res in pairs(results) do
+      if res and next(res) ~= nil then
+        result = res.result
+      end
     end
 
     local uri = result[1].uri or result[1].targetUri
@@ -101,7 +103,7 @@ function def:preview_definition()
     })
     vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
     api.nvim_buf_set_var(0, 'lspsaga_def_preview', { self.winid, 1, config.max_preview_lines, 10 })
-  end, current_buf)
+  end)
 end
 
 function def:has_saga_def_preview()
