@@ -23,6 +23,7 @@ function def:preview_definition()
   local current_buf = api.nvim_get_current_buf()
   client.request(method, params, function(_, result)
     if not result or next(result) == nil then
+      vim.notify('[Lspsaga] response of request method ' .. method ..' is nil from '..client.name)
       return
     end
 
