@@ -24,7 +24,7 @@ local kind = {
   [8] = { 'Field', ' ', colors.teal },
   [9] = { 'Constructor', ' ', colors.blue },
   [10] = { 'Enum', '了', colors.green },
-  [11] = { 'Interface', '練', colors.orange },
+  [11] = { 'Interface', ' ', colors.orange },
   [12] = { 'Function', ' ', colors.violet },
   [13] = { 'Variable', ' ', colors.blue },
   [14] = { 'Constant', ' ', colors.cyan },
@@ -37,7 +37,7 @@ local kind = {
   [21] = { 'Null', ' ', colors.red },
   [22] = { 'EnumMember', ' ', colors.green },
   [23] = { 'Struct', ' ', colors.violet },
-  [24] = { 'Event', ' ', colors.violet },
+  [24] = { 'Event', ' ', colors.violet },
   [25] = { 'Operator', ' ', colors.green },
   [26] = { 'TypeParameter', ' ', colors.green },
   -- ccls
