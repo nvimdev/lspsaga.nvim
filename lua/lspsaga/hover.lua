@@ -108,8 +108,8 @@ local function open_floating_preview(contents, syntax, opts)
   -- soft wrapping
   api.nvim_win_set_option(floating_winnr, 'wrap', true)
   api.nvim_win_set_option(floating_winnr, 'showbreak', 'NONE')
-  api.nvim_win_set_option(floating_winnr,'breakindent', true)
-  api.nvim_win_set_option(floating_winnr,'breakindentopt','shift:2')
+  api.nvim_win_set_option(floating_winnr, 'breakindent', true)
+  api.nvim_win_set_option(floating_winnr, 'breakindentopt', 'shift:2')
 
   api.nvim_buf_set_keymap(
     floating_bufnr,

@@ -14,7 +14,7 @@ saga.config_values = {
     next = '<C-n>',
   },
   -- Error,Warn,Info,Hint
-  diagnostic_header = { ' ', ' ', ' ', 'ﴞ ' },
+  diagnostic_header = { ' ', ' ', ' ', ' ' },
   show_diagnostic_source = true,
   diagnostic_source_bracket = { '❴', '❵' },
   -- code action title icon
@@ -30,9 +30,9 @@ saga.config_values = {
   },
   max_preview_lines = 10,
   finder_icons = {
-    def = 'ﰳ  ',
-    imp = 'ﰳ  ',
-    ref = 'ﰳ  ',
+    def = ' ',
+    imp = ' ',
+    ref = ' ',
   },
   finder_request_timeout = 1500,
   finder_action_keys = {
