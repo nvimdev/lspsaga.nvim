@@ -756,8 +756,14 @@ end
 
 function Finder:quit_float_window(...)
   self:close_auto_preview_win()
-  if self.winid ~= 0 then
-    window.nvim_close_valid_window({ self.winid, self.titlebar_winid })
+  if self.winid and self.winid > 0 then
+    window.nvim_close_valid_window(self.winid)
+    self.winid = nil
+  end
+
+  if self.titlebar_winid and self.titlebar_winid > 0 then
+    api.nvim_win_close(self.titlebar_winid, true)
+    self.titlebar_winid = nil
   end
 
   local args = { ... }
