@@ -343,9 +343,11 @@ function Finder:render_finder_result()
     virt_lines_above = false,
   })
 
-  local quit_pre_id, finder_move_id, winleave_id
-  finder_move_id = api.nvim_create_autocmd('CursorMoved', {
-    group = saga_augroup,
+  self:set_cursor()
+
+  local finder_group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
+  api.nvim_create_autocmd('CursorMoved', {
+    group = finder_group,
     buffer = self.bufnr,
     callback = function()
       self:set_cursor()
@@ -353,31 +355,25 @@ function Finder:render_finder_result()
     end,
   })
 
-  quit_pre_id = api.nvim_create_autocmd('QuitPre', {
-    group = saga_augroup,
+  api.nvim_create_autocmd('QuitPre', {
+    group = finder_group,
     buffer = self.bufnr,
     callback = function()
       self:quit_float_window()
-      if finder_move_id then
-        api.nvim_del_autocmd(finder_move_id)
-        finder_move_id = nil
-      end
-
-      if quit_pre_id then
-        api.nvim_del_autocmd(quit_pre_id)
-        quit_pre_id = nil
+      if finder_group then
+        pcall(api.nvim_del_augroup_by_id, finder_group)
       end
     end,
   })
 
-  winleave_id = api.nvim_create_autocmd('WinLeave', {
+  api.nvim_create_autocmd('WinLeave', {
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
       self:close_auto_preview_win()
       api.nvim_win_close(0, true)
-      if winleave_id then
-        api.nvim_del_autocmd(winleave_id)
+      if finder_group then
+        pcall(api.nvim_del_augroup_by_id, finder_group)
       end
     end,
   })
