@@ -56,27 +56,27 @@ local function find_index_by_type(k)
   return nil
 end
 
+if next(custom_kind) ~= nil then
+  for k, conf in pairs(custom_kind) do
+    local index = find_index_by_type(k)
+    if not index then
+      vim.notify('Does not find this type in kind')
+    end
+
+    if type(conf) == 'string' then
+      kind[index][3] = conf
+    end
+
+    if type(conf) == 'table' then
+      kind[index][2] = conf[1]
+      kind[index][3] = conf[2]
+    end
+  end
+end
+
 local function gen_symbol_winbar_hi()
   local prefix = 'LspSagaWinbar'
   local winbar_sep = 'LspSagaWinbarSep'
-
-  if next(custom_kind) ~= nil then
-    for k, conf in pairs(custom_kind) do
-      local index = find_index_by_type(k)
-      if not index then
-        vim.notify('Does not find this type in kind')
-      end
-
-      if type(conf) == 'string' then
-        kind[index][3] = conf
-      end
-
-      if type(conf) == 'table' then
-        kind[index][2] = conf[1]
-        kind[index][3] = conf[2]
-      end
-    end
-  end
 
   for _, v in pairs(kind) do
     api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
