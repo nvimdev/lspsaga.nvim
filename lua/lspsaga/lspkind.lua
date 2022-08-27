@@ -56,20 +56,22 @@ local function find_index_by_type(k)
   return nil
 end
 
-if next(custom_kind) ~= nil then
-  for k, conf in pairs(custom_kind) do
-    local index = find_index_by_type(k)
-    if not index then
-      vim.notify('Does not find this type in kind')
-    end
+local function load_custom_kind()
+  if next(custom_kind) ~= nil then
+    for k, conf in pairs(custom_kind) do
+      local index = find_index_by_type(k)
+      if not index then
+        vim.notify('Does not find this type in kind')
+      end
 
-    if type(conf) == 'string' then
-      kind[index][3] = conf
-    end
+      if type(conf) == 'string' then
+        kind[index][3] = conf
+      end
 
-    if type(conf) == 'table' then
-      kind[index][2] = conf[1]
-      kind[index][3] = conf[2]
+      if type(conf) == 'table' then
+        kind[index][2] = conf[1]
+        kind[index][3] = conf[2]
+      end
     end
   end
 end
@@ -89,6 +91,10 @@ kind = setmetatable(kind, {
   __index = function(_, key)
     if key == 'gen_symbol_winbar_hi' then
       return gen_symbol_winbar_hi
+    end
+
+    if key == 'load_custom_kind' then
+      return load_custom_kind
     end
 
     if key == 'colors' then
