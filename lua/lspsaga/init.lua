@@ -25,6 +25,7 @@ saga.config_values = {
     enable = true,
     enable_in_insert = true,
     sign = true,
+    update_time = 150,
     sign_priority = 40,
     virtual_text = true,
   },

@@ -146,8 +146,9 @@ code_action_num_shortcut = true,
 -- same as nvim-lightbulb but async
 code_action_lightbulb = {
     enable = true,
-    sign = true,
     enable_in_insert = true,
+    sign = true,
+    update_time = 150,
     sign_priority = 20,
     virtual_text = true,
 },
