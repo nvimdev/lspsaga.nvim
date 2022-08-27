@@ -147,6 +147,7 @@ code_action_num_shortcut = true,
 code_action_lightbulb = {
     enable = true,
     enable_in_insert = true,
+    cache_code_action = true,
     sign = true,
     update_time = 150,
     sign_priority = 20,
@@ -316,6 +317,12 @@ symbol_in_winbar = {
 }
 ```
 </details>
+
+## Module Contact
+
+* Enable `symbol_in_winbar` will make render outline faset.
+* Enable `code_action_lightbulb` will make code action fast.
+
 
 ## Customize Appearance
 

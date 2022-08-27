@@ -140,7 +140,23 @@ function Action:get_clients(results, options)
   end
 end
 
+function Action:actions_in_cache()
+  if not config.code_action_lightbulb.enable then
+    return false
+  end
+
+  if self.action_tuples and next(self.action_tuples) ~= nil then
+    return true
+  end
+end
+
 function Action:code_action()
+  local in_cache = self:actions_in_cache()
+  if in_cache then
+    self:action_callback()
+    return
+  end
+
   self.bufnr = api.nvim_get_current_buf()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context = { diagnostics = diagnostics }
@@ -158,6 +174,12 @@ function Action:code_action()
 end
 
 function Action:range_code_action(context, start_pos, end_pos)
+  local in_cache = self:actions_in_cache()
+  if in_cache then
+    self:action_callback()
+    return
+  end
+
   self.bufnr = api.nvim_get_current_buf()
   vim.validate({ context = { context, 't', true } })
   context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr) }
