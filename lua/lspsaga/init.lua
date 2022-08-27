@@ -97,15 +97,17 @@ end
 
 function saga.init_lsp_saga(opts)
   extend_config(opts)
-  require('lspsaga.lspkind').load_custom_kind()
   local conf = saga.config_values
 
   if conf.code_action_lightbulb.enable then
     require('lspsaga.lightbulb').lb_autocmd()
   end
 
+  local kind = require('lspsaga.lspkind')
+  kind.load_custom_kind()
+
   if conf.symbol_in_winbar.enable or conf.symbol_in_winbar.in_custom then
-    require('lspsaga.lspkind').gen_symbol_winbar_hi()
+    kind.gen_symbol_winbar_hi()
     require('lspsaga.symbolwinbar').config_symbol_autocmd()
   end
 end
