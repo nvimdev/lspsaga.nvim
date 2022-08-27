@@ -3,6 +3,7 @@ local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local code_action_method = 'textDocument/codeAction'
 local saga_augroup = require('lspsaga').saga_augroup
+local codeaction = require('lspsaga.codeaction')
 local lb = {}
 
 local timer = uv.new_timer()
@@ -76,22 +77,23 @@ local function _update_sign(bufnr, line)
   end
 end
 
-local function render_action_virtual_text(bufnr, line, actions)
-  if next(actions) == nil then
+local function render_action_virtual_text(bufnr, line, has_actions)
+  if not has_actions then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(bufnr, nil)
     end
     if config.code_action_lightbulb.sign then
       _update_sign(bufnr, nil)
     end
-  else
-    if config.code_action_lightbulb.sign then
-      _update_sign(bufnr, line)
-    end
+    return
+  end
 
-    if config.code_action_lightbulb.virtual_text then
-      _update_virtual_text(bufnr, line)
-    end
+  if config.code_action_lightbulb.sign then
+    _update_sign(bufnr, line)
+  end
+
+  if config.code_action_lightbulb.virtual_text then
+    _update_virtual_text(bufnr, line)
   end
 end
 
@@ -106,13 +108,20 @@ local send_request = coroutine.create(function()
     params.context = context
     local line = params.range.start.line
     vim.lsp.buf_request_all(current_buf, code_action_method, params, function(results)
-      local actions = {}
+      local has_actions = false
       for _, res in pairs(results or {}) do
         if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
-          table.insert(actions, res.result)
+          has_actions = true
+          break
         end
       end
-      render_action_virtual_text(current_buf, line, actions)
+
+      if has_actions and config.code_action_lightbulb.cache_code_action then
+        codeaction.action_tuples = nil
+        codeaction:get_clients(results)
+      end
+
+      render_action_virtual_text(current_buf, line, has_actions)
     end)
     current_buf = coroutine.yield()
   end
