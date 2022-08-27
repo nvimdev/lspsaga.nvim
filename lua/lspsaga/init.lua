@@ -96,6 +96,7 @@ end
 
 function saga.init_lsp_saga(opts)
   extend_config(opts)
+  require('lspsaga.lspkind').load_custom_kind()
   local conf = saga.config_values
 
   if conf.code_action_lightbulb.enable then

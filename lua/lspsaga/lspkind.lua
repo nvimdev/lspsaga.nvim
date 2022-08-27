@@ -56,10 +56,7 @@ local function find_index_by_type(k)
   return nil
 end
 
-local function gen_symbol_winbar_hi()
-  local prefix = 'LspSagaWinbar'
-  local winbar_sep = 'LspSagaWinbarSep'
-
+local function load_custom_kind()
   if next(custom_kind) ~= nil then
     for k, conf in pairs(custom_kind) do
       local index = find_index_by_type(k)
@@ -77,6 +74,11 @@ local function gen_symbol_winbar_hi()
       end
     end
   end
+end
+
+local function gen_symbol_winbar_hi()
+  local prefix = 'LspSagaWinbar'
+  local winbar_sep = 'LspSagaWinbarSep'
 
   for _, v in pairs(kind) do
     api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
@@ -89,6 +91,10 @@ kind = setmetatable(kind, {
   __index = function(_, key)
     if key == 'gen_symbol_winbar_hi' then
       return gen_symbol_winbar_hi
+    end
+
+    if key == 'load_custom_kind' then
+      return load_custom_kind
     end
 
     if key == 'colors' then
