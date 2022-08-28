@@ -151,12 +151,6 @@ function Action:actions_in_cache()
 end
 
 function Action:code_action()
-  local in_cache = self:actions_in_cache()
-  if in_cache then
-    self:action_callback()
-    return
-  end
-
   self.bufnr = api.nvim_get_current_buf()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context = { diagnostics = diagnostics }
@@ -166,6 +160,12 @@ function Action:code_action()
     self.ctx = {}
   end
   self.ctx = { bufnr = self.bufnr, method = method, params = params }
+
+  local in_cache = self:actions_in_cache()
+  if in_cache then
+    self:action_callback()
+    return
+  end
 
   vim.lsp.buf_request_all(self.bufnr, method, params, function(results)
     self:get_clients(results)
