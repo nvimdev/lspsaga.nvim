@@ -358,7 +358,7 @@ function Finder:render_finder_result()
     group = finder_group,
     buffer = self.bufnr,
     callback = function()
-      self:quit_float_window()
+      self:quit_with_clear()
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
@@ -369,7 +369,7 @@ function Finder:render_finder_result()
     group = finder_group,
     buffer = self.bufnr,
     callback = function()
-      self:quit_float_window()
+      self:quit_with_clear()
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
@@ -380,7 +380,7 @@ function Finder:render_finder_result()
     group = finder_group,
     buffer = self.bufnr,
     callback = function()
-      self:quit_float_window()
+      self:quit_with_clear()
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
@@ -494,7 +494,7 @@ function Finder:apply_float_map()
   end
 
   local quit_func = function()
-    self:quit_float_window()
+    self:quit_with_clear()
   end
 
   local keymaps = {
@@ -737,14 +737,15 @@ function Finder:open_link(action_type)
     return
   end
 
-  self:quit_float_window(false)
+  local short_link = self.short_link
+  self:quit_float_window()
 
   -- if buffer not saved save it before jump
   if vim.bo.modified then
     vim.cmd('write')
   end
-  api.nvim_command(action[action_type] .. self.short_link[current_line].link)
-  fn.cursor(self.short_link[current_line].row, self.short_link[current_line].col)
+  api.nvim_command(action[action_type] .. short_link[current_line].link)
+  fn.cursor(short_link[current_line].row, short_link[current_line].col)
   self:clear_tmp_data()
 end
 
@@ -763,7 +764,7 @@ function Finder:scroll_in_preview(direction)
   api.nvim_win_set_var(0, 'saga_finder_preview', { pdata[1], current_win_lnum, last_lnum })
 end
 
-function Finder:quit_float_window(...)
+function Finder:quit_float_window()
   self:close_auto_preview_win()
   if self.winid and self.winid > 0 then
     window.nvim_close_valid_window(self.winid)
@@ -774,17 +775,6 @@ function Finder:quit_float_window(...)
     api.nvim_win_close(self.titlebar_winid, true)
     self.titlebar_winid = nil
   end
-
-  local args = { ... }
-  local clear = true
-
-  if #args > 0 then
-    clear = args[1]
-  end
-
-  if clear then
-    self:clear_tmp_data()
-  end
 end
 
 function Finder:clear_tmp_data()
@@ -793,6 +783,11 @@ function Finder:clear_tmp_data()
       self[key] = nil
     end
   end
+end
+
+function Finder:quit_with_clear()
+  self:quit_float_window()
+  self:clear_tmp_data()
 end
 
 return Finder
