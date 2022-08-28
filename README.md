@@ -163,6 +163,8 @@ finder_icons = {
 -- if your project big enough or your server very slow
 -- you may need to increase this value
 finder_request_timeout = 1500,
+-- set antoher colorscheme in preview window
+finder_preview_hl_ns = 0,
 finder_action_keys = {
     open = "o",
     vsplit = "s",

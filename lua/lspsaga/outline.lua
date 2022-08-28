@@ -263,7 +263,7 @@ local do_symbol_request = function()
   end, bufnr)
 end
 
-function ot:update_outline(symbols,refresh)
+function ot:update_outline(symbols, refresh)
   local current_buf = api.nvim_get_current_buf()
   local current_win = api.nvim_get_current_win()
   self[current_buf] = { ft = vim.bo.filetype }
@@ -438,7 +438,7 @@ function ot:render_outline(refresh)
     return
   end
 
-  self:update_outline(nil,refresh)
+  self:update_outline(nil, refresh)
 
   if refresh then
     for k, v in pairs(self) do

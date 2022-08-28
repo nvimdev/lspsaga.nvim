@@ -3,7 +3,6 @@ local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local scroll_in_win = require('lspsaga.action').scroll_in_win
-local saga_augroup = require('lspsaga').saga_augroup
 local path_sep = libs.path_sep
 local icons = config.finder_icons
 local insert = table.insert
@@ -377,7 +376,7 @@ function Finder:render_finder_result()
     end,
   })
 
-  api.nvim_create_autocmd('BufDelete',{
+  api.nvim_create_autocmd('BufDelete', {
     group = finder_group,
     buffer = self.bufnr,
     callback = function()
@@ -385,7 +384,7 @@ function Finder:render_finder_result()
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
-    end
+    end,
   })
 
   local virt_hi = 'FinderVirtText'
@@ -710,6 +709,10 @@ function Finder:auto_open_preview()
       api.nvim_buf_set_option(bufnr, 'buflisted', false)
       local last_lnum = #content > config.max_preview_lines and config.max_preview_lines or #content
       api.nvim_win_set_var(0, 'saga_finder_preview', { winid, 1, last_lnum })
+
+      if config.finder_preview_hl_ns > 0 then
+        api.nvim_win_set_hl_ns(winid, config.finder_preview_hl_ns)
+      end
     end, 5)
   end
 end
