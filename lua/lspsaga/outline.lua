@@ -263,7 +263,7 @@ local do_symbol_request = function()
   end, bufnr)
 end
 
-function ot:update_outline(symbols)
+function ot:update_outline(symbols,refresh)
   local current_buf = api.nvim_get_current_buf()
   local current_win = api.nvim_get_current_win()
   self[current_buf] = { ft = vim.bo.filetype }
@@ -300,7 +300,7 @@ function ot:update_outline(symbols)
     api.nvim_buf_add_highlight(self.winbuf, 0, hi, i - 1, 0, -1)
   end
 
-  if not outline_conf.auto_enter then
+  if not outline_conf.auto_enter or refresh then
     api.nvim_set_current_win(current_win)
     self.bufenter_id = api.nvim_create_autocmd('BufEnter', {
       group = saga_group,
@@ -318,7 +318,7 @@ function ot:update_outline(symbols)
   self[current_buf].in_render = true
 
   vim.keymap.set('n', outline_conf.jump_key, function()
-    ot:jump_to_line(current_buf)
+    self:jump_to_line(current_buf)
   end, {
     buffer = self.winbuf,
   })
@@ -438,7 +438,7 @@ function ot:render_outline(refresh)
     return
   end
 
-  self:update_outline()
+  self:update_outline(nil,refresh)
 
   if refresh then
     for k, v in pairs(self) do
