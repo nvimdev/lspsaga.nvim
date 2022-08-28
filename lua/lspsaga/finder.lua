@@ -367,7 +367,7 @@ function Finder:render_finder_result()
   })
 
   api.nvim_create_autocmd('WinLeave', {
-    group = saga_augroup,
+    group = finder_group,
     buffer = self.bufnr,
     callback = function()
       self:quit_float_window()
@@ -375,6 +375,17 @@ function Finder:render_finder_result()
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
     end,
+  })
+
+  api.nvim_create_autocmd('BufDelete',{
+    group = finder_group,
+    buffer = self.bufnr,
+    callback = function()
+      self:quit_float_window()
+      if finder_group then
+        pcall(api.nvim_del_augroup_by_id, finder_group)
+      end
+    end
   })
 
   local virt_hi = 'FinderVirtText'
