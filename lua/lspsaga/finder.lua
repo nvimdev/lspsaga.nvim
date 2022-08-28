@@ -370,8 +370,7 @@ function Finder:render_finder_result()
     group = saga_augroup,
     buffer = self.bufnr,
     callback = function()
-      self:close_auto_preview_win()
-      api.nvim_win_close(0, true)
+      self:quit_float_window()
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
