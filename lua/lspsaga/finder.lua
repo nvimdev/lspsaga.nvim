@@ -2,7 +2,6 @@ local window = require('lspsaga.window')
 local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
-local scroll_in_win = require('lspsaga.action').scroll_in_win
 local path_sep = libs.path_sep
 local icons = config.finder_icons
 local insert = table.insert
@@ -725,6 +724,11 @@ function Finder:auto_open_preview()
 end
 
 function Finder:close_auto_preview_win()
+  if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
+    api.nvim_buf_delete(self.preview_bufnr, { force = true })
+    self.preview_bufnr = nil
+  end
+
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
     self.preview_winid = nil
@@ -757,6 +761,11 @@ function Finder:open_link(action_type)
 end
 
 function Finder:quit_float_window()
+  if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
+    api.nvim_buf_delete(self.bufnr, { force = true })
+    self.bufnr = nil
+  end
+
   self:close_auto_preview_win()
   if self.winid and self.winid > 0 then
     window.nvim_close_valid_window(self.winid)
