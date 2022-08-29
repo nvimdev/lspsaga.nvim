@@ -234,6 +234,26 @@ function libs.get_client_by_cap(caps)
   return client
 end
 
+local function feedkeys(key)
+  local k = api.nvim_replace_termcodes(key, true, false, true)
+  api.nvim_feedkeys(k, 'x', false)
+end
+
+function libs.scroll_in_preview(bufnr, preview_winid)
+  local config = require('lspsaga.init').config_values
+  vim.keymap.set('n', config.scroll_in_preview.scroll_down, function()
+    api.nvim_win_call(preview_winid, function()
+      feedkeys('<C-d>')
+    end)
+  end, { buffer = bufnr })
+
+  vim.keymap.set('n', config.scroll_in_preview.scroll_up, function()
+    api.nvim_win_call(preview_winid, function()
+      feedkeys('<C-u>')
+    end)
+  end, { buffer = bufnr })
+end
+
 function libs.async(routine, ...)
   local f = coroutine.create(function(await, ...)
     routine(await, ...)

@@ -523,22 +523,6 @@ function Finder:apply_float_map()
     { 'n', action.vsplit, vsplit_func, opts },
     { 'n', action.split, split_func, opts },
     { 'n', action.tabe, tabe_func, opts },
-    {
-      'n',
-      action.scroll_down,
-      function()
-        self:scroll_in_preview(1)
-      end,
-      opts,
-    },
-    {
-      'n',
-      action.scroll_up,
-      function()
-        self:scroll_in_preview(-1)
-      end,
-      opts,
-    },
   }
 
   if type(action.open) == 'table' then
@@ -728,22 +712,22 @@ function Finder:auto_open_preview()
 
     vim.defer_fn(function()
       self:close_auto_preview_win()
-      local bufnr, winid = window.create_win_with_border(content_opts, opts)
-      api.nvim_buf_set_option(bufnr, 'buflisted', false)
-      local last_lnum = #content > config.max_preview_lines and config.max_preview_lines or #content
-      api.nvim_win_set_var(0, 'saga_finder_preview', { winid, 1, last_lnum })
+      self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
+      api.nvim_buf_set_option(self.preview_bufnr, 'buflisted', false)
+
+      libs.scroll_in_preview(self.bufnr, self.preview_winid)
 
       if config.finder_preview_hl_ns > 0 then
-        api.nvim_win_set_hl_ns(winid, config.finder_preview_hl_ns)
+        api.nvim_win_set_hl_ns(self.preview_winid, config.finder_preview_hl_ns)
       end
     end, 5)
   end
 end
 
 function Finder:close_auto_preview_win()
-  local has_var, pdata = pcall(api.nvim_win_get_var, 0, 'saga_finder_preview')
-  if has_var then
-    window.nvim_close_valid_window(pdata[1])
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
+    self.preview_winid = nil
   end
 end
 
@@ -770,21 +754,6 @@ function Finder:open_link(action_type)
   api.nvim_command(action[action_type] .. short_link[current_line].link)
   fn.cursor(short_link[current_line].row, short_link[current_line].col)
   self:clear_tmp_data()
-end
-
-function Finder:scroll_in_preview(direction)
-  local has_var, pdata = pcall(api.nvim_win_get_var, 0, 'saga_finder_preview')
-  if not has_var then
-    return
-  end
-  if not api.nvim_win_is_valid(pdata[1]) then
-    return
-  end
-
-  local current_win_lnum, last_lnum = pdata[2], pdata[3]
-  current_win_lnum =
-    scroll_in_win(pdata[1], direction, current_win_lnum, last_lnum, config.max_preview_lines)
-  api.nvim_win_set_var(0, 'saga_finder_preview', { pdata[1], current_win_lnum, last_lnum })
 end
 
 function Finder:quit_float_window()
