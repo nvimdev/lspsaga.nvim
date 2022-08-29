@@ -230,6 +230,10 @@ function M.get_max_content_length(contents)
 end
 
 function M.nvim_close_valid_window(winid)
+  if winid == nil then
+    return
+  end
+
   local close_win = function(win_id)
     if win_id == 0 then
       return

@@ -93,39 +93,27 @@ function def:preview_definition()
 
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
 
-    api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI', 'BufHidden', 'BufLeave' }, {
-      group = saga_augroup,
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden', 'BufLeave' }, {
       buffer = current_buf,
       once = true,
       callback = function()
-        window.nvim_close_valid_window(self.winid)
+        if self.winid ~= nil then
+          window.nvim_close_valid_window(self.winid)
+        end
+        self:clear_tmp_data()
       end,
     })
     vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
-    api.nvim_buf_set_var(0, 'lspsaga_def_preview', { self.winid, 1, config.max_preview_lines, 10 })
+    libs.scroll_in_preview(current_buf, self.winid)
   end)
 end
 
-function def:has_saga_def_preview()
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    return true
+function def:clear_tmp_data()
+  for i, data in pairs(self) do
+    if type(data) ~= 'function' then
+      self[i] = nil
+    end
   end
-  return false
-end
-
-function def:scroll_in_def_preview(direction)
-  if not self:has_saga_def_preview() then
-    return
-  end
-  local pdata = api.nvim_buf_get_var(0, 'lspsaga_def_preview')
-
-  local current_win_lnum =
-    scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
-  api.nvim_buf_set_var(
-    0,
-    'lspsaga_def_preview',
-    { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] }
-  )
 end
 
 return def
