@@ -150,13 +150,17 @@ function Finder:do_request(params, method)
   if method == methods[2] then
     params.context = { includeDeclaration = false }
   end
-  self.client.request(method, params, function(_, result)
-    if not result then
-      result = {}
+  lsp.buf_request_all(self.current_buf, method, params, function(results)
+    local result = {}
+    for _, res in pairs(results or {}) do
+      if res.result then
+        libs.merge_table(result, res.result)
+      end
     end
+
     self.request_result[method] = result
     self.request_status[method] = true
-  end, self.current_buf)
+  end)
 end
 
 function Finder:get_file_icon()
@@ -210,9 +214,15 @@ function Finder:render_finder()
     self:get_uri_scope(method, start_lnum, lnum - 1)
   end
 
-  for _, method in pairs(methods) do
+  for i, method in pairs(methods) do
     local tbl = self:create_finder_contents(self.request_result[method], method)
-    generate_contents(tbl, method)
+    if i ~= 2 then
+      generate_contents(tbl, method)
+    end
+
+    if i == 2 and not tbl[1][1]:find('0') then
+      generate_contents(tbl, method)
+    end
   end
   self:render_finder_result()
 end
@@ -413,34 +423,36 @@ function Finder:render_finder_result()
     })
   end
 
-  api.nvim_buf_set_extmark(0, ns_id, self.imp_scope[1] + 1, 0, {
-    virt_text = { { '│', virt_hi } },
-    virt_text_pos = 'overlay',
-  })
+  if self.imp_scope then
+    api.nvim_buf_set_extmark(0, ns_id, self.imp_scope[1] + 1, 0, {
+      virt_text = { { '│', virt_hi } },
+      virt_text_pos = 'overlay',
+    })
 
-  for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
-    local virt_texts = {}
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
+    for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
+      local virt_texts = {}
+      api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
+      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
 
-    if i == self.imp_scope[2] - 1 then
-      insert(virt_texts, { '└', virt_hi })
-      insert(virt_texts, { '───', virt_hi })
-    else
-      insert(virt_texts, { '├', virt_hi })
-      insert(virt_texts, { '───', virt_hi })
+      if i == self.imp_scope[2] - 1 then
+        insert(virt_texts, { '└', virt_hi })
+        insert(virt_texts, { '───', virt_hi })
+      else
+        insert(virt_texts, { '├', virt_hi })
+        insert(virt_texts, { '───', virt_hi })
+      end
+
+      api.nvim_buf_set_extmark(0, ns_id, i, 0, {
+        virt_text = virt_texts,
+        virt_text_pos = 'overlay',
+      })
     end
 
-    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
-      virt_text = virt_texts,
+    api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
+      virt_text = { { '│', virt_hi } },
       virt_text_pos = 'overlay',
     })
   end
-
-  api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
-    virt_text = { { '│', virt_hi } },
-    virt_text_pos = 'overlay',
-  })
 
   for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
     local virt_texts = {}
@@ -548,23 +560,25 @@ function Finder:lsp_finder_highlight()
   api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
 
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #icons.imp)
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'Implements',
-    self.imp_scope[1],
-    #icons.imp,
-    #icons.imp + imp_len
-  )
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'ImplementsCount',
-    self.imp_scope[1],
-    #icons.imp + imp_len,
-    -1
-  )
+  if self.imp_scope then
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #icons.imp)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      -1,
+      'Implements',
+      self.imp_scope[1],
+      #icons.imp,
+      #icons.imp + imp_len
+    )
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      -1,
+      'ImplementsCount',
+      self.imp_scope[1],
+      #icons.imp + imp_len,
+      -1
+    )
+  end
 
   api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', self.ref_scope[1], 0, #icons.ref)
   api.nvim_buf_add_highlight(
@@ -593,21 +607,22 @@ function Finder:set_cursor()
 
   local first_def_uri_lnum = self.def_scope[1] + 3
   local last_def_uri_lnum = self.def_scope[2]
-  local first_imp_uri_lnum = self.imp_scope[1] + 3
-  local last_imp_uri_lnum = self.imp_scope[2]
   local first_ref_uri_lnum = self.ref_scope[1] + 3
   local last_ref_uri_lnum = self.ref_scope[2]
+
+  local first_imp_uri_lnum = self.imp_scope and self.imp_scope[1] + 3 or -2
+  local last_imp_uri_lnum = self.imp_scope and self.imp_scope[2] or -2
 
   if current_line == 1 then
     fn.cursor(first_def_uri_lnum, column)
   elseif current_line == last_def_uri_lnum + 1 then
-    fn.cursor(first_imp_uri_lnum, column)
+    fn.cursor(first_imp_uri_lnum > 0 and first_imp_uri_lnum or first_ref_uri_lnum, column)
   elseif current_line == last_imp_uri_lnum + 1 then
     fn.cursor(first_ref_uri_lnum, column)
   elseif current_line == last_ref_uri_lnum + 1 then
     fn.cursor(first_def_uri_lnum, column)
   elseif current_line == first_ref_uri_lnum - 1 then
-    fn.cursor(last_imp_uri_lnum, column)
+    fn.cursor(last_imp_uri_lnum > 0 and last_imp_uri_lnum or last_def_uri_lnum, column)
   elseif current_line == first_imp_uri_lnum - 1 then
     fn.cursor(last_def_uri_lnum, column)
   elseif current_line == first_def_uri_lnum - 1 then
