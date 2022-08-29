@@ -28,8 +28,7 @@ function Finder:lsp_finder()
     return
   end
 
-  local caps = { 'referencesProvider', 'definitionProvider' }
-  self.client = libs.get_client_by_cap(caps)
+  self.client = libs.get_client_by_cap('implementationProvider')
 
   -- push a tag stack
   local pos = api.nvim_win_get_cursor(0)
@@ -42,8 +41,14 @@ function Finder:lsp_finder()
 
   self.request_result = {}
   local params = lsp.util.make_position_params()
-  for _, method in pairs(methods) do
-    self:do_request(params, method)
+  for i, method in pairs(methods) do
+    if i == 2 and self.client then
+      self:do_request(params, method)
+    end
+
+    if i ~= 2 then
+      self:do_request(params, method)
+    end
   end
 
   self:get_file_icon()
@@ -96,10 +101,13 @@ function Finder:loading_bar()
   }
   api.nvim_buf_set_option(spin_buf, 'modifiable', true)
 
-  self.request_status = {
-    [methods[1]] = false,
-    [methods[2]] = false,
-  }
+  self.request_status = {}
+
+  -- if server not support textDocument/implementation
+  if not self.client then
+    self.request_status[methods[2]] = true
+    self.request_result[methods[2]] = {}
+  end
 
   local spin_frame = 1
   local spin_timer = uv.new_timer()
