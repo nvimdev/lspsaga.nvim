@@ -1,3 +1,4 @@
+local uv = vim.loop
 local api, lsp, util = vim.api, vim.lsp, vim.lsp.util
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
@@ -114,16 +115,6 @@ function hover:render_hover_doc()
         break
       end
     end
-    -- local bufnr = api.nvim_create_buf(true,false)
-    -- api.nvim_open_win(bufnr,false,{
-    --   border = 'single',
-    --   relative = 'cursor',
-    --   row = 2,
-    --   col =2,
-    --   width = 2,
-    --   height = 2,
-    --   style= 'minimal'
-    -- })
     hover:handler(result)
   end)
 end

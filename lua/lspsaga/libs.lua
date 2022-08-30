@@ -241,17 +241,19 @@ end
 
 function libs.scroll_in_preview(bufnr, preview_winid)
   local config = require('lspsaga.init').config_values
-  vim.keymap.set('n', config.scroll_in_preview.scroll_down, function()
-    api.nvim_win_call(preview_winid, function()
-      feedkeys('<C-d>')
-    end)
-  end, { buffer = bufnr })
+  if preview_winid and api.nvim_win_is_valid(preview_winid) then
+    vim.keymap.set('n', config.scroll_in_preview.scroll_down, function()
+      api.nvim_win_call(preview_winid, function()
+        feedkeys('<C-d>')
+      end)
+    end, { buffer = bufnr })
 
-  vim.keymap.set('n', config.scroll_in_preview.scroll_up, function()
-    api.nvim_win_call(preview_winid, function()
-      feedkeys('<C-u>')
-    end)
-  end, { buffer = bufnr })
+    vim.keymap.set('n', config.scroll_in_preview.scroll_up, function()
+      api.nvim_win_call(preview_winid, function()
+        feedkeys('<C-u>')
+      end)
+    end, { buffer = bufnr })
+  end
 end
 
 function libs.async(routine, ...)
