@@ -175,11 +175,12 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_buf_set_lines(bufnr, 0, -1, true, content)
   end
 
-  api.nvim_buf_set_option(bufnr, 'modifiable', false)
-  api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
+  if api.nvim_buf_is_valid(bufnr) then
+    api.nvim_buf_set_option(bufnr, 'modifiable', false)
+    api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
+  end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
-
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
   api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
 
