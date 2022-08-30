@@ -174,19 +174,17 @@ function M.create_win_with_border(content_opts, opts)
   if not vim.tbl_isempty(content) then
     api.nvim_buf_set_lines(bufnr, 0, -1, true, content)
   end
-  api.nvim_buf_set_option(bufnr, 'modifiable', false)
-  api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
-  api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
 
-  opts.noautocmd = true
-  local winid = api.nvim_open_win(bufnr, enter, opts)
-  if filetype == 'markdown' then
-    api.nvim_win_set_option(winid, 'conceallevel', 2)
+  if api.nvim_buf_is_valid(bufnr) then
+    api.nvim_buf_set_option(bufnr, 'modifiable', false)
+    api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
   end
 
+  local winid = api.nvim_open_win(bufnr, enter, opts)
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
   api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
-  api.nvim_win_set_option(winid, 'foldlevel', 100)
+
+  -- disable winbar in some saga's floatwindow
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
   end
@@ -230,8 +228,12 @@ function M.get_max_content_length(contents)
 end
 
 function M.nvim_close_valid_window(winid)
+  if winid == nil then
+    return
+  end
+
   local close_win = function(win_id)
-    if win_id == 0 then
+    if not winid or win_id == 0 then
       return
     end
     if vim.api.nvim_win_is_valid(win_id) then

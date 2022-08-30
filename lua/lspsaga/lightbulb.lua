@@ -2,7 +2,6 @@ local api, uv = vim.api, vim.loop
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local code_action_method = 'textDocument/codeAction'
-local saga_augroup = require('lspsaga').saga_augroup
 local codeaction = require('lspsaga.codeaction')
 local lb = {}
 
@@ -45,7 +44,7 @@ local function _update_virtual_text(bufnr, line)
 
   if line then
     local icon_with_indent = '  ' .. config.code_action_icon
-    api.nvim_buf_set_extmark(bufnr, namespace, line, -1, {
+    pcall(api.nvim_buf_set_extmark, bufnr, namespace, line, -1, {
       virt_text = { { icon_with_indent, 'LspSagaLightBulb' } },
       virt_text_pos = 'overlay',
       hl_mode = 'combine',
@@ -154,25 +153,30 @@ function lb.action_lightbulb()
   end)
 end
 
+local buf_auid = {}
+
 function lb.lb_autocmd()
+  local lightbulb_group = api.nvim_create_augroup('LspSagaLightBulb', { clear = true })
   if vim.fn.has('nvim-0.8') == 1 then
     api.nvim_create_autocmd('LspAttach', {
-      group = saga_augroup,
+      group = lightbulb_group,
       callback = function()
         local current_buf = api.nvim_get_current_buf()
-        local id = api.nvim_create_autocmd({ 'CursorMoved' }, {
-          group = saga_augroup,
+        local group = api.nvim_create_augroup('LspSagaLightBulb' .. tostring(current_buf), {})
+        api.nvim_create_autocmd({ 'CursorMoved' }, {
+          group = group,
           buffer = current_buf,
           callback = lb.action_lightbulb,
         })
 
-        local delete_id
-        delete_id = api.nvim_create_autocmd('BufDelete', {
-          group = saga_augroup,
-          buffer = current_buf,
-          callback = function()
-            pcall(api.nvim_del_autocmd, id)
-            pcall(api.nvim_del_autocmd, delete_id)
+        buf_auid[current_buf] = group
+
+        api.nvim_buf_attach(current_buf, false, {
+          on_detach = function()
+            if buf_auid[current_buf] then
+              pcall(api.nvim_del_augroup_by_id, buf_auid[current_buf])
+              rawset(buf_auid, current_buf, nil)
+            end
           end,
         })
       end,
@@ -183,11 +187,11 @@ function lb.lb_autocmd()
   ---@deprecated when 0.8 release remove this
   local fts = libs.get_config_lsp_filetypes()
   api.nvim_create_autocmd('FileType', {
-    group = saga_augroup,
+    group = lightbulb_group,
     pattern = fts,
     callback = function()
       api.nvim_create_autocmd({ 'CursorMoved' }, {
-        group = saga_augroup,
+        group = lightbulb_group,
         callback = lb.action_lightbulb,
       })
     end,

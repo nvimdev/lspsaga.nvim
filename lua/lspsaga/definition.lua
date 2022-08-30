@@ -1,9 +1,7 @@
 local libs, window = require('lspsaga.libs'), require('lspsaga.window')
 local config = require('lspsaga').config_values
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
-local scroll_in_win = require('lspsaga.action').scroll_in_win
 local def = {}
-local saga_augroup = require('lspsaga').saga_augroup
 local path_sep = libs.path_sep
 local method = 'textDocument/definition'
 
@@ -68,64 +66,82 @@ function def:preview_definition()
       range['end'].line + 1 + config.max_preview_lines,
       false
     )
-    content = vim.list_extend(
-      { config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' },
-      content
-    )
+
+    local prompt = config.definition_preview_icon .. 'File: '
+    content = vim.list_extend({ prompt .. short_name .. ' [Ctrl + c] to quit', '' }, content)
 
     local opts = {
       relative = 'cursor',
       style = 'minimal',
     }
     local WIN_WIDTH = api.nvim_get_option('columns')
-    local max_width = math.floor(WIN_WIDTH * 0.5)
+    local max_width = math.floor(WIN_WIDTH * 0.6)
+    local max_height = math.floor(vim.o.lines * 0.6)
     local width, _ = vim.lsp.util._make_floating_popup_size(content, opts)
 
     if width > max_width then
       opts.width = max_width
     end
 
+    if #content > max_height then
+      opts.height = max_height
+    end
+
     local content_opts = {
       contents = content,
       filetype = filetype,
+      enter = true,
       highlight = 'LspSagaDefPreviewBorder',
     }
 
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+    --set the initail cursor pos
+    api.nvim_win_set_cursor(self.winid, { 3, 1 })
 
-    api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI', 'BufHidden', 'BufLeave' }, {
-      group = saga_augroup,
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
       buffer = current_buf,
       once = true,
       callback = function()
-        window.nvim_close_valid_window(self.winid)
+        if self.winid ~= nil then
+          window.nvim_close_valid_window(self.winid)
+        end
+        self:clear_tmp_data()
       end,
+      desc = 'Auto close lspsaga definition preview window',
     })
-    vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
-    api.nvim_buf_set_var(0, 'lspsaga_def_preview', { self.winid, 1, config.max_preview_lines, 10 })
+
+    vim.keymap.set('n', '<C-c>', function()
+      if self.winid and api.nvim_win_is_valid(self.winid) then
+        api.nvim_win_close(self.winid, true)
+      end
+    end, { buffer = self.bufnr })
+
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewIcon', 0, 0, #prompt - 1)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      0,
+      'DefinitionPreviewFile',
+      0,
+      #prompt + 1,
+      #prompt + #short_name
+    )
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      -1,
+      'DefinitionPreviewTip',
+      0,
+      #prompt + #short_name + 2,
+      -1
+    )
   end)
 end
 
-function def:has_saga_def_preview()
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    return true
+function def:clear_tmp_data()
+  for i, data in pairs(self) do
+    if type(data) ~= 'function' then
+      self[i] = nil
+    end
   end
-  return false
-end
-
-function def:scroll_in_def_preview(direction)
-  if not self:has_saga_def_preview() then
-    return
-  end
-  local pdata = api.nvim_buf_get_var(0, 'lspsaga_def_preview')
-
-  local current_win_lnum =
-    scroll_in_win(pdata[1], direction, pdata[2], config.max_preview_lines, pdata[4])
-  api.nvim_buf_set_var(
-    0,
-    'lspsaga_def_preview',
-    { pdata[1], current_win_lnum, config.max_preview_lines, pdata[4] }
-  )
 end
 
 return def

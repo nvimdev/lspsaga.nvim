@@ -98,15 +98,13 @@ keymap("n","<leader>o", "<cmd>LSoutlineToggle<CR>",{ silent = true })
 -- Hover Doc
 keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
 
-local action = require("lspsaga.action")
--- scroll in hover doc or  definition preview window
-vim.keymap.set("n", "<C-f>", function()
-    action.smart_scroll_with_saga(1)
-end, { silent = true })
--- scroll in hover doc or  definition preview window
-vim.keymap.set("n", "<C-b>", function()
-    action.smart_scroll_with_saga(-1)
-end, { silent = true })
+-- Float terminal
+keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm<CR>", { silent = true })
+-- if you want pass somc cli command into terminal you can do like this
+-- open lazygit in lspsaga float terminal
+keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm lazygit<CR>", { silent = true })
+-- close floaterm
+keymap("t", "<A-d>", [[<C-\><C-n><cmd>Lspsaga close_floaterm<CR>]], { silent = true })
 ```
 </details>
 
@@ -448,26 +446,6 @@ src="https://user-images.githubusercontent.com/41671631/179864315-3ec84106-bcd4-
 
 <details>
 <summary>Float terminal</summary>
-
-**Lua**
-
-```lua
--- float terminal also you can pass the cli command in open_float_terminal function
-local term = require("lspsaga.floaterm")
-
--- float terminal also you can pass the cli command in open_float_terminal function
-vim.keymap.set("n", "<A-d>", function()
-    term.open_float_terminal("custom_cli_command")
-end, { silent = true })
-vim.keymap.set("t", "<A-d>", function()
-    vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true))
-    term.close_float_terminal()
-end, { silent = true })
-
--- or use command
-vim.keymap.set("n", "<A-d>", "<cmd>Lspsaga open_floaterm custom_cli_command<CR>", { silent = true })
-vim.keymap.set("t", "<A-d>", "<C-\\><C-n><cmd>Lspsaga close_floaterm<CR>", { silent = true })
-```
 
 <div align='center'>
 <img

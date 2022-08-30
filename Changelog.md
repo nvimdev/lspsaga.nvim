@@ -1,4 +1,24 @@
-## Version 2
+## Version 0.2.1 -- 2022-08-30
+
+### New
+
+- improve scroll in preview remove old implement of preview
+- add new option  `scroll_in_preview` use default scroll keymap to scroll `hover` `finder preview`
+- use `CursorMoved` with timer in LightBulb instead of using `CursorHold` `CursorHoldI`
+- new option `update_time` in code_action_lightbulb
+- auto jump into the `preview_definition` window
+- `floaterm` can save the state.
+
+### Bug fix
+
+- fix `definition_preview` and `hover` window not closed when `CursorMoved`
+- fix `finder` works not well when server has multiple servers
+
+### Remove
+
+- remove function `action.smart_scroll_with_saga(1)` no need this function
+
+## Version 0.2
 
 ### BreakChange
 

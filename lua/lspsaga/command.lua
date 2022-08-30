@@ -1,9 +1,7 @@
 local command = {}
 local lsprename = require('lspsaga.rename')
-local lsphover = require('lspsaga.hover')
 local diagnostic = require('lspsaga.diagnostic')
 local codeaction = require('lspsaga.codeaction')
-local floaterm = require('lspsaga.floaterm')
 local finder = require('lspsaga.finder')
 
 local subcommands = {
@@ -16,7 +14,9 @@ local subcommands = {
   rename = function()
     lsprename:lsp_rename()
   end,
-  hover_doc = lsphover.render_hover_doc,
+  hover_doc = function()
+    require('lspsaga.hover'):render_hover_doc()
+  end,
   show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
   show_line_diagnostics = diagnostic.show_line_diagnostics,
   diagnostic_jump_next = diagnostic.goto_next,
@@ -27,8 +27,12 @@ local subcommands = {
   range_code_action = function()
     codeaction:range_code_action()
   end,
-  open_floaterm = floaterm.open_float_terminal,
-  close_floaterm = floaterm.close_float_terminal,
+  open_floaterm = function(cmd)
+    require('lspsaga.floaterm'):open_float_terminal(cmd)
+  end,
+  close_floaterm = function()
+    require('lspsaga.floaterm'):close_float_terminal()
+  end,
 }
 
 function command.command_list()

@@ -30,7 +30,11 @@ saga.config_values = {
     sign_priority = 40,
     virtual_text = true,
   },
-  max_preview_lines = 10,
+  max_preview_lines = 40,
+  scroll_in_preview = {
+    scroll_down = '<C-f>',
+    scroll_up = '<C-b>',
+  },
   finder_icons = {
     def = ' ',
     imp = ' ',
@@ -45,8 +49,6 @@ saga.config_values = {
     split = 'i',
     tabe = 't',
     quit = 'q',
-    scroll_down = '<C-f>',
-    scroll_up = '<C-b>',
   },
   code_action_keys = {
     quit = 'q',
@@ -54,7 +56,7 @@ saga.config_values = {
   },
   rename_action_quit = '<C-c>',
   rename_in_select = true,
-  definition_preview_icon = '  ',
+  definition_preview_icon = ' ',
   -- winbar must nightly
   symbol_in_winbar = {
     in_custom = false,

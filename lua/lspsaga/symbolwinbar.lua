@@ -1,6 +1,5 @@
 local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config_values.symbol_in_winbar
-local saga_group = require('lspsaga').saga_augroup
 local libs = require('lspsaga.libs')
 local symbar = {
   symbol_cache = {},
@@ -211,6 +210,8 @@ function symbar:clear_cache()
   end
 end
 
+local symbol_buf_ids = {}
+
 local function symbol_events()
   if not libs.check_lsp_active(false) then
     return
@@ -230,15 +231,19 @@ local function symbol_events()
 
   update_symbols(true)
 
-  local moved_id = api.nvim_create_autocmd('CursorMoved', {
-    group = saga_group,
+  local symbol_group =
+    api.nvim_create_augroup('LspsagaSymbol' .. tostring(current_buf), { clear = true })
+  symbol_buf_ids[current_buf] = symbol_group
+
+  api.nvim_create_autocmd('CursorMoved', {
+    group = symbol_group,
     buffer = current_buf,
     callback = update_symbols,
     desc = 'Lspsaga symbols',
   })
 
-  local update_id = api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
-    group = saga_group,
+  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+    group = symbol_group,
     buffer = current_buf,
     callback = function()
       if config.in_custom then
@@ -250,23 +255,19 @@ local function symbol_events()
     desc = 'Lspsaga update symbols',
   })
 
-  local delete_id
-  delete_id = api.nvim_create_autocmd('BufDelete', {
-    group = saga_group,
-    buffer = current_buf,
-    callback = function()
-      symbar:clear_cache()
-      pcall(api.nvim_del_autocmd, moved_id)
-      pcall(api.nvim_del_autocmd, update_id)
-      pcall(api.nvim_del_autocmd, delete_id)
+  api.nvim_buf_attach(current_buf, false, {
+    on_detach = function()
+      if symbol_buf_ids[current_buf] then
+        pcall(api.nvim_del_augroup_by_id, symbol_buf_ids[current_buf])
+        rawset(symbol_buf_ids, current_buf, nil)
+      end
     end,
-    desc = 'Lspsaga clear document symbol cache',
   })
 end
 
 function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
-    group = saga_group,
+    group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = symbol_events,
     desc = 'Lspsaga get and show symbols',
   })

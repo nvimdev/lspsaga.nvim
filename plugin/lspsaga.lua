@@ -1,5 +1,5 @@
 local api = vim.api
-vim.g.lspsaga_version = '0.2.0'
+vim.g.lspsaga_version = '0.2.1'
 
 local highlights = {
   -- code action
@@ -29,7 +29,9 @@ local highlights = {
   FinderSpinner = { fg = '#b33076', bold = true },
   -- definition
   LspSagaDefPreviewBorder = { fg = '#b3deef' },
-  DefinitionPreviewTitle = { link = 'Title' },
+  DefinitionPreviewIcon = { link = 'Title' },
+  DefinitionPreviewFile = { link = 'Define' },
+  DefinitionPreviewTip = { link = 'Comment' },
   -- hover
   LspSagaHoverBorder = { fg = '#f7bb3b' },
   LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder' },
@@ -88,9 +90,3 @@ end, {
 api.nvim_create_user_command('LSoutlineToggle', function()
   require('lspsaga.outline'):render_outline()
 end, {})
-
-api.nvim_create_user_command('LspsagaFloaterm', function(args)
-  require('lspsaga.floaterm').open_float_terminal(args.args)
-end, {
-  nargs = '+',
-})
