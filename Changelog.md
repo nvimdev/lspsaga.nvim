@@ -3,7 +3,7 @@
 ### New
 
 - improve scroll in preview remove old implement of preview
-- add new option  `scroll_in_preview` use default scroll keymap to scroll
+- add new option  `scroll_in_preview` use default scroll keymap to scroll `hover` `finder preview`
 - use `CursorMoved` with timer in LightBulb instead of using `CursorHold` `CursorHoldI`
 - new option `update_time` in code_action_lightbulb
 - auto jump into the `preview_definition` window
