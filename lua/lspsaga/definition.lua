@@ -66,10 +66,9 @@ function def:preview_definition()
       range['end'].line + 1 + config.max_preview_lines,
       false
     )
-    content = vim.list_extend(
-      { config.definition_preview_icon .. 'Definition Preview: ' .. short_name, '' },
-      content
-    )
+
+    local prompt = config.definition_preview_icon .. 'File: '
+    content = vim.list_extend({ prompt .. short_name .. ' [Ctrl + c] to quit', '' }, content)
 
     local opts = {
       relative = 'cursor',
@@ -91,12 +90,15 @@ function def:preview_definition()
     local content_opts = {
       contents = content,
       filetype = filetype,
+      enter = true,
       highlight = 'LspSagaDefPreviewBorder',
     }
 
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+    --set the initail cursor pos
+    api.nvim_win_set_cursor(self.winid, { 3, 1 })
 
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden', 'BufLeave' }, {
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
       buffer = current_buf,
       once = true,
       callback = function()
@@ -105,9 +107,32 @@ function def:preview_definition()
         end
         self:clear_tmp_data()
       end,
+      desc = 'Auto close lspsaga definition preview window',
     })
-    vim.api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewTitle', 0, 0, -1)
-    libs.scroll_in_preview(current_buf, self.winid)
+
+    vim.keymap.set('n', '<C-c>', function()
+      if self.winid and api.nvim_win_is_valid(self.winid) then
+        api.nvim_win_close(self.winid, true)
+      end
+    end, { buffer = self.bufnr })
+
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewIcon', 0, 0, #prompt - 1)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      0,
+      'DefinitionPreviewFile',
+      0,
+      #prompt + 1,
+      #prompt + #short_name
+    )
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      -1,
+      'DefinitionPreviewTip',
+      0,
+      #prompt + #short_name + 2,
+      -1
+    )
   end)
 end
 
@@ -117,16 +142,6 @@ function def:clear_tmp_data()
       self[i] = nil
     end
   end
-end
-
-function def:render_definition_preview()
-  -- press twice jump into
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    api.nvim_set_current_win(self.winid)
-    return
-  end
-
-  self:preview_definition()
 end
 
 return def

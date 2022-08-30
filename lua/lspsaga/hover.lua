@@ -17,13 +17,13 @@ function hover:open_floating_preview(contents, opts)
 
   local bufnr = api.nvim_get_current_buf()
 
-  local floating_bufnr = api.nvim_create_buf(false, true)
+  self.preview_bufnr = api.nvim_create_buf(false, true)
 
   -- Clean up input: trim empty lines from the end, pad
   contents = lsp.util._trim(contents, opts)
 
   -- applies the syntax and sets the lines to the buffer
-  contents = lsp.util.stylize_markdown(floating_bufnr, contents, opts)
+  contents = lsp.util.stylize_markdown(self.preview_bufnr, contents, opts)
 
   -- Compute size of float needed to show (wrapped) lines
   if opts.wrap then
@@ -48,10 +48,11 @@ function hover:open_floating_preview(contents, opts)
   local contents_opt = {
     contents = stripped,
     highlight = 'LspSagaHoverBorder',
-    bufnr = floating_bufnr,
+    bufnr = self.preview_bufnr,
   }
+  float_option.focusable = false
 
-  self.preview_bufnr, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
+  _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
 
   api.nvim_win_set_option(self.preview_winid, 'conceallevel', 2)
   api.nvim_win_set_option(self.preview_winid, 'concealcursor', 'n')
@@ -60,23 +61,23 @@ function hover:open_floating_preview(contents, opts)
   api.nvim_win_set_option(self.preview_winid, 'wrap', false)
 
   api.nvim_buf_set_keymap(
-    floating_bufnr,
+    self.preview_bufnr,
     'n',
     'q',
     '<cmd>bdelete<cr>',
     { silent = true, noremap = true, nowait = true }
   )
 
-  libs.close_preview_autocmd(bufnr, self.preview_winid, opts.close_events)
-  api.nvim_create_autocmd(opts.close_events, {
+  api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
     buffer = bufnr,
     once = true,
     callback = function()
-      if self.preview_winid and api.nvim_win_is_valid(self.preview_bufnr) then
+      if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
         api.nvim_win_close(self.preview_winid, true)
         self.preview_winid = nil
       end
     end,
+    desc = '[Lspsaga] Auto close hover window',
   })
 end
 
@@ -112,6 +113,7 @@ function hover.render_hover_doc()
     for _, res in pairs(results) do
       if res and res.result then
         result = res.result
+        break
       end
     end
     hover:handler(result)

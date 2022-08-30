@@ -7,6 +7,11 @@
 - use `CursorMoved` with timer in LightBulb instead of using `CursorHold` `CursorHoldI`
 - new option `update_time` in code_action_lightbulb
 
+### Bug fix
+
+- fix `definition_preview` and `hover` window not closed when `CursorMoved`
+- fix `finder` works not well when server has multiple servers
+
 ### Remove
 
 - remove function `action.smart_scroll_with_saga(1)` no need this function
