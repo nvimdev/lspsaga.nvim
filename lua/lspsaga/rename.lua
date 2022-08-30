@@ -35,7 +35,9 @@ function rename:apply_action_keys()
 
   for i, mode in pairs(modes) do
     vim.keymap.set(mode, quit_key, function()
-      self:close_rename_win()
+      if vim.fn.mode() == 'n' or quit_key == '<C-c>' then
+        self:close_rename_win()
+      end
     end, { buffer = self.bufnr })
 
     if i ~= 3 then
