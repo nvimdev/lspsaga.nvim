@@ -11,7 +11,7 @@ local subcommands = {
     finder:lsp_finder()
   end,
   preview_definition = function()
-    require('lspsaga.definition'):preview_definition()
+    require('lspsaga.definition'):render_definition_preview()
   end,
   rename = function()
     lsprename:lsp_rename()

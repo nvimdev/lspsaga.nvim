@@ -1,9 +1,7 @@
 local libs, window = require('lspsaga.libs'), require('lspsaga.window')
 local config = require('lspsaga').config_values
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
-local scroll_in_win = require('lspsaga.action').scroll_in_win
 local def = {}
-local saga_augroup = require('lspsaga').saga_augroup
 local path_sep = libs.path_sep
 local method = 'textDocument/definition'
 
@@ -78,11 +76,16 @@ function def:preview_definition()
       style = 'minimal',
     }
     local WIN_WIDTH = api.nvim_get_option('columns')
-    local max_width = math.floor(WIN_WIDTH * 0.5)
+    local max_width = math.floor(WIN_WIDTH * 0.6)
+    local max_height = math.floor(vim.o.lines * 0.6)
     local width, _ = vim.lsp.util._make_floating_popup_size(content, opts)
 
     if width > max_width then
       opts.width = max_width
+    end
+
+    if #content > max_height then
+      opts.height = max_height
     end
 
     local content_opts = {
@@ -114,6 +117,16 @@ function def:clear_tmp_data()
       self[i] = nil
     end
   end
+end
+
+function def:render_definition_preview()
+  -- press twice jump into
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_set_current_win(self.winid)
+    return
+  end
+
+  self:preview_definition()
 end
 
 return def
