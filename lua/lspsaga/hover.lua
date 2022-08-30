@@ -13,7 +13,6 @@ function hover:open_floating_preview(contents, opts)
   opts.wrap = opts.wrap ~= false -- wrapping by default
   opts.stylize_markdown = opts.stylize_markdown ~= false and vim.g.syntax_on ~= nil
   opts.focus = opts.focus ~= false
-  opts.close_events = opts.close_events or { 'CursorMoved', 'InsertEnter' }
 
   local bufnr = api.nvim_get_current_buf()
 
@@ -56,21 +55,18 @@ function hover:open_floating_preview(contents, opts)
 
   api.nvim_win_set_option(self.preview_winid, 'conceallevel', 2)
   api.nvim_win_set_option(self.preview_winid, 'concealcursor', 'n')
-  api.nvim_win_set_option(self.preview_winid, 'foldenable', false)
+  -- api.nvim_win_set_option(self.preview_winid, 'foldenable', false)
   -- soft wrapping
   api.nvim_win_set_option(self.preview_winid, 'wrap', false)
 
-  api.nvim_buf_set_keymap(
-    self.preview_bufnr,
-    'n',
-    'q',
-    '<cmd>bdelete<cr>',
-    { silent = true, noremap = true, nowait = true }
-  )
+  vim.keymap.set('n', 'q', function()
+    if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
+      api.nvim_buf_delete(self.preview_bufnr, { force = true })
+    end
+  end)
 
   api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
     buffer = bufnr,
-    once = true,
     callback = function()
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
         api.nvim_win_close(self.preview_winid, true)
@@ -79,6 +75,8 @@ function hover:open_floating_preview(contents, opts)
     end,
     desc = '[Lspsaga] Auto close hover window',
   })
+
+  libs.scroll_in_preview(bufnr, self.preview_winid)
 end
 
 function hover:handler(result)
@@ -95,7 +93,7 @@ function hover:handler(result)
   self:open_floating_preview(markdown_lines)
 end
 
-function hover.render_hover_doc()
+function hover:render_hover_doc()
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
     return
@@ -116,6 +114,16 @@ function hover.render_hover_doc()
         break
       end
     end
+    -- local bufnr = api.nvim_create_buf(true,false)
+    -- api.nvim_open_win(bufnr,false,{
+    --   border = 'single',
+    --   relative = 'cursor',
+    --   row = 2,
+    --   col =2,
+    --   width = 2,
+    --   height = 2,
+    --   style= 'minimal'
+    -- })
     hover:handler(result)
   end)
 end
