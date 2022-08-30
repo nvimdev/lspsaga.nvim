@@ -3,7 +3,6 @@ local if_nil, lsp = vim.F.if_nil, vim.lsp
 local window = require('lspsaga.window')
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
-local hover = require('lspsaga.hover')
 local api = vim.api
 local insert = table.insert
 local space = ' '
@@ -161,8 +160,6 @@ end
 function diag:move_cursor(entry)
   local current_winid = api.nvim_get_current_win()
 
-  -- if has hover window close first
-  hover.close_hover_window()
   -- if current position has a diagnostic floatwin when jump to next close
   -- curren diagnostic floatwin ensure only have one diagnostic floatwin in
   -- current buffer
@@ -199,14 +196,6 @@ local function comp_severity_asc(diag1, diag2)
 end
 
 function diag:show_diagnostics(opts, get_diagnostics)
-  local close_hover = opts.close_hover or false
-
-  -- if we have a hover rendered, don't show diagnostics due to this usually
-  -- being bound to CursorHold which triggers after hover show
-  if not close_hover and hover.has_saga_hover() then
-    return
-  end
-
   if not libs.check_lsp_active() then
     return
   end

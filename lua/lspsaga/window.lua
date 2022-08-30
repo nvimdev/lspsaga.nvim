@@ -187,6 +187,8 @@ function M.create_win_with_border(content_opts, opts)
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
   api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
   api.nvim_win_set_option(winid, 'foldlevel', 100)
+
+  -- disable winbar in some saga's floatwindow
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
   end
@@ -235,7 +237,7 @@ function M.nvim_close_valid_window(winid)
   end
 
   local close_win = function(win_id)
-    if win_id == 0 then
+    if not winid or win_id == 0 then
       return
     end
     if vim.api.nvim_win_is_valid(win_id) then
