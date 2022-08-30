@@ -447,24 +447,6 @@ src="https://user-images.githubusercontent.com/41671631/179864315-3ec84106-bcd4-
 <details>
 <summary>Float terminal</summary>
 
-**Lua**
-
-```lua
--- float terminal also you can pass the cli command in open_float_terminal function
-local term = require("lspsaga.floaterm")
-
--- float terminal also you can pass the cli command in open_float_terminal function
-vim.keymap.set("n", "<A-d>", function()
-    term.open_float_terminal("custom_cli_command")
-end, { silent = true })
-vim.keymap.set("t", "<A-d>", function()
-    vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true))
-    term.close_float_terminal()
-end, { silent = true })
-
--- or use command
-```
-
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/105658287-2c6ed880-5f01-11eb-8af6-daa6fd23576c.gif"/>
