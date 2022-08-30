@@ -1,4 +1,17 @@
-## Version 2
+## Version 0.2.1 -- 2022-08-30
+
+### New
+
+- improve scroll in preview remove old implement of preview
+- add new option  `scroll_in_preview` use default scroll keymap to scroll
+- use `CursorMoved` with timer in LightBulb instead of using `CursorHold` `CursorHoldI`
+- new option `update_time` in code_action_lightbulb
+
+### Remove
+
+- remove function `action.smart_scroll_with_saga(1)` no need this function
+
+## Version 0.2
 
 ### BreakChange
 
