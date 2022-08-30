@@ -2,7 +2,6 @@ local command = {}
 local lsprename = require('lspsaga.rename')
 local diagnostic = require('lspsaga.diagnostic')
 local codeaction = require('lspsaga.codeaction')
-local floaterm = require('lspsaga.floaterm')
 local finder = require('lspsaga.finder')
 
 local subcommands = {
@@ -28,8 +27,12 @@ local subcommands = {
   range_code_action = function()
     codeaction:range_code_action()
   end,
-  open_floaterm = floaterm.open_float_terminal,
-  close_floaterm = floaterm.close_float_terminal,
+  open_floaterm = function(cmd)
+    require('lspsaga.floaterm'):open_float_terminal(cmd)
+  end,
+  close_floaterm = function()
+    require('lspsaga.floaterm'):close_float_terminal()
+  end,
 }
 
 function command.command_list()

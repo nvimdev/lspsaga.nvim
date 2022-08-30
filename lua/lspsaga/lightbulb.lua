@@ -44,7 +44,7 @@ local function _update_virtual_text(bufnr, line)
 
   if line then
     local icon_with_indent = '  ' .. config.code_action_icon
-    api.nvim_buf_set_extmark(bufnr, namespace, line, -1, {
+    pcall(api.nvim_buf_set_extmark, bufnr, namespace, line, -1, {
       virt_text = { { icon_with_indent, 'LspSagaLightBulb' } },
       virt_text_pos = 'overlay',
       hl_mode = 'combine',

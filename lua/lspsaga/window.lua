@@ -174,9 +174,9 @@ function M.create_win_with_border(content_opts, opts)
   if not vim.tbl_isempty(content) then
     api.nvim_buf_set_lines(bufnr, 0, -1, true, content)
   end
+
   api.nvim_buf_set_option(bufnr, 'modifiable', false)
   api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
-  api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
 

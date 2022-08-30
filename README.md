@@ -98,6 +98,13 @@ keymap("n","<leader>o", "<cmd>LSoutlineToggle<CR>",{ silent = true })
 -- Hover Doc
 keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
 
+-- Float terminal
+keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm<CR>", { silent = true })
+-- if you want pass somc cli command into terminal you can do like this
+-- open lazygit in lspsaga float terminal
+keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm lazygit<CR>", { silent = true })
+-- close floaterm
+keymap("t", "<A-d>", [[<C-\><C-n><cmd>Lspsaga close_floaterm<CR>]], { silent = true })
 ```
 </details>
 
@@ -456,8 +463,6 @@ vim.keymap.set("t", "<A-d>", function()
 end, { silent = true })
 
 -- or use command
-vim.keymap.set("n", "<A-d>", "<cmd>Lspsaga open_floaterm custom_cli_command<CR>", { silent = true })
-vim.keymap.set("t", "<A-d>", "<C-\\><C-n><cmd>Lspsaga close_floaterm<CR>", { silent = true })
 ```
 
 <div align='center'>

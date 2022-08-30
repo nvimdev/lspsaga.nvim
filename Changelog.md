@@ -6,6 +6,8 @@
 - add new option  `scroll_in_preview` use default scroll keymap to scroll
 - use `CursorMoved` with timer in LightBulb instead of using `CursorHold` `CursorHoldI`
 - new option `update_time` in code_action_lightbulb
+- auto jump into the `preview_definition` window
+- `floaterm` can save the state.
 
 ### Bug fix
 

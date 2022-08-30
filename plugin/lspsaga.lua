@@ -90,9 +90,3 @@ end, {
 api.nvim_create_user_command('LSoutlineToggle', function()
   require('lspsaga.outline'):render_outline()
 end, {})
-
-api.nvim_create_user_command('LspsagaFloaterm', function(args)
-  require('lspsaga.floaterm').open_float_terminal(args.args)
-end, {
-  nargs = '+',
-})
