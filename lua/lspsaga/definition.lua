@@ -95,6 +95,9 @@ function def:preview_definition()
     }
 
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+    if not vim.opt_local.modifiable:get() then
+      vim.opt_local.modifiable = true
+    end
     --set the initail cursor pos
     api.nvim_win_set_cursor(self.winid, { 3, 1 })
 
