@@ -58,12 +58,9 @@ function def:preview_definition()
       fn.bufload(bufnr)
     end
     local range = result[1].targetRange or result[1].range
-    local start_line = 0
-    if range.start.line - 3 >= 1 then
-      start_line = range.start.line - 3
-    else
-      start_line = range.start.line
-    end
+    local start_line = range.start.line
+
+    local start_char_pos = range.start.character
 
     local content = vim.api.nvim_buf_get_lines(
       bufnr,
@@ -104,7 +101,7 @@ function def:preview_definition()
       vim.opt_local.modifiable = true
     end
     --set the initail cursor pos
-    api.nvim_win_set_cursor(self.winid, { 3, 1 })
+    api.nvim_win_set_cursor(self.winid, { 3, start_char_pos })
 
     api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
       buffer = current_buf,
