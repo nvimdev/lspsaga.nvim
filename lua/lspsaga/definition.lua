@@ -20,11 +20,16 @@ function def:preview_definition()
       return
     end
 
-    local result = {}
+    local result
     for _, res in pairs(results) do
       if res and next(res) ~= nil then
         result = res.result
       end
+    end
+
+    if not result then
+      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil from ')
+      return
     end
 
     local uri = result[1].uri or result[1].targetUri
