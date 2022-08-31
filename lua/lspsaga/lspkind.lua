@@ -81,7 +81,7 @@ local function gen_symbol_winbar_hi()
   local winbar_sep = 'LspSagaWinbarSep'
 
   for _, v in pairs(kind) do
-    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3], bold = true, italic = true })
+    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
   end
   api.nvim_set_hl(0, winbar_sep, { fg = '#d16d9e' })
   api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, bold = true })
