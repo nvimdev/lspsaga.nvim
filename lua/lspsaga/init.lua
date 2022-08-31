@@ -35,7 +35,7 @@ saga.config_values = {
     virtual_text = true,
   },
   max_preview_lines = 10,
-  definition_preview_quit = '<ESC>',
+  definition_preview_quit = '<C-c>',
   scroll_in_preview = {
     scroll_down = '<C-f>',
     scroll_up = '<C-b>',
