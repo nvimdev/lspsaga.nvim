@@ -23,10 +23,9 @@ local msgs = {
 local Finder = {}
 
 function Finder:lsp_finder()
-  vim.cmd "let g:finder = expand('<cword>')"
   vim.cmd "let g:resume = @/"
   vim.cmd "set hls"
-  vim.cmd "let @/ = g:finder"
+  vim.cmd "let @/ = expand('<cword>')"
 
   if not libs.check_lsp_active() then
     return
