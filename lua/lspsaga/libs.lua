@@ -240,7 +240,7 @@ local function feedkeys(key)
 end
 
 function libs.scroll_in_preview(bufnr, preview_winid)
-  local config = require('lspsaga.init').config_values
+  local config = require('lspsaga').config_values
   if preview_winid and api.nvim_win_is_valid(preview_winid) then
     vim.keymap.set('n', config.scroll_in_preview.scroll_down, function()
       api.nvim_win_call(preview_winid, function()
@@ -257,7 +257,7 @@ function libs.scroll_in_preview(bufnr, preview_winid)
 end
 
 function libs.delete_scroll_map(bufnr)
-  local config = require('lspsaga.init').config_values
+  local config = require('lspsaga').config_values
   vim.keymap.del('n', config.scroll_in_preview.scroll_down, { buffer = bufnr })
   vim.keymap.del('n', config.scroll_in_preview.scroll_up, { buffer = bufnr })
 end

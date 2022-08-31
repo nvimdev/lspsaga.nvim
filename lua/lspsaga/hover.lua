@@ -3,7 +3,7 @@ local api, lsp, util, fn = vim.api, vim.lsp, vim.lsp.util, vim.fn
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local wrap = require('lspsaga.wrap')
-local config = require('lspsaga.init').config_values
+local config = require('lspsaga').config_values
 local hover = {}
 
 function hover:open_floating_preview(contents, opts)
