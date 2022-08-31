@@ -110,9 +110,11 @@ function def:preview_definition()
       desc = 'Auto close lspsaga definition preview window',
     })
 
-    vim.keymap.set('n', '<C-c>', function()
+    local quit_key = config.definition_preview_quit
+    vim.keymap.set('n', quit_key, function()
       if self.winid and api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
+        vim.cmd "set nohls"
       end
     end, { buffer = self.bufnr })
 
