@@ -23,6 +23,12 @@ local msgs = {
 local Finder = {}
 
 function Finder:lsp_finder()
+  vim.cmd "let g:finder = expand('<cword>')"
+  vim.cmd "let g:resume = @/"
+  vim.cmd "set hls"
+  vim.cmd ":execute '/' . @0"
+  vim.cmd ":normal! N"
+
   if not libs.check_lsp_active() then
     return
   end
@@ -776,6 +782,9 @@ function Finder:quit_float_window()
     api.nvim_win_close(self.titlebar_winid, true)
     self.titlebar_winid = nil
   end
+
+  vim.cmd "set nohls"
+  vim.cmd ":execute '/' . g:resume"
 end
 
 function Finder:clear_tmp_data()
