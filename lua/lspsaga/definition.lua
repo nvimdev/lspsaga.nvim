@@ -6,6 +6,9 @@ local path_sep = libs.path_sep
 local method = 'textDocument/definition'
 
 function def:preview_definition()
+
+  local search = vim.fn.expand('<cword>')
+
   if not libs.check_lsp_active() then
     return
   end
@@ -103,8 +106,11 @@ function def:preview_definition()
     if not vim.opt_local.modifiable:get() then
       vim.opt_local.modifiable = true
     end
+
     --set the initail cursor pos
-    api.nvim_win_set_cursor(self.winid, { 3, 1 })
+    -- api.nvim_win_set_cursor(self.winid, { 1, 1 })
+
+    vim.fn.search(search)
 
     api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
       buffer = current_buf,

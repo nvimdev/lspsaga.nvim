@@ -151,7 +151,7 @@ function M.create_win_with_border(content_opts, opts)
 
   local contents, filetype = content_opts.contents, content_opts.filetype
   local enter = content_opts.enter or false
-  local highlight = content_opts.highlight or 'LspFloatWinBorder'
+  local highlight = content_opts.highlight or 'LspSagaTermBorder'
   opts = opts or {}
   opts = generate_win_opts(contents, opts)
   opts.border = content_opts.border or get_border_style(config.border_style, highlight)
@@ -193,6 +193,8 @@ function M.create_win_with_border(content_opts, opts)
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
   end
+
+  -- vim.fn.search(vim.fn.expand('<cword>'))
 
   return bufnr, winid
 end
