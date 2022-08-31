@@ -7,6 +7,10 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 saga.config_values = {
   border_style = 'single',
   saga_winblend = 0,
+  float_term = {
+    winblend = 25,
+    shadow_background = true,
+  },
   -- when cusor in saga float window
   -- config these keys to move
   move_in_saga = {

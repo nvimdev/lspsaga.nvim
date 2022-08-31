@@ -113,26 +113,28 @@ local function generate_win_opts(contents, opts)
   return opts
 end
 
-local function get_shadow_config()
-  local opts = {
-    relative = 'editor',
-    style = 'minimal',
-    width = vim.o.columns,
-    height = vim.o.lines,
-    row = 0,
-    col = 0,
-  }
-  return opts
-end
+if config.float_term.shadow_background then
+  function M.get_shadow_config()
+    local opts = {
+      relative = 'editor',
+      style = 'minimal',
+      width = vim.o.columns,
+      height = vim.o.lines,
+      row = 0,
+      col = 0,
+    }
+    return opts
+  end
 
-local function open_shadow_win()
-  local opts = get_shadow_config()
-  local shadow_winhl = 'Normal:SagaShadow,NormalNC:SagaShadow,EndOfBuffer:SagaShadow'
-  local shadow_bufnr = api.nvim_create_buf(false, true)
-  local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
-  api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
-  api.nvim_win_set_option(shadow_winid, 'winblend', 70)
-  return shadow_bufnr, shadow_winid
+  function M.open_shadow_win()
+    local opts = M.get_shadow_config()
+    local shadow_winhl = 'Normal:SagaShadow,NormalNC:SagaShadow,EndOfBuffer:SagaShadow'
+    local shadow_bufnr = api.nvim_create_buf(false, true)
+    local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
+    api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
+    api.nvim_win_set_option(shadow_winid, 'winblend', 70)
+    return shadow_bufnr, shadow_winid
+  end
 end
 
 -- content_opts a table with filed
@@ -180,7 +182,10 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
   end
 
-  local winid = api.nvim_open_win(bufnr, enter, opts)
+  local winid_status, winid = pcall(api.nvim_open_win, bufnr, enter, opts)
+  if not winid_status then
+        return nil
+  end
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
   api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
 
@@ -193,9 +198,14 @@ function M.create_win_with_border(content_opts, opts)
 end
 
 function M.open_shadow_float_win(content_opts, opts)
-  local shadow_bufnr, shadow_winid = open_shadow_win()
-  local contents_bufnr, contents_winid = M.create_win_with_border(content_opts, opts)
-  return contents_bufnr, contents_winid, shadow_bufnr, shadow_winid
+  if config.float_term.shadow_background then
+    local shadow_bufnr, shadow_winid = M.open_shadow_win()
+    local contents_bufnr, contents_winid = M.create_win_with_border(content_opts, opts)
+    return contents_bufnr, contents_winid, shadow_bufnr, shadow_winid
+  else
+    local contents_bufnr, contents_winid = M.create_win_with_border(content_opts, opts)
+    return contents_bufnr, contents_winid
+  end
 end
 
 function M.get_max_float_width()

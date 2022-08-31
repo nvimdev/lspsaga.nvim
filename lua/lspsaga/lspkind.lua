@@ -14,15 +14,15 @@ local colors = {
 }
 
 local kind = {
-  [1] = { 'File', ' ', colors.fg },
-  [2] = { 'Module', ' ', colors.blue },
-  [3] = { 'Namespace', ' ', colors.orange },
-  [4] = { 'Package', ' ', colors.violet },
-  [5] = { 'Class', ' ', colors.violet },
-  [6] = { 'Method', ' ', colors.violet },
-  [7] = { 'Property', ' ', colors.cyan },
-  [8] = { 'Field', ' ', colors.teal },
-  [9] = { 'Constructor', ' ', colors.blue },
+  [1]  = { 'File', ' ', colors.fg },
+  [2]  = { 'Module', ' ', colors.blue },
+  [3]  = { 'Namespace', ' ', colors.orange },
+  [4]  = { 'Package', ' ', colors.violet },
+  [5]  = { 'Class', ' ', colors.violet },
+  [6]  = { 'Method', ' ', colors.violet },
+  [7]  = { 'Property', ' ', colors.cyan },
+  [8]  = { 'Field', ' ', colors.teal },
+  [9]  = { 'Constructor', ' ', colors.blue },
   [10] = { 'Enum', '了', colors.green },
   [11] = { 'Interface', ' ', colors.orange },
   [12] = { 'Function', ' ', colors.violet },
@@ -81,7 +81,7 @@ local function gen_symbol_winbar_hi()
   local winbar_sep = 'LspSagaWinbarSep'
 
   for _, v in pairs(kind) do
-    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
+    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3], bold = true, italic = true })
   end
   api.nvim_set_hl(0, winbar_sep, { fg = '#d16d9e' })
   api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, bold = true })

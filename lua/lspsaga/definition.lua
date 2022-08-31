@@ -73,7 +73,7 @@ function def:preview_definition()
     )
 
     local prompt = config.definition_preview_icon .. 'File: '
-    content = vim.list_extend({ prompt .. short_name .. ' [Ctrl + c] to quit', '' }, content)
+    content = vim.list_extend({ prompt .. short_name, '' }, content)
 
     local opts = {
       relative = 'cursor',

@@ -1,6 +1,7 @@
 local api = vim.api
 local window = require('lspsaga.window')
 local term = {}
+local config = require('lspsaga').config_values
 
 function term:open_float_terminal(command)
   local cmd = command or os.getenv('SHELL')
@@ -30,7 +31,7 @@ function term:open_float_terminal(command)
   local content_opts = {
     contents = {},
     enter = true,
-    winblend = 0,
+    winblend = config.float_term.winblend,
   }
   if self.term_bufnr then
     content_opts.bufnr = self.term_bufnr
@@ -54,7 +55,9 @@ end
 function term:close_float_terminal()
   if self.term_winid and api.nvim_win_is_valid(self.term_winid) then
     api.nvim_win_hide(self.term_winid)
-    api.nvim_win_hide(self.shadow_winid)
+    if config.float_term.shadow_background then
+      api.nvim_win_hide(self.shadow_winid)
+    end
   end
 end
 
