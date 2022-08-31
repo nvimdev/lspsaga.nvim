@@ -1,8 +1,9 @@
 local uv = vim.loop
-local api, lsp, util = vim.api, vim.lsp, vim.lsp.util
+local api, lsp, util, fn = vim.api, vim.lsp, vim.lsp.util, vim.fn
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local wrap = require('lspsaga.wrap')
+local config = require('lspsaga.init').config_values
 local hover = {}
 
 function hover:open_floating_preview(contents, opts)
@@ -98,31 +99,120 @@ function hover:handler(result)
   self:open_floating_preview(markdown_lines)
 end
 
+function hover:do_request()
+  local params = util.make_position_params()
+  lsp.buf_request_all(0, 'textDocument/hover', params, function(results)
+    local result = {}
+    for _, res in pairs(results) do
+      if res and res.result and res.result.contents then
+        result = res.result
+      end
+    end
+    self.request_status = true
+    self.result = result
+  end)
+end
+
+function hover:loading_bar()
+  self.WIN_WIDTH = fn.winwidth(0)
+  self.WIN_HEIGHT = fn.winheight(0)
+
+  -- calculate our floating window size
+  local win_height = math.ceil(self.WIN_HEIGHT * 0.6)
+  local win_width = math.ceil(self.WIN_WIDTH * 0.8)
+
+  -- and its starting position
+  local row = math.ceil((self.WIN_HEIGHT - win_height) / 2 - 1)
+  local col = math.ceil(self.WIN_WIDTH - win_width)
+
+  local opts = {
+    relative = 'editor',
+    height = 2,
+    width = 20,
+    row = row,
+    col = col,
+  }
+
+  local content_opts = {
+    contents = {},
+    highlight = 'FinderSpinnerBorder',
+    enter = false,
+  }
+
+  local spin_buf, spin_win = window.create_win_with_border(content_opts, opts)
+  local spin_config = {
+    spinner = {
+      '█▁▁▁▁▁▁▁▁▁',
+      '██▁▁▁▁▁▁▁▁',
+      '███▁▁▁▁▁▁▁',
+      '████▁▁▁▁▁▁',
+      '█████▁▁▁▁▁',
+      '██████▁▁▁▁',
+      '███████▁▁▁',
+      '████████▁▁ ',
+      '█████████▁',
+      '██████████',
+    },
+    interval = 10,
+    timeout = config.finder_request_timeout,
+  }
+  api.nvim_buf_set_option(spin_buf, 'modifiable', true)
+
+  local spin_frame = 1
+  local spin_timer = uv.new_timer()
+  local start_request = uv.now()
+  spin_timer:start(
+    0,
+    spin_config.interval,
+    vim.schedule_wrap(function()
+      spin_frame = spin_frame == 11 and 1 or spin_frame
+      local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
+      local spinner = ' ' .. spin_config.spinner[spin_frame]
+      pcall(api.nvim_buf_set_lines, spin_buf, 0, -1, false, { msg, spinner })
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinner', 1, 0, -1)
+      spin_frame = spin_frame + 1
+
+      if uv.now() - start_request >= spin_config.timeout and not spin_timer:is_closing() then
+        spin_timer:stop()
+        spin_timer:close()
+        if api.nvim_buf_is_loaded(spin_buf) then
+          api.nvim_buf_delete(spin_buf, { force = true })
+        end
+        window.nvim_close_valid_window(spin_win)
+        vim.notify('request timeout')
+        return
+      end
+
+      if self.request_status then
+        spin_timer:stop()
+        if not spin_timer:is_closing() then
+          spin_timer:close()
+        end
+
+        if api.nvim_buf_is_loaded(spin_buf) then
+          api.nvim_buf_delete(spin_buf, { force = true })
+        end
+        window.nvim_close_valid_window(spin_win)
+        self:handler(self.result)
+      end
+    end)
+  )
+end
+
 function hover:render_hover_doc()
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
     return
   end
 
-  --see #439
   if vim.bo.filetype == 'help' then
     api.nvim_feedkeys('K', 'ni', true)
     return
   end
 
-  local params = util.make_position_params()
-  lsp.buf_request_all(0, 'textDocument/hover', params, function(results)
-    local result = {}
-    for _, res in pairs(results) do
-      if res and res.result then
-        result = res.result
-        break
-      end
-    end
-    hover:handler(result)
-  end)
+  self:do_request()
+  self:loading_bar()
 end
-
-function hover:render_hover() end
 
 return hover
