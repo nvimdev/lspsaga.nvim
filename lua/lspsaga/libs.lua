@@ -256,6 +256,12 @@ function libs.scroll_in_preview(bufnr, preview_winid)
   end
 end
 
+function libs.delete_scroll_map(bufnr)
+  local config = require('lspsaga.init').config_values
+  vim.keymap.del('n', config.scroll_in_preview.scroll_down, { buffer = bufnr })
+  vim.keymap.del('n', config.scroll_in_preview.scroll_up, { buffer = bufnr })
+end
+
 function libs.async(routine, ...)
   local f = coroutine.create(function(await, ...)
     routine(await, ...)

@@ -64,11 +64,15 @@ function hover:open_floating_preview(contents, opts)
     if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
       api.nvim_buf_delete(self.preview_bufnr, { force = true })
     end
-  end)
+  end, { buffer = self.preview_bufnr })
 
   api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
     buffer = bufnr,
     callback = function()
+      if api.nvim_buf_is_loaded(self.preview_bufnr) then
+        libs.delete_scroll_map(bufnr)
+      end
+
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
         api.nvim_win_close(self.preview_winid, true)
         self.preview_winid = nil
@@ -118,5 +122,7 @@ function hover:render_hover_doc()
     hover:handler(result)
   end)
 end
+
+function hover:render_hover() end
 
 return hover
