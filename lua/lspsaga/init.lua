@@ -55,7 +55,7 @@ saga.config_values = {
     exec = '<CR>',
   },
   definition_action_keys = {
-    quit = 'q'
+    quit = 'q',
   },
   rename_action_quit = '<C-c>',
   rename_in_select = true,
