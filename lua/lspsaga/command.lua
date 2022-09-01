@@ -21,6 +21,12 @@ local subcommands = {
   show_line_diagnostics = diagnostic.show_line_diagnostics,
   diagnostic_jump_next = diagnostic.goto_next,
   diagnostic_jump_prev = diagnostic.goto_prev,
+  diagnostic_jump_next_error = function()
+    diagnostic.goto_next({severity=diagnostic.severity.ERROR})
+  end,
+  diagnostic_jump_prev_error = function()
+    diagnostic.goto_prev({severity=diagnostic.severity.ERROR})
+  end,
   code_action = function()
     codeaction:code_action()
   end,
