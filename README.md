@@ -83,6 +83,8 @@ keymap("n", "<leader>cd", "<cmd>Lspsaga show_cursor_diagnostics<CR>", { silent =
 -- Diagnsotic jump can use `<c-o>` to jump back
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", { silent = true })
 keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true })
+keymap("n", "[E", "<cmd>Lspsaga diagnostic_jump_prev_error<CR>", { silent = true })
+keymap("n", "]E", "<cmd>Lspsaga diagnostic_jump_next_error<CR>", { silent = true })
 
 -- Only jump to error
 keymap("n", "[E", function()
