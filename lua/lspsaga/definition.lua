@@ -70,7 +70,7 @@ function def:preview_definition()
     )
 
     local prompt = config.definition_preview_icon .. 'File: '
-    content = vim.list_extend({ prompt .. short_name .. ' [Ctrl + c] to quit', '' }, content)
+    content = vim.list_extend({ prompt .. short_name .. ' q to quit', '' }, content)
 
     local opts = {
       relative = 'cursor',
@@ -115,7 +115,7 @@ function def:preview_definition()
       desc = 'Auto close lspsaga definition preview window',
     })
 
-    vim.keymap.set('n', '<C-c>', function()
+    vim.keymap.set('n', config.definition_action_keys.quit, function()
       if self.winid and api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
       end
