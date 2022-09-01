@@ -454,12 +454,12 @@ function Finder:render_finder_result()
         virt_text_pos = 'overlay',
       })
     end
-
-    api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
-      virt_text = { { '│', virt_hi } },
-      virt_text_pos = 'overlay',
-    })
   end
+
+  api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
+    virt_text = { { '│', virt_hi } },
+    virt_text_pos = 'overlay',
+  })
 
   for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
     local virt_texts = {}
