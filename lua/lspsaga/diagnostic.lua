@@ -82,6 +82,7 @@ function diag:render_diagnostic_window(entry, option)
     opts.move_col = nil
   end
 
+  opts.focusable = false
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#wrap_message),
     border = 'none',
@@ -269,9 +270,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
     highlight = 'LspSagaDiagnosticBorder',
   }
 
-  self.show_diag_bufnr, self.show_diag_winid = window.create_win_with_border(content_opts, {
-    focusable = false,
-  })
+  self.show_diag_bufnr, self.show_diag_winid = window.create_win_with_border(content_opts)
 
   for i, hi in ipairs(highlights) do
     local _, hiname, col_in_line = unpack(hi)

@@ -49,8 +49,6 @@ function hover:open_floating_preview(contents, opts)
     highlight = 'LspSagaHoverBorder',
     bufnr = self.preview_bufnr,
   }
-  float_option.focusable = false
-
   _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
 
   api.nvim_win_set_option(self.preview_winid, 'conceallevel', 2)

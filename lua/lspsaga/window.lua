@@ -48,6 +48,10 @@ local function make_floating_popup_options(width, height, opts)
   new_option.style = 'minimal'
   new_option.width = width
   new_option.height = height
+  new_option.focusable = true
+  if opts.focusable ~= nil then
+    new_option.focusable = opts.focusable
+  end
 
   if opts.relative ~= nil then
     new_option.relative = opts.relative
