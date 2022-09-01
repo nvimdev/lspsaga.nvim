@@ -236,7 +236,7 @@ end
 
 local titles = {
   [methods[1]] = icons.def .. 'Definition ',
-  [methods[2]] = icons.ref .. 'Implements ',
+  [methods[2]] = icons.imp .. 'Implements ',
   [methods[3]] = icons.ref .. 'References ',
 }
 
