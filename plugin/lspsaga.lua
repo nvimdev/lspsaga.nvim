@@ -29,6 +29,9 @@ local highlights = {
   FinderSpinner = { fg = '#b33076', bold = true },
   -- definition
   DefinitionBorder = { fg = '#b3deef' },
+  DefinitionArrow = { fg = '#ad475f' },
+  DefinitionSearch = { link = 'Search' },
+  DefinitionFile = { bg = '#151838' },
   -- hover
   LspSagaHoverBorder = { fg = '#f7bb3b' },
   LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder' },
