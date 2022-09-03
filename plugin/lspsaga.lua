@@ -28,10 +28,7 @@ local highlights = {
   FinderSpinnerTitle = { fg = '#b33076', bold = true },
   FinderSpinner = { fg = '#b33076', bold = true },
   -- definition
-  LspSagaDefPreviewBorder = { fg = '#b3deef' },
-  DefinitionPreviewIcon = { link = 'Title' },
-  DefinitionPreviewFile = { link = 'Define' },
-  DefinitionPreviewTip = { link = 'Comment' },
+  DefinitionBorder = { fg = '#b3deef' },
   -- hover
   LspSagaHoverBorder = { fg = '#f7bb3b' },
   LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder' },

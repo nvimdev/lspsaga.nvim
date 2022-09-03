@@ -58,6 +58,10 @@ function def:preview_definition()
       fn.bufload(bufnr)
     end
 
+    local range = result[1].targetRange or result[1].range
+    local start_line = range.start.line
+    local start_char_pos = range.start.character
+
     local prompt = config.definition_preview_icon .. 'File: '
     local quit = config.definition_action_keys.quit
 
@@ -76,51 +80,22 @@ function def:preview_definition()
       contents = {},
       filetype = filetype,
       enter = true,
-      highlight = 'LspSagaDefPreviewBorder',
+      highlight = 'DefinitionBorder',
     }
 
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
     vim.opt_local.modifiable = true
-    api.nvim_win_set_buf(0,bufnr)
-    api.nvim_win_set_option(self.winid,'winbar',"")
+    api.nvim_win_set_buf(0, bufnr)
+    api.nvim_win_set_option(self.winid, 'winbar', '')
     --set the initail cursor pos
-    -- api.nvim_win_set_cursor(self.winid, { 3, start_char_pos })
+    api.nvim_win_set_cursor(self.winid, { start_line + 1, start_char_pos })
 
-    -- api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
-    --   buffer = current_buf,
-    --   once = true,
-    --   callback = function()
-    --     if self.winid ~= nil then
-    --       window.nvim_close_valid_window(self.winid)
-    --     end
-    --     self:clear_tmp_data()
-    --   end,
-    --   desc = 'Auto close lspsaga definition preview window',
-    -- })
-
-    -- vim.keymap.set('n', quit, function()
-    --   if self.winid and api.nvim_win_is_valid(self.winid) then
-    --     api.nvim_win_close(self.winid, true)
-    --   end
-    -- end, { buffer = bufnr })
-
-    -- api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewIcon', 0, 0, #prompt - 1)
-    -- api.nvim_buf_add_highlight(
-    --   self.bufnr,
-    --   0,
-    --   'DefinitionPreviewFile',
-    --   0,
-    --   #prompt + 1,
-    --   #prompt + #short_name
-    -- )
-    -- api.nvim_buf_add_highlight(
-    --   self.bufnr,
-    --   -1,
-    --   'DefinitionPreviewTip',
-    --   0,
-    --   #prompt + #short_name + 2,
-    --   -1
-    -- )
+    vim.keymap.set('n', quit, function()
+      if self.winid and api.nvim_win_is_valid(self.winid) then
+        api.nvim_win_close(self.winid, true)
+        vim.keymap.del('n', quit, { buffer = bufnr })
+      end
+    end, { buffer = bufnr })
   end)
 end
 
