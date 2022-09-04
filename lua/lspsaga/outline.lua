@@ -244,6 +244,10 @@ end
 
 ---@private
 local do_symbol_request = function()
+  if vim.bo.filetype == 'lspsagaoutline' then
+    return
+  end
+
   local bufnr = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
   local client = libs.get_client_by_cap('documentSymbolProvider')
