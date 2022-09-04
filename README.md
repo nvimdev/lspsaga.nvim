@@ -66,7 +66,7 @@ keymap("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true })
 
 -- Code action
 keymap("n", "<leader>ca", "<cmd>Lspsaga code_action<CR>", { silent = true })
-keymap("v", "<leader>ca", "<cmd><C-U>Lspsaga range_code_action<CR>", { silent = true })
+keymap("v", "<leader>ca", "<cmd>Lspsaga range_code_action<CR>", { silent = true })
 
 -- Rename
 keymap("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true })
