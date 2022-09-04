@@ -24,9 +24,6 @@ local subcommands = {
   code_action = function()
     codeaction:code_action()
   end,
-  range_code_action = function()
-    codeaction:range_code_action()
-  end,
   open_floaterm = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)
   end,
