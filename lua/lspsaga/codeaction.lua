@@ -1,4 +1,4 @@
-local api,util = vim.api,vim.lsp.util
+local api, util = vim.api, vim.lsp.util
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
