@@ -149,6 +149,10 @@ local render_symbol_winbar = function()
   end
   local symbols = symbar.symbol_cache[current_buf]
 
+  if not symbols then
+    return
+  end
+
   local winbar_elements = {}
 
   if config.click_support ~= false then
