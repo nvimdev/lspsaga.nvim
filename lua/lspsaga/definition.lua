@@ -129,8 +129,10 @@ function def:peek_definition()
 
     local quit = config.definition_action_keys.quit
     vim.keymap.set('n', quit, function()
+      api.nvim_buf_clear_namespace(bufnr,def_win_ns,start_line-1,start_line)
       if self.winid and api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
+        api.nvim_win_close(self.title_winid, true)
         vim.keymap.del('n', quit, { buffer = bufnr })
       end
     end, { buffer = bufnr })
