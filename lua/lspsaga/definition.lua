@@ -39,7 +39,7 @@ function def:render_title_win(opts, link)
   api.nvim_buf_add_highlight(self.title_bufnr, 0, 'DefinitionFile', 0, 0, -1)
 end
 
-function def:preview_definition()
+function def:peek_definition()
   if not libs.check_lsp_active() then
     return
   end
