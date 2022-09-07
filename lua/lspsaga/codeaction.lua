@@ -156,7 +156,6 @@ function Action:code_action(options)
   local context = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
-  print(mode)
   options = options or {}
   if options.range then
     assert(type(options.range) == 'table', 'code_action range must be a table')

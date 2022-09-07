@@ -41,8 +41,6 @@ saga.config_values = {
     ref = ' ',
   },
   finder_request_timeout = 1500,
-  -- nvim 0.8 only
-  finder_preview_hl_ns = 0,
   finder_action_keys = {
     open = 'o',
     vsplit = 's',
