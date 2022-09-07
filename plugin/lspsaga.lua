@@ -27,6 +27,7 @@ local highlights = {
   FinderSpinnerBorder = { fg = '#51afef' },
   FinderSpinnerTitle = { fg = '#b33076', bold = true },
   FinderSpinner = { fg = '#b33076', bold = true },
+  FinderPreviewSearch = { link = 'Search' },
   -- definition
   DefinitionBorder = { fg = '#b3deef' },
   DefinitionArrow = { fg = '#ad475f' },

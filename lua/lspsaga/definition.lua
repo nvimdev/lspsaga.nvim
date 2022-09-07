@@ -50,7 +50,7 @@ function def:peek_definition()
   local current_buf = api.nvim_get_current_buf()
   lsp.buf_request_all(current_buf, method, params, function(results)
     if not results or next(results) == nil then
-      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil from ')
+      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil')
       return
     end
 
@@ -62,7 +62,7 @@ function def:peek_definition()
     end
 
     if not result then
-      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil from ')
+      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil')
       return
     end
 
@@ -113,23 +113,19 @@ function def:peek_definition()
     api.nvim_win_set_cursor(self.winid, { start_line + 1, start_char_pos })
     vim.cmd('normal! zt')
 
+    local def_win_ns = api.nvim_create_namespace('DefinitionWinNs')
     api.nvim_buf_add_highlight(
       bufnr,
-      0,
+      def_win_ns,
       'DefinitionSearch',
       start_line,
       start_char_pos,
       end_char_pos
     )
 
-    --TODO: why this not work
-    local def_win_ns = api.nvim_create_namespace('DefinitionWinNs')
-    api.nvim_set_hl(def_win_ns, 'Normal', { fg = '#0d1a36' })
-    api.nvim_win_set_hl_ns(self.winid, def_win_ns)
-
     local quit = config.definition_action_keys.quit
     vim.keymap.set('n', quit, function()
-      api.nvim_buf_clear_namespace(bufnr,def_win_ns,start_line-1,start_line)
+      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
       if self.winid and api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
         api.nvim_win_close(self.title_winid, true)

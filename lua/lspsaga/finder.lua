@@ -293,6 +293,7 @@ function Finder:create_finder_contents(result, method)
       preview = lines,
       row = range.start.line + 1,
       col = range.start.character + 1,
+      _end_col = range['end'].character,
     }
     insert(contents, { target_line, link_with_preview })
   end
@@ -649,6 +650,8 @@ function Finder:auto_open_preview()
     return
   end
   local content = self.short_link[current_line].preview or {}
+  local start_pos = self.short_link[current_line].col
+  local _end_col = self.short_link[current_line]._end_col
 
   if next(content) ~= nil then
     local has_var, finder_win_opts = pcall(api.nvim_win_get_var, 0, 'lsp_finder_win_opts')
@@ -709,21 +712,33 @@ function Finder:auto_open_preview()
       highlight = 'LspSagaAutoPreview',
     }
 
+    self:close_auto_preview_win()
+
     vim.defer_fn(function()
-      self:close_auto_preview_win()
       self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
       api.nvim_buf_set_option(self.preview_bufnr, 'buflisted', false)
 
       libs.scroll_in_preview(self.bufnr, self.preview_winid)
 
-      if config.finder_preview_hl_ns > 0 then
-        api.nvim_win_set_hl_ns(self.preview_winid, config.finder_preview_hl_ns)
+      if not self.preview_hl_ns then
+        self.preview_hl_ns = api.nvim_create_namespace('FinderPreview')
       end
+      api.nvim_buf_add_highlight(
+        self.preview_bufnr,
+        self.preview_hl_ns,
+        'FinderPreviewSearch',
+        0,
+        start_pos - 1,
+        _end_col
+      )
     end, 5)
   end
 end
 
 function Finder:close_auto_preview_win()
+  if self.preview_hl_ns then
+    api.nvim_buf_clear_namespace(self.preview_bufnr, self.preview_hl_ns, 0, -1)
+  end
   if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
     api.nvim_buf_delete(self.preview_bufnr, { force = true })
     self.preview_bufnr = nil
