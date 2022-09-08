@@ -335,7 +335,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
   end
 
   api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
-  local close_events = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
+  local close_events = { 'CursorMoved', 'InsertEnter' }
 
   libs.close_preview_autocmd(current_buf, self.show_diag_winid, close_events)
   return self.show_diag_winid
