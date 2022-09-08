@@ -15,8 +15,6 @@ saga.config_values = {
   },
   -- Error,Warn,Info,Hint
   diagnostic_header = { ' ', ' ', ' ', ' ' },
-  show_diagnostic_source = true,
-  diagnostic_source_bracket = { '❴', '❵' },
   -- code action title icon
   code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window

@@ -40,7 +40,7 @@ local highlights = {
   LspSagaRenameBorder = { fg = '#3bb6c4' },
   LspSagaRenameMatch = { link = 'Search' },
   -- diagnostic
-  LspSagaDiagnosticSource = { fg = '#FF8700' },
+  LspSagaDiagnosticSource = { link = 'Comment' },
   LspSagaDiagnosticError = { link = 'DiagnosticError' },
   LspSagaDiagnosticWarn = { link = 'DiagnosticWarn' },
   LspSagaDiagnosticInfo = { link = 'DiagnosticInfo' },
@@ -51,6 +51,8 @@ local highlights = {
   LspSagaHintTrunCateLine = { link = 'DiagnosticHint' },
   LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
   LspSagaDiagnosticHeader = { fg = '#afd700' },
+  DiagnosticQuickFix = { fg = '#4dd158', bold = true },
+  DiagnosticMap = { fg = '#cf80ce' },
   LspSagaDiagnosticTruncateLine = { link = 'LspSagaDiagnosticBorder' },
   ColInLineDiagnostic = { link = 'Comment' },
   -- signture help

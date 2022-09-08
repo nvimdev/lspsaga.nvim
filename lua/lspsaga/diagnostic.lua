@@ -28,6 +28,16 @@ local jump_diagnostic_header = function(entry)
   end
 end
 
+function diag:code_action_map()
+  local all_maps = api.nvim_get_keymap('n')
+  for _, map in pairs(all_maps) do
+    if map.rhs:find('Lspsaga code_action') then
+      return map.lhs
+    end
+  end
+  return nil
+end
+
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
   -- print(vim.inspect(entry))
@@ -40,13 +50,13 @@ function diag:render_diagnostic_window(entry, option)
   if entry.source and entry.source:find('%.$') then
     entry.source = entry.source:gsub('%.', '')
   end
-  local source = config.show_diagnostic_source and entry.source or ''
-  if #config.diagnostic_source_bracket == 2 and #source > 0 then
-    source = config.diagnostic_source_bracket[1] .. source .. config.diagnostic_source_bracket[2]
-  end
+  local source = ' ' .. entry.source
   wrap_message[1] = header .. ' ' .. diag_type[entry.severity]
+  local lhs = self:code_action_map()
+  local quickfix = lhs and 'QuickFixKey: ' .. lhs or ''
+  wrap_message[1] = wrap_message[1] .. ' ' .. quickfix
 
-  local msgs = wrap.diagnostic_msg(source .. ' ' .. entry.message, max_width)
+  local msgs = wrap.diagnostic_msg(entry.message .. source, max_width)
   for _, v in pairs(msgs) do
     table.insert(wrap_message, v)
   end
@@ -146,9 +156,30 @@ function diag:render_diagnostic_window(entry, option)
     })
   end
 
-  if config.show_diagnostic_source then
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'LspSagaDiagnosticSource', 2, 0, #source)
-  end
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'LspSagaDiagnosticSource',
+    #wrap_message - 1,
+    #wrap_message[#wrap_message] - #source,
+    -1
+  )
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'DiagnosticQuickFix',
+    0,
+    #wrap_message[1] - #quickfix,
+    -1
+  )
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'DiagnosticMap',
+    0,
+    #wrap_message[1] - #quickfix + 12,
+    -1
+  )
 
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
   -- magic to solved the window disappear when trigger CusroMoed
