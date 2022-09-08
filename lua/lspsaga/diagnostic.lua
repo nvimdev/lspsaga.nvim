@@ -51,10 +51,11 @@ function diag:render_diagnostic_window(entry, option)
     entry.source = entry.source:gsub('%.', '')
   end
   local source = ' ' .. entry.source
-  wrap_message[1] = header .. ' ' .. diag_type[entry.severity]
+  local header_with_type = header .. diag_type[entry.severity]
+  local lnum_col = ' in ' .. '❮' .. entry.lnum + 1 .. ':' .. entry.col + 1 .. '❯'
   local lhs = self:code_action_map()
   local quickfix = lhs and 'QuickFixKey: ' .. lhs or ''
-  wrap_message[1] = wrap_message[1] .. ' ' .. quickfix
+  wrap_message[1] = header_with_type .. lnum_col .. ' ' .. quickfix
 
   local msgs = wrap.diagnostic_msg(entry.message .. source, max_width)
   for _, v in pairs(msgs) do
@@ -155,6 +156,15 @@ function diag:render_diagnostic_window(entry, option)
       virt_lines_above = false,
     })
   end
+
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'DiagnosticLineCol',
+    0,
+    #header_with_type,
+    #header_with_type + #lnum_col + 1
+  )
 
   api.nvim_buf_add_highlight(
     self.bufnr,

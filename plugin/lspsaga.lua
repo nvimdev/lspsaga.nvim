@@ -53,6 +53,7 @@ local highlights = {
   LspSagaDiagnosticHeader = { fg = '#afd700' },
   DiagnosticQuickFix = { fg = '#4dd158', bold = true },
   DiagnosticMap = { fg = '#cf80ce' },
+  DiagnosticLineCol = { fg = '#73797e' },
   LspSagaDiagnosticTruncateLine = { link = 'LspSagaDiagnosticBorder' },
   ColInLineDiagnostic = { link = 'Comment' },
   -- signture help
