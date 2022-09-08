@@ -16,12 +16,11 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 1. [Install](#install)
    - [Vim Plug](#vim-plug)
    - [Packer](#packer)
-2. [Configuration](#configuration)
-3. [Mappings](#mappings)
-4. [Customize Appearance](#customize-appearance)
-5. [Showcase](#showcase)
-6. [Donate](#donate)
-7. [License](#license)
+1. [Configuration](#configuration)
+1. [Customize Appearance](#customize-appearance)
+1. [Showcase](#showcase)
+1. [Donate](#donate)
+1. [License](#license)
 
 ## Install
 
@@ -216,7 +215,7 @@ server_filetype_map = {},
 
 <details>
 <summary> work with custom winbar/statusline </summary>
-  
+
 ```lua
 saga.init_lsp_saga({
     symbol_in_winbar = {
@@ -367,7 +366,7 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 Finder Title work with neovim 0.8 +
 
 NOTE: This requires ```filetypes``` and ```root_dir``` set in the  LSP server ```config``` object. So for [nvim-jdtls](https://github.com/mfussenegger/nvim-jdtls) users, even if you are loading the plugin as ```ftplugin``` or with ```FileType java``` autocmd, set ```filetypes``` in the ```config``` object.
-  
+
 <div align='center'>
 <img
 src="https://user-images.githubusercontent.com/41671631/181253960-cef49f9d-db8b-4b04-92d8-cb6322749414.png" />
