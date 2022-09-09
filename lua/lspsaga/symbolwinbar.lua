@@ -33,6 +33,7 @@ local do_symbol_request = function(callback)
   if client == nil then
     return
   end
+  symbar.pending_request = true
   client.request(method, params, callback, current_buf)
 end
 
@@ -143,11 +144,14 @@ local render_symbol_winbar = function()
 
   local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name() or ''
 
-  local symbols = {}
-  if symbar.symbol_cache[current_buf] == nil then
+  if not symbar.symbol_cache[current_buf] and next(symbar.symbol_cache) == nil then
     return
   end
-  symbols = symbar.symbol_cache[current_buf][2]
+  local symbols = symbar.symbol_cache[current_buf]
+
+  if not symbols then
+    return
+  end
 
   local winbar_elements = {}
 
@@ -168,12 +172,11 @@ local render_symbol_winbar = function()
   return winbar_val
 end
 
-function symbar:get_buf_symbol(force, ...)
-  force = force or false
-  local current_buf = api.nvim_get_current_buf()
-  if self.symbol_cache[current_buf] and self.symbol_cache[current_buf][1] and not force then
+function symbar:get_buf_symbol(...)
+  if self.pending_request then
     return
   end
+  local current_buf = api.nvim_get_current_buf()
 
   local arg = { ... }
   local fn
@@ -182,11 +185,12 @@ function symbar:get_buf_symbol(force, ...)
   end
 
   local _callback = function(_, result)
+    self.pending_request = false
     if not result then
       return
     end
 
-    self.symbol_cache[current_buf] = { true, result }
+    self.symbol_cache[current_buf] = result
 
     if fn ~= nil then
       fn()
@@ -199,7 +203,6 @@ function symbar:get_buf_symbol(force, ...)
       })
     end
   end
-
   do_symbol_request(_callback)
 end
 
@@ -212,24 +215,15 @@ end
 
 local symbol_buf_ids = {}
 
-local function symbol_events()
+function symbar:symbol_events()
   if not libs.check_lsp_active(false) then
     return
   end
 
   local current_buf = api.nvim_get_current_buf()
-  local cache = symbar.symbol_cache
+  self.pending_request = false
 
-  local update_symbols = function(force)
-    force = force or true
-    if cache[current_buf] == nil or next(cache[current_buf]) == nil or force then
-      symbar:get_buf_symbol(force, render_symbol_winbar)
-    else
-      render_symbol_winbar()
-    end
-  end
-
-  update_symbols(true)
+  self:get_buf_symbol(render_symbol_winbar)
 
   local symbol_group =
     api.nvim_create_augroup('LspsagaSymbol' .. tostring(current_buf), { clear = true })
@@ -238,7 +232,9 @@ local function symbol_events()
   api.nvim_create_autocmd('CursorMoved', {
     group = symbol_group,
     buffer = current_buf,
-    callback = update_symbols,
+    callback = function()
+      render_symbol_winbar()
+    end,
     desc = 'Lspsaga symbols',
   })
 
@@ -247,10 +243,10 @@ local function symbol_events()
     buffer = current_buf,
     callback = function()
       if config.in_custom then
-        symbar:get_buf_symbol(true)
-      else
-        symbar:get_buf_symbol(true, render_symbol_winbar)
+        self:get_buf_symbol()
+        return
       end
+      self:get_buf_symbol(render_symbol_winbar)
     end,
     desc = 'Lspsaga update symbols',
   })
@@ -258,6 +254,7 @@ local function symbol_events()
   api.nvim_buf_attach(current_buf, false, {
     on_detach = function()
       if symbol_buf_ids[current_buf] then
+        self:clear_cache()
         pcall(api.nvim_del_augroup_by_id, symbol_buf_ids[current_buf])
         rawset(symbol_buf_ids, current_buf, nil)
       end
@@ -268,7 +265,9 @@ end
 function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
-    callback = symbol_events,
+    callback = function()
+      symbar:symbol_events()
+    end,
     desc = 'Lspsaga get and show symbols',
   })
 end

@@ -1,4 +1,4 @@
-local api = vim.api
+local api, util = vim.api, vim.lsp.util
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
 local wrap = require('lspsaga.wrap')
@@ -150,11 +150,39 @@ function Action:actions_in_cache()
   end
 end
 
-function Action:code_action()
+function Action:code_action(options)
   self.bufnr = api.nvim_get_current_buf()
   local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context = { diagnostics = diagnostics }
-  local params = vim.lsp.util.make_range_params()
+  local params
+  local mode = api.nvim_get_mode().mode
+  options = options or {}
+  if options.range then
+    assert(type(options.range) == 'table', 'code_action range must be a table')
+    local start = assert(options.range.start, 'range must have a `start` property')
+    local end_ = assert(options.range['end'], 'range must have a `end` property')
+    params = util.make_given_range_params(start, end_)
+  elseif mode == 'v' or mode == 'V' then
+    -- [bufnum, lnum, col, off]; both row and column 1-indexed
+    local start = vim.fn.getpos('v')
+    local end_ = vim.fn.getpos('.')
+    local start_row = start[2]
+    local start_col = start[3]
+    local end_row = end_[2]
+    local end_col = end_[3]
+
+    -- A user can start visual selection at the end and move backwards
+    -- Normalize the range to start < end
+    if start_row == end_row and end_col < start_col then
+      end_col, start_col = start_col, end_col
+    elseif end_row < start_row then
+      start_row, end_row = end_row, start_row
+      start_col, end_col = end_col, start_col
+    end
+    params = util.make_given_range_params({ start_row, start_col - 1 }, { end_row, end_col - 1 })
+  else
+    params = util.make_range_params()
+  end
   params.context = context
   if self.ctx == nil then
     self.ctx = {}
@@ -166,29 +194,6 @@ function Action:code_action()
     self:action_callback()
     return
   end
-
-  vim.lsp.buf_request_all(self.bufnr, method, params, function(results)
-    self:get_clients(results)
-    self:action_callback()
-  end)
-end
-
-function Action:range_code_action(context, start_pos, end_pos)
-  local in_cache = self:actions_in_cache()
-  if in_cache then
-    self:action_callback()
-    return
-  end
-
-  self.bufnr = api.nvim_get_current_buf()
-  vim.validate({ context = { context, 't', true } })
-  context = context or { diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr) }
-  local params = vim.lsp.util.make_given_range_params(start_pos, end_pos)
-  params.context = context
-  if self.ctx == nil then
-    self.ctx = {}
-  end
-  self.ctx = { bufnr = self.bufnr, method = method, params = params }
 
   vim.lsp.buf_request_all(self.bufnr, method, params, function(results)
     self:get_clients(results)

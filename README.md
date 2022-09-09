@@ -64,14 +64,13 @@ saga.init_lsp_saga()
 keymap("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true })
 
 -- Code action
-keymap("n", "<leader>ca", "<cmd>Lspsaga code_action<CR>", { silent = true })
-keymap("v", "<leader>ca", "<cmd>Lspsaga range_code_action<CR>", { silent = true })
+keymap({"n","v"}, "<leader>ca", "<cmd>Lspsaga code_action<CR>", { silent = true })
 
 -- Rename
 keymap("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true })
 
--- Definition preview
-keymap("n", "gd", "<cmd>Lspsaga preview_definition<CR>", { silent = true })
+-- Peek Definition
+keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>", { silent = true })
 
 -- Show line diagnostics
 keymap("n", "<leader>cd", "<cmd>Lspsaga show_line_diagnostics<CR>", { silent = true })
@@ -178,7 +177,6 @@ definition_action_keys = {
 },
 rename_action_quit = "<C-c>",
 rename_in_select = true,
-definition_preview_icon = "  ",
 -- show symbols in winbar must nightly
 symbol_in_winbar = {
     in_custom = false,
@@ -362,10 +360,6 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 
 <details>
 <summary>lsp finder</summary>
-
-Finder Title work with neovim 0.8 +
-
-NOTE: This requires ```filetypes``` and ```root_dir``` set in the  LSP server ```config``` object. So for [nvim-jdtls](https://github.com/mfussenegger/nvim-jdtls) users, even if you are loading the plugin as ```ftplugin``` or with ```FileType java``` autocmd, set ```filetypes``` in the ```config``` object.
 
 <div align='center'>
 <img

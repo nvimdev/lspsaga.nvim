@@ -27,11 +27,12 @@ local highlights = {
   FinderSpinnerBorder = { fg = '#51afef' },
   FinderSpinnerTitle = { fg = '#b33076', bold = true },
   FinderSpinner = { fg = '#b33076', bold = true },
+  FinderPreviewSearch = { link = 'Search' },
   -- definition
-  LspSagaDefPreviewBorder = { fg = '#b3deef' },
-  DefinitionPreviewIcon = { link = 'Title' },
-  DefinitionPreviewFile = { link = 'Define' },
-  DefinitionPreviewTip = { link = 'Comment' },
+  DefinitionBorder = { fg = '#b3deef' },
+  DefinitionArrow = { fg = '#ad475f' },
+  DefinitionSearch = { link = 'Search' },
+  DefinitionFile = { bg = '#151838' },
   -- hover
   LspSagaHoverBorder = { fg = '#f7bb3b' },
   LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder' },
@@ -39,7 +40,7 @@ local highlights = {
   LspSagaRenameBorder = { fg = '#3bb6c4' },
   LspSagaRenameMatch = { link = 'Search' },
   -- diagnostic
-  LspSagaDiagnosticSource = { fg = '#FF8700' },
+  LspSagaDiagnosticSource = { link = 'Comment' },
   LspSagaDiagnosticError = { link = 'DiagnosticError' },
   LspSagaDiagnosticWarn = { link = 'DiagnosticWarn' },
   LspSagaDiagnosticInfo = { link = 'DiagnosticInfo' },
@@ -50,6 +51,9 @@ local highlights = {
   LspSagaHintTrunCateLine = { link = 'DiagnosticHint' },
   LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
   LspSagaDiagnosticHeader = { fg = '#afd700' },
+  DiagnosticQuickFix = { fg = '#4dd158', bold = true },
+  DiagnosticMap = { fg = '#cf80ce' },
+  DiagnosticLineCol = { fg = '#73797e' },
   LspSagaDiagnosticTruncateLine = { link = 'LspSagaDiagnosticBorder' },
   ColInLineDiagnostic = { link = 'Comment' },
   -- signture help

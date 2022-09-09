@@ -9,7 +9,13 @@ local subcommands = {
     finder:lsp_finder()
   end,
   preview_definition = function()
-    require('lspsaga.definition'):preview_definition()
+    vim.notify(
+      'preview_definition will be removed after three days,Please use peek_definition instead of',
+      vim.log.levels.WARN
+    )
+  end,
+  peek_definition = function()
+    require('lspsaga.definition'):peek_definition()
   end,
   rename = function()
     lsprename:lsp_rename()
@@ -25,7 +31,10 @@ local subcommands = {
     codeaction:code_action()
   end,
   range_code_action = function()
-    codeaction:range_code_action()
+    vim.notify(
+      'range_code_action will be removed after three days,Please use code_action instead of. check example config',
+      vim.log.levels.WARN
+    )
   end,
   open_floaterm = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)

@@ -15,8 +15,6 @@ saga.config_values = {
   },
   -- Error,Warn,Info,Hint
   diagnostic_header = { ' ', ' ', ' ', ' ' },
-  show_diagnostic_source = true,
-  diagnostic_source_bracket = { '❴', '❵' },
   -- code action title icon
   code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window
@@ -41,8 +39,6 @@ saga.config_values = {
     ref = ' ',
   },
   finder_request_timeout = 1500,
-  -- nvim 0.8 only
-  finder_preview_hl_ns = 0,
   finder_action_keys = {
     open = 'o',
     vsplit = 's',
@@ -59,7 +55,6 @@ saga.config_values = {
   },
   rename_action_quit = '<C-c>',
   rename_in_select = true,
-  definition_preview_icon = ' ',
   -- winbar must nightly
   symbol_in_winbar = {
     in_custom = false,

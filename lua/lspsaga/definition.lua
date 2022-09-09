@@ -2,10 +2,44 @@ local libs, window = require('lspsaga.libs'), require('lspsaga.window')
 local config = require('lspsaga').config_values
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local def = {}
-local path_sep = libs.path_sep
 local method = 'textDocument/definition'
 
-function def:preview_definition()
+function def:render_title_win(opts, link)
+  local path_sep = libs.path_sep
+  local root_dir = libs.get_lsp_root_dir()
+  if not root_dir then
+    root_dir = ''
+  end
+
+  local short_name
+  if link:find(root_dir, 1, true) then
+    short_name = link:sub(root_dir:len() + 2)
+  else
+    local _split = vim.split(link, path_sep)
+    if #_split >= 4 then
+      short_name = table.concat(_split, path_sep, #_split - 2, #_split)
+    end
+  end
+
+  local content_opts = {
+    contents = { '   Definition: ' .. short_name .. ' ' },
+    border = 'none',
+  }
+  self.title_bufnr, self.title_winid = window.create_win_with_border(content_opts, opts)
+  local ns_id = api.nvim_create_namespace('LspsagaDefinition')
+  api.nvim_buf_set_extmark(self.title_bufnr, ns_id, 0, 0, {
+    virt_text = { { '┃', 'DefinitionArrow' }, { ' ', 'DefinitionArrow' } },
+    virt_text_pos = 'overlay',
+  })
+  api.nvim_buf_set_extmark(self.title_bufnr, ns_id, 0, 0, {
+    virt_text = { { ' ', 'DefinitionArrow' }, { '┃', 'DefinitionArrow' } },
+    virt_text_pos = 'eol',
+  })
+
+  api.nvim_buf_add_highlight(self.title_bufnr, 0, 'DefinitionFile', 0, 0, -1)
+end
+
+function def:peek_definition()
   if not libs.check_lsp_active() then
     return
   end
@@ -16,7 +50,7 @@ function def:preview_definition()
   local current_buf = api.nvim_get_current_buf()
   lsp.buf_request_all(current_buf, method, params, function(results)
     if not results or next(results) == nil then
-      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil from ')
+      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil')
       return
     end
 
@@ -28,7 +62,7 @@ function def:preview_definition()
     end
 
     if not result then
-      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil from ')
+      vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil')
       return
     end
 
@@ -38,40 +72,15 @@ function def:preview_definition()
     end
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri)
-    local short_name
-    local root_dir = libs.get_lsp_root_dir()
-    if not root_dir then
-      root_dir = ''
-    end
-
-    -- reduce filename length by root_dir or home dir
-    if link:find(root_dir, 1, true) then
-      short_name = link:sub(root_dir:len() + 2)
-    else
-      local _split = vim.split(link, path_sep)
-      if #_split >= 4 then
-        short_name = table.concat(_split, path_sep, #_split - 2, #_split)
-      end
-    end
 
     if not vim.api.nvim_buf_is_loaded(bufnr) then
       fn.bufload(bufnr)
     end
+
     local range = result[1].targetRange or result[1].range
     local start_line = range.start.line
-
     local start_char_pos = range.start.character
-
-    local content = vim.api.nvim_buf_get_lines(
-      bufnr,
-      start_line,
-      range['end'].line + 1 + config.max_preview_lines,
-      false
-    )
-
-    local prompt = config.definition_preview_icon .. 'File: '
-    local quit = config.definition_action_keys.quit
-    content = vim.list_extend({ prompt .. short_name .. ' ' .. quit .. ' to quit', '' }, content)
+    local end_char_pos = range['end'].character
 
     local opts = {
       relative = 'cursor',
@@ -79,66 +88,59 @@ function def:preview_definition()
     }
     local WIN_WIDTH = api.nvim_get_option('columns')
     local max_width = math.floor(WIN_WIDTH * 0.6)
-    local max_height = math.floor(vim.o.lines * 0.6)
-    local width, _ = vim.lsp.util._make_floating_popup_size(content, opts)
+    local max_height = math.floor(vim.o.lines * 0.4)
 
-    if width > max_width then
-      opts.width = max_width
-    end
+    opts.width = max_width
+    opts.height = max_height
 
-    if #content > max_height then
-      opts.height = max_height
-    end
+    opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
 
+    self:render_title_win(opts, link)
+
+    opts.row = opts.row + 1
     local content_opts = {
-      contents = content,
+      contents = {},
       filetype = filetype,
       enter = true,
-      highlight = 'LspSagaDefPreviewBorder',
+      highlight = 'DefinitionBorder',
     }
 
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
-    if not vim.opt_local.modifiable:get() then
-      vim.opt_local.modifiable = true
-    end
+    vim.opt_local.modifiable = true
+    api.nvim_win_set_buf(0, bufnr)
+    api.nvim_win_set_option(self.winid, 'winbar', '')
     --set the initail cursor pos
-    api.nvim_win_set_cursor(self.winid, { 3, start_char_pos })
+    api.nvim_win_set_cursor(self.winid, { start_line + 1, start_char_pos })
+    vim.cmd('normal! zt')
 
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
-      buffer = current_buf,
-      once = true,
-      callback = function()
-        if self.winid ~= nil then
-          window.nvim_close_valid_window(self.winid)
-        end
-        self:clear_tmp_data()
-      end,
-      desc = 'Auto close lspsaga definition preview window',
-    })
+    local def_win_ns = api.nvim_create_namespace('DefinitionWinNs')
+    api.nvim_buf_add_highlight(
+      bufnr,
+      def_win_ns,
+      'DefinitionSearch',
+      start_line,
+      start_char_pos,
+      end_char_pos
+    )
 
+    local quit = config.definition_action_keys.quit
     vim.keymap.set('n', quit, function()
+      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
       if self.winid and api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
+        api.nvim_win_close(self.title_winid, true)
+        vim.keymap.del('n', quit, { buffer = bufnr })
       end
-    end, { buffer = self.bufnr })
+    end, { buffer = bufnr })
 
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionPreviewIcon', 0, 0, #prompt - 1)
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      0,
-      'DefinitionPreviewFile',
-      0,
-      #prompt + 1,
-      #prompt + #short_name
-    )
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      -1,
-      'DefinitionPreviewTip',
-      0,
-      #prompt + #short_name + 2,
-      -1
-    )
+    api.nvim_create_autocmd('QuitPre', {
+      once = true,
+      callback = function()
+        if self.title_winid and api.nvim_win_is_valid(self.title_winid) then
+          api.nvim_win_close(self.title_winid, true)
+        end
+      end,
+    })
   end)
 end
 
