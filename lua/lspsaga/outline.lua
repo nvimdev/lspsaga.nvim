@@ -47,7 +47,7 @@ end
 local function get_all_nodes(symbols)
   local nodes, hi_tbl = {}, {}
   local current_buf = api.nvim_get_current_buf()
-  symbols = symbols or cache[current_buf][2]
+  symbols = symbols or cache[current_buf]
 
   nodes_with_icon(symbols, nodes, hi_tbl)
 
