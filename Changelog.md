@@ -1,3 +1,19 @@
+## Version 0.2.2 -- 2022--09-09
+
+- fix symbolwinbar high memory usage
+- `preview_definition` chang to `peek_definition` support edit definition file in floatwindow and highlight
+- `code_action` support in visual mode .
+- `finder` preview highlight current word.
+-  show diagnostic source by default.
+- add lspsaga codeaction keymap in diagnostic header
+
+## Remove
+
+-  remove `definition_preview_icon`  option
+- remove `finder_preview_hl_ns`
+- remove `diagnostic_source_bracket`
+- remove `show_diagnostic_source` . 
+
 ## Version 0.2.1 -- 2022-08-30
 
 ### New
