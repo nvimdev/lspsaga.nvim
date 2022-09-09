@@ -108,7 +108,9 @@ function def:peek_definition()
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
     vim.opt_local.modifiable = true
     api.nvim_win_set_buf(0, bufnr)
-    api.nvim_win_set_option(self.winid, 'winbar', '')
+    if vim.fn.has('nvim-0.8') == 1 then
+      api.nvim_win_set_option(self.winid, 'winbar', '')
+    end
     --set the initail cursor pos
     api.nvim_win_set_cursor(self.winid, { start_line + 1, start_char_pos })
     vim.cmd('normal! zt')
