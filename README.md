@@ -173,7 +173,11 @@ code_action_keys = {
     exec = "<CR>",
 },
 definition_action_keys = {
-    quit = "q",
+  edit = '<C-c>o',
+  vsplit = '<C-c>v',
+  split = '<C-c>i',
+  tabe = '<C-c>t',
+  quit = 'q',
 },
 rename_action_quit = "<C-c>",
 rename_in_select = true,

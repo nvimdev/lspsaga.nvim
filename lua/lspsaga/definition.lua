@@ -44,6 +44,13 @@ function def:peek_definition()
     return
   end
 
+  -- push a tag stack
+  local pos = api.nvim_win_get_cursor(0)
+  local current_word = vim.fn.expand('<cword>')
+  local from = { api.nvim_get_current_buf(), pos[1], pos[2] + 1, 0 }
+  local items = { { tagname = current_word, from = from } }
+  vim.fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
+
   local filetype = vim.api.nvim_buf_get_option(0, 'filetype')
   local params = lsp.util.make_position_params()
 
@@ -71,7 +78,7 @@ function def:peek_definition()
       return
     end
     local bufnr = vim.uri_to_bufnr(uri)
-    local link = vim.uri_to_fname(uri)
+    self.link = vim.uri_to_fname(uri)
 
     if not vim.api.nvim_buf_is_loaded(bufnr) then
       fn.bufload(bufnr)
@@ -95,7 +102,7 @@ function def:peek_definition()
 
     opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
 
-    self:render_title_win(opts, link)
+    self:render_title_win(opts, self.link)
 
     opts.row = opts.row + 1
     local content_opts = {
@@ -115,25 +122,17 @@ function def:peek_definition()
     api.nvim_win_set_cursor(self.winid, { start_line + 1, start_char_pos })
     vim.cmd('normal! zt')
 
-    local def_win_ns = api.nvim_create_namespace('DefinitionWinNs')
+    self.def_win_ns = api.nvim_create_namespace('DefinitionWinNs')
     api.nvim_buf_add_highlight(
       bufnr,
-      def_win_ns,
+      self.def_win_ns,
       'DefinitionSearch',
       start_line,
       start_char_pos,
       end_char_pos
     )
 
-    local quit = config.definition_action_keys.quit
-    vim.keymap.set('n', quit, function()
-      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
-      if self.winid and api.nvim_win_is_valid(self.winid) then
-        api.nvim_win_close(self.winid, true)
-        api.nvim_win_close(self.title_winid, true)
-        vim.keymap.del('n', quit, { buffer = bufnr })
-      end
-    end, { buffer = bufnr })
+    self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
 
     api.nvim_create_autocmd('QuitPre', {
       once = true,
@@ -144,6 +143,34 @@ function def:peek_definition()
       end,
     })
   end)
+end
+
+function def:apply_aciton_keys(bufnr, pos)
+  local maps = config.definition_action_keys
+
+  local del_all_maps = function()
+    for _, key in pairs(maps) do
+      vim.keymap.del('n', key, { buffer = bufnr })
+    end
+  end
+
+  for action, key in pairs(maps) do
+    vim.keymap.set('n', key, function()
+      api.nvim_buf_clear_namespace(bufnr, self.def_win_ns, 0, -1)
+      del_all_maps()
+      self:close_window()
+      vim.cmd(action .. ' ' .. self.link)
+      api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+      self:clear_tmp_data()
+    end, { buffer = bufnr })
+  end
+end
+
+function def:close_window()
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
+    api.nvim_win_close(self.title_winid, true)
+  end
 end
 
 function def:clear_tmp_data()

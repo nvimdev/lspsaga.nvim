@@ -51,6 +51,10 @@ saga.config_values = {
     exec = '<CR>',
   },
   definition_action_keys = {
+    edit = '<C-c>o',
+    vsplit = '<C-c>v',
+    split = '<C-c>i',
+    tabe = '<C-c>t',
     quit = 'q',
   },
   rename_action_quit = '<C-c>',
