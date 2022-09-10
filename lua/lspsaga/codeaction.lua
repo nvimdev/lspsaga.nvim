@@ -14,20 +14,14 @@ function Action:action_callback()
   local title = config['code_action_icon'] .. 'CodeActions:'
   table.insert(contents, title)
 
-  local index = 0
-  for _, client_with_actions in pairs(self.action_tuples) do
+  for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
     if #client_with_actions ~= 2 then
-      vim.notify('There has somethint wrong in aciton_tuples')
+      vim.notify('There has something wrong in aciton_tuples')
       return
     end
-    index = index + 1
     if client_with_actions[2].title then
       action_title = '[' .. index .. ']' .. ' ' .. client_with_actions[2].title
-      if self.actions == nil then
-        self.actions = {}
-      end
-      self.actions[index] = client_with_actions
     end
     table.insert(contents, action_title)
   end
@@ -140,12 +134,33 @@ function Action:get_clients(results, options)
   end
 end
 
+local function check_sub_tbl(tbl)
+  for _, t in pairs(tbl) do
+    if type(t[1]) ~= 'number' then
+      return false
+    end
+
+    if type(t[2]) ~= 'table' or next(t[2]) == nil then
+      return false
+    end
+  end
+  return true
+end
+
 function Action:actions_in_cache()
   if not config.code_action_lightbulb.enable then
     return false
   end
 
-  if self.action_tuples and next(self.action_tuples) ~= nil then
+  if not config.code_action_lightbulb.cache_code_action then
+    return false
+  end
+
+  if
+    self.action_tuples
+    and next(self.action_tuples) ~= nil
+    and check_sub_tbl(self.action_tuples)
+  then
     return true
   end
 end
@@ -208,14 +223,14 @@ function Action:set_cursor()
   if current_line == 1 then
     api.nvim_win_set_cursor(self.action_winid, { 3, col })
   elseif current_line == 2 then
-    api.nvim_win_set_cursor(self.action_winid, { 2 + #self.actions, col })
-  elseif current_line == #self.actions + 3 then
+    api.nvim_win_set_cursor(self.action_winid, { 2 + #self.action_tuples, col })
+  elseif current_line == #self.action_tuples + 3 then
     api.nvim_win_set_cursor(self.action_winid, { 3, col })
   end
 end
 
 function Action:num_shortcut()
-  for num, _ in pairs(self.actions) do
+  for num, _ in pairs(self.action_tuples) do
     vim.keymap.set('n', tostring(num), function()
       self:do_code_action(num)
     end, { buffer = self.action_bufnr })
@@ -248,8 +263,8 @@ end
 
 function Action:do_code_action(num)
   local number = num and tonumber(num) or tonumber(vim.fn.expand('<cword>'))
-  local action = self.actions[number][2]
-  local client = vim.lsp.get_client_by_id(self.actions[number][1])
+  local action = self.action_tuples[number][2]
+  local client = vim.lsp.get_client_by_id(self.action_tuples[number][1])
 
   if
     not action.edit
@@ -270,7 +285,6 @@ function Action:do_code_action(num)
 end
 
 function Action:clear_tmp_data()
-  self.actions = {}
   self.bufnr = 0
   self.action_bufnr = 0
   self.action_winid = 0
