@@ -372,8 +372,15 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 <img
 src="https://user-images.githubusercontent.com/41671631/181253960-cef49f9d-db8b-4b04-92d8-cb6322749414.png" />
 </div>
-
 </details>
+
+<details>
+<summary>peek definition</summary>
+<div align="center">
+<img
+src="https://user-images.githubusercontent.com/41671631/189480034-89f4bcc8-918a-47a5-b2a4-0dfe1c688525.gif"/>
+</div>
+</details
 
 <details>
 <summary>Code action</summary>
