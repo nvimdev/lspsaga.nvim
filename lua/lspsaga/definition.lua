@@ -95,7 +95,7 @@ function def:peek_definition()
     }
     local WIN_WIDTH = api.nvim_get_option('columns')
     local max_width = math.floor(WIN_WIDTH * 0.6)
-    local max_height = math.floor(vim.o.lines * 0.4)
+    local max_height = math.floor(vim.o.lines * 0.6)
 
     opts.width = max_width
     opts.height = max_height
@@ -160,8 +160,10 @@ function def:apply_aciton_keys(bufnr, pos)
       del_all_maps()
       self:close_window()
       api.nvim_buf_delete(bufnr, { force = true })
-      vim.cmd(action .. ' ' .. self.link)
-      api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+      if action ~= 'quit' then
+        vim.cmd(action .. ' ' .. self.link)
+        api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+      end
       self:clear_tmp_data()
     end, { buffer = bufnr })
   end
