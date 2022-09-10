@@ -31,7 +31,7 @@ end
 function diag:code_action_map()
   local all_maps = api.nvim_get_keymap('n')
   for _, map in pairs(all_maps) do
-    if map.has and map.rhs:find('Lspsaga code_action') then
+    if map.rhs and map.rhs:find('Lspsaga code_action') then
       return map.lhs
     end
   end
