@@ -134,6 +134,18 @@ function def:peek_definition()
         vim.keymap.del('n', quit, { buffer = bufnr })
       end
     end, { buffer = bufnr })
+      
+    local enter = config.definition_action_keys.enter
+    vim.keymap.set('n', "<CR>", function()
+      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
+      if self.winid and api.nvim_win_is_valid(self.winid) then
+        api.nvim_win_close(self.winid, true)
+        api.nvim_win_close(self.title_winid, true)
+        vim.keymap.del('n', quit, { buffer = bufnr })
+        vim.lsp.buf.definition()
+      end
+    end, { buffer = bufnr })
+
 
     api.nvim_create_autocmd('QuitPre', {
       once = true,
