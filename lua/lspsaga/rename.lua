@@ -97,6 +97,33 @@ local feedkeys = function(keys, mode)
   api.nvim_feedkeys(api.nvim_replace_termcodes(keys, true, true, true), mode, true)
 end
 
+local function support_change()
+  local ok, _ = pcall(require, 'nvim-treesitter')
+  if not ok then
+    return true
+  end
+
+  local bufnr = api.nvim_get_current_buf()
+  local queries = require('nvim-treesitter.query')
+  local ft_to_lang = require('nvim-treesitter.parsers').ft_to_lang
+  local query = queries.get_query(ft_to_lang(vim.bo[bufnr].filetype), 'highlights')
+
+  local ts_utils = require('nvim-treesitter.ts_utils')
+  local current_node = ts_utils.get_node_at_cursor()
+  if not current_node then
+    return
+  end
+  local start_row, _, end_row, _ = current_node:range()
+  end_row = end_row + 1
+  for id, _, _ in query:iter_captures(current_node, 0, start_row, end_row) do
+    local name = query.captures[id]
+    if name:find('builtin') or name:find('keyword') then
+      return false
+    end
+  end
+  return true
+end
+
 function rename:lsp_rename()
   if not libs.check_lsp_active(false) then
     return
@@ -104,6 +131,12 @@ function rename:lsp_rename()
 
   local current_win = api.nvim_get_current_win()
   local current_word = vim.fn.expand('<cword>')
+
+  if not support_change() then
+    vim.notify('Current is builtin or keyword,you can not rename it', vim.log.levels.WARN)
+    return
+  end
+
   self.pos = api.nvim_win_get_cursor(current_win)
 
   local opts = {
