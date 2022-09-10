@@ -133,15 +133,15 @@ local function get_shadow_config()
   return opts
 end
 
-local function open_shadow_win()
-  local opts = get_shadow_config()
-  local shadow_winhl = 'Normal:SagaShadow,NormalNC:SagaShadow,EndOfBuffer:SagaShadow'
-  local shadow_bufnr = api.nvim_create_buf(false, true)
-  local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
-  api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
-  api.nvim_win_set_option(shadow_winid, 'winblend', 70)
-  return shadow_bufnr, shadow_winid
-end
+-- local function open_shadow_win()
+--   local opts = get_shadow_config()
+--   local shadow_winhl = 'Normal:SagaShadow,NormalNC:SagaShadow,EndOfBuffer:SagaShadow'
+--   local shadow_bufnr = api.nvim_create_buf(false, true)
+--   local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
+--   api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
+--   api.nvim_win_set_option(shadow_winid, 'winblend', 70)
+--   return shadow_bufnr, shadow_winid
+-- end
 
 -- content_opts a table with filed
 -- contents table type
@@ -201,9 +201,9 @@ function M.create_win_with_border(content_opts, opts)
 end
 
 function M.open_shadow_float_win(content_opts, opts)
-  local shadow_bufnr, shadow_winid = open_shadow_win()
+  -- local shadow_bufnr, shadow_winid = open_shadow_win()
   local contents_bufnr, contents_winid = M.create_win_with_border(content_opts, opts)
-  return contents_bufnr, contents_winid, shadow_bufnr, shadow_winid
+  return contents_bufnr, contents_winid
 end
 
 function M.get_max_float_width()

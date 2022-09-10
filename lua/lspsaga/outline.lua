@@ -79,11 +79,11 @@ local function set_local()
   end
 end
 
-local function gen_outline_hi()
-  for _, v in pairs(kind) do
-    api.nvim_set_hl(0, hi_prefix .. v[1], { fg = v[3] })
-  end
-end
+-- local function gen_outline_hi()
+--   for _, v in pairs(kind) do
+--     api.nvim_set_hl(0, hi_prefix .. v[1], { fg = v[3] })
+--   end
+-- end
 
 function ot.set_foldtext()
   local line = vim.fn.getline(vim.v.foldstart)
@@ -272,7 +272,7 @@ function ot:update_outline(symbols, refresh)
 
   local nodes, hi_tbl = get_all_nodes(symbols)
 
-  gen_outline_hi()
+  -- gen_outline_hi()
 
   if self.winid == nil then
     create_outline_window()
