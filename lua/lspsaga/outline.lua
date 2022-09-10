@@ -201,6 +201,8 @@ function ot:auto_preview(bufnr)
     highlight = 'LSOutlinePreviewBorder',
   }
 
+  opts.noautocmd = true
+
   self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
   api.nvim_win_set_var(0, 'outline_preview_win', { self.preview_bufnr, self.preview_winid })
 
@@ -244,9 +246,6 @@ end
 
 ---@private
 local do_symbol_request = function()
-  if vim.bo.filetype == 'lspsagaoutline' then
-    return
-  end
   local bufnr = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
   local client = libs.get_client_by_cap('documentSymbolProvider')
