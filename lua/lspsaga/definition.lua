@@ -159,7 +159,9 @@ function def:apply_aciton_keys(bufnr, pos)
       api.nvim_buf_clear_namespace(bufnr, self.def_win_ns, 0, -1)
       del_all_maps()
       self:close_window()
-      api.nvim_buf_delete(bufnr, { force = true })
+      if bufnr ~= api.nvim_get_current_buf() then
+        api.nvim_buf_delete(bufnr, { force = true })
+      end
       if action ~= 'quit' then
         vim.cmd(action .. ' ' .. self.link)
         api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
