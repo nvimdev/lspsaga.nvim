@@ -32,7 +32,11 @@ function diag:code_action_map()
   local all_maps = api.nvim_get_keymap('n')
   for _, map in pairs(all_maps) do
     if map.rhs and map.rhs:find('Lspsaga code_action') then
-      return map.lhs
+      local ret = map.lhs
+      if ret:sub(1, 1) == vim.g.mapleader then
+        ret = '<leader>' .. ret:sub(2)
+      end
+      return ret:gsub(' ', '<space>')
     end
   end
   return nil
