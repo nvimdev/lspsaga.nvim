@@ -140,12 +140,8 @@ function lb.action_lightbulb()
   end
 
   timer:stop()
+
   local current_buf = api.nvim_get_current_buf()
-  if not config.code_action_lightbulb.enable_in_insert and vim.fn.mode() == 'i' then
-    _update_sign(current_buf, nil)
-    _update_virtual_text(current_buf, nil)
-    return
-  end
   timer:start(config.code_action_lightbulb.update_time, 0, function()
     vim.schedule(function()
       render_bulb(current_buf)
@@ -169,6 +165,17 @@ function lb.lb_autocmd()
           callback = lb.action_lightbulb,
         })
 
+        if not config.code_action_lightbulb.enable_in_insert then
+          api.nvim_create_autocmd('InsertEnter', {
+            group = group,
+            buffer = current_buf,
+            callback = function()
+              _update_sign(current_buf, nil)
+              _update_virtual_text(current_buf, nil)
+            end,
+          })
+        end
+
         buf_auid[current_buf] = group
 
         api.nvim_buf_attach(current_buf, false, {
@@ -189,9 +196,10 @@ function lb.lb_autocmd()
   api.nvim_create_autocmd('FileType', {
     group = lightbulb_group,
     pattern = fts,
-    callback = function()
+    callback = function(opt)
       api.nvim_create_autocmd({ 'CursorMoved' }, {
         group = lightbulb_group,
+        buffer = opt.buf,
         callback = lb.action_lightbulb,
       })
     end,
