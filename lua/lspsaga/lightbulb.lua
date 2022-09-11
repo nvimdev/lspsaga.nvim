@@ -163,7 +163,7 @@ function lb.lb_autocmd()
       callback = function()
         local current_buf = api.nvim_get_current_buf()
         local group = api.nvim_create_augroup('LspSagaLightBulb' .. tostring(current_buf), {})
-        api.nvim_create_autocmd({ 'CursorMoved' }, {
+        api.nvim_create_autocmd({ 'CursorMoved', 'ModeChanged' }, {
           group = group,
           buffer = current_buf,
           callback = lb.action_lightbulb,
@@ -190,7 +190,7 @@ function lb.lb_autocmd()
     group = lightbulb_group,
     pattern = fts,
     callback = function()
-      api.nvim_create_autocmd({ 'CursorMoved' }, {
+      api.nvim_create_autocmd({ 'CursorMoved', 'ModeChanged' }, {
         group = lightbulb_group,
         callback = lb.action_lightbulb,
       })
