@@ -61,13 +61,9 @@ function def:peek_definition()
       return
     end
 
-    if config.debug_print then
-      vim.notify(vim.inspect(results))
-    end
-
     local result
     for _, res in pairs(results) do
-      if res and next(res) ~= nil then
+      if res and res.result then
         result = res.result
       end
     end
@@ -77,15 +73,14 @@ function def:peek_definition()
       return
     end
 
-    local uri
-    for _,res in pairs(result) do
-      if res.uri then
-        uri = res.uri
-      end
+    local uri, range
 
-      if res.targetUri then
-        uri = res.targetUri
-      end
+    if not vim.tbl_islist(result) and #result == 1 then
+      uri = result.uri or result.targetUri
+      range = result.range or result.targetRange
+    else
+      uri = result[1].uri or result[1].targetUri
+      range = result[1].range or result[1].targetRange
     end
 
     if not uri then
@@ -99,7 +94,6 @@ function def:peek_definition()
       fn.bufload(bufnr)
     end
 
-    local range = result[1].targetRange or result[1].range
     local start_line = range.start.line
     local start_char_pos = range.start.character
     local end_char_pos = range['end'].character
