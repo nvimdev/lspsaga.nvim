@@ -5,6 +5,7 @@ local saga = {}
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 saga.config_values = {
+  debug_print = false,
   border_style = 'single',
   saga_winblend = 0,
   -- when cusor in saga float window

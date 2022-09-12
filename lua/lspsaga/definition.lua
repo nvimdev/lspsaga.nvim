@@ -61,6 +61,10 @@ function def:peek_definition()
       return
     end
 
+    if config.debug_print then
+      vim.notify(results)
+    end
+
     local result
     for _, res in pairs(results) do
       if res and next(res) ~= nil then
