@@ -160,8 +160,11 @@ function Finder:do_request(params, method)
   lsp.buf_request_all(self.current_buf, method, params, function(results)
     local result = {}
     for _, res in pairs(results or {}) do
-      if res.result then
+      if res.result and not (res.uri or res.targetUri) then
         libs.merge_table(result, res.result)
+      else
+        -- this work for some servers like exlixir
+        libs.merge_table(result,{res.result})
       end
     end
 
