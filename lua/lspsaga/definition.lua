@@ -75,7 +75,7 @@ function def:peek_definition()
 
     local uri, range
 
-    if not vim.tbl_islist(result) and #result == 1 then
+    if result.uri or result.targetUri then
       uri = result.uri or result.targetUri
       range = result.range or result.targetRange
     else
