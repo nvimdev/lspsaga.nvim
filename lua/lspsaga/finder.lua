@@ -372,7 +372,9 @@ function Finder:render_finder_result()
     end,
   })
 
-  api.nvim_create_autocmd('QuitPre', {
+  local events = { 'QuitPre', 'WinLeave' }
+
+  api.nvim_create_autocmd(events, {
     group = finder_group,
     buffer = self.bufnr,
     callback = function()
@@ -380,27 +382,12 @@ function Finder:render_finder_result()
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
-    end,
-  })
-
-  api.nvim_create_autocmd('WinLeave', {
-    group = finder_group,
-    buffer = self.bufnr,
-    callback = function()
-      self:quit_with_clear()
-      if finder_group then
-        pcall(api.nvim_del_augroup_by_id, finder_group)
-      end
-    end,
-  })
-
-  api.nvim_create_autocmd('BufDelete', {
-    group = finder_group,
-    buffer = self.bufnr,
-    callback = function()
-      self:quit_with_clear()
-      if finder_group then
-        pcall(api.nvim_del_augroup_by_id, finder_group)
+      -- make sure close all finder preview window
+      for _, win in pairs(api.nvim_list_wins()) do
+        local ok, id = pcall(api.nvim_win_get_var, win, 'finder_preview')
+        if ok then
+          pcall(api.nvim_win_close, id, true)
+        end
       end
     end,
   })
@@ -715,8 +702,10 @@ function Finder:auto_open_preview()
     self:close_auto_preview_win()
 
     vim.defer_fn(function()
+      opts.noautocmd = true
       self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
       api.nvim_buf_set_option(self.preview_bufnr, 'buflisted', false)
+      api.nvim_win_set_var(self.preview_winid, 'finder_preview', self.preview_winid)
 
       libs.scroll_in_preview(self.bufnr, self.preview_winid)
 
@@ -731,13 +720,13 @@ function Finder:auto_open_preview()
         start_pos - 1,
         _end_col
       )
-    end, 5)
+    end, 10)
   end
 end
 
 function Finder:close_auto_preview_win()
   if self.preview_hl_ns then
-    api.nvim_buf_clear_namespace(self.preview_bufnr, self.preview_hl_ns, 0, -1)
+    pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
   end
   if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
     api.nvim_buf_delete(self.preview_bufnr, { force = true })
