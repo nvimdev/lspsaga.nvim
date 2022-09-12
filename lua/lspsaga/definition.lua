@@ -62,7 +62,7 @@ function def:peek_definition()
     end
 
     if config.debug_print then
-      vim.notify(results)
+      vim.notify(vim.inspect(results))
     end
 
     local result
