@@ -73,10 +73,21 @@ function def:peek_definition()
       return
     end
 
-    local uri = result[1].uri or result[1].targetUri
-    if #uri == 0 then
+    local uri
+    for _,res in pairs(result) do
+      if res.uri then
+        uri = res.uri
+      end
+
+      if res.targetUri then
+        uri = res.targetUri
+      end
+    end
+
+    if not uri then
       return
     end
+
     local bufnr = vim.uri_to_bufnr(uri)
     self.link = vim.uri_to_fname(uri)
 
