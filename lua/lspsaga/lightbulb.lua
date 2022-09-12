@@ -178,11 +178,12 @@ function lb.lb_autocmd()
 
         buf_auid[current_buf] = group
 
-        api.nvim_buf_attach(current_buf, false, {
-          on_detach = function()
-            if buf_auid[current_buf] then
-              pcall(api.nvim_del_augroup_by_id, buf_auid[current_buf])
-              rawset(buf_auid, current_buf, nil)
+        api.nvim_create_autocmd('BufDelete', {
+          buffer = current_buf,
+          callback = function(opt)
+            if buf_auid[opt.buf] then
+              pcall(api.nvim_del_augroup_by_id, buf_auid[opt.buf])
+              rawset(buf_auid, opt.buf, nil)
             end
           end,
         })
