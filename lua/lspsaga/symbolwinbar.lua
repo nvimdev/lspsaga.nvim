@@ -166,7 +166,7 @@ local render_symbol_winbar = function()
   end
 
   winbar_val = winbar_val .. str
-  if not config.in_custom then
+  if not config.in_custom and vim.fn.winheight(0) > 1 then
     vim.wo.winbar = winbar_val
   end
   return winbar_val
@@ -215,12 +215,12 @@ end
 
 local symbol_buf_ids = {}
 
-function symbar:symbol_events()
+function symbar:symbol_events(opt)
   if not libs.check_lsp_active(false) then
     return
   end
 
-  local current_buf = api.nvim_get_current_buf()
+  local current_buf = opt.buf
   self.pending_request = false
 
   self:get_buf_symbol(render_symbol_winbar)
@@ -265,8 +265,8 @@ end
 function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
-    callback = function()
-      symbar:symbol_events()
+    callback = function(opt)
+      symbar:symbol_events(opt)
     end,
     desc = 'Lspsaga get and show symbols',
   })
