@@ -181,13 +181,15 @@ function def:apply_aciton_keys(scope, bufnr, pos)
       local non_quit_action = action ~= 'quit'
       self:close_window(curr_scope, { close_all = non_quit_action })
 
+      self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
+      self:clear_all_maps(bufnr)
+
       if non_quit_action then
         vim.cmd(action .. ' ' .. link)
         api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+      else
+        self:focus_last_window() -- INFO: Only focus the last window when `quit`
       end
-
-      self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
-      self:clear_all_maps(bufnr)
     end, { buffer = bufnr })
   end
 end
@@ -296,6 +298,24 @@ function def:process_all_scopes(cb)
     if type(scopes) == 'table' and api.nvim_buf_is_valid(bufnr) then
       cb(bufnr, scopes)
     end
+  end
+end
+
+-- Function to find the last definition window and then focus it
+function def:focus_last_window()
+  local last_window
+  self:process_all_scopes(function(_, scopes)
+    for _, scope in ipairs(scopes) do
+      if last_window == nil or last_window < scope.winid then
+        if api.nvim_win_is_valid(scope.winid) then
+          last_window = scope.winid
+        end
+      end
+    end
+  end)
+
+  if last_window ~= nil then
+    api.nvim_set_current_win(last_window)
   end
 end
 
