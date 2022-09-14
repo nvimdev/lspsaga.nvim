@@ -161,15 +161,15 @@ function def:apply_aciton_keys(scope, bufnr, pos)
       api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
       local curr_scope = self:find_current_scope()
 
-      local close_all = action ~= 'quit'
-      self:close_window(curr_scope, { close_all = close_all })
+      local non_quit_action = action ~= 'quit'
+      self:close_window(curr_scope, { close_all = non_quit_action })
 
-      if close_all then
+      if non_quit_action then
         vim.cmd(action .. ' ' .. link)
         api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
       end
 
-      self:clear_tmp_data(bufnr, curr_scope, { close_all = close_all })
+      self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
       self:clear_all_maps(bufnr)
     end, { buffer = bufnr })
   end
