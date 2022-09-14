@@ -3,6 +3,7 @@ local config = require('lspsaga').config_values
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local def = {}
 local method = 'textDocument/definition'
+local definition_group = api.nvim_create_augroup('DefinitionAutoCmdGroup', { clear = true })
 
 function def:render_title_win(opts, scope)
   local link = scope.link
@@ -144,7 +145,21 @@ function def:peek_definition()
     )
 
     self:apply_aciton_keys(scope, bufnr, { start_line, start_char_pos })
+    self:apply_autocmds(scope)
   end)
+end
+
+function def:apply_autocmds(scope)
+  api.nvim_create_autocmd('WinClosed', {
+    desc = 'Remove the title window when the related content window is closed',
+    group = definition_group,
+    pattern = { tostring(scope.winid) },
+    callback = function()
+      if scope.title_winid and api.nvim_win_is_valid(scope.title_winid) then
+        api.nvim_win_close(scope.title_winid, true)
+      end
+    end,
+  })
 end
 
 function def:apply_aciton_keys(scope, bufnr, pos)
@@ -220,15 +235,13 @@ function def:close_window(curr_scope, opts)
   local curr_bufnr = api.nvim_get_current_buf()
 
   local close_scope = function(item)
-    local bufnr, winid, title_winid = item.bufnr, item.winid, item.title_winid
+    local bufnr, winid = item.bufnr, item.winid
     if bufnr and api.nvim_buf_is_loaded(bufnr) then
       api.nvim_buf_delete(bufnr, { force = true })
     end
 
-    for _, each_winid in ipairs({ winid, title_winid }) do
-      if api.nvim_win_is_valid(each_winid) then
-        api.nvim_win_close(each_winid, true)
-      end
+    if winid and api.nvim_win_is_valid(winid) then
+      api.nvim_win_close(winid, true)
     end
   end
 
