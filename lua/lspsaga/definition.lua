@@ -148,18 +148,20 @@ function def:peek_definition()
 end
 
 function def:apply_aciton_keys(scope, bufnr, pos)
-  local link, def_win_ns = scope.link, scope.def_win_ns
-  local maps = config.definition_action_keys
-
+  -- Save the current scope data
   if self[bufnr] == nil then
     self[bufnr] = {}
   end
   table.insert(self[bufnr], scope)
 
+  local maps = config.definition_action_keys
+
   for action, key in pairs(maps) do
     vim.keymap.set('n', key, function()
-      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
       local curr_scope = self:find_current_scope()
+      local link, def_win_ns = curr_scope.link, curr_scope.def_win_ns
+
+      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
 
       local non_quit_action = action ~= 'quit'
       self:close_window(curr_scope, { close_all = non_quit_action })
@@ -180,19 +182,19 @@ end
 function def:find_current_scope()
   local curr_winid = api.nvim_get_current_win()
 
-  local current_scope
+  local curr_scope
   for _, scopes in pairs(self) do
     if type(scopes) == 'table' then
       for _, scope in ipairs(scopes) do
         if scope.winid == curr_winid then
-          current_scope = scope
+          curr_scope = scope
           break
         end
       end
     end
   end
 
-  return current_scope
+  return curr_scope
 end
 
 -- Function to clear all the keymappings when there's no window
