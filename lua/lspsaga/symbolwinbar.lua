@@ -1,4 +1,4 @@
-local lsp, api = vim.lsp, vim.api
+local lsp, api, fn = vim.lsp, vim.api, vim.fn
 local config = require('lspsaga').config_values.symbol_in_winbar
 local libs = require('lspsaga.libs')
 local symbar = {
@@ -159,6 +159,23 @@ local render_symbol_winbar = function()
     click_node_cnt = 0
   end
   find_in_node(symbols, current_line - 1, winbar_elements)
+
+  local lens, over_idx = 0, 0
+  local max_width = math.floor(api.nvim_win_get_width(current_win) * 0.9)
+  for i, item in pairs(winbar_elements) do
+    local s = vim.split(item, '@')
+    lens = lens + fn.strdisplaywidth(s[3]) + fn.strdisplaywidth(config.separator)
+    if lens > max_width then
+      over_idx = i
+      lens = 0
+    end
+  end
+
+  if over_idx > 0 then
+    winbar_elements = { unpack(winbar_elements, over_idx) }
+    table.insert(winbar_elements, 1, '...')
+  end
+
   local str = table.concat(winbar_elements, winbar_sep)
 
   if config.show_file and next(winbar_elements) ~= nil then
