@@ -478,7 +478,7 @@ function Finder:render_finder_result()
 end
 
 function Finder:apply_float_map()
-  local action = config.finder_action_keys
+  local actions = config.finder_action_keys
   local move = config.move_in_saga
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local opts = {
@@ -487,50 +487,38 @@ function Finder:apply_float_map()
     silent = true,
   }
 
-  local open_func = function()
-    self:open_link(1)
-  end
-
-  local vsplit_func = function()
-    self:open_link(2)
-  end
-
-  local split_func = function()
-    self:open_link(3)
-  end
-
-  local tabe_func = function()
-    self:open_link(4)
-  end
-
-  local quit_func = function()
-    self:quit_with_clear()
-  end
+  local funcs = {
+    open = function()
+      self:open_link(1)
+    end,
+    vsplit = function()
+      self:open_link(2)
+    end,
+    split = function()
+      self:open_link(3)
+    end,
+    tabe = function()
+      self:open_link(4)
+    end,
+    quit = function()
+      self:quit_with_clear()
+    end,
+  }
 
   local keymaps = {
     { 'n', move.prev, '<Up>', opts },
     { 'n', move.next, '<Down>', opts },
-    { 'n', action.vsplit, vsplit_func, opts },
-    { 'n', action.split, split_func, opts },
-    { 'n', action.tabe, tabe_func, opts },
   }
-
-  if type(action.open) == 'table' then
-    for _, key in ipairs(action.open) do
-      insert(keymaps, { 'n', key, open_func, opts })
+  for action, keymap in pairs(actions) do
+    if type(keymap) == 'table' then
+      for _, key in ipairs(keymap) do
+        insert(keymaps, { 'n', key, funcs[action], opts })
+      end
+    elseif type(keymap) == 'string' then
+      insert(keymaps, { 'n', keymap, funcs[action], opts })
     end
-  elseif type(action.open) == 'string' then
-    insert(keymaps, { 'n', action.open, open_func, opts })
+    nvim_create_keymap(keymaps)
   end
-
-  if type(action.quit) == 'table' then
-    for _, key in ipairs(action.quit) do
-      insert(keymaps, { 'n', key, quit_func, opts })
-    end
-  elseif type(action.quit) == 'string' then
-    insert(keymaps, { 'n', action.quit, quit_func, opts })
-  end
-  nvim_create_keymap(keymaps)
 end
 
 function Finder:lsp_finder_highlight()
