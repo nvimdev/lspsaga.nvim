@@ -320,7 +320,7 @@ symbol_in_winbar = {
 
 ## Module Contact
 
-* Enable `symbol_in_winbar` will make render outline faset.
+* Enable `symbol_in_winbar` will make render outline fast.
 * Enable `code_action_lightbulb` will make code action fast.
 
 
@@ -328,7 +328,7 @@ symbol_in_winbar = {
 
 ### Custom Lsp Kind Icon and Color
 
-you can use the `custom_kind` option to change the default icon and color
+You can use the `custom_kind` option to change the default icon and color:
 
 ```lua
 -- if only change the color you can do it like
@@ -343,6 +343,7 @@ custom_kind = {
 ```
 
 ### Highlight Group
+  
 Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
 
 
