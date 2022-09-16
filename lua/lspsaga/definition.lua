@@ -172,25 +172,35 @@ function def:apply_aciton_keys(scope, bufnr, pos)
   local maps = config.definition_action_keys
 
   for action, key in pairs(maps) do
-    vim.keymap.set('n', key, function()
-      local curr_scope = self:find_current_scope()
-      local link, def_win_ns = curr_scope.link, curr_scope.def_win_ns
+    local function map_action(keymap)
+      vim.keymap.set('n', keymap, function()
+        local curr_scope = self:find_current_scope()
+        local link, def_win_ns = curr_scope.link, curr_scope.def_win_ns
 
-      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
+        api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
 
-      local non_quit_action = action ~= 'quit'
-      self:close_window(curr_scope, { close_all = non_quit_action })
+        local non_quit_action = action ~= 'quit'
+        self:close_window(curr_scope, { close_all = non_quit_action })
 
-      self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
-      self:clear_all_maps(bufnr)
+        self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
+        self:clear_all_maps(bufnr)
 
-      if non_quit_action then
-        vim.cmd(action .. ' ' .. link)
-        api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
-      else
-        self:focus_last_window() -- INFO: Only focus the last window when `quit`
+        if non_quit_action then
+          vim.cmd(action .. ' ' .. link)
+          api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+        else
+          self:focus_last_window() -- INFO: Only focus the last window when `quit`
+        end
+      end, { buffer = bufnr })
+    end
+
+    if type(key) == 'table' then
+      for _, k in ipairs(key) do
+        map_action(k)
       end
-    end, { buffer = bufnr })
+    elseif type(key) == 'string' then
+      map_action(key)
+    end
   end
 end
 
@@ -223,7 +233,13 @@ function def:clear_all_maps(bufnr)
   if scopes == nil or next(scopes) == nil then
     if api.nvim_buf_is_valid(bufnr) then
       for _, key in pairs(maps) do
-        vim.keymap.del('n', key, { buffer = bufnr })
+        if type(key) == 'table' then
+          for _, k in pairs(key) do
+            vim.keymap.del('n', k, { buffer = bufnr })
+          end
+        elseif type(key) == 'string' then
+          vim.keymap.del('n', key, { buffer = bufnr })
+        end
       end
     end
   end
