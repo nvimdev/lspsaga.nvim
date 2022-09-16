@@ -95,7 +95,7 @@ function Finder:loading_bar()
       '█████████▁',
       '██████████',
     },
-    interval = 10,
+    interval = 15,
     timeout = config.finder_request_timeout,
   }
   api.nvim_buf_set_option(spin_buf, 'modifiable', true)
@@ -375,7 +375,7 @@ function Finder:render_finder_result()
     end,
   })
 
-  local events = { 'QuitPre', 'WinLeave' }
+  local events = { 'WinClosed', 'WinLeave' }
 
   api.nvim_create_autocmd(events, {
     group = finder_group,
