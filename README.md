@@ -246,7 +246,7 @@ end
 
 local function config_winbar_or_statusline()
     local exclude = {
-        ['teminal'] = true,
+        ['terminal'] = true,
         ['toggleterm'] = true,
         ['prompt'] = true,
         ['NvimTree'] = true,
