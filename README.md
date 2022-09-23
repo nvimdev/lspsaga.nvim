@@ -376,7 +376,7 @@ src="https://user-images.githubusercontent.com/41671631/181253960-cef49f9d-db8b-
 <img
 src="https://user-images.githubusercontent.com/41671631/189480034-89f4bcc8-918a-47a5-b2a4-0dfe1c688525.gif"/>
 </div>
-</details
+</details>
 
 <details>
 <summary>Code action</summary>
