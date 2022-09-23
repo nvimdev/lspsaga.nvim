@@ -107,10 +107,14 @@ local function find_in_node(tbl, line, elements)
   local node = tbl[mid]
 
   local click = ''
-  if not config.click_support then
+  if config.click_support then
     click_node_cnt = click_node_cnt + 1
     click_node[click_node_cnt] = node
-    click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
+      if type(config.click_support) == "function" then
+        click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
+      else
+        vim.notify("[LspSaga] symbol_in_winbar.click_support is not a function", vim.log.levels.WARN)
+      end
   end
 
   local range = get_node_range(tbl[mid]) or {}
