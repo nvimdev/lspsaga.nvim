@@ -61,10 +61,11 @@ function diag:render_diagnostic_window(entry, option)
   local quickfix = lhs and 'QuickFixKey: ' .. lhs or ''
   wrap_message[1] = header_with_type .. lnum_col .. ' ' .. quickfix
 
-  local msgs = wrap.diagnostic_msg(entry.message .. source, max_width)
+  local msgs = wrap.diagnostic_msg(entry.message, max_width)
   for _, v in pairs(msgs) do
     table.insert(wrap_message, v)
   end
+  wrap_message[#wrap_message] = wrap_message[#wrap_message] .. source
 
   local truncate_line = wrap.add_truncate_line(wrap_message)
   table.insert(wrap_message, 2, truncate_line)
@@ -178,6 +179,7 @@ function diag:render_diagnostic_window(entry, option)
     #wrap_message[#wrap_message] - #source,
     -1
   )
+
   api.nvim_buf_add_highlight(
     self.bufnr,
     -1,
