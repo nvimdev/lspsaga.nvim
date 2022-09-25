@@ -106,7 +106,13 @@ local function support_change()
   local bufnr = api.nvim_get_current_buf()
   local queries = require('nvim-treesitter.query')
   local ft_to_lang = require('nvim-treesitter.parsers').ft_to_lang
-  local query = queries.get_query(ft_to_lang(vim.bo[bufnr].filetype), 'highlights')
+
+  local lang = ft_to_lang(vim.bo[bufnr].filetype)
+  local is_installed = #api.nvim_get_runtime_file('parser/' .. lang .. '.so', false) > 0
+  if not is_installed then
+    return true
+  end
+  local query = queries.get_query(lang, 'highlights')
 
   local ts_utils = require('nvim-treesitter.ts_utils')
   local current_node = ts_utils.get_node_at_cursor()
