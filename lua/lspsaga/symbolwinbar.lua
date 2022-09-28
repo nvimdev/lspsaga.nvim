@@ -10,8 +10,8 @@ local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 local cap = 'documentSymbolProvider'
 
-function symbar:get_file_name()
-  local file_name = string.gsub(vim.fn.expand('%:t'), '%%', '')
+function symbar:get_file_name(file_formatter)
+  local file_name = string.gsub(vim.fn.expand(file_formatter or '%:t'), '%%', '')
   local ok, devicons = pcall(require, 'nvim-web-devicons')
   local f_icon = ''
   local f_hl = ''
@@ -110,11 +110,11 @@ local function find_in_node(tbl, line, elements)
   if config.click_support then
     click_node_cnt = click_node_cnt + 1
     click_node[click_node_cnt] = node
-      if type(config.click_support) == "function" then
-        click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
-      else
-        vim.notify("[LspSaga] symbol_in_winbar.click_support is not a function", vim.log.levels.WARN)
-      end
+    if type(config.click_support) == 'function' then
+      click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
+    else
+      vim.notify('[LspSaga] symbol_in_winbar.click_support is not a function', vim.log.levels.WARN)
+    end
   end
 
   local range = get_node_range(tbl[mid]) or {}
@@ -122,8 +122,7 @@ local function find_in_node(tbl, line, elements)
   if mid > 1 then
     for i = 1, mid - 1 do
       local prev_range = get_node_range(tbl[i]) or {}
-      if
-        -- not sure there should be 6 or other kind can be used in here
+      if -- not sure there should be 6 or other kind can be used in here
         tbl[i].kind == 6
         and range.start.line > prev_range.start.line
         and range['end'].line <= prev_range['end'].line
@@ -146,7 +145,10 @@ local render_symbol_winbar = function()
   local current_buf = api.nvim_get_current_buf()
   local current_line = api.nvim_win_get_cursor(current_win)[1]
 
-  local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name() or ''
+  local winbar_val = config.show_file
+      and not config.in_custom
+      and symbar:get_file_name(config.file_formatter)
+    or ''
 
   if not symbar.symbol_cache[current_buf] and next(symbar.symbol_cache) == nil then
     return
