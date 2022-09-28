@@ -10,8 +10,8 @@ local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
 local method = 'textDocument/documentSymbol'
 local cap = 'documentSymbolProvider'
 
-function symbar:get_file_name()
-  local file_name = string.gsub(vim.fn.expand('%:t'), '%%', '')
+function symbar:get_file_name(file_formatter)
+  local file_name = string.gsub(vim.fn.expand(file_formatter or '%:t'), '%%', '')
   local ok, devicons = pcall(require, 'nvim-web-devicons')
   local f_icon = ''
   local f_hl = ''
@@ -146,7 +146,7 @@ local render_symbol_winbar = function()
   local current_buf = api.nvim_get_current_buf()
   local current_line = api.nvim_win_get_cursor(current_win)[1]
 
-  local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name() or ''
+  local winbar_val = config.show_file and not config.in_custom and symbar:get_file_name(config.file_formatter) or ''
 
   if not symbar.symbol_cache[current_buf] and next(symbar.symbol_cache) == nil then
     return
