@@ -110,11 +110,11 @@ local function find_in_node(tbl, line, elements)
   if config.click_support then
     click_node_cnt = click_node_cnt + 1
     click_node[click_node_cnt] = node
-      if type(config.click_support) == "function" then
-        click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
-      else
-        vim.notify("[LspSaga] symbol_in_winbar.click_support is not a function", vim.log.levels.WARN)
-      end
+    if type(config.click_support) == 'function' then
+      click = '%' .. tostring(click_node_cnt) .. '@v:lua.___lspsaga_winbar_click@'
+    else
+      vim.notify('[LspSaga] symbol_in_winbar.click_support is not a function', vim.log.levels.WARN)
+    end
   end
 
   local range = get_node_range(tbl[mid]) or {}
@@ -122,11 +122,10 @@ local function find_in_node(tbl, line, elements)
   if mid > 1 then
     for i = 1, mid - 1 do
       local prev_range = get_node_range(tbl[i]) or {}
-      if
-        -- not sure there should be 6 or other kind can be used in here
-        tbl[i].kind == 6
-        and range.start.line > prev_range.start.line
-        and range['end'].line <= prev_range['end'].line
+      if -- not sure there should be 6 or other kind can be used in here
+      tbl[i].kind == 6
+          and range.start.line > prev_range.start.line
+          and range['end'].line <= prev_range['end'].line
       then
         insert_elements(tbl[i], click, elements)
       end
@@ -247,7 +246,7 @@ function symbar:symbol_events(opt)
   self:get_buf_symbol(render_symbol_winbar)
 
   local symbol_group =
-    api.nvim_create_augroup('LspsagaSymbol' .. tostring(current_buf), { clear = true })
+  api.nvim_create_augroup('LspsagaSymbol' .. tostring(current_buf), { clear = true })
   symbol_buf_ids[current_buf] = symbol_group
 
   api.nvim_create_autocmd('CursorMoved', {
