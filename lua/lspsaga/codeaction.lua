@@ -249,14 +249,16 @@ function Action:apply_action(action, client)
       enriched_ctx.client_id = client.id
       fn(command, enriched_ctx)
     else
-      -- Not using command directly to exclude extra properties,
-      -- see https://github.com/python-lsp/python-lsp-server/issues/146
       local params = {
         command = command.command,
         arguments = command.arguments,
         workDoneToken = command.workDoneToken,
       }
-      client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
+      -- TODO: find why there must use a timer.
+      -- @see https://github.com/glepnir/lspsaga.nvim/issues/544
+      vim.defer_fn(function()
+        client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
+      end, 180)
     end
   end
 end
