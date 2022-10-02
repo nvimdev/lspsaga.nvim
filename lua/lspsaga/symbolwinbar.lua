@@ -169,8 +169,8 @@ local render_symbol_winbar = function()
   local lens, over_idx = 0, 0
   local max_width = math.floor(api.nvim_win_get_width(current_win) * 0.9)
   for i, item in pairs(winbar_elements) do
-    local s = vim.split(item, '@')
-    lens = lens + fn.strdisplaywidth(s[3]) + fn.strdisplaywidth(config.separator)
+    local s = vim.split(item, '#')
+    lens = lens + api.nvim_strwidth(s[3]) + api.nvim_strwidth(config.separator)
     if lens > max_width then
       over_idx = i
       lens = 0
