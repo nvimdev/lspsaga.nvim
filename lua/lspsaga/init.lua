@@ -77,6 +77,7 @@ saga.config_values = {
     virt_text = '┃',
     jump_key = 'o',
     auto_refresh = true,
+    auto_close = true,
   },
   custom_kind = {},
   server_filetype_map = {},

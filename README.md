@@ -208,6 +208,7 @@ show_outline = {
   jump_key = 'o',
   -- auto refresh when change buffer
   auto_refresh = true,
+  auto_close = true,
 },
 -- custom lsp kind
 -- usage { Field = 'color code'} or {Field = {your icon, your color code}}
