@@ -21,7 +21,7 @@ function rename:close_rename_win()
   api.nvim_win_set_cursor(0, { self.pos[1], self.pos[2] })
 
   if next(cursorword_hl) ~= nil then
-    api.nvim_set_hl(0, 'CursorWord', cursorword_hl)
+    pcall(api.nvim_set_hl, 0, 'CursorWord', cursorword_hl)
   end
 
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
