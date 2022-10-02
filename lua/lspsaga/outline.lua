@@ -461,7 +461,6 @@ end
 
 if config.show_outline.auto_close then
   vim.api.nvim_create_autocmd("BufEnter", {
-    nested = true,
     callback = function ()
       if #vim.api.nvim_list_wins() == 1 and vim.bo.filetype == "lspsagaoutline" then
         vim.cmd "quit"
