@@ -123,9 +123,9 @@ local function find_in_node(tbl, line, elements)
     for i = 1, mid - 1 do
       local prev_range = get_node_range(tbl[i]) or {}
       if -- not sure there should be 6 or other kind can be used in here
-        tbl[i].kind == 6
-        and range.start.line > prev_range.start.line
-        and range['end'].line <= prev_range['end'].line
+      tbl[i].kind == 6
+          and range.start.line > prev_range.start.line
+          and range['end'].line <= prev_range['end'].line
       then
         insert_elements(tbl[i], click, elements)
       end
@@ -148,7 +148,7 @@ local render_symbol_winbar = function()
   local winbar_val = config.show_file
       and not config.in_custom
       and symbar:get_file_name(config.file_formatter)
-    or ''
+      or ''
 
   if not symbar.symbol_cache[current_buf] and next(symbar.symbol_cache) == nil then
     return
@@ -189,8 +189,8 @@ local render_symbol_winbar = function()
   end
 
   winbar_val = winbar_val .. str
-  if not config.in_custom and vim.fn.winheight(0) > 1 then
-    vim.wo.winbar = winbar_val
+  if not config.in_custom and api.nvim_win_get_height(current_win) - 1 > 1 then
+    vim.wo[current_win].winbar = winbar_val
   end
   return winbar_val
 end
@@ -249,7 +249,7 @@ function symbar:symbol_events(opt)
   self:get_buf_symbol(render_symbol_winbar)
 
   local symbol_group =
-    api.nvim_create_augroup('LspsagaSymbol' .. tostring(current_buf), { clear = true })
+  api.nvim_create_augroup('LspsagaSymbol' .. tostring(current_buf), { clear = true })
   symbol_buf_ids[current_buf] = symbol_group
 
   api.nvim_create_autocmd('CursorMoved', {
