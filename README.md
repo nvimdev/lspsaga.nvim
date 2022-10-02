@@ -180,9 +180,12 @@ definition_action_keys = {
 rename_action_quit = "<C-c>",
 rename_in_select = true,
 -- show symbols in winbar must nightly
+-- in_custom mean use lspsaga api to get symbols
+-- and set it to your custom winbar or some winbar plugins.
+-- if in_cusomt = true you must set in_enable to false
 symbol_in_winbar = {
     in_custom = false,
-    enable = false,
+    enable = true,
     separator = ' ',
     show_file = true,
     -- define how to customize filename, eg: %:., %
