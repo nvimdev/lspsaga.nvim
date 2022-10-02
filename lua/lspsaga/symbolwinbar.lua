@@ -238,12 +238,12 @@ end
 
 local symbol_buf_ids = {}
 
-function symbar:symbol_events(opt)
+function symbar:symbol_events()
   if not libs.check_lsp_active(false) then
     return
   end
 
-  local current_buf = opt.buf
+  local current_buf = api.nvim_get_current_buf()
   self.pending_request = false
 
   self:get_buf_symbol(render_symbol_winbar)
@@ -288,8 +288,8 @@ end
 function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
-    callback = function(opt)
-      symbar:symbol_events(opt)
+    callback = function()
+      symbar:symbol_events()
     end,
     desc = 'Lspsaga get and show symbols',
   })
