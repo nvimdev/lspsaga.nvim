@@ -120,7 +120,6 @@ local function support_change()
     return
   end
   local start_row, _, end_row, _ = current_node:range()
-  end_row = end_row + 1
   for id, _, _ in query:iter_captures(current_node, 0, start_row, end_row) do
     local name = query.captures[id]
     if name:find('builtin') or name:find('keyword') then
@@ -136,7 +135,7 @@ function rename:lsp_rename()
   end
 
   local current_win = api.nvim_get_current_win()
-  local current_word = vim.fn.expand('<cWORD>')
+  local current_word = vim.fn.expand('<cword>')
 
   if not support_change() then
     vim.notify('Current is builtin or keyword,you can not rename it', vim.log.levels.WARN)
@@ -144,6 +143,15 @@ function rename:lsp_rename()
   end
 
   self.pos = api.nvim_win_get_cursor(current_win)
+
+  local _, end_col = vim.fn.getline('.'):find(current_word)
+  local next_char = api.nvim_buf_get_text(0, self.pos[1], end_col, self.pos[1], end_col)
+  if next_char ~= ' ' then
+    local old_val = vim.bo.keyword
+    vim.bo.keyword = vim.bo.keyword .. ',' .. next_char
+    current_word = vim.fn.expand('<cword')
+    vim.bo.keyword = old_val
+  end
 
   local opts = {
     height = 1,
