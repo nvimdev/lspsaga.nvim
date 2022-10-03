@@ -136,7 +136,7 @@ function rename:lsp_rename()
   end
 
   local current_win = api.nvim_get_current_win()
-  local current_word = vim.fn.expand('<cword>')
+  local current_word = vim.fn.expand('<cWORD>')
 
   if not support_change() then
     vim.notify('Current is builtin or keyword,you can not rename it', vim.log.levels.WARN)
