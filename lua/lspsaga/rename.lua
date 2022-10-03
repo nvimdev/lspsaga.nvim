@@ -147,11 +147,13 @@ function rename:lsp_rename()
   local _, end_col = vim.fn.getline('.'):find(current_word)
   local next_char =
     api.nvim_buf_get_text(0, self.pos[1] - 1, end_col, self.pos[1] - 1, end_col + 1, {})[1]
-  if next_char ~= ' ' then
-    local old_val = vim.bo.keyword
-    vim.bo.keyword = vim.bo.keyword .. ',' .. next_char
-    current_word = vim.fn.expand('<cword')
-    vim.bo.keyword = old_val
+
+  local spec_char = { ' ', '(' }
+  if not vim.tbl_contains(spec_char, next_char) then
+    local old_val = vim.bo.iskeyword
+    vim.bo.iskeyword = vim.bo.iskeyword .. ',' .. next_char
+    current_word = vim.fn.expand('<cword>')
+    vim.bo.iskeyword = old_val
   end
 
   local opts = {
