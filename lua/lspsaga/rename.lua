@@ -145,7 +145,8 @@ function rename:lsp_rename()
   self.pos = api.nvim_win_get_cursor(current_win)
 
   local _, end_col = vim.fn.getline('.'):find(current_word)
-  local next_char = api.nvim_buf_get_text(0, self.pos[1], end_col, self.pos[1], end_col)
+  local next_char =
+    api.nvim_buf_get_text(0, self.pos[1] - 1, end_col, self.pos[1] - 1, end_col + 1, {})[1]
   if next_char ~= ' ' then
     local old_val = vim.bo.keyword
     vim.bo.keyword = vim.bo.keyword .. ',' .. next_char
