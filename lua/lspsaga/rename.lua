@@ -120,7 +120,6 @@ local function support_change()
     return
   end
   local start_row, _, end_row, _ = current_node:range()
-  end_row = end_row + 1
   for id, _, _ in query:iter_captures(current_node, 0, start_row, end_row) do
     local name = query.captures[id]
     if name:find('builtin') or name:find('keyword') then
@@ -130,71 +129,128 @@ local function support_change()
   return true
 end
 
+---@private
+local function get_text_at_range(range, offset_encoding)
+  local bufnr = api.nvim_get_current_buf()
+  return api.nvim_buf_get_text(
+    bufnr,
+    range.start.line,
+    util._get_line_byte_from_position(bufnr, range.start, offset_encoding),
+    range['end'].line,
+    util._get_line_byte_from_position(bufnr, range['end'], offset_encoding),
+    {}
+  )[1]
+end
+
+local function do_prepare_rename(f)
+  local pre_method = 'textDocument/prepareRename'
+
+  local client
+  local clients = lsp.get_active_clients({ buffer = 0 })
+  for _, c in pairs(clients) do
+    local filetypes = c.filetypes
+    if
+      c.supports_method(pre_method)
+      and filetypes
+      and vim.tbl_contains(filetypes, vim.bo.filetype)
+    then
+      client = c
+      break
+    end
+  end
+  local current_word = vim.fn.expand('<cword>')
+
+  if client then
+    local current_win = api.nvim_get_current_win()
+    local params = util.make_position_params(current_win, client.offset_encoding)
+    client.request(pre_method, params, function(err, result)
+      if err or result == nil then
+        local msg = err and ('Error on prepareRename: ' .. (err.message or ''))
+          or 'Nothing to rename'
+        vim.notify(msg, vim.log.levels.INFO)
+        return
+      end
+
+      if result.placeholder then
+        current_word = result.placeholder
+      elseif result.start then
+        current_word = get_text_at_range(result, client.offset_encoding)
+      elseif result.range then
+        current_word = get_text_at_range(result.range, client.offset_encoding)
+      end
+      f(current_word)
+    end, 0)
+  else
+    f(current_word)
+  end
+end
+
 function rename:lsp_rename()
   if not libs.check_lsp_active(false) then
     return
   end
-
-  local current_win = api.nvim_get_current_win()
-  local current_word = vim.fn.expand('<cword>')
 
   if not support_change() then
     vim.notify('Current is builtin or keyword,you can not rename it', vim.log.levels.WARN)
     return
   end
 
-  self.pos = api.nvim_win_get_cursor(current_win)
+  local try_to_rename = function(current_word)
+    self.pos = api.nvim_win_get_cursor(0)
 
-  local opts = {
-    height = 1,
-    width = 30,
-  }
+    local opts = {
+      height = 1,
+      width = 30,
+    }
 
-  local content_opts = {
-    contents = {},
-    filetype = 'sagarename',
-    enter = true,
-    highlight = 'LspSagaRenameBorder',
-  }
+    local content_opts = {
+      contents = {},
+      filetype = 'sagarename',
+      enter = true,
+      highlight = 'LspSagaRenameBorder',
+    }
 
-  self:find_reference()
+    self:find_reference()
 
-  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
-  self:set_local_options()
-  api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
+    self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+    self:set_local_options()
+    api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
 
-  if config.rename_in_select then
-    vim.cmd([[normal! viw]])
-    feedkeys('<C-g>', 'n')
+    if config.rename_in_select then
+      vim.cmd([[normal! V]])
+      feedkeys('<C-g>', 'n')
+    end
+
+    local quit_id, close_unfocus
+    quit_id = api.nvim_create_autocmd('QuitPre', {
+      group = saga_augroup,
+      buffer = self.bufnr,
+      once = true,
+      nested = true,
+      callback = function()
+        self:close_rename_win()
+        if not quit_id then
+          api.nvim_del_autocmd(quit_id)
+          quit_id = nil
+        end
+      end,
+    })
+
+    close_unfocus = api.nvim_create_autocmd('WinLeave', {
+      group = saga_augroup,
+      buffer = self.bufnr,
+      callback = function()
+        api.nvim_win_close(0, true)
+        if close_unfocus then
+          api.nvim_del_autocmd(close_unfocus)
+          close_unfocus = nil
+        end
+      end,
+    })
+    self:apply_action_keys()
   end
 
-  local quit_id, close_unfocus
-  quit_id = api.nvim_create_autocmd('QuitPre', {
-    group = saga_augroup,
-    buffer = self.bufnr,
-    once = true,
-    nested = true,
-    callback = function()
-      self:close_rename_win()
-      if not quit_id then
-        api.nvim_del_autocmd(quit_id)
-        quit_id = nil
-      end
-    end,
-  })
-
-  close_unfocus = api.nvim_create_autocmd('WinLeave', {
-    group = saga_augroup,
-    buffer = self.bufnr,
-    callback = function()
-      api.nvim_win_close(0, true)
-      if close_unfocus then
-        api.nvim_del_autocmd(close_unfocus)
-        close_unfocus = nil
-      end
-    end,
-  })
-  self:apply_action_keys()
+  do_prepare_rename(try_to_rename)
 end
 
 function rename:do_rename()
