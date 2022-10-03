@@ -164,7 +164,7 @@ function rename:lsp_rename()
   api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
 
   if config.rename_in_select then
-    vim.cmd([[normal! viw]])
+    vim.cmd([[normal! V]])
     feedkeys('<C-g>', 'n')
   end
 
