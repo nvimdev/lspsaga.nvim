@@ -187,7 +187,6 @@ function def:apply_aciton_keys(scope, bufnr, pos)
       if non_quit_action then
         local win
         api.nvim_win_call(self.main_winid, function()
-          print(action)
           vim.cmd(action .. ' ' .. link)
           win = api.nvim_get_current_win()
         end)
