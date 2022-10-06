@@ -58,6 +58,10 @@ function def:peek_definition()
   local params = lsp.util.make_position_params()
 
   local current_buf = api.nvim_get_current_buf()
+  if not self.main_winid then
+    self.main_winid = api.nvim_get_current_win()
+  end
+
   lsp.buf_request_all(current_buf, method, params, function(results)
     if not results or next(results) == nil then
       vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil')
@@ -179,17 +183,20 @@ function def:apply_aciton_keys(scope, bufnr, pos)
       api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
 
       local non_quit_action = action ~= 'quit'
+
+      if non_quit_action then
+        api.nvim_win_call(self.main_winid, function()
+          vim.cmd(action .. ' ' .. link)
+          api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+        end)
+      else
+        self:focus_last_window() -- INFO: Only focus the last window when `quit`
+      end
+
       self:close_window(curr_scope, { close_all = non_quit_action })
 
       self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
       self:clear_all_maps(bufnr)
-
-      if non_quit_action then
-        vim.cmd(action .. ' ' .. link)
-        api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
-      else
-        self:focus_last_window() -- INFO: Only focus the last window when `quit`
-      end
     end, { buffer = bufnr })
   end
 end
