@@ -185,10 +185,17 @@ function def:apply_aciton_keys(scope, bufnr, pos)
       local non_quit_action = action ~= 'quit'
 
       if non_quit_action then
+        local win
         api.nvim_win_call(self.main_winid, function()
+          print(action)
           vim.cmd(action .. ' ' .. link)
-          api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+          win = api.nvim_get_current_win()
         end)
+
+        if win then
+          api.nvim_set_current_win(win)
+          api.nvim_win_set_cursor(win, { pos[1] + 1, pos[2] })
+        end
       else
         self:focus_last_window() -- INFO: Only focus the last window when `quit`
       end
