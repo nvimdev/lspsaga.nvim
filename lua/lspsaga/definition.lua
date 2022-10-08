@@ -261,10 +261,8 @@ function def:close_window(curr_scope, opts)
   end
 
   if opts.close_all then
-    self:process_all_scopes(function(bufnr, scopes)
-      for _, item in ipairs(scopes) do
-        close_scope(item)
-      end
+    self:process_all_scopes(function(bufnr, scope)
+      close_scope(scope)
 
       if bufnr ~= curr_bufnr then
         api.nvim_buf_delete(bufnr, { force = true })
@@ -309,7 +307,9 @@ end
 function def:process_all_scopes(cb)
   for bufnr, scopes in pairs(self) do
     if type(scopes) == 'table' and api.nvim_buf_is_valid(bufnr) then
-      cb(bufnr, scopes)
+      for _, scope in ipairs(scopes) do
+        cb(bufnr, scope)
+      end
     end
   end
 end
@@ -317,13 +317,13 @@ end
 -- Function to find the last definition window and then focus it
 function def:focus_last_window()
   local last_window
-  self:process_all_scopes(function(_, scopes)
-    for _, scope in ipairs(scopes) do
-      if last_window == nil or last_window < scope.winid then
-        if api.nvim_win_is_valid(scope.winid) then
-          last_window = scope.winid
-        end
-      end
+  local curr_win = api.nvim_get_current_win()
+  self:process_all_scopes(function(_, scope)
+    local valid_win = scope.winid ~= curr_win
+      and api.nvim_win_is_valid(scope.winid)
+
+    if last_window == nil or (scope.winid > last_window and valid_win) then
+      last_window = scope.winid
     end
   end)
 
