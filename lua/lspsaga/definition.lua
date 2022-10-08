@@ -319,8 +319,7 @@ function def:focus_last_window()
   local last_window
   local curr_win = api.nvim_get_current_win()
   self:process_all_scopes(function(_, scope)
-    local valid_win = scope.winid ~= curr_win
-      and api.nvim_win_is_valid(scope.winid)
+    local valid_win = scope.winid ~= curr_win and api.nvim_win_is_valid(scope.winid)
 
     if last_window == nil or (scope.winid > last_window and valid_win) then
       last_window = scope.winid
