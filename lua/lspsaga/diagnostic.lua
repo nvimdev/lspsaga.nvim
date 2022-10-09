@@ -55,6 +55,9 @@ function diag:render_diagnostic_window(entry, option)
     entry.source = entry.source:gsub('%.', '')
   end
   local source = ' ' .. entry.source
+  if entry.code ~= nil then
+    source = source .. '(' .. entry.code .. ')'
+  end
   local header_with_type = header .. diag_type[entry.severity]
   local lnum_col = ' in ' .. '❮' .. entry.lnum + 1 .. ':' .. entry.col + 1 .. '❯'
   local lhs = self:code_action_map()
