@@ -300,6 +300,16 @@ function def:clear_tmp_data(bufnr, curr_scope, opts)
       end
     end
   end
+
+  -- INFO: unset the `main_winid` when all the definition windows are closed.
+  local cleared = true
+  self:process_all_scopes(function(_, _)
+    cleared = false
+  end)
+
+  if cleared then
+    self.main_winid = nil
+  end
 end
 
 -- Function to iterate all the scopes with given callback function
