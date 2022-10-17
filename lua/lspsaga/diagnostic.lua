@@ -50,14 +50,21 @@ function diag:render_diagnostic_window(entry, option)
   local max_width = window.get_max_float_width()
 
   local header = jump_diagnostic_header(entry)
+  local source = ' '
+
   -- remove dot in source tail {lua-language-server}
   if entry.source and entry.source:find('%.$') then
     entry.source = entry.source:gsub('%.', '')
   end
-  local source = ' ' .. entry.source
+
+  if entry.source then
+    source = source .. entry.source
+  end
+
   if entry.code ~= nil then
     source = source .. '(' .. entry.code .. ')'
   end
+
   local header_with_type = header .. diag_type[entry.severity]
   local lnum_col = ' in ' .. '❮' .. entry.lnum + 1 .. ':' .. entry.col + 1 .. '❯'
   local lhs = self:code_action_map()
