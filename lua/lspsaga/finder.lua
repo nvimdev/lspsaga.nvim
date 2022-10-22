@@ -513,23 +513,10 @@ function Finder:apply_float_map()
     { 'n', action.vsplit, vsplit_func, opts },
     { 'n', action.split, split_func, opts },
     { 'n', action.tabe, tabe_func, opts },
+    { 'n', action.open, open_func, opts },
+    { 'n', action.quit, quit_func, opts },
   }
 
-  if type(action.open) == 'table' then
-    for _, key in ipairs(action.open) do
-      insert(keymaps, { 'n', key, open_func, opts })
-    end
-  elseif type(action.open) == 'string' then
-    insert(keymaps, { 'n', action.open, open_func, opts })
-  end
-
-  if type(action.quit) == 'table' then
-    for _, key in ipairs(action.quit) do
-      insert(keymaps, { 'n', key, quit_func, opts })
-    end
-  elseif type(action.quit) == 'string' then
-    insert(keymaps, { 'n', action.quit, quit_func, opts })
-  end
   nvim_create_keymap(keymaps)
 end
 

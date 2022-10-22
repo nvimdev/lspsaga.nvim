@@ -41,11 +41,11 @@ saga.config_values = {
   },
   finder_request_timeout = 1500,
   finder_action_keys = {
-    open = 'o',
+    open = { 'o', '<CR>' },
     vsplit = 's',
     split = 'i',
     tabe = 't',
-    quit = 'q',
+    quit = { 'q', '<ESC>' },
   },
   code_action_keys = {
     quit = 'q',
