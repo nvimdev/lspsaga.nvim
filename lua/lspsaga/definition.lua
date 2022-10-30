@@ -82,12 +82,12 @@ function def:peek_definition()
 
     local uri, range
 
-    if result.uri or result.targetUri then
-      uri = result.uri or result.targetUri
-      range = result.range or result.targetRange
-    else
+    if type(result[1]) == "table" then
       uri = result[1].uri or result[1].targetUri
       range = result[1].range or result[1].targetRange
+    else
+      uri = result.uri or result.targetUri
+      range = result.range or result.targetRange
     end
 
     if not uri then
