@@ -160,15 +160,15 @@ finder_icons = {
 -- you may need to increase this value
 finder_request_timeout = 1500,
 finder_action_keys = {
-    open = "o",
-    vsplit = "s",
-    split = "i",
-    tabe = "t",
-    quit = "q",
+    open = {'o', '<CR>'},
+    vsplit = 's',
+    split = 'i',
+    tabe = 't',
+    quit = {'q', '<ESC>'},
 },
 code_action_keys = {
-    quit = "q",
-    exec = "<CR>",
+    quit = 'q',
+    exec = '<CR>',
 },
 definition_action_keys = {
   edit = '<C-c>o',
@@ -177,7 +177,7 @@ definition_action_keys = {
   tabe = '<C-c>t',
   quit = 'q',
 },
-rename_action_quit = "<C-c>",
+rename_action_quit = '<C-c>',
 rename_in_select = true,
 -- show symbols in winbar must nightly
 -- in_custom mean use lspsaga api to get symbols
@@ -351,7 +351,7 @@ custom_kind = {
 ```
 
 ### Highlight Group
-  
+
 Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
 
 
