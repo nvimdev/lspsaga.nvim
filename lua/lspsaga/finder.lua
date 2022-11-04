@@ -286,7 +286,7 @@ function Finder:create_finder_contents(result, method)
     local range = res.targetRange or res.range
     local lines = api.nvim_buf_get_lines(
       bufnr,
-      range.start.line - 0,
+      range.start.line - config.preview_lines_above,
       range['end'].line + 1 + config.max_preview_lines,
       false
     )
@@ -706,7 +706,7 @@ function Finder:auto_open_preview()
         self.preview_bufnr,
         self.preview_hl_ns,
         'FinderPreviewSearch',
-        0,
+        0 + config.preview_lines_above,
         start_pos - 1,
         _end_col
       )
