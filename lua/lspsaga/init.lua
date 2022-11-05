@@ -30,7 +30,6 @@ saga.config_values = {
     virtual_text = true,
   },
   preview_lines_above = 0,
-  preview_before_lines = 0,
   max_preview_lines = 15,
   scroll_in_preview = {
     scroll_down = '<C-f>',
