@@ -702,11 +702,19 @@ function Finder:auto_open_preview()
       if not self.preview_hl_ns then
         self.preview_hl_ns = api.nvim_create_namespace('FinderPreview')
       end
+      local trimLines = 0
+      for _, v in pairs(content) do
+        if v == '' then
+          trimLines = trimLines + 1
+        else
+          break
+        end
+      end
       api.nvim_buf_add_highlight(
         self.preview_bufnr,
         self.preview_hl_ns,
         'FinderPreviewSearch',
-        0 + config.preview_lines_above,
+        0 + config.preview_lines_above - trimLines,
         start_pos - 1,
         _end_col
       )
