@@ -67,9 +67,8 @@ local highlights = {
   LspSagaBorderTitle = { link = 'String' },
   -- Outline
   LSOutlinePreviewBorder = { fg = '#52ad70' },
-  OutlineIndentEvn = { fg = '#c955ae' },
-  OutlineIndentOdd = { fg = '#b8733e' },
-  OutlineFoldPrefix = { fg = '#bf4537' },
+  OutlineExpand = { fg = '#c955ae' },
+  OutlineCollaspe = { fg = '#b8733e' },
   OutlineDetail = { fg = '#73797e' },
   -- all floatwindow of lspsaga
   LspFloatWinNormal = { link = 'Normal' },

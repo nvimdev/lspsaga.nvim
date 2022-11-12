@@ -1,5 +1,5 @@
 local ot = {}
-local api, lsp = vim.api, vim.lsp
+local api, lsp, fn, keymap = vim.api, vim.lsp, vim.fn, vim.keymap
 local symbar = require('lspsaga.symbolwinbar')
 local cache = symbar.symbol_cache
 local kind = require('lspsaga.lspkind')
@@ -13,32 +13,52 @@ local max_preview_lines = config.max_preview_lines
 local outline_conf = config.show_outline
 local method = 'textDocument/documentSymbol'
 
+-- alias built in
+local insert = table.insert
+
 local function nodes_with_icon(tbl, nodes, hi_tbl, level)
   local current_buf = api.nvim_get_current_buf()
   local icon, hi, line = '', '', ''
+
+  if ot[current_buf].preview_contents == nil then
+    ot[current_buf].preview_contents = {}
+    ot[current_buf].link = {}
+    ot[current_buf].details = {}
+    ot[current_buf].expand_line = {}
+  end
 
   for _, node in pairs(tbl) do
     level = level or 1
     icon = kind[node.kind][2]
     hi = hi_prefix .. kind[node.kind][1]
     local indent = string.rep(space, level)
-
-    line = indent .. icon .. node.name
-    table.insert(nodes, line)
-    table.insert(hi_tbl, hi)
-    if ot[current_buf].preview_contents == nil then
-      ot[current_buf].preview_contents = {}
-      ot[current_buf].link = {}
-      ot[current_buf].details = {}
+    local indent_with_icon = indent .. icon
+    local prev_indent = 2
+    if next(nodes) ~= nil then
+      _, prev_indent = nodes[#nodes]:find('%s+')
     end
-    local range = node.location ~= nil and node.location.range or node.range
+
+    if #indent > prev_indent then
+      local text = nodes[#nodes]
+      local tmp = text:sub(1, prev_indent - 2) .. outline_conf.icon.expand
+      nodes[#nodes] = tmp .. text:sub(prev_indent)
+      insert(hi_tbl[#hi_tbl], #tmp)
+      ot[current_buf].expand_line[#hi_tbl] = true
+    end
+
+    line = indent_with_icon .. node.name
+
+    insert(nodes, line)
+    insert(hi_tbl, { hi, #indent_with_icon })
+    -- get preview contents
+    local range = node.location and node.location.range or node.range
     local _end_line = range['end'].line + 1
     local content = api.nvim_buf_get_lines(current_buf, range.start.line, _end_line, false)
-    table.insert(ot[current_buf].preview_contents, content)
-    table.insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
-    table.insert(ot[current_buf].details, node.detail)
+    insert(ot[current_buf].preview_contents, content)
+    insert(ot[current_buf].link, { range.start.line + 1, range.start.character })
+    insert(ot[current_buf].details, node.detail)
 
-    if node.children ~= nil and next(node.children) ~= nil then
+    if node.children and next(node.children) ~= nil then
       nodes_with_icon(node.children, nodes, hi_tbl, level + 1)
     end
   end
@@ -69,10 +89,6 @@ local function set_local()
     spell = false,
     cursorcolumn = false,
     cursorline = false,
-    foldmethod = 'expr',
-    foldexpr = "v:lua.require'lspsaga.outline'.set_fold()",
-    foldtext = "v:lua.require'lspsaga.outline'.set_foldtext()",
-    fillchars = { eob = '-', fold = ' ' },
   }
   for opt, val in pairs(local_options) do
     vim.opt_local[opt] = val
@@ -85,50 +101,7 @@ local function gen_outline_hi()
   end
 end
 
-function ot.set_foldtext()
-  local line = vim.fn.getline(vim.v.foldstart)
-  return outline_conf.fold_prefix .. line
-end
-
-function ot.set_fold()
-  local cur_indent = vim.fn.indent(vim.v.lnum)
-  local next_indent = vim.fn.indent(vim.v.lnum + 1)
-
-  if cur_indent == next_indent then
-    return (cur_indent / vim.bo.shiftwidth) - 1
-  elseif next_indent < cur_indent then
-    return (cur_indent / vim.bo.shiftwidth) - 1
-  elseif next_indent > cur_indent then
-    return '>' .. (next_indent / vim.bo.shiftwidth) - 1
-  end
-end
-
 local virt_id = api.nvim_create_namespace('lspsaga_outline')
-local virt_hi = { 'OutlineIndentOdd', 'OutlineIndentEvn' }
-
-function ot:fold_indent_virt(tbl)
-  local level, col = 0, 0
-  local virt_with_hi = {}
-  for index, _ in pairs(tbl) do
-    level = vim.fn.foldlevel(index)
-    if level > 0 then
-      for i = 1, level do
-        if bit.band(i, 1) == 1 then
-          col = i == 1 and i - 1 or col + 2
-          virt_with_hi = { { outline_conf.virt_text, virt_hi[1] } }
-        else
-          col = col + 2
-          virt_with_hi = { { outline_conf.virt_text, virt_hi[2] } }
-        end
-
-        api.nvim_buf_set_extmark(0, virt_id, index - 1, col, {
-          virt_text = virt_with_hi,
-          virt_text_pos = 'overlay',
-        })
-      end
-    end
-  end
-end
 
 function ot:detail_virt_text(bufnr)
   if not self[bufnr].details then
@@ -155,7 +128,7 @@ function ot:auto_preview(bufnr)
   local current_line = api.nvim_win_get_cursor(0)[1]
   local content = self[bufnr].preview_contents[current_line]
 
-  local WIN_WIDTH = api.nvim_get_option('columns')
+  local WIN_WIDTH = vim.o.columns
   local max_width = math.floor(WIN_WIDTH * 0.5)
   local max_height = #content
 
@@ -170,30 +143,18 @@ function ot:auto_preview(bufnr)
     width = max_width,
   }
 
-  local winid = vim.fn.bufwinid(bufnr)
-  local _height = vim.fn.winheight(winid)
-  local win_height
+  local winid = fn.bufwinid(bufnr)
+  local _height = api.nvim_win_get_height(winid)
+  local win_height = api.nvim_win_get_height(0)
 
   if outline_conf.win_position == 'right' then
     opts.anchor = 'NE'
     opts.col = WIN_WIDTH - outline_conf.win_width - 1
-    opts.row = vim.fn.winline()
-    win_height = vim.fn.winheight(0)
-    if win_height < _height then
-      opts.row = (_height - win_height) + vim.fn.winline()
-    else
-      opts.row = vim.fn.winline()
-    end
   else
     opts.anchor = 'NW'
     opts.col = outline_conf.win_width + 1
-    win_height = vim.fn.winheight(0)
-    if win_height < _height then
-      opts.row = (_height - win_height) + vim.fn.winline()
-    else
-      opts.row = vim.fn.winline()
-    end
   end
+  opts.row = win_height < _height and (_height - win_height) + fn.winline() or fn.winline() - 1
 
   local content_opts = {
     contents = content,
@@ -213,10 +174,23 @@ function ot:auto_preview(bufnr)
   end, 0)
 end
 
+function ot:expand_collaspe(bufnr)
+  local current_line = api.nvim_win_get_cursor(self.winid)[1]
+  local status = self[bufnr].expand_line[current_line]
+  if status == nil then
+    return
+  end
+
+  if status then
+    local current_text = api.nvim_get_current_line()
+    current_text = current_text:gsub(outline_conf.icon.expand, outline_conf.icon.collaspe)
+  end
+end
+
 function ot:jump_to_line(bufnr)
   local current_line = api.nvim_win_get_cursor(0)[1]
   local pos = self[bufnr].link[current_line]
-  local win = vim.fn.win_findbuf(bufnr)[1]
+  local win = fn.win_findbuf(bufnr)[1]
   api.nvim_set_current_win(win)
   api.nvim_win_set_cursor(win, pos)
 end
@@ -228,11 +202,11 @@ function ot:render_status()
 end
 
 local create_outline_window = function()
-  if string.len(outline_conf.win_with) > 0 then
+  if #outline_conf.win_with > 0 then
     local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
 
     if ok then
-      local winid = vim.fn.win_findbuf(sp_buf)[1]
+      local winid = fn.win_findbuf(sp_buf)[1]
       api.nvim_set_current_win(winid)
       vim.cmd('noautocmd sp vnew')
       return
@@ -292,14 +266,20 @@ function ot:update_outline(symbols, refresh)
 
   api.nvim_buf_set_lines(self.winbuf, 0, -1, false, nodes)
 
-  self:fold_indent_virt(nodes)
-
-  self:detail_virt_text(current_buf)
+  if config.show_outline.show_detail then
+    self:detail_virt_text(current_buf)
+  end
 
   api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
 
   for i, hi in pairs(hi_tbl) do
-    api.nvim_buf_add_highlight(self.winbuf, 0, hi, i - 1, 0, -1)
+    local group, scope, expand = unpack(hi)
+    if expand then
+      api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineExpand', i - 1, 0, expand)
+      api.nvim_buf_add_highlight(self.winbuf, 0, group, i - 1, expand + 1, scope + 1)
+    else
+      api.nvim_buf_add_highlight(self.winbuf, 0, group, i - 1, 0, scope)
+    end
   end
 
   if not outline_conf.auto_enter or refresh then
@@ -319,8 +299,14 @@ function ot:update_outline(symbols, refresh)
 
   self[current_buf].in_render = true
 
-  vim.keymap.set('n', outline_conf.jump_key, function()
+  keymap.set('n', outline_conf.keys.jump, function()
     self:jump_to_line(current_buf)
+  end, {
+    buffer = self.winbuf,
+  })
+
+  keymap.set('n', outline_conf.keys.expand_collaspe, function()
+    self:expand_collaspe(current_buf)
   end, {
     buffer = self.winbuf,
   })
@@ -417,10 +403,6 @@ function ot:render_outline(refresh)
   refresh = refresh or false
 
   if self.status and not refresh then
-    if api.nvim_buf_is_loaded(self.winbuf) then
-      api.nvim_buf_delete(self.winbuf, { force = true })
-    end
-
     window.nvim_close_valid_window(self.winid)
     self.winid = nil
     self.winbuf = nil

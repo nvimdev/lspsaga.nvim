@@ -153,55 +153,38 @@ local buf_auid = {}
 
 function lb.lb_autocmd()
   local lightbulb_group = api.nvim_create_augroup('LspSagaLightBulb', { clear = true })
-  if vim.fn.has('nvim-0.8') == 1 then
-    api.nvim_create_autocmd('LspAttach', {
-      group = lightbulb_group,
-      callback = function()
-        local current_buf = api.nvim_get_current_buf()
-        local group = api.nvim_create_augroup('LspSagaLightBulb' .. tostring(current_buf), {})
-        api.nvim_create_autocmd({ 'CursorMoved' }, {
+  api.nvim_create_autocmd('LspAttach', {
+    group = lightbulb_group,
+    callback = function()
+      local current_buf = api.nvim_get_current_buf()
+      local group = api.nvim_create_augroup('LspSagaLightBulb' .. tostring(current_buf), {})
+      api.nvim_create_autocmd({ 'CursorMoved' }, {
+        group = group,
+        buffer = current_buf,
+        callback = lb.action_lightbulb,
+      })
+
+      if not config.code_action_lightbulb.enable_in_insert then
+        api.nvim_create_autocmd('InsertEnter', {
           group = group,
           buffer = current_buf,
-          callback = lb.action_lightbulb,
-        })
-
-        if not config.code_action_lightbulb.enable_in_insert then
-          api.nvim_create_autocmd('InsertEnter', {
-            group = group,
-            buffer = current_buf,
-            callback = function()
-              _update_sign(current_buf, nil)
-              _update_virtual_text(current_buf, nil)
-            end,
-          })
-        end
-
-        buf_auid[current_buf] = group
-
-        api.nvim_create_autocmd('BufDelete', {
-          buffer = current_buf,
-          callback = function(opt)
-            if buf_auid[opt.buf] then
-              pcall(api.nvim_del_augroup_by_id, buf_auid[opt.buf])
-              rawset(buf_auid, opt.buf, nil)
-            end
+          callback = function()
+            _update_sign(current_buf, nil)
+            _update_virtual_text(current_buf, nil)
           end,
         })
-      end,
-    })
-    return
-  end
+      end
 
-  ---@deprecated when 0.8 release remove this
-  local fts = libs.get_config_lsp_filetypes()
-  api.nvim_create_autocmd('FileType', {
-    group = lightbulb_group,
-    pattern = fts,
-    callback = function(opt)
-      api.nvim_create_autocmd({ 'CursorMoved' }, {
-        group = lightbulb_group,
-        buffer = opt.buf,
-        callback = lb.action_lightbulb,
+      buf_auid[current_buf] = group
+
+      api.nvim_create_autocmd('BufDelete', {
+        buffer = current_buf,
+        callback = function(opt)
+          if buf_auid[opt.buf] then
+            pcall(api.nvim_del_augroup_by_id, buf_auid[opt.buf])
+            rawset(buf_auid, opt.buf, nil)
+          end
+        end,
       })
     end,
   })
