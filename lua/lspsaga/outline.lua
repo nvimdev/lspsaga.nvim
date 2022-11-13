@@ -40,10 +40,11 @@ local function nodes_with_icon(tbl, nodes, hi_tbl, level)
 
     if #indent > prev_indent then
       local text = nodes[#nodes]
-      local tmp = text:sub(1, prev_indent - 2) .. outline_conf.icon.expand
-      nodes[#nodes] = tmp .. text:sub(prev_indent)
+      local cell = api.nvim_strwidth(outline_conf.icon.expand)
+      local tmp = text:sub(1, prev_indent - cell) .. outline_conf.icon.expand
+      nodes[#nodes] = tmp .. text:sub(prev_indent + 1)
       insert(hi_tbl[#hi_tbl], #tmp)
-      ot[current_buf].expand_line[#hi_tbl] = true
+      ot[current_buf].expand_line[#hi_tbl] = { true, prev_indent }
     end
 
     line = indent_with_icon .. node.name
@@ -176,14 +177,31 @@ end
 
 function ot:expand_collaspe(bufnr)
   local current_line = api.nvim_win_get_cursor(self.winid)[1]
-  local status = self[bufnr].expand_line[current_line]
-  if status == nil then
+  local expand_data = self[bufnr].expand_line
+  if not libs.has_key(expand_data, current_line) then
     return
   end
 
-  if status then
-    local current_text = api.nvim_get_current_line()
+  local current_text = api.nvim_get_current_line()
+
+  local _end_pos = 0
+  if expand_data[current_line][1] then
+    for k, v in pairs(expand_data) do
+      if v[2] == expand_data[current_line][2] and current_line ~= k then
+        _end_pos = k
+        break
+      end
+    end
+
     current_text = current_text:gsub(outline_conf.icon.expand, outline_conf.icon.collaspe)
+    local _, pos = current_text:find(outline_conf.icon.collaspe)
+    api.nvim_buf_set_option(self.winbuf, 'modifiable', true)
+    api.nvim_buf_set_lines(self.winbuf, current_line - 1, _end_pos - 1, false, { current_text })
+    api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
+    expand_data[current_line][1] = false
+    api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineCollaspe', current_line - 1, 0, pos)
+    local group, scope, _ = unpack(self[bufnr].hi_tbl[current_line])
+    api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 1, pos + 1, scope + 1)
   end
 end
 
@@ -245,6 +263,7 @@ function ot:update_outline(symbols, refresh)
   self[current_buf] = { ft = vim.bo.filetype }
 
   local nodes, hi_tbl = get_all_nodes(symbols)
+  self[current_buf].hi_tbl = hi_tbl
 
   gen_outline_hi()
 
@@ -361,30 +380,32 @@ local outline_exclude = {
 }
 
 function ot:refresh_events()
-  if outline_conf.auto_refresh then
-    self.refresh_au = api.nvim_create_autocmd('BufEnter', {
-      group = saga_group,
-      callback = function()
-        local current_buf = api.nvim_get_current_buf()
-        local in_render = function()
-          if self[current_buf] == nil then
-            return false
-          end
-
-          if self[current_buf].in_render == nil then
-            return false
-          end
-
-          return self[current_buf].in_render == true
-        end
-
-        if not outline_exclude[vim.bo.filetype] and not in_render() then
-          self:render_outline(true)
-        end
-      end,
-      desc = 'Outline refresh',
-    })
+  if not outline_conf.auto_refresh then
+    return
   end
+
+  self.refresh_au = api.nvim_create_autocmd('BufEnter', {
+    group = saga_group,
+    callback = function()
+      local current_buf = api.nvim_get_current_buf()
+      local in_render = function()
+        if self[current_buf] == nil then
+          return false
+        end
+
+        if self[current_buf].in_render == nil then
+          return false
+        end
+
+        return self[current_buf].in_render == true
+      end
+
+      if not outline_exclude[vim.bo.filetype] and not in_render() then
+        self:render_outline(true)
+      end
+    end,
+    desc = 'Outline refresh',
+  })
 end
 
 function ot:remove_events()
@@ -435,10 +456,6 @@ function ot:render_outline(refresh)
   end
 
   self:refresh_events()
-end
-
-function ot:auto_refresh()
-  self:update_outline()
 end
 
 return ot

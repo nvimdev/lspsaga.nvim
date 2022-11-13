@@ -77,12 +77,12 @@ saga.config_values = {
     auto_enter = true,
     auto_preview = true,
     icon = {
-      expand = '',
-      collaspe = ' ',
+      expand = ' ',
+      collaspe = ' ',
     },
     keys = {
       jump = 'o',
-      expand_collaspe = 'l',
+      expand_collaspe = 'u',
     },
     auto_refresh = true,
   },
