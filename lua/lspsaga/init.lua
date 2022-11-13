@@ -83,6 +83,7 @@ saga.config_values = {
     keys = {
       jump = 'o',
       expand_collaspe = 'u',
+      quit = 'q',
     },
     auto_refresh = true,
   },

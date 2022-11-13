@@ -104,14 +104,17 @@ end
 
 local virt_id = api.nvim_create_namespace('lspsaga_outline')
 
-function ot:detail_virt_text(bufnr)
+function ot:detail_virt_text(bufnr, scope)
   if not self[bufnr].details then
     return
   end
 
-  for i, detail in pairs(self[bufnr].details) do
+  scope = scope or { 1, #self[bufnr].details }
+  -- print(scope[1], scope[2])
+
+  for i = scope[1], scope[2], 1 do
     api.nvim_buf_set_extmark(0, virt_id, i - 1, 0, {
-      virt_text = { { detail, 'OutlineDetail' } },
+      virt_text = { { self[bufnr].details[i], 'OutlineDetail' } },
       virt_text_pos = 'eol',
     })
   end
@@ -202,6 +205,7 @@ function ot:expand_collaspe(bufnr)
     api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineCollaspe', current_line - 1, 0, pos)
     local group, scope, _ = unpack(self[bufnr].hi_tbl[current_line])
     api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 1, pos + 1, scope + 1)
+    self:detail_virt_text(bufnr, { current_line, current_line })
     return
   end
 
@@ -219,6 +223,7 @@ function ot:expand_collaspe(bufnr)
       api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 2 + i, 0, scope)
     end
   end
+  self:detail_virt_text(bufnr, { current_line, _end_pos - 1 })
   expand_data[current_line][1] = true
 end
 
@@ -348,6 +353,10 @@ function ot:update_outline(symbols, refresh)
     buffer = self.winbuf,
   })
 
+  keymap.set('n', outline_conf.keys.quit, function()
+    window.nvim_close_valid_window(self.winid)
+  end)
+
   api.nvim_buf_attach(self.winbuf, false, {
     on_detach = function()
       self:remove_events()
@@ -438,14 +447,20 @@ function ot:remove_events()
   end
 end
 
+function ot:clear_data()
+  for i, v in pairs(self) do
+    if type(v) ~= 'function' then
+      self[i] = nil
+    end
+  end
+end
+
 function ot:render_outline(refresh)
   refresh = refresh or false
 
   if self.status and not refresh then
     window.nvim_close_valid_window(self.winid)
-    self.winid = nil
-    self.winbuf = nil
-    self.status = false
+    self:clear_data()
     return
   end
 
@@ -455,6 +470,13 @@ function ot:render_outline(refresh)
   end
 
   local current_buf = api.nvim_get_current_buf()
+
+  -- if buffer not lsp client
+  local clients = lsp.get_active_clients({ buffer = current_buf })
+  if next(clients) == nil then
+    return
+  end
+
   --if cache does not have value also do request
   if cache[current_buf] == nil or next(cache[current_buf][2]) == nil then
     do_symbol_request()
