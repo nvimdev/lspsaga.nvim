@@ -185,24 +185,41 @@ function ot:expand_collaspe(bufnr)
   local current_text = api.nvim_get_current_line()
 
   local _end_pos = 0
-  if expand_data[current_line][1] then
-    for k, v in pairs(expand_data) do
-      if v[2] == expand_data[current_line][2] and current_line ~= k then
-        _end_pos = k
-        break
-      end
+  for k, v in pairs(expand_data) do
+    if v[2] == expand_data[current_line][2] and current_line ~= k then
+      _end_pos = k
+      break
     end
+  end
+  api.nvim_buf_set_option(self.winbuf, 'modifiable', true)
 
+  if expand_data[current_line][1] then
     current_text = current_text:gsub(outline_conf.icon.expand, outline_conf.icon.collaspe)
     local _, pos = current_text:find(outline_conf.icon.collaspe)
-    api.nvim_buf_set_option(self.winbuf, 'modifiable', true)
     api.nvim_buf_set_lines(self.winbuf, current_line - 1, _end_pos - 1, false, { current_text })
     api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
     expand_data[current_line][1] = false
     api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineCollaspe', current_line - 1, 0, pos)
     local group, scope, _ = unpack(self[bufnr].hi_tbl[current_line])
     api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 1, pos + 1, scope + 1)
+    return
   end
+
+  local lines = { unpack(self[bufnr].nodes, current_line, _end_pos - 1) }
+  lines[1] = api.nvim_get_current_line()
+  lines[1] = lines[1]:gsub(outline_conf.icon.collaspe, outline_conf.icon.expand)
+  api.nvim_buf_set_lines(self.winbuf, current_line - 1, current_line, false, lines)
+  api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
+  for i = 1, #lines, 1 do
+    local group, scope, expand = unpack(self[bufnr].hi_tbl[current_line + i - 1])
+    if expand then
+      api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineExpand', current_line - 2 + i, 0, expand)
+      api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 2 + i, expand + 1, scope + 1)
+    else
+      api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 2 + i, 0, scope)
+    end
+  end
+  expand_data[current_line][1] = true
 end
 
 function ot:jump_to_line(bufnr)
@@ -264,6 +281,7 @@ function ot:update_outline(symbols, refresh)
 
   local nodes, hi_tbl = get_all_nodes(symbols)
   self[current_buf].hi_tbl = hi_tbl
+  self[current_buf].nodes = nodes
 
   gen_outline_hi()
 
