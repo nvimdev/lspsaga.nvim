@@ -186,7 +186,7 @@ function ot:expand_collaspe(bufnr)
 
   local _end_pos = 0
   for k, v in pairs(expand_data) do
-    if v[2] == expand_data[current_line][2] and current_line ~= k then
+    if v[2] == expand_data[current_line][2] and k > current_line then
       _end_pos = k
       break
     end
