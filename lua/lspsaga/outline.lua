@@ -144,7 +144,7 @@ function ot:auto_preview(bufnr)
   }
 
   local winid = fn.bufwinid(bufnr)
-  local _height = api.nvim_win_get_height(winid)
+  local _height = fn.winheight(winid)
   local win_height = api.nvim_win_get_height(0)
 
   if outline_conf.win_position == 'right' then
