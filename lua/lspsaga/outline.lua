@@ -110,7 +110,6 @@ function ot:detail_virt_text(bufnr, scope)
   end
 
   scope = scope or { 1, #self[bufnr].details }
-  -- print(scope[1], scope[2])
 
   for i = scope[1], scope[2], 1 do
     api.nvim_buf_set_extmark(0, virt_id, i - 1, 0, {
@@ -204,8 +203,19 @@ function ot:expand_collaspe(bufnr)
     expand_data[current_line][1] = false
     api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineCollaspe', current_line - 1, 0, pos)
     local group, scope, _ = unpack(self[bufnr].hi_tbl[current_line])
-    api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 1, pos + 1, scope + 1)
+    api.nvim_buf_add_highlight(self.winbuf, 0, group, current_line - 1, pos + 1, scope)
     self:detail_virt_text(bufnr, { current_line, current_line })
+    local need_reduce = _end_pos - current_line - 1
+    local tmp = {}
+    for i, v in pairs(expand_data) do
+      if i >= _end_pos then
+        local new_key = i - need_reduce
+        tmp[new_key] = v
+      else
+        tmp[i] = v
+      end
+    end
+    self[bufnr].expand_line = tmp
     return
   end
 
@@ -265,7 +275,6 @@ local do_symbol_request = function()
   local client = libs.get_client_by_cap('documentSymbolProvider')
 
   if not client then
-    vim.notify('[Lspsaga] Server of this buffer not support ' .. method)
     return
   end
 
@@ -290,10 +299,10 @@ function ot:update_outline(symbols, refresh)
 
   gen_outline_hi()
 
-  if self.winid == nil then
+  if not self.winid then
     create_outline_window()
-    self.winid = vim.api.nvim_get_current_win()
-    self.winbuf = vim.api.nvim_create_buf(false, true)
+    self.winid = api.nvim_get_current_win()
+    self.winbuf = api.nvim_create_buf(false, true)
     api.nvim_win_set_buf(self.winid, self.winbuf)
     set_local()
   else
@@ -416,11 +425,11 @@ function ot:refresh_events()
     callback = function()
       local current_buf = api.nvim_get_current_buf()
       local in_render = function()
-        if self[current_buf] == nil then
+        if not self[current_buf] then
           return false
         end
 
-        if self[current_buf].in_render == nil then
+        if not self[current_buf].in_render then
           return false
         end
 
