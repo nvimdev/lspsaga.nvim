@@ -77,6 +77,9 @@ local function _update_sign(bufnr, line)
 end
 
 local function render_action_virtual_text(bufnr, line, has_actions)
+  if vim.fn.bufexists(bufnr) == 0 then
+    return
+  end
   if not has_actions then
     if config.code_action_lightbulb.virtual_text then
       _update_virtual_text(bufnr, nil)
