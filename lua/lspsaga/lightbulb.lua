@@ -77,7 +77,7 @@ local function _update_sign(bufnr, line)
 end
 
 local function render_action_virtual_text(bufnr, line, has_actions)
-  if vim.fn.bufexists(bufnr) == 0 then
+  if not vim.api.nvim_buf_is_valid(bufnr) then
     return
   end
   if not has_actions then
