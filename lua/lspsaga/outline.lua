@@ -109,10 +109,13 @@ function ot:detail_virt_text(bufnr, scope)
   scope = scope or { 1, #self[bufnr].data }
 
   for i = scope[1], scope[2], 1 do
-    api.nvim_buf_set_extmark(0, virt_id, self[bufnr].data[i].win_line - 1, 0, {
-      virt_text = { { self[bufnr].data[i].detail, 'OutlineDetail' } },
-      virt_text_pos = 'eol',
-    })
+    if self[bufnr].data[i].detail then
+      -- print(self[bufnr].data[i].detail, i, self[bufnr].data[i].win_line)
+      api.nvim_buf_set_extmark(0, virt_id, self[bufnr].data[i].win_line - 1, 0, {
+        virt_text = { { self[bufnr].data[i].detail, 'OutlineDetail' } },
+        virt_text_pos = 'eol',
+      })
+    end
   end
 end
 
@@ -182,6 +185,7 @@ function ot:expand_collaspe(bufnr)
   local data = self[bufnr].data
   local actual_indent, actual_index, _end_index
   for k, v in pairs(data) do
+    print(v.win_line, current_line, v.indent, actual_indent)
     if v.win_line == current_line and not actual_indent then
       actual_indent = v.indent
       actual_index = k
@@ -194,12 +198,16 @@ function ot:expand_collaspe(bufnr)
       _end_index = k
       break
     end
+    if k == #data and not _end_index then
+      _end_index = k
+    end
   end
 
   api.nvim_buf_set_option(self.winbuf, 'modifiable', true)
 
   if data[actual_index].expand then
-    local _end_pos = data[_end_index].win_line
+    local _end_pos = _end_index ~= #data and data[_end_index].win_line
+      or data[_end_index].win_line + 1
     current_text = current_text:gsub(outline_conf.icon.expand, outline_conf.icon.collaspe)
     local _, pos = current_text:find(outline_conf.icon.collaspe)
     api.nvim_buf_set_lines(self.winbuf, current_line - 1, _end_pos - 1, false, { current_text })
@@ -224,6 +232,7 @@ function ot:expand_collaspe(bufnr)
   end
 
   local lines = {}
+  _end_index = _end_index == #data and _end_index + 1 or _end_index
   for i = actual_index, _end_index - 1 do
     insert(lines, data[i].node)
   end
@@ -232,17 +241,32 @@ function ot:expand_collaspe(bufnr)
   api.nvim_buf_set_lines(self.winbuf, current_line - 1, current_line, false, lines)
   api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
   data[actual_index].expand = true
+  --update data
+  for i = actual_index + 1, #data do
+    data[i].win_line = data[i].win_line + (_end_index - actual_index - 1)
+  end
   for i = actual_index, _end_index - 1 do
-    api.nvim_buf_add_highlight(self.winbuf, 0, data[i].hi, i - 1, 0, data[i].hi_scope)
+    api.nvim_buf_add_highlight(
+      self.winbuf,
+      0,
+      data[i].hi,
+      data[i].win_line - 1,
+      0,
+      data[i].hi_scope
+    )
     if data[i].expand_col then
-      api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineCollaspe', i - 1, 0, data[i].expand_col)
+      api.nvim_buf_add_highlight(
+        self.winbuf,
+        0,
+        'OutlineCollaspe',
+        data[i].win_line - 1,
+        0,
+        data[i].expand_col
+      )
     end
   end
-  for _, v in pairs(data) do
-    if v.win_line > current_line then
-      v.win_line = v.win_line + (_end_index - actual_index - 1)
-    end
-  end
+  _end_index = _end_index == #data + 1 and _end_index - 1 or _end_index
+  self:detail_virt_text(bufnr, { actual_index, _end_index })
 end
 
 function ot:jump_to_line(bufnr)
