@@ -306,7 +306,7 @@ local create_outline_window = function()
 end
 
 ---@private
-local request_and_render = function()
+local request_and_render = function(event)
   local bufnr = api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
   local client = libs.get_client_by_cap('documentSymbolProvider')
@@ -321,7 +321,7 @@ local request_and_render = function()
     end
 
     local symbols = result
-    ot:update_outline(symbols)
+    ot:update_outline(symbols, event)
   end, bufnr)
 end
 
@@ -351,8 +351,7 @@ function ot:set_keymap(bufnr)
   end)
 end
 
-function ot:update_outline(symbols, in_refresh)
-  in_refresh = in_refresh or nil
+function ot:update_outline(symbols, event)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
 
@@ -396,7 +395,7 @@ function ot:update_outline(symbols, in_refresh)
   end
 
   self:set_keymap(current_buf)
-  if not in_refresh then
+  if not event then
     self:preview_event(current_buf)
   end
   self:refresh_event()
@@ -423,7 +422,7 @@ function ot:refresh_event()
   end
 
   self.refresh_au = api.nvim_create_autocmd('BufEnter', {
-    callback = function()
+    callback = function(opt)
       if vim.bo.filetype == 'lspsagaoutline' then
         return
       end
@@ -450,11 +449,12 @@ function ot:refresh_event()
       end
 
       if not cache[buf] or next(cache[buf]) == nil then
-        request_and_render()
+        request_and_render(opt.event)
         return
       end
-      self:update_outline(cache[buf], true)
+      self:update_outline(cache[buf], opt.event)
     end,
+    desc = 'Lspsaga refresh outline',
   })
 end
 
@@ -485,7 +485,9 @@ function ot:remove_events()
   pcall(api.nvim_del_augroup_by_id, self.preview_au)
 end
 
-function ot:clear_data()
+function ot:close_and_clear()
+  self:remove_events()
+  window.nvim_close_valid_window(self.winid)
   for i, v in pairs(self) do
     if type(v) ~= 'function' then
       self[i] = nil
@@ -495,8 +497,7 @@ end
 
 function ot:render_outline()
   if self.render_status then
-    window.nvim_close_valid_window(self.winid)
-    self:clear_data()
+    self:close_and_clear()
     return
   end
   local current_buf = api.nvim_get_current_buf()
