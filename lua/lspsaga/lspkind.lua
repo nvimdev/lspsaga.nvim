@@ -45,6 +45,12 @@ local kind = {
   [253] = { 'Parameter', ' ', colors.blue },
   [254] = { 'StaticMethod', 'ﴂ ', colors.orange },
   [255] = { 'Macro', ' ', colors.red },
+  -- for completion sb microsoft!!!
+  [300] = { 'Text', ' ', colors.green },
+  [301] = { 'Snippet', ' ', colors.blue },
+  [302] = { 'Folder', ' ', colors.yellow },
+  [303] = { 'Unit', ' ', colors.cyan },
+  [304] = { 'Value', ' ', colors.blue },
 }
 
 local function find_index_by_type(k)
@@ -99,6 +105,10 @@ kind = setmetatable(kind, {
 
     if key == 'colors' then
       return colors
+    end
+
+    if vim.tbl_contains(completion_kind, key) then
+      return completion_kind
     end
   end,
 })
