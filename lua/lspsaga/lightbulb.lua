@@ -115,7 +115,11 @@ local send_request = coroutine.create(function()
         end
       end
 
-      if has_actions and config.code_action_lightbulb.cache_code_action then
+      if
+        has_actions
+        and config.code_action_lightbulb.enable
+        and config.code_action_lightbulb.cache_code_action
+      then
         codeaction.action_tuples = nil
         codeaction:get_clients(results)
       end

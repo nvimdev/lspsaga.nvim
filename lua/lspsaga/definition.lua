@@ -3,9 +3,8 @@ local config = require('lspsaga').config_values
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local def = {}
 local method = 'textDocument/definition'
-local definition_group = api.nvim_create_augroup('DefinitionAutoCmdGroup', { clear = true })
 
-function def:render_title_win(opts, scope)
+function def:title_text(opts, scope)
   local link = scope.link
   local path_sep = libs.path_sep
   local root_dir = libs.get_lsp_root_dir()
@@ -22,23 +21,8 @@ function def:render_title_win(opts, scope)
       short_name = table.concat(_split, path_sep, #_split - 2, #_split)
     end
   end
-
-  local content_opts = {
-    contents = { '   Definition: ' .. short_name .. ' ' },
-    border = 'none',
-  }
-  scope.title_bufnr, scope.title_winid = window.create_win_with_border(content_opts, opts)
-  local ns_id = api.nvim_create_namespace('LspsagaDefinition')
-  api.nvim_buf_set_extmark(scope.title_bufnr, ns_id, 0, 0, {
-    virt_text = { { '┃', 'DefinitionArrow' }, { ' ', 'DefinitionArrow' } },
-    virt_text_pos = 'overlay',
-  })
-  api.nvim_buf_set_extmark(scope.title_bufnr, ns_id, 0, 0, {
-    virt_text = { { ' ', 'DefinitionArrow' }, { '┃', 'DefinitionArrow' } },
-    virt_text_pos = 'eol',
-  })
-
-  api.nvim_buf_add_highlight(scope.title_bufnr, 0, 'DefinitionFile', 0, 0, -1)
+  opts.title = short_name
+  opts.title_pos = 'center'
 end
 
 function def:peek_definition()
@@ -118,8 +102,6 @@ function def:peek_definition()
 
     opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
 
-    self:render_title_win(opts, scope)
-
     opts.row = opts.row + 1
     local content_opts = {
       contents = {},
@@ -128,10 +110,14 @@ function def:peek_definition()
       highlight = 'DefinitionBorder',
     }
 
+    if fn.has('nvim-0.9') == 1 then
+      self:title_text(opts, scope)
+    end
+
     scope.bufnr, scope.winid = window.create_win_with_border(content_opts, opts)
     vim.opt_local.modifiable = true
     api.nvim_win_set_buf(0, bufnr)
-    if vim.fn.has('nvim-0.8') == 1 then
+    if fn.has('nvim-0.8') == 1 then
       api.nvim_win_set_option(scope.winid, 'winbar', '')
     end
     --set the initail cursor pos
@@ -149,26 +135,12 @@ function def:peek_definition()
     )
 
     self:apply_aciton_keys(scope, bufnr, { start_line, start_char_pos })
-    self:apply_autocmds(scope)
   end)
-end
-
-function def:apply_autocmds(scope)
-  api.nvim_create_autocmd('WinClosed', {
-    desc = 'Remove the title window when the related content window is closed',
-    group = definition_group,
-    pattern = { tostring(scope.winid) },
-    callback = function()
-      if scope.title_winid and api.nvim_win_is_valid(scope.title_winid) then
-        api.nvim_win_close(scope.title_winid, true)
-      end
-    end,
-  })
 end
 
 function def:apply_aciton_keys(scope, bufnr, pos)
   -- Save the current scope data
-  if self[bufnr] == nil then
+  if not self[bufnr] then
     self[bufnr] = {}
   end
   table.insert(self[bufnr], scope)
@@ -185,16 +157,10 @@ function def:apply_aciton_keys(scope, bufnr, pos)
       local non_quit_action = action ~= 'quit'
 
       if non_quit_action then
-        local win
-        api.nvim_win_call(self.main_winid, function()
+        vim.defer_fn(function()
           vim.cmd(action .. ' ' .. link)
-          win = api.nvim_get_current_win()
-        end)
-
-        if win then
-          api.nvim_set_current_win(win)
-          api.nvim_win_set_cursor(win, { pos[1] + 1, pos[2] })
-        end
+          api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+        end, 1000)
       else
         self:focus_last_window() -- INFO: Only focus the last window when `quit`
       end
@@ -250,13 +216,8 @@ function def:close_window(curr_scope, opts)
   local curr_bufnr = api.nvim_get_current_buf()
 
   local close_scope = function(item)
-    local bufnr, winid = item.bufnr, item.winid
-    if bufnr and api.nvim_buf_is_loaded(bufnr) then
-      api.nvim_buf_delete(bufnr, { force = true })
-    end
-
-    if winid and api.nvim_win_is_valid(winid) then
-      api.nvim_win_close(winid, true)
+    if item.winid and api.nvim_win_is_valid(item.winid) then
+      api.nvim_win_close(item.winid, true)
     end
   end
 

@@ -1,11 +1,10 @@
 local window = require('lspsaga.window')
-local api, lsp, fn = vim.api, vim.lsp, vim.fn
+local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local path_sep = libs.path_sep
 local icons = config.finder_icons
 local insert = table.insert
-local uv = vim.loop
 local indent = '    '
 
 local methods = {
@@ -201,9 +200,6 @@ end
 
 function Finder:render_finder()
   self.root_dir = libs.get_lsp_root_dir()
-  if not self.root_dir then
-    vim.notify('[LspSaga] get root dir failed')
-  end
 
   self.contents = {}
   self.short_link = {}
@@ -226,6 +222,10 @@ function Finder:render_finder()
 
   for i, method in pairs(methods) do
     local tbl = self:create_finder_contents(self.request_result[method], method)
+    if not tbl then
+      return
+    end
+
     if i ~= 2 then
       generate_contents(tbl, method)
     end
@@ -340,28 +340,15 @@ function Finder:render_finder_result()
     highlight = 'LspSagaLspFinderBorder',
   }
 
+  if fn.has('nvim-0.9') == 1 then
+    opts.title = { { 'Finder', 'FinderTitle' } }
+    opts.title_pos = 'center'
+  end
+
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
   api.nvim_buf_set_option(self.bufnr, 'buflisted', false)
   api.nvim_win_set_var(self.winid, 'lsp_finder_win_opts', opts)
   api.nvim_win_set_option(self.winid, 'cursorline', false)
-
-  opts.row = opts.row - 1
-  opts.col = opts.col + 1
-  opts.width = #self.param + 8
-  opts.height = 2
-  opts.no_size_override = true
-  self.titlebar_bufnr, self.titlebar_winid = window.create_win_with_border({
-    contents = { string.rep(' ', #self.param + 12), '' },
-    filetype = 'lspsagafindertitlebar',
-    border = 'none',
-  }, opts)
-
-  local titlebar_ns = api.nvim_create_namespace('FinderTitleBar')
-  api.nvim_buf_set_extmark(self.titlebar_bufnr, titlebar_ns, 0, 0, {
-    virt_text = { { 'Find: ' .. self.param, 'FinderParam' } },
-    virt_text_pos = 'overlay',
-    virt_lines_above = false,
-  })
 
   self:set_cursor()
 
@@ -689,6 +676,11 @@ function Finder:auto_open_preview()
       highlight = 'LspSagaAutoPreview',
     }
 
+    if fn.has('nvim-0.9') == 1 then
+      opts.title = { { 'Preview', 'FinderPreview' } }
+      opts.title_pos = 'center'
+    end
+
     self:close_auto_preview_win()
 
     vim.defer_fn(function()
@@ -772,11 +764,6 @@ function Finder:quit_float_window()
   if self.winid and self.winid > 0 then
     window.nvim_close_valid_window(self.winid)
     self.winid = nil
-  end
-
-  if self.titlebar_winid and self.titlebar_winid > 0 then
-    api.nvim_win_close(self.titlebar_winid, true)
-    self.titlebar_winid = nil
   end
 end
 

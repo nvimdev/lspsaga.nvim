@@ -13,7 +13,6 @@ local highlights = {
   LspSagaFinderSelection = { fg = '#89d957', bold = true },
   TargetFileName = { fg = '#d1d4cf' },
   FinderParam = { fg = '#CBA6F7', bg = '#392a52', bold = true },
-  FinderVirtText = { fg = '#c95942' },
   DefinitionsIcon = { fg = '#e3e346' },
   Definitions = { fg = '#CBA6F7', bold = true },
   DefinitionCount = { link = 'Title' },
@@ -28,6 +27,9 @@ local highlights = {
   FinderSpinnerTitle = { fg = '#b33076', bold = true },
   FinderSpinner = { fg = '#b33076', bold = true },
   FinderPreviewSearch = { link = 'Search' },
+  FinderTitle = { bg = '#876ec2', fg = '#e0c06e' },
+  FinderPreview = { bg = '#876ec2', fg = '#e0c06e' },
+  FinderVirtText = { fg = '#c95942' },
   -- definition
   DefinitionBorder = { fg = '#b3deef' },
   DefinitionArrow = { fg = '#ad475f' },
