@@ -202,9 +202,8 @@ function def:apply_aciton_keys(bufnr, pos)
       keymap('n', key, function()
         local scope = self:find_current_scope()
         local link, def_win_ns = scope.link, scope.def_win_ns
-
         api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
-
+        self:clean_buf_map(scope)
         self:close_window(scope)
         if action ~= 'quit' then
           vim.cmd(action .. ' ' .. link)
@@ -224,6 +223,15 @@ function def:apply_aciton_keys(bufnr, pos)
     api.nvim_set_current_win(main_winid)
     self[scope.main_bufnr] = nil
   end, { buffer = bufnr })
+end
+
+function def:clean_buf_map(scope)
+  local maps = config.definition_action_keys
+  if scope.link == self[scope.main_bufnr].fname and #self[scope.main_bufnr].scopes == 1 then
+    for _, v in pairs(maps) do
+      vim.keymap.del('n', v, { buffer = scope.bufnr })
+    end
+  end
 end
 
 function def:close_window(scope)
