@@ -157,6 +157,7 @@ function def:peek_definition()
     )
 
     self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
+    self:event(bufnr)
     scope.main_bufnr = current_buf
     table.insert(self[current_buf].scopes, scope)
   end)
@@ -173,6 +174,17 @@ function def:find_current_scope()
       end
     end
   end
+end
+
+function def:event(bufnr)
+  api.nvim_create_autocmd('QuitPre', {
+    buffer = bufnr,
+    once = true,
+    callback = function()
+      local scope = self:find_current_scope()
+      pcall(api.nvim_buf_clear_namespace, bufnr, scope.def_win_ns, 0, -1)
+    end,
+  })
 end
 
 function def:apply_aciton_keys(bufnr, pos)
