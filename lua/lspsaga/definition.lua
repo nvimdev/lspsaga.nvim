@@ -208,6 +208,13 @@ function def:apply_aciton_keys(bufnr, pos)
         if action ~= 'quit' then
           vim.cmd(action .. ' ' .. link)
           api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+        else
+          -- focus prev window
+          local idx = self:get_scope_index(scope)
+          if idx - 1 > 0 then
+            local prev_winid = self[scope.main_bufnr].scopes[idx - 1].winid
+            api.nvim_set_current_win(prev_winid)
+          end
         end
         self:remove_scope(scope)
       end, { buffer = bufnr })
