@@ -78,6 +78,7 @@ saga.config_values = {
     auto_enter = true,
     auto_preview = true,
     auto_refresh = true,
+    auto_close = true,
     icon = {
       expand = ' ',
       collaspe = ' ',

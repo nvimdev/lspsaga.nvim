@@ -400,6 +400,9 @@ function ot:update_outline(symbols, event)
   end
   self:refresh_event()
   self.render_status = true
+  if outline_conf.auto_close then
+    self:close_when_last()
+  end
 
   api.nvim_buf_attach(self.winbuf, false, {
     on_detach = function()
@@ -477,6 +480,19 @@ function ot:preview_event(bufnr)
       self:auto_preview(buf)
     end,
     desc = 'Lspsaga Outline Preview',
+  })
+end
+
+function ot:close_when_last()
+  api.nvim_create_autocmd('WinEnter', {
+    callback = function(opt)
+      local wins = api.nvim_list_wins()
+      if #wins == 1 and wins[1] == self.winid then
+        self:close_and_clear()
+      end
+      pcall(api.nvim_del_autocmd, opt.id)
+    end,
+    desc = 'Outline auto close when last one',
   })
 end
 
