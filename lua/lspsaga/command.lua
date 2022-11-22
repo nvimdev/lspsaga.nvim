@@ -17,6 +17,9 @@ local subcommands = {
   peek_definition = function()
     require('lspsaga.definition'):peek_definition()
   end,
+  goto_defintion = function()
+    require('lspsaga.definition'):goto_defintion()
+  end,
   rename = function()
     lsprename:lsp_rename()
   end,

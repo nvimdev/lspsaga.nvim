@@ -26,6 +26,36 @@ function def:title_text(opts, scope)
   opts.title_pos = 'center'
 end
 
+local function get_uri_data(result)
+  local uri, range
+
+  if type(result[1]) == 'table' then
+    uri = result[1].uri or result[1].targetUri
+    range = result[1].range or result[1].targetRange
+  else
+    uri = result.uri or result.targetUri
+    range = result.range or result.targetRange
+  end
+
+  if not uri then
+    vim.notify('[Lspsaga] Does not find target uri', vim.log.levels.WARN)
+    return
+  end
+
+  local bufnr = vim.uri_to_bufnr(uri)
+  local link = vim.uri_to_fname(uri)
+
+  if not api.nvim_buf_is_loaded(bufnr) then
+    fn.bufload(bufnr)
+  end
+
+  local start_line = range.start.line
+  local start_char_pos = range.start.character
+  local end_char_pos = range['end'].character
+
+  return bufnr, link, start_line, start_char_pos, end_char_pos
+end
+
 -- { [bufnr] = {
 --    main_winid = number,
 --    fname = string,
@@ -83,30 +113,8 @@ function def:peek_definition()
       return
     end
 
-    local uri, range
-
-    if type(result[1]) == 'table' then
-      uri = result[1].uri or result[1].targetUri
-      range = result[1].range or result[1].targetRange
-    else
-      uri = result.uri or result.targetUri
-      range = result.range or result.targetRange
-    end
-
-    if not uri then
-      return
-    end
-
-    local bufnr = vim.uri_to_bufnr(uri)
-    scope.link = vim.uri_to_fname(uri)
-
-    if not api.nvim_buf_is_loaded(bufnr) then
-      fn.bufload(bufnr)
-    end
-
-    local start_line = range.start.line
-    local start_char_pos = range.start.character
-    local end_char_pos = range['end'].character
+    local bufnr, link, start_line, start_char_pos, end_char_pos = get_uri_data(result)
+    scope.link = link
 
     local opts = {
       relative = 'cursor',
@@ -239,6 +247,18 @@ function def:remove_scope(scope)
     local index = self:get_scope_index(scope)
     table.remove(self[scope.main_bufnr].scopes, index)
   end
+end
+
+function def:goto_defintion()
+  vim.lsp.handlers[method] = function(_, result, _, _)
+    if not result or vim.tbl_isempty(result) then
+      return
+    end
+    local _, link, start_line, start_char_pos, _ = get_uri_data(result)
+    api.nvim_command('edit ' .. link)
+    api.nvim_win_set_cursor(0, { start_line + 1, start_char_pos })
+  end
+  vim.lsp.buf.definition()
 end
 
 return def
