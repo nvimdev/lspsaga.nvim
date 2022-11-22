@@ -58,6 +58,7 @@ saga.config_values = {
     split = '<C-c>i',
     tabe = '<C-c>t',
     quit = 'q',
+    close = '<Esc>',
   },
   rename_action_quit = '<C-c>',
   rename_in_select = true,

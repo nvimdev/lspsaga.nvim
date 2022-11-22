@@ -1,9 +1,10 @@
 local libs, window = require('lspsaga.libs'), require('lspsaga.window')
 local config = require('lspsaga').config_values
-local lsp, fn, api = vim.lsp, vim.fn, vim.api
+local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap.set
 local def = {}
 local method = 'textDocument/definition'
 
+--- @deprecated when 0.9 release
 function def:title_text(opts, scope)
   local link = scope.link
   local path_sep = libs.path_sep
@@ -25,25 +26,43 @@ function def:title_text(opts, scope)
   opts.title_pos = 'center'
 end
 
+-- { [bufnr] = {
+--    main_winid = number,
+--    fname = string,
+--    scopes = {
+--     { bufnr,def_win_ns, link, winid, main_bufnr }
+--    }
+--  }
+-- }
 function def:peek_definition()
-  local scope = {}
   if not libs.check_lsp_active() then
     return
   end
 
-  -- push a tag stack
-  local pos = api.nvim_win_get_cursor(0)
-  local current_word = vim.fn.expand('<cword>')
-  local from = { api.nvim_get_current_buf(), pos[1], pos[2] + 1, 0 }
-  local items = { { tagname = current_word, from = from } }
-  vim.fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
-
-  local filetype = vim.api.nvim_buf_get_option(0, 'filetype')
-  local params = lsp.util.make_position_params()
+  local scope = {}
 
   local current_buf = api.nvim_get_current_buf()
-  if not self.main_winid then
-    self.main_winid = api.nvim_get_current_win()
+
+  if not self[current_buf] then
+    self[current_buf] = {}
+    self[current_buf].scopes = {}
+  end
+  -- push a tag stack
+  local pos = api.nvim_win_get_cursor(0)
+  local current_word = fn.expand('<cword>')
+  local from = { current_buf, pos[1], pos[2] + 1, 0 }
+  local items = { { tagname = current_word, from = from } }
+  fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
+
+  local filetype = api.nvim_buf_get_option(0, 'filetype')
+  local params = lsp.util.make_position_params()
+
+  if not self[current_buf].main_winid then
+    self[current_buf].main_winid = api.nvim_get_current_win()
+  end
+
+  if not self[current_buf].fname then
+    self[current_buf].fname = api.nvim_buf_get_name(current_buf)
   end
 
   lsp.buf_request_all(current_buf, method, params, function(results)
@@ -81,7 +100,7 @@ function def:peek_definition()
     local bufnr = vim.uri_to_bufnr(uri)
     scope.link = vim.uri_to_fname(uri)
 
-    if not vim.api.nvim_buf_is_loaded(bufnr) then
+    if not api.nvim_buf_is_loaded(bufnr) then
       fn.bufload(bufnr)
     end
 
@@ -93,7 +112,7 @@ function def:peek_definition()
       relative = 'cursor',
       style = 'minimal',
     }
-    local WIN_WIDTH = api.nvim_get_option('columns')
+    local WIN_WIDTH = vim.o.columns
     local max_width = math.floor(WIN_WIDTH * 0.6)
     local max_height = math.floor(vim.o.lines * 0.6)
 
@@ -114,9 +133,12 @@ function def:peek_definition()
       self:title_text(opts, scope)
     end
 
-    scope.bufnr, scope.winid = window.create_win_with_border(content_opts, opts)
+    _, scope.winid = window.create_win_with_border(content_opts, opts)
     vim.opt_local.modifiable = true
-    api.nvim_win_set_buf(0, bufnr)
+    api.nvim_win_set_buf(scope.winid, bufnr)
+    scope.bufnr = bufnr
+    api.nvim_buf_set_option(scope.bufnr, 'bufhidden', 'wipe')
+
     if fn.has('nvim-0.8') == 1 then
       api.nvim_win_set_option(scope.winid, 'winbar', '')
     end
@@ -134,171 +156,76 @@ function def:peek_definition()
       end_char_pos
     )
 
-    self:apply_aciton_keys(scope, bufnr, { start_line, start_char_pos })
+    self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
+    scope.main_bufnr = current_buf
+    table.insert(self[current_buf].scopes, scope)
   end)
 end
 
-function def:apply_aciton_keys(scope, bufnr, pos)
-  -- Save the current scope data
-  if not self[bufnr] then
-    self[bufnr] = {}
+function def:find_current_scope()
+  local cur_winid = api.nvim_get_current_win()
+  for _, data in pairs(self) do
+    if type(data) == 'table' then
+      for _, v in pairs(data.scopes) do
+        if v.winid == cur_winid then
+          return v
+        end
+      end
+    end
   end
-  table.insert(self[bufnr], scope)
+end
 
+function def:apply_aciton_keys(bufnr, pos)
   local maps = config.definition_action_keys
-
   for action, key in pairs(maps) do
-    vim.keymap.set('n', key, function()
-      local curr_scope = self:find_current_scope()
-      local link, def_win_ns = curr_scope.link, curr_scope.def_win_ns
+    if action ~= 'close' then
+      keymap('n', key, function()
+        local scope = self:find_current_scope()
+        local link, def_win_ns = scope.link, scope.def_win_ns
 
-      api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
+        api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
 
-      local non_quit_action = action ~= 'quit'
-
-      if non_quit_action then
-        vim.defer_fn(function()
+        self:close_window(scope)
+        if action ~= 'quit' then
           vim.cmd(action .. ' ' .. link)
           api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
-        end, 1000)
-      else
-        self:focus_last_window() -- INFO: Only focus the last window when `quit`
-      end
-
-      self:close_window(curr_scope, { close_all = non_quit_action })
-
-      self:clear_tmp_data(bufnr, curr_scope, { close_all = non_quit_action })
-      self:clear_all_maps(bufnr)
-    end, { buffer = bufnr })
-  end
-end
-
--- Function to find the scope data for the current window
--- @return table
-function def:find_current_scope()
-  local curr_winid = api.nvim_get_current_win()
-
-  local curr_scope
-  for _, scopes in pairs(self) do
-    if type(scopes) == 'table' then
-      for _, scope in ipairs(scopes) do
-        if scope.winid == curr_winid then
-          curr_scope = scope
-          break
         end
-      end
+        self:remove_scope(scope)
+      end, { buffer = bufnr })
     end
   end
 
-  return curr_scope
-end
-
--- Function to clear all the keymappings when there's no window
--- @param bufnr - The buffer number that those keymappings set for
-function def:clear_all_maps(bufnr)
-  local scopes = self[bufnr]
-  local maps = config.definition_action_keys
-
-  if scopes == nil or next(scopes) == nil then
-    if api.nvim_buf_is_valid(bufnr) then
-      for _, key in pairs(maps) do
-        vim.keymap.del('n', key, { buffer = bufnr })
-      end
+  keymap('n', maps.close, function()
+    local scope = self:find_current_scope()
+    local main_winid = self[scope.main_bufnr].main_winid
+    for _, v in pairs(self[scope.main_bufnr].scopes) do
+      self:close_window(v)
     end
+    api.nvim_set_current_win(main_winid)
+    self[scope.main_bufnr] = nil
+  end, { buffer = bufnr })
+end
+
+function def:close_window(scope)
+  if scope.winid and api.nvim_win_is_valid(scope.winid) then
+    api.nvim_win_close(scope.winid, true)
   end
 end
 
--- Function to close the given window
--- @param curr_scope - Scope data for the current window
--- @param opts       - Options including `close_all`
-function def:close_window(curr_scope, opts)
-  opts = opts or {}
-  local curr_bufnr = api.nvim_get_current_buf()
-
-  local close_scope = function(item)
-    if item.winid and api.nvim_win_is_valid(item.winid) then
-      api.nvim_win_close(item.winid, true)
-    end
-  end
-
-  if opts.close_all then
-    self:process_all_scopes(function(bufnr, scope)
-      close_scope(scope)
-
-      if bufnr ~= curr_bufnr then
-        api.nvim_buf_delete(bufnr, { force = true })
-      end
-    end)
-  elseif curr_scope ~= nil then
-    close_scope(curr_scope)
-  end
-end
-
--- Function to clear the tmp data on triggering the keymap
--- @param bufnr       - Current buffer number
--- @param curr_scope  - Scope data for the current window
--- @param opts        - Options including `close_all`
-function def:clear_tmp_data(bufnr, curr_scope, opts)
-  opts = opts or {}
-
-  if opts.close_all then
-    self:process_all_scopes(function(key, _)
-      self[key] = nil
-    end)
-  elseif curr_scope ~= nil then
-    local scopes = self[bufnr]
-
-    local matched_index
-    if scopes ~= nil then
-      for i, item in ipairs(scopes) do
-        if item.winid == curr_scope.winid then
-          matched_index = i
-        end
-      end
-
-      if matched_index ~= nil then
-        table.remove(scopes, matched_index)
-      end
-    end
-  end
-
-  -- INFO: unset the `main_winid` when all the definition windows are closed.
-  local cleared = true
-  self:process_all_scopes(function(_, _)
-    cleared = false
-  end)
-
-  if cleared then
-    self.main_winid = nil
-  end
-end
-
--- Function to iterate all the scopes with given callback function
--- @param cb - The callback function for each scope
-function def:process_all_scopes(cb)
-  for bufnr, scopes in pairs(self) do
-    if type(scopes) == 'table' and api.nvim_buf_is_valid(bufnr) then
-      for _, scope in ipairs(scopes) do
-        cb(bufnr, scope)
+function def:get_scope_index(scope)
+  if self[scope.main_bufnr] then
+    for k, v in pairs(self[scope.main_bufnr].scopes) do
+      if v.winid == scope.winid then
+        return k
       end
     end
   end
 end
 
--- Function to find the last definition window and then focus it
-function def:focus_last_window()
-  local last_window
-  local curr_win = api.nvim_get_current_win()
-  self:process_all_scopes(function(_, scope)
-    local valid_win = scope.winid ~= curr_win and api.nvim_win_is_valid(scope.winid)
-
-    if (last_window == nil or scope.winid > last_window) and valid_win then
-      last_window = scope.winid
-    end
-  end)
-
-  if last_window ~= nil then
-    api.nvim_set_current_win(last_window)
+function def:remove_scope(scope)
+  if self[scope.main_bufnr] then
+    local index = self:get_scope_index(scope)
+    table.remove(self[scope.main_bufnr].scopes, index)
   end
 end
 
