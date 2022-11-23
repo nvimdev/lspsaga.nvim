@@ -351,13 +351,18 @@ function ot:set_keymap(bufnr)
   end)
 end
 
+local already_gen = false
+
 function ot:update_outline(symbols, event)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
 
   self:init_data(symbols)
 
-  gen_outline_hi()
+  if not already_gen then
+    gen_outline_hi()
+    already_gen = true
+  end
 
   if not self.winid then
     create_outline_window()

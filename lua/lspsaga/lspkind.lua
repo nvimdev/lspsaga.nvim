@@ -106,10 +106,6 @@ kind = setmetatable(kind, {
     if key == 'colors' then
       return colors
     end
-
-    if vim.tbl_contains(completion_kind, key) then
-      return completion_kind
-    end
   end,
 })
 
