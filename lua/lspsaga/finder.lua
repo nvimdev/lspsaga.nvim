@@ -738,7 +738,7 @@ function Finder:open_link(action_type)
   local current_line = api.nvim_win_get_cursor(0)[1]
 
   if self.short_link[current_line] == nil then
-    error('[LspSaga] target file uri not exist')
+    vim.notify('[LspSaga] no file link in current line')
     return
   end
 
