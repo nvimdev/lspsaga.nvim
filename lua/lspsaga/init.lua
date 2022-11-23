@@ -20,6 +20,10 @@ saga.config_values = {
   code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window
   code_action_num_shortcut = true,
+  code_action_keys = {
+    quit = 'q',
+    exec = '<CR>',
+  },
   code_action_lightbulb = {
     enable = true,
     enable_in_insert = true,
@@ -47,10 +51,6 @@ saga.config_values = {
     split = 'i',
     tabe = 't',
     quit = { 'q', '<ESC>' },
-  },
-  code_action_keys = {
-    quit = 'q',
-    exec = '<CR>',
   },
   definition_action_keys = {
     edit = '<C-c>o',
