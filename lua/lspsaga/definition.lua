@@ -264,6 +264,7 @@ function def:remove_scope(scope)
   end
 end
 
+-- override the default the defintion handler
 function def:goto_defintion()
   vim.lsp.handlers[method] = function(_, result, _, _)
     if not result or vim.tbl_isempty(result) then

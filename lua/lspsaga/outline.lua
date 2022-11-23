@@ -97,7 +97,11 @@ end
 
 local function gen_outline_hi()
   for _, v in pairs(kind) do
-    api.nvim_set_hl(0, hi_prefix .. v[1], { fg = v[3] })
+    local hi_name = hi_prefix .. v[1]
+    local ok,tbl = pcall(api.nvim_get_hl_by_name,hi_name, true)
+    if not ok or not tbl.foreground then
+      api.nvim_set_hl(0, hi_name, { fg = v[3] })
+    end
   end
 end
 
@@ -351,8 +355,6 @@ function ot:set_keymap(bufnr)
   end)
 end
 
-local already_gen = false
-
 function ot:update_outline(symbols, event)
   local current_buf = api.nvim_get_current_buf()
   self[current_buf] = { ft = vim.bo.filetype }
@@ -502,8 +504,8 @@ function ot:close_when_last()
 end
 
 function ot:remove_events()
-  pcall(api.nvim_del_augroup_by_id, self.refresh_au)
-  pcall(api.nvim_del_augroup_by_id, self.preview_au)
+  pcall(api.nvim_del_autocmd, self.refresh_au)
+  pcall(api.nvim_del_autocmd, self.preview_au)
 end
 
 function ot:close_and_clear()
