@@ -1,5 +1,5 @@
 local config = require('lspsaga').config_values
-local if_nil, lsp = vim.F.if_nil, vim.lsp
+local if_nil, lsp, fn = vim.F.if_nil, vim.lsp, vim.fn
 local window = require('lspsaga.window')
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
@@ -12,44 +12,11 @@ local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
-local jump_diagnostic_header = function(entry)
-  if type(config.diagnostic_header) == 'table' then
-    local icon = config.diagnostic_header[entry.severity]
-    return icon
-  end
-
-  if type(config.diagnostic_header) == 'function' then
-    local header = config.diagnostic_header(entry)
-    if type(header) ~= 'string' then
-      vim.notify('diagnostic_header function must return a string')
-      return ''
-    end
-    return header
-  end
-end
-
-function diag:code_action_map()
-  local all_maps = api.nvim_get_keymap('n')
-  for _, map in pairs(all_maps) do
-    if map.rhs and map.rhs:find('Lspsaga code_action') then
-      local ret = map.lhs
-      if ret:sub(1, 1) == vim.g.mapleader then
-        ret = '<leader>' .. ret:sub(2)
-      end
-      return ret:gsub(' ', '<space>')
-    end
-  end
-  return nil
-end
-
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
-  -- print(vim.inspect(entry))
-  local current_buffer = api.nvim_get_current_buf()
   local wrap_message = {}
   local max_width = window.get_max_float_width()
 
-  local header = jump_diagnostic_header(entry)
   local source = ' '
 
   -- remove dot in source tail {lua-language-server}
@@ -61,24 +28,15 @@ function diag:render_diagnostic_window(entry, option)
     source = source .. entry.source
   end
 
-  if entry.code ~= nil then
+  if entry.code then
     source = source .. '(' .. entry.code .. ')'
   end
-
-  local header_with_type = header .. diag_type[entry.severity]
-  local lnum_col = ' in ' .. '❮' .. entry.lnum + 1 .. ':' .. entry.col + 1 .. '❯'
-  local lhs = self:code_action_map()
-  local quickfix = lhs and 'QuickFixKey: ' .. lhs or ''
-  wrap_message[1] = header_with_type .. lnum_col .. ' ' .. quickfix
 
   local msgs = wrap.diagnostic_msg(entry.message, max_width)
   for _, v in pairs(msgs) do
     table.insert(wrap_message, v)
   end
   wrap_message[#wrap_message] = wrap_message[#wrap_message] .. source
-
-  local truncate_line = wrap.add_truncate_line(wrap_message)
-  table.insert(wrap_message, 2, truncate_line)
 
   local hi_name = 'LspSagaDiagnostic' .. diag_type[entry.severity]
   local content_opts = {
@@ -93,10 +51,18 @@ function diag:render_diagnostic_window(entry, option)
     move_col = 3,
   }
 
+  if fn.has('nvim-0.9') == 1 then
+    opts.title = {
+      { config.diagnostic_icon, 'DiagnosticTitleIcon' },
+      { 'Line: ' .. (entry.lnum + 1), 'DiagnosticTitleLine' },
+      { ' Col: ' .. (entry.col + 1), 'DiagnosticTitleCol' },
+    }
+  end
+
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
   local win_config = api.nvim_win_get_config(self.winid)
 
-  local above = win_config['row'][false] < vim.fn.winline()
+  local above = win_config['row'][false] < fn.winline()
 
   if win_config['anchor'] == 'NE' then
     opts.move_col = -1
@@ -110,15 +76,9 @@ function diag:render_diagnostic_window(entry, option)
 
   opts.focusable = false
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
-    contents = libs.generate_empty_table(#wrap_message),
+    contents = libs.generate_empty_table(#wrap_message + 1),
     border = 'none',
   }, opts)
-
-  local title_icon_length = #header + #diag_type[entry.severity] + 1
-  api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, 0, 0, title_icon_length)
-
-  local truncate_line_hl = 'LspSaga' .. diag_type[entry.severity] .. 'TrunCateLine'
-  api.nvim_buf_add_highlight(self.bufnr, -1, truncate_line_hl, 1, 0, -1)
 
   local get_pos_with_char = function()
     if win_config['anchor'] == 'NE' then
@@ -140,14 +100,14 @@ function diag:render_diagnostic_window(entry, option)
 
   local pos_char = get_pos_with_char()
 
-  for i, _ in pairs(wrap_message) do
+  for i = 1,#wrap_message + 1 do
     local virt_tbl = {}
     if i > 2 then
       api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
     end
 
     if not above then
-      if i == #wrap_message then
+      if i == #wrap_message + 1 then
         insert(virt_tbl, { pos_char[2], hi_name })
         insert(virt_tbl, { '━', hi_name })
         insert(virt_tbl, { pos_char[3], hi_name })
@@ -175,38 +135,13 @@ function diag:render_diagnostic_window(entry, option)
   api.nvim_buf_add_highlight(
     self.bufnr,
     -1,
-    'DiagnosticLineCol',
-    0,
-    #header_with_type,
-    #header_with_type + #lnum_col + 1
-  )
-
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
     'LspSagaDiagnosticSource',
     #wrap_message - 1,
     #wrap_message[#wrap_message] - #source,
     -1
   )
 
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'DiagnosticQuickFix',
-    0,
-    #wrap_message[1] - #quickfix,
-    -1
-  )
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'DiagnosticMap',
-    0,
-    #wrap_message[1] - #quickfix + 12,
-    -1
-  )
-
+  local current_buffer = api.nvim_get_current_buf()
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
   -- magic to solved the window disappear when trigger CusroMoed
   -- see https://github.com/neovim/neovim/issues/12923
@@ -330,23 +265,12 @@ function diag:show_diagnostics(opts, get_diagnostics)
   self.show_diag_bufnr, self.show_diag_winid = window.create_win_with_border(content_opts)
 
   for i, hi in ipairs(highlights) do
-    local _, hiname, col_in_line = unpack(hi)
+    local _, hiname = unpack(hi)
     -- Start highlight after the prefix
     if i == 1 then
       api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, 0, 0, -1)
     else
       api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, i, 0, -1)
-    end
-
-    if col_in_line then
-      api.nvim_buf_add_highlight(
-        self.show_diag_bufnr,
-        -1,
-        'ColInLineDiagnostic',
-        i,
-        col_in_line,
-        -1
-      )
     end
   end
 

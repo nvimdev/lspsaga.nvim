@@ -49,7 +49,7 @@ local function make_floating_popup_options(width, height, opts)
   new_option.width = width
   new_option.height = height
   new_option.focusable = true
-  if opts.focusable then
+  if opts.focusable ~= nil then
     new_option.focusable = opts.focusable
   end
 
@@ -69,7 +69,7 @@ local function make_floating_popup_options(width, height, opts)
 
   if opts.title then
     new_option.title = opts.title
-    new_option.title_pos = opts.title_pos or nil
+    new_option.title_pos = opts.title_pos or 'center'
   end
 
   if opts.row == nil and opts.col == nil then
@@ -87,7 +87,7 @@ local function make_floating_popup_options(width, height, opts)
       new_option.row = 0
     end
 
-    if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
+    if vim.fn.wincol() + width <= vim.o.columns then
       new_option.anchor = new_option.anchor .. 'W'
       new_option.col = 0
       if opts.move_col then
