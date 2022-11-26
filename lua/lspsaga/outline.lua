@@ -432,7 +432,8 @@ function ot:refresh_event()
     return
   end
 
-  self.refresh_au = api.nvim_create_autocmd('BufEnter', {
+  api.nvim_create_autocmd('BufEnter', {
+    group = self.group,
     callback = function(opt)
       if vim.bo.filetype == 'lspsagaoutline' then
         return
@@ -443,13 +444,13 @@ function ot:refresh_event()
       end
 
       local buf = api.nvim_get_current_buf()
-      local in_render_buf = self:find_in_render_buf()
-      if buf == in_render_buf then
+      -- don't render when the buffer is unnamed buffer
+      if #api.nvim_buf_get_name(buf) == 0 then
         return
       end
 
-      -- don't render when the buffer is unnamed buffer
-      if #api.nvim_buf_get_name(buf) == 0 then
+      local in_render_buf = self:find_in_render_buf()
+      if buf == in_render_buf then
         return
       end
 
@@ -474,7 +475,8 @@ function ot:preview_event(bufnr)
     return
   end
   self:auto_preview(bufnr)
-  self.preview_au = api.nvim_create_autocmd('CursorMoved', {
+  api.nvim_create_autocmd('CursorMoved', {
+    group = self.group,
     buffer = self.winbuf,
     callback = function()
       local buf
@@ -512,13 +514,15 @@ function ot:close_when_last()
 end
 
 function ot:remove_events()
-  pcall(api.nvim_del_autocmd, self.refresh_au)
-  pcall(api.nvim_del_autocmd, self.preview_au)
+  if self.group then
+    api.nvim_del_augroup_by_id(self.group)
+    self.group = nil
+  end
 end
 
 function ot:close_and_clear()
-  self:remove_events()
   pcall(api.nvim_win_close, self.winid, true)
+  self:remove_events()
   for i, v in pairs(self) do
     if type(v) ~= 'function' then
       self[i] = nil
@@ -539,6 +543,8 @@ function ot:render_outline()
   if next(clients) == nil then
     return
   end
+
+  self.group = api.nvim_create_augroup('LSOutline', { clear = true})
 
   if cache[current_buf] and next(cache[current_buf]) ~= nil then
     self:update_outline(cache[current_buf])
