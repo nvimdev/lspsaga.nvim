@@ -98,7 +98,7 @@ end
 local function gen_outline_hi()
   for _, v in pairs(kind) do
     local hi_name = hi_prefix .. v[1]
-    local ok,tbl = pcall(api.nvim_get_hl_by_name,hi_name, true)
+    local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
     if not ok or not tbl.foreground then
       api.nvim_set_hl(0, hi_name, { fg = v[3] })
     end
@@ -241,7 +241,9 @@ function ot:expand_collaspe(bufnr)
         v.win_line = v.win_line - (_end_pos - current_line - 1)
       end
     end
-    self:detail_virt_text(bufnr, { actual_index, actual_index })
+    if outline_conf.show_detail then
+      self:detail_virt_text(bufnr, { actual_index, _end_pos - 1 })
+    end
     return
   end
 
@@ -280,7 +282,9 @@ function ot:expand_collaspe(bufnr)
     end
   end
   _end_index = _end_index == #data + 1 and _end_index - 1 or _end_index
-  self:detail_virt_text(bufnr, { actual_index, _end_index })
+  if outline_conf.show_detail then
+    self:detail_virt_text(bufnr, { actual_index, _end_index })
+  end
 end
 
 function ot:jump_to_line(bufnr)
@@ -299,13 +303,13 @@ local create_outline_window = function()
     if ok then
       local winid = fn.win_findbuf(sp_buf)[1]
       api.nvim_set_current_win(winid)
-      vim.cmd('noautocmd sp vnew')
+      vim.cmd('sp vnew')
       return
     end
   end
 
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
-  vim.cmd('noautocmd ' .. pos .. ' vsplit')
+  vim.cmd(pos .. ' vsplit')
   vim.cmd('vertical resize ' .. config.show_outline.win_width)
 end
 
@@ -351,8 +355,8 @@ function ot:set_keymap(bufnr)
   })
 
   keymap.set('n', outline_conf.keys.quit, function()
-    window.nvim_close_valid_window(self.winid)
-  end)
+    self:close_and_clear()
+  end, { buffer = self.winbuf })
 end
 
 function ot:update_outline(symbols, event)
@@ -361,15 +365,12 @@ function ot:update_outline(symbols, event)
 
   self:init_data(symbols)
 
-  if not already_gen then
-    gen_outline_hi()
-    already_gen = true
-  end
+  gen_outline_hi()
 
   if not self.winid then
     create_outline_window()
     self.winid = api.nvim_get_current_win()
-    self.winbuf = api.nvim_create_buf(false, true)
+    self.winbuf = api.nvim_create_buf(false, false)
     api.nvim_win_set_buf(self.winid, self.winbuf)
     set_local()
   else
@@ -494,10 +495,17 @@ function ot:close_when_last()
   api.nvim_create_autocmd('WinEnter', {
     callback = function(opt)
       local wins = api.nvim_list_wins()
-      if #wins == 1 and wins[1] == self.winid then
-        self:close_and_clear()
+      if #wins == 1 and vim.bo.filetype == 'lspsagaoutline' then
+        api.nvim_buf_delete(self.winbuf, { force = true })
+        self.winid = nil
+        self.winbuf = nil
+        for k, _ in pairs(self) do
+          if type(k) == 'table' then
+            self[k] = nil
+          end
+        end
+        api.nvim_del_autocmd(opt.id)
       end
-      pcall(api.nvim_del_autocmd, opt.id)
     end,
     desc = 'Outline auto close when last one',
   })
@@ -510,7 +518,7 @@ end
 
 function ot:close_and_clear()
   self:remove_events()
-  window.nvim_close_valid_window(self.winid)
+  pcall(api.nvim_win_close, self.winid, true)
   for i, v in pairs(self) do
     if type(v) ~= 'function' then
       self[i] = nil
@@ -523,6 +531,7 @@ function ot:render_outline()
     self:close_and_clear()
     return
   end
+
   local current_buf = api.nvim_get_current_buf()
 
   -- if buffer not lsp client

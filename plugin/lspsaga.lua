@@ -49,9 +49,9 @@ local highlights = {
   LspSagaDiagnosticHint = { link = 'DiagnosticHint' },
   LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
   LspSagaDiagnosticHeader = { fg = '#afd700' },
-  DiagnosticTitleIcon = { fg = '#9c255e'},
+  DiagnosticTitleIcon = { fg = '#9c255e' },
   DiagnosticTitleLine = { fg = '#9c255e', bold = true },
-  DiagnosticTitleCol = { fg = '#9c255e', bold = true},
+  DiagnosticTitleCol = { fg = '#9c255e', bold = true },
   -- signture help
   LspSagaSignatureHelpBorder = { fg = '#98be65' },
   LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder' },

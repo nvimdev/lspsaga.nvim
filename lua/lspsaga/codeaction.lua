@@ -30,10 +30,6 @@ function Action:action_callback()
     return
   end
 
-  -- insert blank line
-  local truncate_line = wrap.add_truncate_line(contents)
-  table.insert(contents, 2, truncate_line)
-
   local content_opts = {
     contents = contents,
     filetype = 'sagacodeaction',

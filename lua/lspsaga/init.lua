@@ -16,6 +16,7 @@ saga.config_values = {
   },
   -- Error,Warn,Info,Hint
   diagnostic_icon = ' ',
+  jump_with_action = true,
   -- code action title icon
   code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window
@@ -74,7 +75,7 @@ saga.config_values = {
     win_position = 'right',
     win_with = '',
     win_width = 30,
-    show_detail = false,
+    show_detail = true,
     auto_enter = true,
     auto_preview = true,
     auto_refresh = true,

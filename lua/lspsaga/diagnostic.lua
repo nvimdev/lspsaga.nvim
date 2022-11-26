@@ -100,7 +100,7 @@ function diag:render_diagnostic_window(entry, option)
 
   local pos_char = get_pos_with_char()
 
-  for i = 1,#wrap_message + 1 do
+  for i = 1, #wrap_message + 1 do
     local virt_tbl = {}
     if i > 2 then
       api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
