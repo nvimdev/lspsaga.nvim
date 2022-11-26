@@ -29,15 +29,19 @@ end
 
 function rename:apply_action_keys()
   local quit_key = config.rename_action_quit
+  if type(quit_key) == 'string' then
+    quit_key = { quit_key }
+  end
   local exec_key = '<CR>'
 
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in pairs(modes) do
-    vim.keymap.set(mode, quit_key, function()
-      self:close_rename_win()
-    end, { buffer = self.bufnr })
-
+    for _, v in ipairs(quit_key) do
+      vim.keymap.set(mode, v, function()
+        self:close_rename_win()
+      end, { buffer = self.bufnr })
+    end
     if i ~= 3 then
       vim.keymap.set(mode, exec_key, function()
         self:do_rename()
