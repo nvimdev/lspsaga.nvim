@@ -1,3 +1,4 @@
+local api = vim.api
 local wrap = {}
 local space = ' '
 
@@ -89,6 +90,20 @@ function wrap.generate_spe_line(width)
   for _ = 1, width, 1 do
     line = line .. char
   end
+  return line
+end
+
+function wrap.truncate_line(width, title)
+  local char = '─'
+  local line = ''
+  local t_cent = math.floor(api.nvim_strwidth(title) / 2)
+  local w_cent = math.floor(width / 2)
+  for _ = 1, width, 1 do
+    line = line .. char
+  end
+  local cell = #line / width
+  local start_pos = (w_cent - t_cent) * cell
+  line = line:sub(0, start_pos) .. title .. line:sub(#line - start_pos + 1)
   return line
 end
 

@@ -14,7 +14,7 @@ local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
-function diag:code_action_cb()
+function diag:code_action_cb(hi)
   local contents = {}
 
   for index, client_with_actions in pairs(act.action_tuples) do
@@ -30,15 +30,18 @@ function diag:code_action_cb()
   end
 
   if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
+    local width = api.nvim_win_get_width(self.winid)
+    local height = api.nvim_win_get_height(self.winid)
     api.nvim_win_set_config(self.winid, {
       height = #contents + 2,
     })
-    local max_width = window.get_max_float_width()
-    local line = wrap.generate_spe_line(max_width)
+    local line = wrap.truncate_line(width, config.code_action_icon .. ' Code Actions')
     insert(contents, 1, line)
     api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
     api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
     api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
+
+    api.nvim_buf_add_highlight(self.bufnr, 0, hi, height, 0, -1)
   end
 end
 
@@ -54,12 +57,13 @@ end
 function diag:apply_map()
   keymap('n', diag_conf.jump_win_keys.exec, function()
     self:do_code_action()
-    api.nvim_win_close(self.winid, true)
+    window.nvim_close_valid_window({ self.winid, self.virt_winid })
     act:clear_tmp_data()
   end, { buffer = self.bufnr })
 
   keymap('n', diag_conf.jump_win_keys.quit, function()
     api.nvim_win_close(self.winid, true)
+    window.nvim_close_valid_window({ self.winid, self.virt_winid })
     act:clear_tmp_data()
   end, { buffer = self.bufnr })
 end
@@ -90,23 +94,23 @@ function diag:render_diagnostic_window(entry, option)
   end
   content[#content] = content[#content] .. source
 
+  local hi_name = 'LspSagaDiagnostic' .. diag_type[entry.severity]
+
   if diag_conf.show_code_action then
     act:send_code_action_request({
       range = {
-        ['start'] = { entry.lnum, entry.col },
-        ['end'] = { entry.lnum, entry.col },
+        ['start'] = { entry.lnum + 1, entry.col + 1 },
+        ['end'] = { entry.lnum + 1, entry.col + 1 },
       },
     }, function()
-      self:code_action_cb()
+      self:code_action_cb(hi_name)
     end)
   end
 
-  local hi_name = 'LspSagaDiagnostic' .. diag_type[entry.severity]
   local content_opts = {
     contents = content,
     filetype = 'plaintext',
     highlight = hi_name,
-    enter = diag_conf.auto_enter_float,
   }
 
   local opts = {
@@ -210,8 +214,12 @@ function diag:render_diagnostic_window(entry, option)
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
 
   self:apply_map()
-  -- magic to solved the window disappear when trigger CusroMoed
-  -- see https://github.com/neovim/neovim/issues/12923
+
+  if diag_conf.auto_enter_float then
+    api.nvim_set_current_win(self.winid)
+    return
+  end
+
   vim.defer_fn(function()
     libs.close_preview_autocmd(current_buffer, { self.winid, self.virt_winid }, close_autocmds)
   end, 0)
