@@ -1,7 +1,6 @@
-local api, util = vim.api, vim.lsp.util
+local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
-local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 local method = 'textDocument/codeAction'
 local saga_augroup = require('lspsaga').saga_augroup
@@ -11,8 +10,6 @@ Action.__index = Action
 
 function Action:action_callback()
   local contents = {}
-  local title = config['code_action_icon'] .. 'CodeActions:'
-  table.insert(contents, title)
 
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
@@ -37,9 +34,15 @@ function Action:action_callback()
     highlight = 'LspSagaCodeActionBorder',
   }
 
-  self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts)
+  local opt = {}
+
+  if fn.has('nvim-0.9') == 1 then
+    opt.title = config.code_action_icon .. 'CodeAction'
+  end
+
+  self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
   -- initial position in code action window
-  api.nvim_win_set_cursor(self.action_winid, { 3, 1 })
+  api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
   api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.action_bufnr,
@@ -124,10 +127,6 @@ function Action:get_clients(results, options)
       end
     end
   end
-  if #self.action_tuples == 0 then
-    vim.notify('No code actions available', vim.log.levels.INFO)
-    return
-  end
 end
 
 local function check_sub_tbl(tbl)
@@ -161,9 +160,9 @@ function Action:actions_in_cache()
   end
 end
 
-function Action:code_action(options)
+function Action:send_code_action_request(options, cb)
   self.bufnr = api.nvim_get_current_buf()
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
+  local diagnostics = lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
@@ -175,8 +174,8 @@ function Action:code_action(options)
     params = util.make_given_range_params(start, end_)
   elseif mode == 'v' or mode == 'V' then
     -- [bufnum, lnum, col, off]; both row and column 1-indexed
-    local start = vim.fn.getpos('v')
-    local end_ = vim.fn.getpos('.')
+    local start = fn.getpos('v')
+    local end_ = fn.getpos('.')
     local start_row = start[2]
     local start_col = start[3]
     local end_row = end_[2]
@@ -199,16 +198,15 @@ function Action:code_action(options)
     self.ctx = {}
   end
   self.ctx = { bufnr = self.bufnr, method = method, params = params }
-
-  local in_cache = self:actions_in_cache()
-  if in_cache then
-    self:action_callback()
-    return
-  end
-
-  vim.lsp.buf_request_all(self.bufnr, method, params, function(results)
+  lsp.buf_request_all(self.bufnr, method, params, function(results)
     self:get_clients(results)
-    self:action_callback()
+    if #self.action_tuples == 0 then
+      vim.notify('No code actions available', vim.log.levels.INFO)
+      return
+    end
+    if cb then
+      cb()
+    end
   end)
 end
 
@@ -216,12 +214,10 @@ function Action:set_cursor()
   local col = 1
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
-  if current_line == 1 then
-    api.nvim_win_set_cursor(self.action_winid, { 3, col })
-  elseif current_line == 2 then
-    api.nvim_win_set_cursor(self.action_winid, { 2 + #self.action_tuples, col })
-  elseif current_line == #self.action_tuples + 3 then
-    api.nvim_win_set_cursor(self.action_winid, { 3, col })
+  if current_line == #self.action_tuples + 1 then
+    api.nvim_win_set_cursor(self.action_winid, { 1, col })
+  else
+    api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
 end
 
@@ -233,13 +229,25 @@ function Action:num_shortcut()
   end
 end
 
+function Action:code_action(options)
+  if self:actions_in_cache() then
+    self:action_callback()
+    return
+  end
+
+  options = options or {}
+  self:send_code_action_request(options, function()
+    self:action_callback()
+  end)
+end
+
 function Action:apply_action(action, client)
   if action.edit then
-    vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
+    util.apply_workspace_edit(action.edit, client.offset_encoding)
   end
   if action.command then
     local command = type(action.command) == 'table' and action.command or action
-    local fn = client.commands[command.command] or vim.lsp.commands[command.command]
+    local fn = client.commands[command.command] or lsp.commands[command.command]
     if fn then
       local enriched_ctx = vim.deepcopy(self.ctx)
       enriched_ctx.client_id = client.id
@@ -262,7 +270,7 @@ end
 function Action:do_code_action(num)
   local number = num and tonumber(num) or tonumber(vim.fn.expand('<cword>'))
   local action = self.action_tuples[number][2]
-  local client = vim.lsp.get_client_by_id(self.action_tuples[number][1])
+  local client = lsp.get_client_by_id(self.action_tuples[number][1])
 
   if
     not action.edit

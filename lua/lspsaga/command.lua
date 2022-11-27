@@ -1,12 +1,9 @@
 local command = {}
-local lsprename = require('lspsaga.rename')
 local diagnostic = require('lspsaga.diagnostic')
-local codeaction = require('lspsaga.codeaction')
-local finder = require('lspsaga.finder')
 
 local subcommands = {
   lsp_finder = function()
-    finder:lsp_finder()
+    require('lspsaga.finder'):lsp_finder()
   end,
   preview_definition = function()
     vim.notify(
@@ -21,7 +18,7 @@ local subcommands = {
     require('lspsaga.definition'):goto_defintion()
   end,
   rename = function()
-    lsprename:lsp_rename()
+    require('lspsaga.rename'):lsp_rename()
   end,
   hover_doc = function()
     require('lspsaga.hover'):render_hover_doc()
@@ -31,7 +28,7 @@ local subcommands = {
   diagnostic_jump_next = diagnostic.goto_next,
   diagnostic_jump_prev = diagnostic.goto_prev,
   code_action = function()
-    codeaction:code_action()
+    require('lspsaga.codeaction'):code_action()
   end,
   range_code_action = function()
     vim.notify(

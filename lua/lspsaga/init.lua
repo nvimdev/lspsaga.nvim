@@ -5,7 +5,6 @@ local saga = {}
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 saga.config_values = {
-  debug_print = false,
   border_style = 'single',
   saga_winblend = 0,
   -- when cusor in saga float window
@@ -14,9 +13,16 @@ saga.config_values = {
     prev = '<C-p>',
     next = '<C-n>',
   },
-  -- Error,Warn,Info,Hint
-  diagnostic_icon = ' ',
-  jump_with_action = true,
+  diagnostic = {
+    icon = ' ',
+    show_code_action = true,
+    show_source = true,
+    auto_enter_float = true,
+    jump_win_keys = {
+      exec = 'o',
+      quit = 'q',
+    },
+  },
   -- code action title icon
   code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window

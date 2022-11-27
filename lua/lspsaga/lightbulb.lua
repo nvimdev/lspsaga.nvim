@@ -1,4 +1,4 @@
-local api, uv = vim.api, vim.loop
+local api, uv, lsp = vim.api, vim.loop, vim.lsp
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local code_action_method = 'textDocument/codeAction'
@@ -16,7 +16,7 @@ if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
 end
 
 local function check_server_support_codeaction(bufnr)
-  local clients = vim.lsp.get_active_clients({ bufnr = bufnr })
+  local clients = lsp.get_active_clients({ bufnr = bufnr })
   for _, client in pairs(clients) do
     if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
       for _, fts in pairs(config.server_filetype_map) do
@@ -101,12 +101,12 @@ local send_request = coroutine.create(function()
   vim.w.lightbulb_line = vim.w.lightbulb_line or 0
 
   while true do
-    local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(current_buf)
+    local diagnostics = lsp.diagnostic.get_line_diagnostics(current_buf)
     local context = { diagnostics = diagnostics }
-    local params = vim.lsp.util.make_range_params()
+    local params = lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
-    vim.lsp.buf_request_all(current_buf, code_action_method, params, function(results)
+    lsp.buf_request_all(current_buf, code_action_method, params, function(results)
       local has_actions = false
       for _, res in pairs(results or {}) do
         if res.result and type(res.result) == 'table' and next(res.result) ~= nil then

@@ -81,24 +81,18 @@ local function make_floating_popup_options(width, height, opts)
     local pum_vis = not vim.tbl_isempty(pum_pos) -- pumvisible() can be true and pum_pos() returns {}
     if pum_vis and vim.fn.line('.') >= pum_pos.row or not pum_vis and lines_above < lines_below then
       new_option.anchor = 'N'
-      new_option.row = 1
+      new_option.row = opts.move_row and opts.move_row or 1
     else
       new_option.anchor = 'S'
-      new_option.row = 0
+      new_option.row = opts.move_row and opts.move_row or 0
     end
 
     if vim.fn.wincol() + width <= vim.o.columns then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = 0
-      if opts.move_col then
-        new_option.col = new_option.col + opts.move_col
-      end
+      new_option.col = opts.move_col and opts.move_col or 0
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = 1
-      if opts.move_col then
-        new_option.col = new_option.col - opts.move_col + 1
-      end
+      new_option.col = opts.move_col and opts.move_col or 1
     end
   else
     new_option.row = opts.row
@@ -111,11 +105,6 @@ end
 local function generate_win_opts(contents, opts)
   opts = opts or {}
   local win_width, win_height
-  -- _make_floating_popup_size doesn't allow the window size to be larger than
-  -- the current window. For the finder preview window, this means it won't let the
-  -- preview window be wider than the finder window. To work around this, the
-  -- no_size_override option can be set to indicate that the size shouldn't be changed
-  -- from what was given.
   if opts.no_size_override and opts.width and opts.height then
     win_width, win_height = opts.width, opts.height
   else
@@ -194,6 +183,7 @@ function M.create_win_with_border(content_opts, opts)
   end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
+  api.nvim_win_set_option(winid, 'wrap', content_opts.wrap or false)
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
   api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
 
@@ -213,7 +203,7 @@ end
 
 function M.get_max_float_width()
   -- current window width
-  local WIN_WIDTH = vim.fn.winwidth(0)
+  local WIN_WIDTH = api.nvim_win_get_width(0)
   local max_width = math.floor(WIN_WIDTH * 0.7)
   return max_width
 end

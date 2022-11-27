@@ -1,8 +1,10 @@
 local config = require('lspsaga').config_values
-local if_nil, lsp, fn = vim.F.if_nil, vim.lsp, vim.fn
+local diag_conf = config.diagnostic
+local if_nil, lsp, fn, keymap = vim.F.if_nil, vim.lsp, vim.fn, vim.keymap.set
 local window = require('lspsaga.window')
 local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
+local act = require('lspsaga.codeaction')
 local api = vim.api
 local insert = table.insert
 local space = ' '
@@ -12,9 +14,59 @@ local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
+function diag:code_action_cb()
+  local contents = {}
+
+  for index, client_with_actions in pairs(act.action_tuples) do
+    local action_title = ''
+    if #client_with_actions ~= 2 then
+      vim.notify('There has something wrong in aciton_tuples')
+      return
+    end
+    if client_with_actions[2].title then
+      action_title = '[' .. index .. ']' .. ' ' .. client_with_actions[2].title
+    end
+    table.insert(contents, action_title)
+  end
+
+  if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
+    api.nvim_win_set_config(self.winid, {
+      height = #contents + 2,
+    })
+    local max_width = window.get_max_float_width()
+    local line = wrap.generate_spe_line(max_width)
+    insert(contents, 1, line)
+    api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
+    api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
+    api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
+  end
+end
+
+function diag:do_code_action()
+  local line = api.nvim_get_current_line()
+  local num = line:match('[^%[]')
+  if not num then
+    return
+  end
+  act:do_code_action(num)
+end
+
+function diag:apply_map()
+  keymap('n', diag_conf.jump_win_keys.exec, function()
+    self:do_code_action()
+    api.nvim_win_close(self.winid, true)
+    act:clear_tmp_data()
+  end, { buffer = self.bufnr })
+
+  keymap('n', diag_conf.jump_win_keys.quit, function()
+    api.nvim_win_close(self.winid, true)
+    act:clear_tmp_data()
+  end, { buffer = self.bufnr })
+end
+
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
-  local wrap_message = {}
+  local content = {}
   local max_width = window.get_max_float_width()
 
   local source = ' '
@@ -34,15 +86,27 @@ function diag:render_diagnostic_window(entry, option)
 
   local msgs = wrap.diagnostic_msg(entry.message, max_width)
   for _, v in pairs(msgs) do
-    table.insert(wrap_message, v)
+    table.insert(content, v)
   end
-  wrap_message[#wrap_message] = wrap_message[#wrap_message] .. source
+  content[#content] = content[#content] .. source
+
+  if diag_conf.show_code_action then
+    act:send_code_action_request({
+      range = {
+        ['start'] = { entry.lnum, entry.col },
+        ['end'] = { entry.lnum, entry.col },
+      },
+    }, function()
+      self:code_action_cb()
+    end)
+  end
 
   local hi_name = 'LspSagaDiagnostic' .. diag_type[entry.severity]
   local content_opts = {
-    contents = wrap_message,
+    contents = content,
     filetype = 'plaintext',
     highlight = hi_name,
+    enter = diag_conf.auto_enter_float,
   }
 
   local opts = {
@@ -53,7 +117,7 @@ function diag:render_diagnostic_window(entry, option)
 
   if fn.has('nvim-0.9') == 1 then
     opts.title = {
-      { config.diagnostic_icon, 'DiagnosticTitleIcon' },
+      { diag_conf.icon, 'DiagnosticTitleIcon' },
       { 'Line: ' .. (entry.lnum + 1), 'DiagnosticTitleLine' },
       { ' Col: ' .. (entry.col + 1), 'DiagnosticTitleCol' },
     }
@@ -76,8 +140,9 @@ function diag:render_diagnostic_window(entry, option)
 
   opts.focusable = false
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
-    contents = libs.generate_empty_table(#wrap_message + 1),
+    contents = libs.generate_empty_table(#content + 1),
     border = 'none',
+    winblend = 100,
   }, opts)
 
   local get_pos_with_char = function()
@@ -100,14 +165,14 @@ function diag:render_diagnostic_window(entry, option)
 
   local pos_char = get_pos_with_char()
 
-  for i = 1, #wrap_message + 1 do
+  for i = 1, #content + 1 do
     local virt_tbl = {}
     if i > 2 then
       api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
     end
 
     if not above then
-      if i == #wrap_message + 1 then
+      if i == #content + 1 then
         insert(virt_tbl, { pos_char[2], hi_name })
         insert(virt_tbl, { '━', hi_name })
         insert(virt_tbl, { pos_char[3], hi_name })
@@ -136,13 +201,15 @@ function diag:render_diagnostic_window(entry, option)
     self.bufnr,
     -1,
     'LspSagaDiagnosticSource',
-    #wrap_message - 1,
-    #wrap_message[#wrap_message] - #source,
+    #content - 1,
+    #content[#content] - #source,
     -1
   )
 
   local current_buffer = api.nvim_get_current_buf()
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
+
+  self:apply_map()
   -- magic to solved the window disappear when trigger CusroMoed
   -- see https://github.com/neovim/neovim/issues/12923
   vim.defer_fn(function()
@@ -151,6 +218,10 @@ function diag:render_diagnostic_window(entry, option)
 end
 
 function diag:move_cursor(entry)
+  if diag_conf.show_code_action then
+    act:clear_tmp_data()
+  end
+
   local current_winid = api.nvim_get_current_win()
 
   -- if current position has a diagnostic floatwin when jump to next close
@@ -158,7 +229,7 @@ function diag:move_cursor(entry)
   -- current buffer
   window.nvim_close_valid_window({ self.winid, self.virt_winid })
 
-  vim.api.nvim_win_call(current_winid, function()
+  api.nvim_win_call(current_winid, function()
     -- Save position in the window's jumplist
     vim.cmd("normal! m'")
     api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
@@ -232,7 +303,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
     local hiname = 'Diagnostic' .. severities[diagnostic.severity] or severities[1]
     local message_lines = vim.split(diagnostic.message, '\n', true)
 
-    if config.show_diagnostic_source then
+    if diag_conf.show_source then
       message_lines[1] = prefix .. message_lines[1] .. space .. '[' .. diagnostic.source .. ']'
     end
     local start_col = diagnostic.col or diagnostic.range.start.character

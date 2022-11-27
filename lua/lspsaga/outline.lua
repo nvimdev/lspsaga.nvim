@@ -544,7 +544,7 @@ function ot:render_outline()
     return
   end
 
-  self.group = api.nvim_create_augroup('LSOutline', { clear = true})
+  self.group = api.nvim_create_augroup('LSOutline', { clear = true })
 
   if cache[current_buf] and next(cache[current_buf]) ~= nil then
     self:update_outline(cache[current_buf])
