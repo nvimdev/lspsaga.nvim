@@ -35,13 +35,26 @@ function diag:code_action_cb(hi)
     api.nvim_win_set_config(self.winid, {
       height = #contents + 2,
     })
-    local line = wrap.truncate_line(width, config.code_action_icon .. ' Code Actions')
+    local line, scope = wrap.truncate_line(width, config.code_action_icon .. ' Code Actions')
     insert(contents, 1, line)
     api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
     api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
     api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
+    -- highlight of code action border
     api.nvim_buf_add_highlight(self.bufnr, 0, hi, height, 0, -1)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      0,
+      'DiagnosticActionTitle',
+      height,
+      scope[1],
+      scope[2] + 1
+    )
+
+    for i = 2, #contents do
+      api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', height + i - 1, 0, -1)
+    end
   end
 end
 
@@ -199,11 +212,15 @@ function diag:render_diagnostic_window(entry, option)
       virt_text_pos = pos_char[1],
       virt_lines_above = false,
     })
+
+    if i ~= #content + 1 then
+      api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticText', i - 1, 0, -1)
+    end
   end
 
   api.nvim_buf_add_highlight(
     self.bufnr,
-    -1,
+    0,
     'LspSagaDiagnosticSource',
     #content - 1,
     #content[#content] - #source,

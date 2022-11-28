@@ -104,7 +104,7 @@ function wrap.truncate_line(width, title)
   local cell = #line / width
   local start_pos = (w_cent - t_cent) * cell
   line = line:sub(0, start_pos) .. title .. line:sub(#line - start_pos + 1)
-  return line
+  return line, { start_pos, #line - start_pos }
 end
 
 function wrap.add_truncate_line(contents)

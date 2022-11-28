@@ -247,8 +247,8 @@ function Action:apply_action(action, client)
   end
   if action.command then
     local command = type(action.command) == 'table' and action.command or action
-    local fn = client.commands[command.command] or lsp.commands[command.command]
-    if fn then
+    local func = client.commands[command.command] or lsp.commands[command.command]
+    if func then
       local enriched_ctx = vim.deepcopy(self.ctx)
       enriched_ctx.client_id = client.id
       fn(command, enriched_ctx)
@@ -258,11 +258,7 @@ function Action:apply_action(action, client)
         arguments = command.arguments,
         workDoneToken = command.workDoneToken,
       }
-      -- TODO: find why there must use a timer.
-      -- @see https://github.com/glepnir/lspsaga.nvim/issues/544
-      vim.defer_fn(function()
-        client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
-      end, 180)
+      client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
     end
   end
 end
