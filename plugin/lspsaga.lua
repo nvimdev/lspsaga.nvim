@@ -55,6 +55,8 @@ local highlights = {
   DiagnosticText = { fg = '#c77ba7' },
   DiagnosticActionTitle = { fg = '#9c255e', bold = true },
   DiagnosticActionText = { fg = '#b7f59a' },
+  DiagnosticActionPborder = { fg = '#afd700' },
+  DiagnosticActionPtitle = { fg = '#CBA6F7' },
   -- signture help
   LspSagaSignatureHelpBorder = { fg = '#98be65' },
   LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder' },

@@ -28,39 +28,41 @@ function diag:code_action_cb(hi)
     end
     table.insert(contents, action_title)
   end
-
-  if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
-    local width = api.nvim_win_get_width(self.winid)
-    local height = api.nvim_win_get_height(self.winid)
-    api.nvim_win_set_config(self.winid, {
-      height = #contents + 2,
-    })
-    local line, scope = wrap.truncate_line(width, config.code_action_icon .. ' Code Actions')
-    insert(contents, 1, line)
-    api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
-    api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
-    api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
-
-    -- highlight of code action border
-    api.nvim_buf_add_highlight(self.bufnr, 0, hi, height, 0, -1)
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      0,
-      'DiagnosticActionTitle',
-      height,
-      scope[1],
-      scope[2] + 1
-    )
-
-    for i = 2, #contents do
-      api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', height + i - 1, 0, -1)
-    end
+  if not self.bufnr and not api.nvim_buf_is_loaded(self.bufnr) then
+    return
   end
+
+  local width = api.nvim_win_get_width(self.winid)
+  local height = api.nvim_buf_line_count(self.bufnr)
+  api.nvim_win_set_config(self.winid, {
+    height = #contents + 2,
+  })
+  local line, scope = wrap.truncate_line(width, config.code_action_icon .. ' Code Actions')
+  insert(contents, 1, line)
+  api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
+  api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
+  api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
+
+  -- highlight of code action border
+  api.nvim_buf_add_highlight(self.bufnr, 0, hi, height, 0, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', height, scope[1], scope[2] + 1)
+
+  for i = 2, #contents do
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', height + i - 1, 0, -1)
+  end
+
+  api.nvim_create_autocmd('CursorMoved', {
+    buffer = self.bufnr,
+    callback = function()
+      self:action_prevew()
+    end,
+    desc = 'Lspsaga show code action preview in diagnostic window',
+  })
 end
 
 function diag:do_code_action()
   local line = api.nvim_get_current_line()
-  local num = line:match('[^%[]')
+  local num = line:match('%[([1-9])%]')
   if not num then
     return
   end
@@ -70,13 +72,13 @@ end
 function diag:apply_map()
   keymap('n', diag_conf.jump_win_keys.exec, function()
     self:do_code_action()
-    window.nvim_close_valid_window({ self.winid, self.virt_winid })
+    window.nvim_close_valid_window({ self.winid, self.virt_winid, self.preview_winid })
     act:clear_tmp_data()
   end, { buffer = self.bufnr })
 
   keymap('n', diag_conf.jump_win_keys.quit, function()
     api.nvim_win_close(self.winid, true)
-    window.nvim_close_valid_window({ self.winid, self.virt_winid })
+    window.nvim_close_valid_window({ self.winid, self.virt_winid, self.preview_winid })
     act:clear_tmp_data()
   end, { buffer = self.bufnr })
 end
@@ -85,6 +87,7 @@ function diag:render_diagnostic_window(entry, option)
   option = option or {}
   local content = {}
   local max_width = window.get_max_float_width()
+  self.main_buf = api.nvim_get_current_buf()
 
   local source = ' '
 
@@ -240,6 +243,57 @@ function diag:render_diagnostic_window(entry, option)
   vim.defer_fn(function()
     libs.close_preview_autocmd(current_buffer, { self.winid, self.virt_winid }, close_autocmds)
   end, 0)
+end
+
+function diag:action_prevew()
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
+    self.preview_winid = nil
+  end
+  local line = api.nvim_get_current_line()
+  local num = line:match('%[([1-9])%]')
+  if not num then
+    return
+  end
+
+  local tbl = act:action_preview(num, self.main_buf)
+  if not tbl then
+    return
+  end
+
+  tbl = vim.split(tbl, '\n')
+  table.remove(tbl, 1)
+
+  local win_conf = api.nvim_win_get_config(self.winid)
+  local col_start = win_conf.col[false] - win_conf['col'][true]
+  local win_width, _ = vim.lsp.util._make_floating_popup_size(tbl)
+  local opt = {}
+  opt.relative = 'win'
+  opt.win = self.winid
+  if col_start + win_conf.width + win_width >= vim.o.columns then
+    opt.row = win_conf.row[true] + 3
+    opt.col = win_conf.col[true] - 4
+    opt.width = win_conf.width
+    opt.height = #tbl
+    opt.no_size_override = true
+  else
+    opt.row = win_conf.row[false] + 2
+    opt.col = win_conf.col[false] + win_conf.width + 2
+  end
+
+  if fn.has('nvim-0.9') == 1 then
+    opt.title = { { 'Action Preivew', 'DiagnosticActionPtitle' } }
+  end
+
+  local content_opts = {
+    contents = tbl,
+    filetype = 'diff',
+    highlight = 'DiagnosticActionPborder',
+  }
+
+  local preview_buf
+  preview_buf, self.preview_winid = window.create_win_with_border(content_opts, opt)
+  vim.bo[preview_buf].syntax = 'on'
 end
 
 function diag:move_cursor(entry)

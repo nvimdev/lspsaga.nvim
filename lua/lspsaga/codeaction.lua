@@ -286,12 +286,37 @@ function Action:do_code_action(num)
   self:quit_action_window()
 end
 
+function Action:action_preview(num, main_buf)
+  local action = self.action_tuples[tonumber(num)][2]
+  if not action then
+    return
+  end
+
+  local old_lines = {}
+
+  local new_lines = ''
+
+  if action.edit then
+    print(vim.inspect(action.edit))
+    local key = vim.tbl_keys(action.edit.changes)
+    local schema = key[1]
+    local text_edits = action.edit.changes[schema]
+    for _, v in pairs(text_edits) do
+      new_lines = new_lines .. v.newText
+      local start = v.range.start.line
+      local _end = v.range['end'].line + 1
+      table.insert(old_lines, api.nvim_buf_get_lines(main_buf, start, _end, false)[1] .. '\n')
+    end
+    return vim.diff(table.concat(old_lines, '') .. '\n', new_lines .. '\n')
+  end
+end
+
 function Action:clear_tmp_data()
-  self.bufnr = 0
-  self.action_bufnr = 0
-  self.action_winid = 0
-  self.action_tuples = {}
-  self.ctx = {}
+  for k, v in pairs(self) do
+    if type(v) ~= 'function' then
+      self[k] = nil
+    end
+  end
 end
 
 function Action:quit_action_window()

@@ -48,24 +48,11 @@ local function make_floating_popup_options(width, height, opts)
   new_option.style = 'minimal'
   new_option.width = width
   new_option.height = height
-  new_option.focusable = true
-  if opts.focusable ~= nil then
-    new_option.focusable = opts.focusable
-  end
 
-  if opts.noautocmd then
-    new_option.noautocmd = opts.noautocmd
-  end
-
-  if opts.relative ~= nil then
-    new_option.relative = opts.relative
-  else
-    new_option.relative = 'cursor'
-  end
-
-  if opts.anchor ~= nil then
-    new_option.anchor = opts.anchor
-  end
+  new_option.focusable = opts.focusable ~= nil and opts.focusable or nil
+  new_option.noautocmd = opts.noautocmd ~= nil and opts.noautocmd or nil
+  new_option.relative = opts.relative and opts.relative or 'cursor'
+  new_option.anchor = opts.anchor or nil
 
   if opts.title then
     new_option.title = opts.title
@@ -157,7 +144,7 @@ function M.create_win_with_border(content_opts, opts)
   opts.border = content_opts.border or get_border_style(config.border_style, highlight)
 
   -- create contents buffer
-  local bufnr = content_opts.bufnr or api.nvim_create_buf(false, true)
+  local bufnr = content_opts.bufnr or api.nvim_create_buf(false, false)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
   local content = vim.lsp.util._trim(contents)
@@ -177,17 +164,14 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_buf_set_lines(bufnr, 0, -1, true, content)
   end
 
-  if api.nvim_buf_is_valid(bufnr) then
-    api.nvim_buf_set_option(bufnr, 'modifiable', false)
-    api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
-  end
+  api.nvim_buf_set_option(bufnr, 'modifiable', false)
+  api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
   api.nvim_win_set_option(winid, 'wrap', content_opts.wrap or false)
   api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
   api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
 
-  -- disable winbar in some saga's floatwindow
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')
   end
