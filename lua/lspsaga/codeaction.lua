@@ -297,15 +297,17 @@ function Action:action_preview(num, main_buf)
   local new_lines = ''
 
   if action.edit then
-    print(vim.inspect(action.edit))
     local key = vim.tbl_keys(action.edit.changes)
     local schema = key[1]
     local text_edits = action.edit.changes[schema]
     for _, v in pairs(text_edits) do
-      new_lines = new_lines .. v.newText
       local start = v.range.start.line
       local _end = v.range['end'].line + 1
-      table.insert(old_lines, api.nvim_buf_get_lines(main_buf, start, _end, false)[1] .. '\n')
+      new_lines = new_lines .. (start + 1) .. ' ' .. v.newText
+      table.insert(
+        old_lines,
+        (start + 1) .. ' ' .. api.nvim_buf_get_lines(main_buf, start, _end, false)[1] .. '\n'
+      )
     end
     return vim.diff(table.concat(old_lines, '') .. '\n', new_lines .. '\n')
   end
