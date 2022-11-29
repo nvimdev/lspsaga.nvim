@@ -55,7 +55,7 @@ function diag:code_action_cb(hi)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
-      self:action_prevew()
+      self.preview_winid = act:action_preview(self.winid, self.main_buf)
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
@@ -244,58 +244,6 @@ function diag:render_diagnostic_window(entry, option)
   vim.defer_fn(function()
     libs.close_preview_autocmd(current_buffer, { self.winid, self.virt_winid }, close_autocmds)
   end, 0)
-end
-
-function diag:action_prevew()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    api.nvim_win_close(self.preview_winid, true)
-    self.preview_winid = nil
-  end
-  local line = api.nvim_get_current_line()
-  local num = line:match('%[([1-9])%]')
-  if not num then
-    return
-  end
-
-  local tbl = act:action_preview(num, self.main_buf)
-  if not tbl then
-    return
-  end
-
-  tbl = vim.split(tbl, '\n')
-  table.remove(tbl, 1)
-
-  local win_conf = api.nvim_win_get_config(self.winid)
-  local col_start = win_conf.col[false] - win_conf['col'][true]
-  local win_width, _ = vim.lsp.util._make_floating_popup_size(tbl)
-  local opt = {}
-  opt.relative = 'editor'
-  if col_start + win_conf.width + win_width >= vim.o.columns then
-    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + #tbl + win_conf.height
-      or win_conf.row[false] - win_conf.height - 2
-    opt.col = win_conf.col[false]
-    opt.anchor = win_conf.anchor
-    opt.width = win_conf.width
-    opt.height = #tbl
-    opt.no_size_override = true
-  else
-    opt.row = win_conf.row[false] + 2
-    opt.col = win_conf.col[false] + win_conf.width + 2
-  end
-
-  if fn.has('nvim-0.9') == 1 then
-    opt.title = { { 'Action Preivew', 'DiagnosticActionPtitle' } }
-  end
-
-  local content_opts = {
-    contents = tbl,
-    filetype = 'diff',
-    highlight = 'DiagnosticActionPborder',
-  }
-
-  local preview_buf
-  preview_buf, self.preview_winid = window.create_win_with_border(content_opts, opt)
-  vim.bo[preview_buf].syntax = 'on'
 end
 
 function diag:move_cursor(entry)

@@ -161,7 +161,6 @@ function Action:actions_in_cache()
 end
 
 function Action:send_code_action_request(options, cb)
-  self.bufnr = api.nvim_get_current_buf()
   local diagnostics = lsp.diagnostic.get_line_diagnostics(self.bufnr)
   local context = { diagnostics = diagnostics }
   local params
@@ -198,6 +197,7 @@ function Action:send_code_action_request(options, cb)
     self.ctx = {}
   end
   self.ctx = { bufnr = self.bufnr, method = method, params = params }
+
   lsp.buf_request_all(self.bufnr, method, params, function(results)
     self:get_clients(results)
     if #self.action_tuples == 0 then
@@ -219,6 +219,7 @@ function Action:set_cursor()
   else
     api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
+  self:action_preview(self.action_winid, self.bufnr)
 end
 
 function Action:num_shortcut()
@@ -230,10 +231,7 @@ function Action:num_shortcut()
 end
 
 function Action:code_action(options)
-  if self:actions_in_cache() then
-    self:action_callback()
-    return
-  end
+  self.bufnr = api.nvim_get_current_buf()
 
   options = options or {}
   self:send_code_action_request(options, function()
@@ -286,7 +284,7 @@ function Action:do_code_action(num)
   self:quit_action_window()
 end
 
-function Action:action_preview(num, main_buf)
+function Action:get_action_diff(num, main_buf)
   local action = self.action_tuples[tonumber(num)][2]
   if not action then
     return
@@ -313,6 +311,59 @@ function Action:action_preview(num, main_buf)
   end
 end
 
+function Action:action_preview(main_winid, main_buf)
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
+    self.preview_winid = nil
+  end
+  local line = api.nvim_get_current_line()
+  local num = line:match('%[([1-9])%]')
+  if not num then
+    return
+  end
+
+  local tbl = self:get_action_diff(num, main_buf)
+  if not tbl then
+    return
+  end
+
+  tbl = vim.split(tbl, '\n')
+  table.remove(tbl, 1)
+
+  local win_conf = api.nvim_win_get_config(main_winid)
+  local col_start = win_conf.col[false] - win_conf['col'][true]
+  local win_width, _ = vim.lsp.util._make_floating_popup_size(tbl)
+  local opt = {}
+  opt.relative = 'editor'
+  if col_start + win_conf.width + win_width >= vim.o.columns then
+    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + #tbl + win_conf.height
+      or win_conf.row[false] - win_conf.height - 2
+    opt.col = win_conf.col[false]
+    opt.anchor = win_conf.anchor
+    opt.width = win_conf.width
+    opt.height = #tbl
+    opt.no_size_override = true
+  else
+    opt.row = win_conf.row[false] + 2
+    opt.col = win_conf.col[false] + win_conf.width + 2
+  end
+
+  if fn.has('nvim-0.9') == 1 then
+    opt.title = { { 'Action Preivew', 'DiagnosticActionPtitle' } }
+  end
+
+  local content_opts = {
+    contents = tbl,
+    filetype = 'diff',
+    highlight = 'DiagnosticActionPborder',
+  }
+
+  local preview_buf
+  preview_buf, self.preview_winid = window.create_win_with_border(content_opts, opt)
+  vim.bo[preview_buf].syntax = 'on'
+  return self.preview_winid
+end
+
 function Action:clear_tmp_data()
   for k, v in pairs(self) do
     if type(v) ~= 'function' then
@@ -325,7 +376,7 @@ function Action:quit_action_window()
   if self.action_bufnr == 0 and self.action_winid == 0 then
     return
   end
-  window.nvim_close_valid_window(self.action_winid)
+  window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
   self:clear_tmp_data()
 end
 
