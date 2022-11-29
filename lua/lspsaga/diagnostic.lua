@@ -28,6 +28,7 @@ function diag:code_action_cb(hi)
     end
     table.insert(contents, action_title)
   end
+
   if not self.bufnr and not api.nvim_buf_is_loaded(self.bufnr) then
     return
   end
@@ -268,11 +269,12 @@ function diag:action_prevew()
   local col_start = win_conf.col[false] - win_conf['col'][true]
   local win_width, _ = vim.lsp.util._make_floating_popup_size(tbl)
   local opt = {}
-  opt.relative = 'win'
-  opt.win = self.winid
+  opt.relative = 'editor'
   if col_start + win_conf.width + win_width >= vim.o.columns then
-    opt.row = win_conf.row[true] + 3
-    opt.col = win_conf.col[true] - 4
+    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + #tbl + win_conf.height
+      or win_conf.row[false] - win_conf.height - 2
+    opt.col = win_conf.col[false]
+    opt.anchor = win_conf.anchor
     opt.width = win_conf.width
     opt.height = #tbl
     opt.no_size_override = true
