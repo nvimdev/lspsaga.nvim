@@ -30,11 +30,11 @@ local subcommands = {
   code_action = function()
     require('lspsaga.codeaction'):code_action()
   end,
-  range_code_action = function()
-    vim.notify(
-      'range_code_action will be removed after three days,Please use code_action instead of. check example config',
-      vim.log.levels.WARN
-    )
+  incoming_calls = function()
+    require('lspsaga.callhierarchy'):incoming_calls()
+  end,
+  outcoming_calls = function()
+    require('lspsaga.callhierarchy'):outcoming_calls()
   end,
   open_floaterm = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)

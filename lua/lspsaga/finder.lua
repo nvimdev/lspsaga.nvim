@@ -35,8 +35,6 @@ function Finder:lsp_finder()
   local items = { { tagname = current_word, from = from } }
   vim.fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
-  self.param = '  ' .. current_word
-
   self.request_result = {}
   local params = lsp.util.make_position_params()
   for i, method in pairs(methods) do
