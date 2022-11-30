@@ -95,6 +95,13 @@ saga.config_values = {
       quit = 'q',
     },
   },
+  call_hierarchy = {
+    incoming_icon = ' ',
+    outgoing_icon = ' ',
+    expand_icon = ' ',
+    collaspe_icon = ' ',
+    show_detail = false,
+  },
   custom_kind = {},
   server_filetype_map = {},
 }
