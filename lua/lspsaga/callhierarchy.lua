@@ -11,6 +11,11 @@ local method = {
 
 local ch = {}
 
+local ctx = {}
+function ctx.__newindex(_, k, v)
+  rawset(ctx, k, v)
+end
+
 ---@private
 local function pick_call_hierarchy_item(call_hierarchy_items)
   if not call_hierarchy_items then
@@ -41,37 +46,32 @@ local function parse_data(tbl)
   return content
 end
 
-function ch:call_hierarchy(bufnr, item)
-  local client = self[bufnr].client
-  client.request(self.method, { item = item }, function(_, res)
+function ch:call_hierarchy(item)
+  local client = ctx.client
+  client.request(ctx.method, { item = item }, function(_, res)
     if not res or next(res) == nil then
       return
     end
     for i, v in pairs(res) do
-      insert(self[bufnr].data, {
+      insert(ctx.data, {
         from = v.from,
         name = '    ' .. kind[v.from.kind][2] .. v.from.name,
         winline = i + 1,
       })
     end
-    local content = parse_data(self[bufnr].data)
+    local content = parse_data(ctx.data)
     self:render_win(content)
   end)
 end
 
 function ch:send_prepare_call()
-  local current_buf = api.nvim_get_current_buf()
-  if not self[current_buf] then
-    self[current_buf] = {
-      data = {},
-    }
-  end
+  ctx.main_buf = api.nvim_get_current_buf()
 
   local params = lsp.util.make_position_params()
-  lsp.buf_request(0, method[1], params, function(_, result, ctx)
+  lsp.buf_request(0, method[1], params, function(_, result, data)
     local call_hierarchy_item = pick_call_hierarchy_item(result)
-    self[current_buf].client = lsp.get_client_by_id(ctx.client_id)
-    self:call_hierarchy(current_buf, call_hierarchy_item)
+    ctx.client = lsp.get_client_by_id(data.client_id)
+    self:call_hierarchy(call_hierarchy_item)
   end)
 end
 
@@ -83,28 +83,77 @@ function ch:render_win(content)
   })
   local content_opt = {
     contents = content,
-    highlight = 'callHierarchyBorder',
+    enter = true,
+    highlight = 'CallHierarchyBorder',
   }
 
   local opt = {}
   if fn.has('nvim-0.9') == 1 then
     local titles = {
-      [method[2]] = 'InComing Call',
-      [method[3]] = 'OutGoing Call',
+      [method[2]] = 'InComing',
+      [method[3]] = 'OutGoing',
     }
-    opt.title = call_conf.incoming_icon .. titles[self.method]
+    opt.title = {
+      { call_conf.incoming_icon, 'CallHierarchyIcon' },
+      { ' ' .. titles[ctx.method], 'CallHierarchyTitle' },
+    }
     opt.title_pos = 'left'
   end
-  self.winbuf, self.winid = window.create_win_with_border(content_opt, opt)
+  opt.width = math.floor(vim.o.columns * 0.2)
+  ctx.winbuf, ctx.winid = window.create_win_with_border(content_opt, opt)
+  api.nvim_create_autocmd('CursorMoved', {
+    buffer = self.winbuf,
+    callback = function()
+      self:preview()
+    end,
+  })
+end
+
+function ch:get_preview_bufnr()
+  local cur_line = api.nvim_win_get_cursor(0)[1]
+  local idx
+  for i, v in pairs(ctx.data) do
+    if v.winline == cur_line then
+      idx = i
+      break
+    end
+  end
+
+  if not idx then
+    return
+  end
+
+  local uri = ctx.data[idx].from.uri
+  local bufnr = vim.uri_to_bufnr(uri)
+
+  if not api.nvim_buf_is_loaded(bufnr) then
+    fn.bufload(bufnr)
+  end
+  return bufnr
+end
+
+function ch:preview()
+  local bufnr = self:get_preview_bufnr()
+  local opt = {}
+  local win_conf = api.nvim_win_get_config(ctx.winid)
+  opt.row = win_conf.row[false] + win_conf.height + 1
+  opt.col = win_conf.col[false]
+  local content_opt = {
+    contents = {},
+  }
+  window.create_win_with_border(content_opt, opt)
 end
 
 function ch:incoming_calls()
-  self.method = method[2]
+  ctx.method = method[2]
+  ctx.data = {}
   self:send_prepare_call()
 end
 
 function ch:outgoing_calls()
   self.method = method[3]
 end
+
+setmetatable(ch, ctx)
 
 return ch

@@ -249,7 +249,7 @@ function Action:apply_action(action, client)
     if func then
       local enriched_ctx = vim.deepcopy(self.ctx)
       enriched_ctx.client_id = client.id
-      fn(command, enriched_ctx)
+      func(command, enriched_ctx)
     else
       local params = {
         command = command.command,
@@ -293,21 +293,75 @@ function Action:get_action_diff(num, main_buf)
   local old_lines = {}
 
   local new_lines = ''
+  local client = lsp.get_client_by_id(self.action_tuples[tonumber(num)][1])
+
+  if
+    not action.edit
+    and client
+    and vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
+  then
+    local results = lsp.buf_request_sync(main_buf, 'codeAction/resolve', action, 1000)
+    action = results[client.id].result
+  end
 
   if action.edit then
-    local key = vim.tbl_keys(action.edit.changes)
-    local schema = key[1]
-    local text_edits = action.edit.changes[schema]
-    for _, v in pairs(text_edits) do
-      local start = v.range.start.line
-      local _end = v.range['end'].line + 1
-      new_lines = new_lines .. (start + 1) .. ' ' .. v.newText
-      table.insert(
-        old_lines,
-        (start + 1) .. ' ' .. api.nvim_buf_get_lines(main_buf, start, _end, false)[1] .. '\n'
-      )
+    local text_edits
+    if action.kind == 'quickfix' then
+      local key = vim.tbl_keys(action.edit.changes)
+      local schema = key[1]
+      text_edits = action.edit.changes[schema]
     end
-    return vim.diff(table.concat(old_lines, '') .. '\n', new_lines .. '\n')
+
+    if action.kind:find('refactor') or #action.kind == 0 then
+      text_edits = action.edit.documentChanges[1].edits
+    end
+
+    local tmp_buf = api.nvim_create_buf(false, true)
+
+    local remove_whole_line = false
+    for _, v in pairs(text_edits) do
+      if #v.newText == 0 and v.range['end'].character - v.range.start.character == 1 then
+        remove_whole_line = true
+      end
+    end
+
+    for _, v in pairs(text_edits) do
+      if #v.newText == 0 then
+        goto skip
+      end
+
+      local start = v.range.start
+      local _end = v.range['end']
+      if next(old_lines) == nil then
+        table.insert(
+          old_lines,
+          api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1] .. '\n'
+        )
+      end
+      local old = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)
+      api.nvim_buf_set_lines(tmp_buf, 0, -1, false, old)
+      v.newText = v.newText:find('\r\n') and v.newText:gsub('\r\n', '\n') or v.newText
+      local newText = vim.split(v.newText, '\n')
+      if not newText[#newText]:find('%w') then
+        table.remove(newText, #newText)
+      end
+      local ecol = api.nvim_strwidth(old[1])
+      if start.character ~= _end.character then
+        if not remove_whole_line then
+          api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
+        else
+          api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
+        end
+      elseif start.character == _end.character then
+        api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
+      end
+      local new_text = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+      new_lines = new_lines .. table.concat(new_text, '\n') .. '\n'
+      api.nvim_buf_set_lines(tmp_buf, 0, -1, false, {})
+      ::skip::
+    end
+    api.nvim_buf_delete(tmp_buf, { force = true })
+    return vim.diff(table.concat(old_lines, ''), new_lines)
   end
 end
 
@@ -335,16 +389,16 @@ function Action:action_preview(main_winid, main_buf)
   local win_width, _ = vim.lsp.util._make_floating_popup_size(tbl)
   local opt = {}
   opt.relative = 'editor'
-  if col_start + win_conf.width + win_width >= vim.o.columns then
-    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + #tbl + win_conf.height
-      or win_conf.row[false] - win_conf.height - 2
+  if col_start + win_conf.width + win_width >= vim.o.columns - 2 then
+    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + win_conf.height + 2
+      or win_conf.row[false] - win_conf.height
     opt.col = win_conf.col[false]
     opt.anchor = win_conf.anchor
     opt.width = win_conf.width
     opt.height = #tbl
     opt.no_size_override = true
   else
-    opt.row = win_conf.row[false] + 2
+    opt.row = win_conf.row[false]
     opt.col = win_conf.col[false] + win_conf.width + 2
   end
 

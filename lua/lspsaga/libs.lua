@@ -4,14 +4,12 @@ local window = require('lspsaga.window')
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
-function libs.is_windows()
-  return vim.loop.os_uname().sysname:find('Windows', 1, true) and true
-end
+libs.is_windows = vim.loop.os_uname().version:match('Windows')
 
-libs.path_sep = libs.is_windows() and '\\' or '/'
+libs.path_sep = libs.is_windows and '\\' or '/'
 
 function libs.get_home_dir()
-  if libs.is_windows() then
+  if libs.is_windows then
     return os.getenv('USERPROFILE')
   end
   return os.getenv('HOME')

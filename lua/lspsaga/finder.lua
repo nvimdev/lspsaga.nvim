@@ -264,7 +264,7 @@ function Finder:create_finder_contents(result, method)
       fn.bufload(bufnr)
     end
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
-    if libs.is_windows() then
+    if libs.is_windows then
       link = link:gsub('^%l', link:sub(1, 1):upper())
     end
     local short_name

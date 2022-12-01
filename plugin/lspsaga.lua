@@ -57,9 +57,9 @@ local highlights = {
   DiagnosticActionText = { fg = '#b7f59a' },
   DiagnosticActionPborder = { fg = '#afd700' },
   DiagnosticActionPtitle = { fg = '#CBA6F7' },
-  -- signture help
-  LspSagaSignatureHelpBorder = { fg = '#98be65' },
-  LspSagaShTrunCateLine = { link = 'LspSagaSignatureHelpBorder' },
+  -- Call Hierachry
+  CallHierarchyIcon = { fg = '#CBA6F7' },
+  CallHierarchyTitle = { fg = '#9c255e' },
   -- lightbulb
   LspSagaLightBulb = { link = 'DiagnosticSignHint' },
   -- shadow
