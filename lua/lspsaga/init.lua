@@ -59,6 +59,7 @@ saga.config_values = {
     tabe = '<C-c>t',
     quit = 'q',
   },
+  hover_action_quit = 'q',
   rename_action_quit = '<C-c>',
   rename_in_select = true,
   -- winbar must nightly
