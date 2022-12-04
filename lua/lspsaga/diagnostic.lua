@@ -114,10 +114,10 @@ function diag:render_diagnostic_window(entry, option)
   local hi_name = 'LspSagaDiagnostic' .. diag_type[entry.severity]
 
   if diag_conf.show_code_action then
-    act:send_code_action_request({
+    act:send_code_action_request(self.main_buf, {
       range = {
-        ['start'] = { entry.lnum + 1, entry.col + 1 },
-        ['end'] = { entry.lnum + 1, entry.col + 1 },
+        start = { entry.lnum + 1, entry.col },
+        ['end'] = { entry.lnum + 1, entry.col },
       },
     }, function()
       self:code_action_cb(hi_name)

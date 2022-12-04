@@ -160,8 +160,8 @@ function Action:actions_in_cache()
   end
 end
 
-function Action:send_code_action_request(options, cb)
-  local diagnostics = lsp.diagnostic.get_line_diagnostics(self.bufnr)
+function Action:send_code_action_request(main_buf, options, cb)
+  local diagnostics = lsp.diagnostic.get_line_diagnostics(main_buf)
   local context = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
@@ -234,7 +234,7 @@ function Action:code_action(options)
   self.bufnr = api.nvim_get_current_buf()
 
   options = options or {}
-  self:send_code_action_request(options, function()
+  self:send_code_action_request(self.bufnr, options, function()
     self:action_callback()
   end)
 end
