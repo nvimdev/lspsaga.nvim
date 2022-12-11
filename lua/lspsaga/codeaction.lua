@@ -390,7 +390,7 @@ function Action:action_preview(main_winid, main_buf)
   local opt = {}
   opt.relative = 'editor'
   if col_start + win_conf.width + win_width >= vim.o.columns - 2 then
-    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + win_conf.height + 2
+    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + win_conf.height + 3
       or win_conf.row[false] - win_conf.height
     opt.col = win_conf.col[false]
     opt.anchor = win_conf.anchor

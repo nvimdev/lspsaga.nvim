@@ -146,7 +146,7 @@ local function do_prepare_rename(f)
   local pre_method = 'textDocument/prepareRename'
 
   local client
-  local clients = lsp.get_active_clients({ buffer = 0 })
+  local clients = lsp.get_active_clients({ bufnr = 0 })
   for _, c in pairs(clients) do
     local filetypes = c.filetypes
     if

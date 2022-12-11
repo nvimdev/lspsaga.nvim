@@ -1,4 +1,4 @@
-local api = vim.api
+local api,lsp = vim.api,vim.lsp
 local libs = {}
 local window = require('lspsaga.window')
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map
@@ -57,7 +57,7 @@ end
 function libs.check_lsp_active(silent)
   silent = silent or true
   local current_buf = api.nvim_get_current_buf()
-  local active_clients = vim.lsp.get_active_clients({ buffer = current_buf })
+  local active_clients = lsp.get_active_clients({ bufnr = current_buf })
   if next(active_clients) == nil then
     if not silent then
       vim.notify('[LspSaga] Current buffer does not have any lsp server')
@@ -78,7 +78,7 @@ function libs.get_lsp_root_dir()
     return
   end
 
-  local clients = vim.lsp.get_active_clients()
+  local clients = lsp.get_active_clients()
   for _, client in pairs(clients) do
     if client.config.filetypes and client.config.root_dir then
       if libs.has_value(client.config.filetypes, vim.bo.filetype) then

@@ -2,7 +2,7 @@ local api, uv, lsp = vim.api, vim.loop, vim.lsp
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local code_action_method = 'textDocument/codeAction'
-local codeaction = require('lspsaga.codeaction')
+-- local codeaction = require('lspsaga.codeaction')
 local lb = {}
 
 local timer = uv.new_timer()

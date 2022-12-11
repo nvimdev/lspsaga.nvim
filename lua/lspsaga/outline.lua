@@ -454,9 +454,7 @@ function ot:refresh_event()
         return
       end
 
-      -- when the buffer not have lsp client
-      local clients = lsp.get_active_clients({ buffer = buf })
-      if next(clients) == nil then
+      if not libs.check_lsp_active() then
         return
       end
 
@@ -539,8 +537,7 @@ function ot:render_outline()
   local current_buf = api.nvim_get_current_buf()
 
   -- if buffer not lsp client
-  local clients = lsp.get_active_clients({ buffer = current_buf })
-  if next(clients) == nil then
+  if not libs.check_lsp_active() then
     return
   end
 
