@@ -1,7 +1,9 @@
 local api, fn, lsp, validate = vim.api, vim.fn, vim.lsp, vim.validate
 local window = require('lspsaga.window')
 local kind = require('lspsaga.lspkind')
+local max_preview_lines = require('lspsaga').config_values.max_preview_lines
 local call_conf = require('lspsaga').config_values.call_hierarchy
+local libs = require('lspsaga.libs')
 local insert = table.insert
 local method = {
   'textDocument/prepareCallHierarchy',
@@ -14,6 +16,10 @@ local ch = {}
 local ctx = {}
 function ctx.__newindex(_, k, v)
   rawset(ctx, k, v)
+end
+
+local function clean_ctx()
+  ctx = {}
 end
 
 ---@private
@@ -77,6 +83,20 @@ end
 
 function ch:expand_collaspe() end
 
+function ch:apply_map()
+  local keys = call_conf.keys
+  local keymap = vim.keymap.set
+  keymap('n', keys.quit, function()
+    if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+      api.nvim_win_close(ctx.winid, true)
+      if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
+        api.nvim_win_close(ctx.preview_winid, true)
+      end
+      clean_ctx()
+    end
+  end, { buffer = ctx.bufnr, nowait = true })
+end
+
 function ch:render_win(content)
   validate({
     content = { content, 'table' },
@@ -102,15 +122,20 @@ function ch:render_win(content)
   opt.width = math.floor(vim.o.columns * 0.2)
   ctx.winbuf, ctx.winid = window.create_win_with_border(content_opt, opt)
   api.nvim_create_autocmd('CursorMoved', {
-    buffer = self.winbuf,
+    buffer = ctx.winbuf,
     callback = function()
       self:preview()
     end,
   })
+
+  self:apply_map()
 end
 
-function ch:get_preview_bufnr()
+function ch:get_preview_content()
   local cur_line = api.nvim_win_get_cursor(0)[1]
+  if cur_line == 1 then
+    return
+  end
   local idx
   for i, v in pairs(ctx.data) do
     if v.winline == cur_line then
@@ -124,24 +149,47 @@ function ch:get_preview_bufnr()
   end
 
   local uri = ctx.data[idx].from.uri
+  local range = ctx.data[idx].from.range
   local bufnr = vim.uri_to_bufnr(uri)
 
   if not api.nvim_buf_is_loaded(bufnr) then
     fn.bufload(bufnr)
   end
-  return bufnr
+
+  local lines =
+    api.nvim_buf_get_lines(bufnr, range.start.line, range['end'].line + max_preview_lines, false)
+
+  return lines
 end
 
 function ch:preview()
-  local bufnr = self:get_preview_bufnr()
   local opt = {}
   local win_conf = api.nvim_win_get_config(ctx.winid)
-  opt.row = win_conf.row[false] + win_conf.height + 1
+  local lines = self:get_preview_content()
+  if not lines then
+    return
+  end
   opt.col = win_conf.col[false]
+  opt.width = math.floor(vim.o.columns * 0.7)
+  opt.height = math.floor(vim.o.lines * 0.4)
+  opt.no_size_override = true
+  opt.relative = 'editor'
+  opt.row = win_conf.row[false] + win_conf.height + 2 >= vim.o.lines - 6
+      and vim.o.lines - win_conf.row[false]
+    or win_conf.row[false] + win_conf.height + 2
+
   local content_opt = {
-    contents = {},
+    contents = lines,
+    filetype = vim.bo[ctx.main_buf].filetype,
+    enter = false,
   }
-  window.create_win_with_border(content_opt, opt)
+
+  if fn.has('nvim-0.9') == 1 then
+    opt.title = { { 'Preview' } }
+  end
+
+  ctx.preview_bufnr, ctx.preview_winid = window.create_win_with_border(content_opt, opt)
+  libs.close_preview_autocmd(ctx.winbuf, ctx.preview_winid, { 'CursorMoved' })
 end
 
 function ch:incoming_calls()

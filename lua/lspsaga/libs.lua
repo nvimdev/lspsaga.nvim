@@ -1,4 +1,4 @@
-local api,lsp = vim.api,vim.lsp
+local api, lsp = vim.api, vim.lsp
 local libs = {}
 local window = require('lspsaga.window')
 local server_filetype_map = require('lspsaga').config_values.server_filetype_map

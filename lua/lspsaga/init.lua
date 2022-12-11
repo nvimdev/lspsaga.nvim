@@ -101,6 +101,11 @@ saga.config_values = {
     expand_icon = ' ',
     collaspe_icon = ' ',
     show_detail = false,
+    keys = {
+      jump = 'o',
+      quit = 'q',
+      expand_collaspe = 'u',
+    },
   },
   custom_kind = {},
   server_filetype_map = {},
