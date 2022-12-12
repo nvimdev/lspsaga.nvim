@@ -79,10 +79,10 @@ keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>", { silent = true })
 -- Show line diagnostics
 keymap("n", "<leader>cd", "<cmd>Lspsaga show_line_diagnostics<CR>", { silent = true })
 
--- Show cursor diagnostic
+-- Show cursor diagnostics
 keymap("n", "<leader>cd", "<cmd>Lspsaga show_cursor_diagnostics<CR>", { silent = true })
 
--- Diagnsotic jump can use `<c-o>` to jump back
+-- Diagnostic jump can use `<c-o>` to jump back
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", { silent = true })
 keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true })
 
@@ -102,7 +102,7 @@ keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
 
 -- Float terminal
 keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm<CR>", { silent = true })
--- if you want pass somc cli command into terminal you can do like this
+-- if you want to pass some cli command into a terminal you can do it like this
 -- open lazygit in lspsaga float terminal
 keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm lazygit<CR>", { silent = true })
 -- close floaterm
@@ -158,7 +158,7 @@ finder_icons = {
   link = '  ',
 },
 -- finder do lsp request timeout
--- if your project big enough or your server very slow
+-- if your project is big enough or your server very slow
 -- you may need to increase this value
 finder_request_timeout = 1500,
 finder_action_keys = {
@@ -303,7 +303,7 @@ minwid will be replaced with current node. For example:
 ```lua
 symbol_in_winbar = {
     click_support = function(node, clicks, button, modifiers)
-        -- To see all avaiable details: vim.pretty_print(node)
+        -- To see all available details: vim.pretty_print(node)
         local st = node.range.start
         local en = node.range['end']
         if button == "l" then
@@ -354,7 +354,7 @@ custom_kind = {
 
 ### Highlight Group
 
-Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
+Colors can be simply changed by overwriting the default highlight groups LspSaga is using.
 
 
 ```vim
