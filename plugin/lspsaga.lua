@@ -93,5 +93,6 @@ end, {
 })
 
 api.nvim_create_user_command('LSoutlineToggle', function()
+  vim.notify('LSoutlineToggle is deprecated, use `Lspsaga outline` instead', vim.log.levels.WARN)
   require('lspsaga.outline'):render_outline()
 end, {})

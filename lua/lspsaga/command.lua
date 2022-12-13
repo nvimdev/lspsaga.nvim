@@ -5,14 +5,11 @@ local codeaction = require('lspsaga.codeaction')
 local finder = require('lspsaga.finder')
 
 local subcommands = {
+  outline = function()
+    require('lspsaga.outline'):render_outline()
+  end,
   lsp_finder = function()
     finder:lsp_finder()
-  end,
-  preview_definition = function()
-    vim.notify(
-      'preview_definition will be removed after three days,Please use peek_definition instead of',
-      vim.log.levels.WARN
-    )
   end,
   peek_definition = function()
     require('lspsaga.definition'):peek_definition()
@@ -29,12 +26,6 @@ local subcommands = {
   diagnostic_jump_prev = diagnostic.goto_prev,
   code_action = function()
     codeaction:code_action()
-  end,
-  range_code_action = function()
-    vim.notify(
-      'range_code_action will be removed after three days,Please use code_action instead of. check example config',
-      vim.log.levels.WARN
-    )
   end,
   open_floaterm = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)
