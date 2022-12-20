@@ -5,12 +5,6 @@ local subcommands = {
   lsp_finder = function()
     require('lspsaga.finder'):lsp_finder()
   end,
-  preview_definition = function()
-    vim.notify(
-      'preview_definition will be removed after three days,Please use peek_definition instead of',
-      vim.log.levels.WARN
-    )
-  end,
   peek_definition = function()
     require('lspsaga.definition'):peek_definition()
   end,

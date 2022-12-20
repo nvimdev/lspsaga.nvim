@@ -15,7 +15,9 @@ local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 function diag:code_action_cb(hi)
-  local contents = {}
+  local contents = {
+    config.code_action_icon .. 'Fix',
+  }
 
   for index, client_with_actions in pairs(act.action_tuples) do
     local action_title = ''
@@ -33,23 +35,24 @@ function diag:code_action_cb(hi)
     return
   end
 
-  local width = api.nvim_win_get_width(self.winid)
-  local height = api.nvim_buf_line_count(self.bufnr)
-  api.nvim_win_set_config(self.winid, {
-    height = #contents + 2,
-  })
-  local line, scope = wrap.truncate_line(width, config.code_action_icon .. ' Code Actions')
-  insert(contents, 1, line)
+  local start_line = api.nvim_buf_line_count(self.bufnr)
+  local win_conf = api.nvim_win_get_config(self.winid)
+  local len = #contents
+  if win_conf.row[false] + win_conf.height + #contents > vim.o.lines - 6 then
+    len = 4
+  end
+  api.nvim_win_set_config(self.winid, { height = win_conf.height + len })
+
   api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
   api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
   -- highlight of code action border
-  api.nvim_buf_add_highlight(self.bufnr, 0, hi, height, 0, -1)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', height, scope[1], scope[2] + 1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, hi, start_line, 0, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 0, -1)
 
   for i = 2, #contents do
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', height + i - 1, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', start_line + i - 1, 0, -1)
   end
 
   api.nvim_create_autocmd('CursorMoved', {
