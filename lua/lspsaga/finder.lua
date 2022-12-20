@@ -670,7 +670,6 @@ function Finder:auto_open_preview()
 
     local content_opts = {
       contents = content,
-      filetype = self.buf_filetype,
       highlight = 'LspSagaAutoPreview',
     }
 
@@ -684,6 +683,7 @@ function Finder:auto_open_preview()
     vim.defer_fn(function()
       opts.noautocmd = true
       self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
+      vim.treesitter.start(self.preview_bufnr, self.buf_filetype)
       api.nvim_buf_set_option(self.preview_bufnr, 'buflisted', false)
       api.nvim_win_set_var(self.preview_winid, 'finder_preview', self.preview_winid)
 

@@ -178,13 +178,13 @@ function ot:auto_preview(bufnr)
 
   local content_opts = {
     contents = content,
-    filetype = self[bufnr].ft,
     highlight = 'LSOutlinePreviewBorder',
   }
 
   opts.noautocmd = true
 
   self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
+  vim.treesitter.start(self.preview_bufnr, self[bufnr].ft)
 
   local events = { 'CursorMoved', 'BufLeave' }
   vim.defer_fn(function()
