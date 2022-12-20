@@ -388,13 +388,19 @@ function Action:action_preview(main_winid, main_buf)
 
   local opt = {}
   opt.relative = 'editor'
-  local offset = vim.o.lines - win_conf.row[false] - 6 > 0 and 0 or 2
-  opt.row = win_conf.row[false] - win_conf.height - offset
   if win_conf.anchor:find('^S') then
-    opt.row = offset == 0 and win_conf.row[false] + win_conf.height + 2 or opt.row
+    if vim.o.lines - win_conf.row[false] - 6 > 0 then
+      opt.row = win_conf.row[false] + 1
+      opt.anchor = 'NW'
+    else
+      opt.row = win_conf.row[false] - win_conf.height - 2
+      opt.anchor = win_conf.anchor
+    end
+  else
+    opt.row = win_conf.row[false]
+    opt.anchor = 'SW'
   end
   opt.col = win_conf.col[false]
-  opt.anchor = win_conf.anchor
   opt.width = win_conf.width
   opt.height = #tbl
   opt.no_size_override = true
