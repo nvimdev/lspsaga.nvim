@@ -52,21 +52,49 @@ local function parse_data(tbl)
   return content
 end
 
-function ch:call_hierarchy(item)
+function ch:call_hierarchy(item, parent)
   local client = ctx.client
   client.request(ctx.method, { item = item }, function(_, res)
     if not res or next(res) == nil then
       return
     end
-    for i, v in pairs(res) do
-      insert(ctx.data, {
-        from = v.from,
-        name = '    ' .. kind[v.from.kind][2] .. v.from.name,
-        winline = i + 1,
-      })
+    if not parent then
+      for i, v in pairs(res) do
+        insert(ctx.data, {
+          from = v.from,
+          name = '    ' .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name,
+          winline = i + 1,
+          expand = false,
+          children = {},
+          requested = false,
+        })
+      end
+      local content = parse_data(ctx.data)
+      self:render_win(content)
+      return
     end
-    local content = parse_data(ctx.data)
-    self:render_win(content)
+
+    vim.bo.modifiable = true
+    parent.requested = true
+    for i, v in pairs(res) do
+      local name = '    ' .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name
+      insert(parent.children, {
+        from = v.from,
+        name = name,
+        winline = parent.winline + i,
+        expand = false,
+        children = {},
+        requested = false,
+      })
+      api.nvim_buf_set_lines(
+        ctx.winbuf,
+        parent.winline + i,
+        parent.winline + i + 1,
+        false,
+        { name }
+      )
+    end
+    vim.bo.modifiable = false
   end)
 end
 
@@ -81,11 +109,17 @@ function ch:send_prepare_call()
   end)
 end
 
-function ch:expand_collaspe() end
+function ch:expand_collaspe()
+  local actual_idx = self:get_actual_index()
+  if not ctx.data[actual_idx].expand then
+    self:call_hierarchy(ctx.data[actual_idx].from, ctx.data[actual_idx])
+  end
+end
 
 function ch:apply_map()
   local keys = call_conf.keys
   local keymap = vim.keymap.set
+  local opt = { buffer = ctx.bufnr, nowait = true }
   keymap('n', keys.quit, function()
     if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
       api.nvim_win_close(ctx.winid, true)
@@ -94,7 +128,11 @@ function ch:apply_map()
       end
       clean_ctx()
     end
-  end, { buffer = ctx.bufnr, nowait = true })
+  end, opt)
+
+  keymap('n', keys.expand_collaspe, function()
+    self:expand_collaspe()
+  end, opt)
 end
 
 function ch:render_win(content)
@@ -131,7 +169,7 @@ function ch:render_win(content)
   self:apply_map()
 end
 
-function ch:get_preview_content()
+function ch:get_actual_index()
   local cur_line = api.nvim_win_get_cursor(0)[1]
   if cur_line == 1 then
     return
@@ -143,7 +181,11 @@ function ch:get_preview_content()
       break
     end
   end
+  return idx
+end
 
+function ch:get_preview_content()
+  local idx = self:get_actual_index()
   if not idx then
     return
   end

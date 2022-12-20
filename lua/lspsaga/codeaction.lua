@@ -306,13 +306,13 @@ function Action:get_action_diff(num, main_buf)
 
   if action.edit then
     local text_edits
-    if action.kind == 'quickfix' then
+    if action.kind == 'quickfix' or 'refactor.rewrite' then
       local key = vim.tbl_keys(action.edit.changes)
       local schema = key[1]
       text_edits = action.edit.changes[schema]
     end
 
-    if action.kind:find('refactor') or #action.kind == 0 then
+    if action.edit.documentChanges then
       text_edits = action.edit.documentChanges[1].edits
     end
 
@@ -385,22 +385,19 @@ function Action:action_preview(main_winid, main_buf)
   table.remove(tbl, 1)
 
   local win_conf = api.nvim_win_get_config(main_winid)
-  local col_start = win_conf.col[false] - win_conf['col'][true]
-  local win_width, _ = vim.lsp.util._make_floating_popup_size(tbl)
+
   local opt = {}
   opt.relative = 'editor'
-  if col_start + win_conf.width + win_width >= vim.o.columns - 2 then
-    opt.row = win_conf.anchor:find('^N') and win_conf.row[false] + win_conf.height + 3
-      or win_conf.row[false] - win_conf.height
-    opt.col = win_conf.col[false]
-    opt.anchor = win_conf.anchor
-    opt.width = win_conf.width
-    opt.height = #tbl
-    opt.no_size_override = true
-  else
-    opt.row = win_conf.row[false]
-    opt.col = win_conf.col[false] + win_conf.width + 2
+  local offset = vim.o.lines - win_conf.row[false] - 6 > 0 and 0 or 2
+  opt.row = win_conf.row[false] - win_conf.height - offset
+  if win_conf.anchor:find('^S') then
+    opt.row = offset == 0 and win_conf.row[false] + win_conf.height + 2 or opt.row
   end
+  opt.col = win_conf.col[false]
+  opt.anchor = win_conf.anchor
+  opt.width = win_conf.width
+  opt.height = #tbl
+  opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 then
     opt.title = { { 'Action Preivew', 'DiagnosticActionPtitle' } }
