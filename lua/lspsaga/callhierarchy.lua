@@ -52,7 +52,8 @@ local function parse_data(tbl)
   return content
 end
 
-function ch:call_hierarchy(item, parent)
+function ch:call_hierarchy(item, parent, level)
+  local indent = '  '
   local client = ctx.client
   client.request(ctx.method, { item = item }, function(_, res)
     if not res or next(res) == nil then
@@ -62,7 +63,7 @@ function ch:call_hierarchy(item, parent)
       for i, v in pairs(res) do
         insert(ctx.data, {
           from = v.from,
-          name = '    ' .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name,
+          name = indent .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name,
           winline = i + 1,
           expand = false,
           children = {},
@@ -76,8 +77,18 @@ function ch:call_hierarchy(item, parent)
 
     vim.bo.modifiable = true
     parent.requested = true
+    parent.expand = true
+    parent.name = parent.name:gsub(call_conf.expand_icon, call_conf.collaspe_icon)
+    api.nvim_buf_set_lines(ctx.winbuf, parent.winline - 1, parent.winline, false, {
+      parent.name,
+    })
+
+    level = level == 1 and level + 1 or level
+    indent = string.rep(indent, level)
+
+    local tbl = {}
     for i, v in pairs(res) do
-      local name = '    ' .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name
+      local name = indent .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name
       insert(parent.children, {
         from = v.from,
         name = name,
@@ -86,14 +97,10 @@ function ch:call_hierarchy(item, parent)
         children = {},
         requested = false,
       })
-      api.nvim_buf_set_lines(
-        ctx.winbuf,
-        parent.winline + i,
-        parent.winline + i + 1,
-        false,
-        { name }
-      )
+      insert(tbl, name)
     end
+
+    api.nvim_buf_set_lines(ctx.winbuf, parent.winline, parent.winline, false, tbl)
     vim.bo.modifiable = false
   end)
 end
@@ -110,9 +117,13 @@ function ch:send_prepare_call()
 end
 
 function ch:expand_collaspe()
-  local actual_idx = self:get_actual_index()
-  if not ctx.data[actual_idx].expand then
-    self:call_hierarchy(ctx.data[actual_idx].from, ctx.data[actual_idx])
+  local node, level = self:get_node_at_cursor()
+  if not node then
+    return
+  end
+
+  if not node.expand then
+    self:call_hierarchy(node.from, node, level)
   end
 end
 
@@ -157,7 +168,9 @@ function ch:render_win(content)
     }
     opt.title_pos = 'left'
   end
+  opt.height = math.floor(vim.o.lines * 0.2)
   opt.width = math.floor(vim.o.columns * 0.2)
+  opt.no_size_override = true
   ctx.winbuf, ctx.winid = window.create_win_with_border(content_opt, opt)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.winbuf,
@@ -169,29 +182,41 @@ function ch:render_win(content)
   self:apply_map()
 end
 
-function ch:get_actual_index()
+function ch:get_node_at_cursor()
   local cur_line = api.nvim_win_get_cursor(0)[1]
   if cur_line == 1 then
     return
   end
-  local idx
-  for i, v in pairs(ctx.data) do
-    if v.winline == cur_line then
-      idx = i
-      break
+
+  local node = {}
+  local level = 0
+
+  local function get_node(data)
+    for _, v in pairs(data) do
+      level = level + 1
+      if v.winline == cur_line then
+        node = v
+        level = level
+      end
+      if v.children then
+        get_node(v.children)
+      end
     end
   end
-  return idx
+
+  get_node(ctx.data)
+
+  return node, level
 end
 
 function ch:get_preview_content()
-  local idx = self:get_actual_index()
-  if not idx then
+  local node, _ = self:get_node_at_cursor()
+  if not node or vim.tbl_count(node) == 0 then
     return
   end
 
-  local uri = ctx.data[idx].from.uri
-  local range = ctx.data[idx].from.range
+  local uri = node.from.uri
+  local range = node.from.range
   local bufnr = vim.uri_to_bufnr(uri)
 
   if not api.nvim_buf_is_loaded(bufnr) then
@@ -205,6 +230,10 @@ function ch:get_preview_content()
 end
 
 function ch:preview()
+  if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
+    api.nvim_win_close(ctx.preview_winid, true)
+  end
+
   local opt = {}
   local win_conf = api.nvim_win_get_config(ctx.winid)
   local lines = self:get_preview_content()
@@ -222,7 +251,6 @@ function ch:preview()
 
   local content_opt = {
     contents = lines,
-    filetype = vim.bo[ctx.main_buf].filetype,
     enter = false,
   }
 
@@ -231,7 +259,7 @@ function ch:preview()
   end
 
   ctx.preview_bufnr, ctx.preview_winid = window.create_win_with_border(content_opt, opt)
-  libs.close_preview_autocmd(ctx.winbuf, ctx.preview_winid, { 'CursorMoved' })
+  vim.treesitter.start(ctx.preview_bufnr, vim.bo[ctx.main_buf].filetype)
 end
 
 function ch:incoming_calls()
@@ -241,7 +269,9 @@ function ch:incoming_calls()
 end
 
 function ch:outgoing_calls()
-  self.method = method[3]
+  ctx.method = method[3]
+  ctx.data = {}
+  self:send_prepare_call()
 end
 
 setmetatable(ch, ctx)
