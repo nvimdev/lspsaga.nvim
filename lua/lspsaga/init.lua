@@ -102,7 +102,7 @@ saga.config_values = {
     collaspe_icon = ' ',
     show_detail = false,
     keys = {
-      jump = 'o',
+      jump_to_preview = 'o',
       quit = 'q',
       expand_collaspe = 'u',
     },

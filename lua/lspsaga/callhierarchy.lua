@@ -1,9 +1,8 @@
 local api, fn, lsp, validate = vim.api, vim.fn, vim.lsp, vim.validate
 local window = require('lspsaga.window')
 local kind = require('lspsaga.lspkind')
-local max_preview_lines = require('lspsaga').config_values.max_preview_lines
-local call_conf = require('lspsaga').config_values.call_hierarchy
 local libs = require('lspsaga.libs')
+local call_conf = require('lspsaga').config_values.call_hierarchy
 local insert = table.insert
 local method = {
   'textDocument/prepareCallHierarchy',
@@ -144,6 +143,12 @@ function ch:apply_map()
   keymap('n', keys.expand_collaspe, function()
     self:expand_collaspe()
   end, opt)
+
+  keymap('n', keys.jump_to_preview, function()
+    if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
+      api.nvim_set_current_win(ctx.preview_winid)
+    end
+  end)
 end
 
 function ch:render_win(content)
@@ -209,7 +214,7 @@ function ch:get_node_at_cursor()
   return node, level
 end
 
-function ch:get_preview_content()
+function ch:get_preview_data()
   local node, _ = self:get_node_at_cursor()
   if not node or vim.tbl_count(node) == 0 then
     return
@@ -223,10 +228,7 @@ function ch:get_preview_content()
     fn.bufload(bufnr)
   end
 
-  local lines =
-    api.nvim_buf_get_lines(bufnr, range.start.line, range['end'].line + max_preview_lines, false)
-
-  return lines
+  return { bufnr, range }
 end
 
 function ch:preview()
@@ -236,10 +238,11 @@ function ch:preview()
 
   local opt = {}
   local win_conf = api.nvim_win_get_config(ctx.winid)
-  local lines = self:get_preview_content()
-  if not lines then
+  local data = self:get_preview_data()
+  if not data then
     return
   end
+
   opt.col = win_conf.col[false]
   opt.width = math.floor(vim.o.columns * 0.7)
   opt.height = math.floor(vim.o.lines * 0.4)
@@ -250,16 +253,21 @@ function ch:preview()
     or win_conf.row[false] + win_conf.height + 2
 
   local content_opt = {
-    contents = lines,
+    contents = {},
     enter = false,
   }
 
   if fn.has('nvim-0.9') == 1 then
-    opt.title = { { 'Preview' } }
+    local fname = api.nvim_buf_get_name(data[1])
+    local fname_parts = vim.split(fname, libs.path_sep)
+    fname_parts = { unpack(fname_parts, #fname_parts - 1, #fname_parts) }
+    opt.title = { { table.concat(fname_parts, libs.path_sep) } }
   end
 
   ctx.preview_bufnr, ctx.preview_winid = window.create_win_with_border(content_opt, opt)
-  vim.treesitter.start(ctx.preview_bufnr, vim.bo[ctx.main_buf].filetype)
+  api.nvim_win_set_buf(ctx.preview_winid, data[1])
+  vim.bo[data[1]].filetype = vim.bo[ctx.main_buf].filetype
+  api.nvim_win_set_cursor(ctx.preview_winid, { data[2].start.line, data[2].start.character })
 end
 
 function ch:incoming_calls()
