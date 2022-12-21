@@ -123,7 +123,16 @@ function ch:expand_collaspe()
 
   if not node.expand then
     self:call_hierarchy(node.from, node, level)
+    return
   end
+
+  local cur_line = api.nvim_win_get_cursor(0)[1]
+  local text = api.nvim_get_current_line()
+  text = text:gsub(call_conf.collaspe_icon, call_conf.expand_icon)
+  vim.bo[ctx.winbuf].modifiable = true
+  api.nvim_buf_set_lines(ctx.winbuf, cur_line - 1, cur_line + #node.children, false, { text })
+  node.expand = false
+  vim.bo[ctx.winbuf].modifiable = false
 end
 
 function ch:apply_map()
