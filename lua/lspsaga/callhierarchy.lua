@@ -101,6 +101,7 @@ function ch:call_hierarchy(item, parent, level)
 
     api.nvim_buf_set_lines(ctx.winbuf, parent.winline, parent.winline, false, tbl)
     vim.bo.modifiable = false
+    self:change_node_winline(parent, #res)
   end)
 end
 
@@ -122,7 +123,24 @@ function ch:expand_collaspe()
   end
 
   if not node.expand then
-    self:call_hierarchy(node.from, node, level)
+    if not node.requested then
+      self:call_hierarchy(node.from, node, level)
+    else
+      node.name = node.name:gsub(call_conf.expand_icon, call_conf.collaspe_icon)
+      vim.bo.modifiable = true
+      api.nvim_buf_set_lines(ctx.winbuf, node.winline - 1, node.winline, false, {
+        node.name,
+      })
+      local tbl = {}
+      for i, v in ipairs(node.children) do
+        v.winline = node.winline + i
+        insert(tbl, v.name)
+      end
+      node.expand = true
+      api.nvim_buf_set_lines(ctx.winbuf, node.winline, node.winline, false, tbl)
+      vim.bo.modifiable = false
+      self:change_node_winline(node, #node.children)
+    end
     return
   end
 
@@ -133,6 +151,10 @@ function ch:expand_collaspe()
   api.nvim_buf_set_lines(ctx.winbuf, cur_line - 1, cur_line + #node.children, false, { text })
   node.expand = false
   vim.bo[ctx.winbuf].modifiable = false
+  for _, v in pairs(node.children) do
+    v.winline = -1
+  end
+  self:change_node_winline(node, -#node.children)
 end
 
 function ch:apply_map()
@@ -194,6 +216,35 @@ function ch:render_win(content)
   })
 
   self:apply_map()
+end
+
+---@private
+local function node_in_parent(parent, node)
+  for _, v in pairs(parent.children) do
+    if v.name == node.name then
+      return true
+    end
+  end
+  return false
+end
+
+function ch:change_node_winline(node, factor)
+  local found = false
+  local function get_node(data)
+    for _, v in pairs(data) do
+      if found and not node_in_parent(node, v) then
+        v.winline = v.winline + factor
+      end
+      if v.name == node.name then
+        found = true
+      end
+      if v.children then
+        get_node(v.children)
+      end
+    end
+  end
+
+  get_node(ctx.data)
 end
 
 function ch:get_node_at_cursor()
