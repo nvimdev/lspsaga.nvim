@@ -16,7 +16,7 @@ local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 function diag:code_action_cb(hi)
   local contents = {
-    config.code_action_icon .. 'Fix',
+    config.code_action_icon .. 'Fix ',
   }
 
   for index, client_with_actions in pairs(act.action_tuples) do
@@ -163,6 +163,10 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.focusable = false
+  if fn.has('nvim-0.9') == 1 then
+    opts.title = nil
+  end
+
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#content + 1),
     border = 'none',

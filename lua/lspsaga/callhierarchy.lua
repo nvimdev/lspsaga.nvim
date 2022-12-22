@@ -138,7 +138,7 @@ end
 function ch:apply_map()
   local keys = call_conf.keys
   local keymap = vim.keymap.set
-  local opt = { buffer = ctx.bufnr, nowait = true }
+  local opt = { buffer = true, nowait = true }
   keymap('n', keys.quit, function()
     if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
       api.nvim_win_close(ctx.winid, true)
@@ -157,7 +157,7 @@ function ch:apply_map()
     if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
       api.nvim_set_current_win(ctx.preview_winid)
     end
-  end)
+  end, opt)
 end
 
 function ch:render_win(content)
@@ -183,7 +183,7 @@ function ch:render_win(content)
     opt.title_pos = 'left'
   end
   opt.height = math.floor(vim.o.lines * 0.2)
-  opt.width = math.floor(vim.o.columns * 0.2)
+  opt.width = math.floor(vim.o.columns * 0.4)
   opt.no_size_override = true
   ctx.winbuf, ctx.winid = window.create_win_with_border(content_opt, opt)
   api.nvim_create_autocmd('CursorMoved', {
@@ -257,9 +257,11 @@ function ch:preview()
   opt.height = math.floor(vim.o.lines * 0.4)
   opt.no_size_override = true
   opt.relative = 'editor'
-  opt.row = win_conf.row[false] + win_conf.height + 2 >= vim.o.lines - 6
-      and vim.o.lines - win_conf.row[false]
-    or win_conf.row[false] + win_conf.height + 2
+  if win_conf.anchor:find('^N') then
+    opt.row = win_conf.row[false] - opt.height - 2
+  else
+    opt.row = win_conf.row[false]
+  end
 
   local content_opt = {
     contents = {},
@@ -276,6 +278,7 @@ function ch:preview()
   ctx.preview_bufnr, ctx.preview_winid = window.create_win_with_border(content_opt, opt)
   api.nvim_win_set_buf(ctx.preview_winid, data[1])
   vim.bo[data[1]].filetype = vim.bo[ctx.main_buf].filetype
+  vim.bo[data[1]].modifiable = true
   api.nvim_win_set_cursor(ctx.preview_winid, { data[2].start.line, data[2].start.character })
 end
 
