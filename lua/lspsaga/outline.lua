@@ -493,11 +493,13 @@ function ot:preview_event(bufnr)
 end
 
 function ot:close_when_last()
-  api.nvim_create_autocmd('WinEnter', {
+  api.nvim_create_autocmd('BufEnter', {
     callback = function(opt)
       local wins = api.nvim_list_wins()
       if #wins == 1 and vim.bo.filetype == 'lspsagaoutline' then
         api.nvim_buf_delete(self.winbuf, { force = true })
+        local bufnr = api.nvim_create_buf(true, true)
+        api.nvim_win_set_buf(0, bufnr)
         self.winid = nil
         self.winbuf = nil
         for k, _ in pairs(self) do
