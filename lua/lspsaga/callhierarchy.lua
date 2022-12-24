@@ -52,8 +52,46 @@ local function parse_data(tbl)
 end
 
 function ch:call_hierarchy(item, parent, level)
+  local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
   local indent = '  '
   local client = ctx.client
+  local pending_request = true
+  local frame = 0
+  if ctx.winbuf and api.nvim_buf_is_loaded(ctx.winbuf) and parent then
+    local uv = vim.loop
+    local timer = uv.new_timer()
+    timer:start(
+      0,
+      50,
+      vim.schedule_wrap(function()
+        local text = api.nvim_get_current_line()
+        local curline = api.nvim_win_get_cursor(0)[1]
+        local replace_icon = text:find(call_conf.expand_icon) and call_conf.expand_icon
+          or call_conf.collaspe_icon
+        if pending_request then
+          local next = frame + 1 == 9 and 1 or frame + 1
+          if text:find(replace_icon) then
+            text = text:gsub(replace_icon, spinner[next])
+          else
+            text = text:gsub(spinner[frame], spinner[next])
+          end
+          vim.bo[ctx.winbuf].modifiable = true
+          api.nvim_buf_set_lines(ctx.winbuf, curline - 1, curline, false, { text })
+          frame = frame + 1 == 9 and 1 or frame + 1
+        end
+
+        if not pending_request and not timer:is_closing() then
+          timer:close()
+          text = text:gsub(spinner[frame], replace_icon)
+          if vim.bo[ctx.winbuf].modifiable then
+            api.nvim_buf_set_lines(ctx.winbuf, curline - 1, curline, false, { text })
+          end
+          vim.bo[ctx.winbuf].modifiable = false
+        end
+      end)
+    )
+  end
+
   client.request(ctx.method, { item = item }, function(_, res)
     if not res or next(res) == nil then
       return
@@ -62,7 +100,7 @@ function ch:call_hierarchy(item, parent, level)
       for i, v in pairs(res) do
         local target = v.from and v.from or v.to
         insert(ctx.data, {
-          from = target,
+          target = target,
           name = indent .. call_conf.expand_icon .. kind[target.kind][2] .. target.name,
           winline = i + 1,
           expand = false,
@@ -88,9 +126,10 @@ function ch:call_hierarchy(item, parent, level)
 
     local tbl = {}
     for i, v in pairs(res) do
-      local name = indent .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name
+      local target = v.from and v.from or v.to
+      local name = indent .. call_conf.expand_icon .. kind[target.kind][2] .. target.name
       insert(parent.children, {
-        from = v.from,
+        target = target,
         name = name,
         winline = parent.winline + i,
         expand = false,
@@ -100,6 +139,7 @@ function ch:call_hierarchy(item, parent, level)
       insert(tbl, name)
     end
 
+    pending_request = false
     api.nvim_buf_set_lines(ctx.winbuf, parent.winline, parent.winline, false, tbl)
     vim.bo.modifiable = false
     self:change_node_winline(parent, #res)
@@ -125,7 +165,7 @@ function ch:expand_collaspe()
 
   if not node.expand then
     if not node.requested then
-      self:call_hierarchy(node.from, node, level)
+      self:call_hierarchy(node.target, node, level)
     else
       node.name = node.name:gsub(call_conf.expand_icon, call_conf.collaspe_icon)
       vim.bo.modifiable = true
@@ -281,8 +321,8 @@ function ch:get_preview_data()
     return
   end
 
-  local uri = node.from.uri
-  local range = node.from.range
+  local uri = node.target.uri
+  local range = node.target.range
   local bufnr = vim.uri_to_bufnr(uri)
 
   if not api.nvim_buf_is_loaded(bufnr) then
