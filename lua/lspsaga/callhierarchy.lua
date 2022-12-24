@@ -34,7 +34,7 @@ local function pick_call_hierarchy_item(call_hierarchy_items)
     local entry = item.detail or item.name
     table.insert(items, string.format('%d. %s', i, entry))
   end
-  local choice = vim.fn.inputlist(items)
+  local choice = fn.inputlist(items)
   if choice < 1 or choice > #items then
     return
   end
@@ -60,9 +60,10 @@ function ch:call_hierarchy(item, parent, level)
     end
     if not parent then
       for i, v in pairs(res) do
+        local target = v.from and v.from or v.to
         insert(ctx.data, {
-          from = v.from,
-          name = indent .. call_conf.expand_icon .. kind[v.from.kind][2] .. v.from.name,
+          from = target,
+          name = indent .. call_conf.expand_icon .. kind[target.kind][2] .. target.name,
           winline = i + 1,
           expand = false,
           children = {},
