@@ -8,7 +8,7 @@ local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config_values
 local max_preview_lines = config.max_preview_lines
-local outline_conf = config.show_outline
+local outline_conf, ui = config.show_outline, config.ui
 local method = 'textDocument/documentSymbol'
 
 -- alias built in
@@ -43,8 +43,8 @@ function ot:init_data(tbl, level)
 
     if #indent > prev_indent then
       local text = data[#data].node
-      local iwidth = api.nvim_strwidth(outline_conf.icon.expand)
-      local tmp = text:sub(0, (prev_indent - iwidth)) .. outline_conf.icon.expand
+      local iwidth = api.nvim_strwidth(ui.expand)
+      local tmp = text:sub(0, (prev_indent - iwidth)) .. ui.expand
       data[#data].node = tmp .. text:sub(prev_indent + 1)
       data[#data].expand = true
       data[#data].expand_col = prev_indent + 2
@@ -223,8 +223,8 @@ function ot:expand_collaspe(bufnr)
   if data[actual_index].expand then
     local _end_pos = _end_index ~= #data and data[_end_index].win_line
       or data[_end_index].win_line + 1
-    current_text = current_text:gsub(outline_conf.icon.expand, outline_conf.icon.collaspe)
-    local _, pos = current_text:find(outline_conf.icon.collaspe)
+    current_text = current_text:gsub(ui.expand, ui.collaspe)
+    local _, pos = current_text:find(ui.collaspe)
     api.nvim_buf_set_lines(self.winbuf, current_line - 1, _end_pos - 1, false, { current_text })
     api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
     data[actual_index].expand = false
@@ -254,7 +254,7 @@ function ot:expand_collaspe(bufnr)
     insert(lines, data[i].node)
   end
   lines[1] = api.nvim_get_current_line()
-  lines[1] = lines[1]:gsub(outline_conf.icon.collaspe, outline_conf.icon.expand)
+  lines[1] = lines[1]:gsub(ui.collaspe, ui.expand)
   api.nvim_buf_set_lines(self.winbuf, current_line - 1, current_line, false, lines)
   api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
   data[actual_index].expand = true

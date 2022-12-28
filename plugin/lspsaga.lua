@@ -55,6 +55,7 @@ local highlights = {
   DiagnosticText = { fg = '#c77ba7' },
   DiagnosticActionTitle = { fg = '#000000', bg = '#61aced', bold = true },
   DiagnosticActionText = { fg = '#b7f59a' },
+  DiagnosticActionSymbol = { fg = '#61aced'},
   DiagnosticActionPborder = { fg = '#afd700' },
   DiagnosticActionPtitle = { fg = '#CBA6F7' },
   -- Call Hierachry

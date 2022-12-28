@@ -12,7 +12,7 @@ local SIGN_NAME = 'LspSagaLightBulb'
 local hl_group = 'LspSagaLightBulb'
 
 if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.code_action_icon, texthl = hl_group })
+  vim.fn.sign_define(SIGN_NAME, { text = config.ui.code_action, texthl = hl_group })
 end
 
 local function check_server_support_codeaction(bufnr)
@@ -43,7 +43,7 @@ local function _update_virtual_text(bufnr, line)
   api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 
   if line then
-    local icon_with_indent = '  ' .. config.code_action_icon
+    local icon_with_indent = '  ' .. config.ui.code_action
     pcall(api.nvim_buf_set_extmark, bufnr, namespace, line, -1, {
       virt_text = { { icon_with_indent, 'LspSagaLightBulb' } },
       virt_text_pos = 'overlay',

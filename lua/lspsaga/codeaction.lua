@@ -37,7 +37,7 @@ function Action:action_callback()
   local opt = {}
 
   if fn.has('nvim-0.9') == 1 then
-    opt.title = config.code_action_icon .. 'CodeAction'
+    opt.title = config.ui.code_action .. 'CodeAction'
   end
 
   self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
@@ -401,7 +401,8 @@ function Action:action_preview(main_winid, main_buf)
     end
   end
   opt.col = win_conf.col[false]
-  opt.width = math.floor(vim.o.columns * 0.4)
+  local max_width = math.floor(vim.o.columns * 0.4)
+  opt.width = win_conf.width < max_width and max_width or win_conf.width
   opt.height = #tbl
   opt.no_size_override = true
 

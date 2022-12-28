@@ -2,6 +2,7 @@ local api, fn, lsp, validate = vim.api, vim.fn, vim.lsp, vim.validate
 local window = require('lspsaga.window')
 local kind = require('lspsaga.lspkind')
 local libs = require('lspsaga.libs')
+local ui = require('lspsaga').config_values.ui
 local call_conf = require('lspsaga').config_values.call_hierarchy
 local insert = table.insert
 local method = {
@@ -44,7 +45,7 @@ end
 ---@private
 local function parse_data(tbl)
   local content = {}
-  insert(content, call_conf.collaspe_icon .. fn.expand('<cword>'))
+  insert(content, ui.collaspe .. fn.expand('<cword>'))
   for _, v in pairs(tbl) do
     insert(content, v.name)
   end
@@ -66,8 +67,7 @@ function ch:call_hierarchy(item, parent, level)
       vim.schedule_wrap(function()
         local text = api.nvim_get_current_line()
         local curline = api.nvim_win_get_cursor(0)[1]
-        local replace_icon = text:find(call_conf.expand_icon) and call_conf.expand_icon
-          or call_conf.collaspe_icon
+        local replace_icon = text:find(ui.expand) and ui.expand or ui.collaspe
         if pending_request then
           local next = frame + 1 == 9 and 1 or frame + 1
           if text:find(replace_icon) then
@@ -101,7 +101,7 @@ function ch:call_hierarchy(item, parent, level)
         local target = v.from and v.from or v.to
         insert(ctx.data, {
           target = target,
-          name = indent .. call_conf.expand_icon .. kind[target.kind][2] .. target.name,
+          name = indent .. ui.expand .. kind[target.kind][2] .. target.name,
           winline = i + 1,
           expand = false,
           children = {},
@@ -116,7 +116,7 @@ function ch:call_hierarchy(item, parent, level)
     vim.bo.modifiable = true
     parent.requested = true
     parent.expand = true
-    parent.name = parent.name:gsub(call_conf.expand_icon, call_conf.collaspe_icon)
+    parent.name = parent.name:gsub(ui.expand, ui.collaspe)
     api.nvim_buf_set_lines(ctx.winbuf, parent.winline - 1, parent.winline, false, {
       parent.name,
     })
@@ -127,7 +127,7 @@ function ch:call_hierarchy(item, parent, level)
     local tbl = {}
     for i, v in pairs(res) do
       local target = v.from and v.from or v.to
-      local name = indent .. call_conf.expand_icon .. kind[target.kind][2] .. target.name
+      local name = indent .. ui.expand .. kind[target.kind][2] .. target.name
       insert(parent.children, {
         target = target,
         name = name,
@@ -167,7 +167,7 @@ function ch:expand_collaspe()
     if not node.requested then
       self:call_hierarchy(node.target, node, level)
     else
-      node.name = node.name:gsub(call_conf.expand_icon, call_conf.collaspe_icon)
+      node.name = node.name:gsub(ui.expand, ui.collaspe)
       vim.bo.modifiable = true
       api.nvim_buf_set_lines(ctx.winbuf, node.winline - 1, node.winline, false, {
         node.name,
@@ -187,7 +187,7 @@ function ch:expand_collaspe()
 
   local cur_line = api.nvim_win_get_cursor(0)[1]
   local text = api.nvim_get_current_line()
-  text = text:gsub(call_conf.collaspe_icon, call_conf.expand_icon)
+  text = text:gsub(ui.collaspe, ui.expand)
   vim.bo[ctx.winbuf].modifiable = true
   api.nvim_buf_set_lines(ctx.winbuf, cur_line - 1, cur_line + #node.children, false, { text })
   node.expand = false
@@ -239,8 +239,9 @@ function ch:render_win(content)
       [method[2]] = 'InComing',
       [method[3]] = 'OutGoing',
     }
+    local icon = ctx.method == method[2] and ui.incoming or ui.outgoing
     opt.title = {
-      { call_conf.incoming_icon, 'CallHierarchyIcon' },
+      { icon, 'CallHierarchyIcon' },
       { ' ' .. titles[ctx.method], 'CallHierarchyTitle' },
     }
     opt.title_pos = 'left'

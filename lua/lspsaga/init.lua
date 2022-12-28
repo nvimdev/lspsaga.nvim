@@ -4,8 +4,22 @@ local saga = {}
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 saga.config_values = {
-  border_style = 'single',
-  saga_winblend = 0,
+  ui = {
+    border = 'solid',
+    winblend = 0,
+    expand = ' ',
+    collaspe = ' ',
+    finder_def = ' ',
+    finder_imp = ' ',
+    finder_ref = ' ',
+    code_action = '💡',
+    incoming = ' ',
+    outgoing = ' ',
+    diagnostic = {
+      Error = '',
+      Warn = '',
+    },
+  },
   -- when cusor in saga float window
   -- config these keys to move
   move_in_saga = {
@@ -13,7 +27,6 @@ saga.config_values = {
     next = '<C-n>',
   },
   diagnostic = {
-    icon = ' ',
     show_code_action = true,
     show_source = true,
     auto_enter_float = true,
@@ -22,8 +35,6 @@ saga.config_values = {
       quit = 'q',
     },
   },
-  -- code action title icon
-  code_action_icon = '💡',
   -- if true can press number to execute the codeaction in codeaction window
   code_action_num_shortcut = true,
   code_action_keys = {
@@ -44,11 +55,6 @@ saga.config_values = {
   scroll_in_preview = {
     scroll_down = '<C-f>',
     scroll_up = '<C-b>',
-  },
-  finder_icons = {
-    def = ' ',
-    imp = ' ',
-    ref = ' ',
   },
   finder_request_timeout = 1500,
   finder_action_keys = {
@@ -85,10 +91,6 @@ saga.config_values = {
     auto_preview = true,
     auto_refresh = true,
     auto_close = true,
-    icon = {
-      expand = ' ',
-      collaspe = ' ',
-    },
     keys = {
       jump = 'o',
       expand_collaspe = 'u',
@@ -96,10 +98,6 @@ saga.config_values = {
     },
   },
   call_hierarchy = {
-    incoming_icon = ' ',
-    outgoing_icon = ' ',
-    expand_icon = ' ',
-    collaspe_icon = ' ',
     show_detail = false,
     keys = {
       jump_to_preview = 'o',

@@ -1,5 +1,5 @@
 local config = require('lspsaga').config_values
-local diag_conf = config.diagnostic
+local diag_conf, ui = config.diagnostic, config.ui
 local if_nil, lsp, fn, keymap = vim.F.if_nil, vim.lsp, vim.fn, vim.keymap.set
 local window = require('lspsaga.window')
 local wrap = require('lspsaga.wrap')
@@ -14,9 +14,10 @@ local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
-function diag:code_action_cb(hi)
+function diag:code_action_cb()
   local contents = {
-    config.code_action_icon .. 'Fix ',
+    '',
+    '' .. ui.code_action .. 'Fix ' .. '',
   }
 
   for index, client_with_actions in pairs(act.action_tuples) do
@@ -35,7 +36,7 @@ function diag:code_action_cb(hi)
     return
   end
 
-  local start_line = api.nvim_buf_line_count(self.bufnr)
+  local start_line = api.nvim_buf_line_count(self.bufnr) + 1
   local win_conf = api.nvim_win_get_config(self.winid)
   local len = #contents
   if win_conf.row[false] + win_conf.height + #contents > vim.o.lines - 6 then
@@ -47,9 +48,9 @@ function diag:code_action_cb(hi)
   api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
-  -- highlight of code action border
-  api.nvim_buf_add_highlight(self.bufnr, 0, hi, start_line, 0, -1)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 0, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', start_line, 0, 4)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', start_line, 11, -1)
 
   for i = 2, #contents do
     api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', start_line + i - 1, 0, -1)
@@ -89,16 +90,13 @@ end
 
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
-  local content = {}
+  local content = {
+    ' ',
+  }
   local max_width = window.get_max_float_width()
   self.main_buf = api.nvim_get_current_buf()
 
   local source = ' '
-
-  -- remove dot in source tail {lua-language-server}
-  if entry.source and entry.source:find('%.$') then
-    entry.source = entry.source:gsub('%.', '')
-  end
 
   if entry.source then
     source = source .. entry.source
@@ -123,7 +121,7 @@ function diag:render_diagnostic_window(entry, option)
         ['end'] = { entry.lnum + 1, entry.col },
       },
     }, function()
-      self:code_action_cb(hi_name)
+      self:code_action_cb()
     end)
   end
 
@@ -141,7 +139,7 @@ function diag:render_diagnostic_window(entry, option)
 
   if fn.has('nvim-0.9') == 1 then
     opts.title = {
-      { diag_conf.icon, 'DiagnosticTitleIcon' },
+      { ui.diagnostic, 'DiagnosticTitleIcon' },
       { 'Line: ' .. (entry.lnum + 1), 'DiagnosticTitleLine' },
       { ' Col: ' .. (entry.col + 1), 'DiagnosticTitleCol' },
     }
@@ -337,7 +335,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
     local prefix = string.format('%d. ', i)
 
     local hiname = 'Diagnostic' .. severities[diagnostic.severity] or severities[1]
-    local message_lines = vim.split(diagnostic.message, '\n', true)
+    local message_lines = vim.split(diagnostic.message, '\n', { trimempty = true })
 
     if diag_conf.show_source then
       message_lines[1] = prefix .. message_lines[1] .. space .. '[' .. diagnostic.source .. ']'

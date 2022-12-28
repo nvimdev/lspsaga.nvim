@@ -3,7 +3,7 @@ local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
 local path_sep = libs.path_sep
-local icons = config.finder_icons
+local ui = config.ui
 local insert = table.insert
 local indent = '    '
 
@@ -236,9 +236,9 @@ function Finder:render_finder()
 end
 
 local titles = {
-  [methods[1]] = icons.def .. 'Definition ',
-  [methods[2]] = icons.imp .. 'Implements ',
-  [methods[3]] = icons.ref .. 'References ',
+  [methods[1]] = ui.finder_def .. 'Definition ',
+  [methods[2]] = ui.finder_imp .. 'Implements ',
+  [methods[3]] = ui.finder_ref .. 'References ',
 }
 
 function Finder:create_finder_contents(result, method)
@@ -510,45 +510,45 @@ function Finder:lsp_finder_highlight()
   local ref_len = string.len('References')
   local imp_len = string.len('Implements')
   -- add syntax
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #icons.def)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #icons.def, #icons.def + def_len)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #icons.def + def_len, -1)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #ui.finder_def)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #ui.finder_def, #ui.finder_def + def_len)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #ui.finder_def + def_len, -1)
 
   if self.imp_scope then
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #icons.imp)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #ui.finder_imp)
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,
       'Implements',
       self.imp_scope[1],
-      #icons.imp,
-      #icons.imp + imp_len
+      #ui.finder_imp,
+      #ui.finder_imp + imp_len
     )
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,
       'ImplementsCount',
       self.imp_scope[1],
-      #icons.imp + imp_len,
+      #ui.finder_imp + imp_len,
       -1
     )
   end
 
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', self.ref_scope[1], 0, #icons.ref)
+  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', self.ref_scope[1], 0, #ui.finder_ref)
   api.nvim_buf_add_highlight(
     self.bufnr,
     -1,
     'References',
     self.ref_scope[1],
-    #icons.ref,
-    #icons.ref + ref_len
+    #ui.finder_ref,
+    #ui.finder_ref + ref_len
   )
   api.nvim_buf_add_highlight(
     self.bufnr,
     -1,
     'ReferencesCount',
     self.ref_scope[1],
-    #icons.ref + ref_len,
+    #ui.finder_ref + ref_len,
     -1
   )
 end
