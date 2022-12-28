@@ -291,8 +291,6 @@ function Action:get_action_diff(num, main_buf)
   end
 
   local old_lines = {}
-
-  local new_lines = ''
   local client = lsp.get_client_by_id(self.action_tuples[tonumber(num)][1])
 
   if
@@ -304,65 +302,59 @@ function Action:get_action_diff(num, main_buf)
     action = results[client.id].result
   end
 
-  if action.edit then
-    local text_edits
-    if action.kind == 'quickfix' or 'refactor.rewrite' then
-      local key = vim.tbl_keys(action.edit.changes)
-      local schema = key[1]
-      text_edits = action.edit.changes[schema]
+  if not action.edit then
+    return
+  end
+
+  local text_edits
+  if action.edit.documentChanges then
+    text_edits = action.edit.documentChanges[1].edits
+  elseif action.edit.changes then
+    text_edits = action.edit.changes[vim.uri_from_bufnr(main_buf)]
+  end
+
+  local tmp_buf = api.nvim_create_buf(false, false)
+
+  local remove_whole_line = false
+  for _, v in pairs(text_edits) do
+    if #v.newText == 0 and v.range['end'].character - v.range.start.character == 1 then
+      remove_whole_line = true
+    end
+  end
+
+  for _, v in pairs(text_edits) do
+    if #v.newText == 0 then
+      goto skip
     end
 
-    if action.edit.documentChanges then
-      text_edits = action.edit.documentChanges[1].edits
+    local start = v.range.start
+    local _end = v.range['end']
+    local old_text = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1]
+    if next(old_lines) == nil then
+      table.insert(old_lines, old_text .. '\n')
     end
-
-    local tmp_buf = api.nvim_create_buf(false, true)
-
-    local remove_whole_line = false
-    for _, v in pairs(text_edits) do
-      if #v.newText == 0 and v.range['end'].character - v.range.start.character == 1 then
-        remove_whole_line = true
-      end
+    api.nvim_buf_set_lines(tmp_buf, 0, -1, false, { old_text })
+    v.newText = v.newText:find('\r\n') and v.newText:gsub('\r\n', '\n') or v.newText
+    local newText = vim.split(v.newText, '\n')
+    if not newText[#newText]:find('%w') then
+      table.remove(newText, #newText)
     end
-
-    for _, v in pairs(text_edits) do
-      if #v.newText == 0 then
-        goto skip
-      end
-
-      local start = v.range.start
-      local _end = v.range['end']
-      if next(old_lines) == nil then
-        table.insert(
-          old_lines,
-          api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1] .. '\n'
-        )
-      end
-      local old = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)
-      api.nvim_buf_set_lines(tmp_buf, 0, -1, false, old)
-      v.newText = v.newText:find('\r\n') and v.newText:gsub('\r\n', '\n') or v.newText
-      local newText = vim.split(v.newText, '\n')
-      if not newText[#newText]:find('%w') then
-        table.remove(newText, #newText)
-      end
-      local ecol = api.nvim_strwidth(old[1])
-      if start.character ~= _end.character then
-        if not remove_whole_line then
-          api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
-        else
-          api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
-        end
-      elseif start.character == _end.character then
+    local ecol = api.nvim_strwidth(old_text)
+    if start.character ~= _end.character then
+      if not remove_whole_line then
+        api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
+      else
         api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
       end
-      local new_text = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
-      new_lines = new_lines .. table.concat(new_text, '\n') .. '\n'
-      api.nvim_buf_set_lines(tmp_buf, 0, -1, false, {})
-      ::skip::
+    elseif start.character == _end.character then
+      api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
     end
-    api.nvim_buf_delete(tmp_buf, { force = true })
-    return vim.diff(table.concat(old_lines, ''), new_lines)
+    ::skip::
   end
+  local new_text = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+  new_text = table.concat(new_text, '\n') .. '\n'
+  api.nvim_buf_delete(tmp_buf, { force = true })
+  return vim.diff(table.concat(old_lines, ''), new_text)
 end
 
 function Action:action_preview(main_winid, main_buf)
@@ -388,20 +380,28 @@ function Action:action_preview(main_winid, main_buf)
 
   local opt = {}
   opt.relative = 'editor'
-  if win_conf.anchor:find('^S') then
-    if vim.o.lines - win_conf.row[false] - 6 > 0 then
-      opt.row = win_conf.row[false] + 1
-      opt.anchor = 'NW'
+  if win_conf.anchor:find('^N') then
+    if win_conf.row[false] - #tbl > 0 then
+      opt.row = win_conf.row[false]
+      opt.anchor = win_conf.anchor:gsub('N', 'S')
     else
-      opt.row = win_conf.row[false] - win_conf.height - 2
+      opt.row = win_conf.row[false] + win_conf.height + 2
+      if #vim.wo[fn.bufwinid(main_buf)].winbar > 0 then
+        opt.row = opt.row + 1
+      end
       opt.anchor = win_conf.anchor
     end
   else
-    opt.row = win_conf.row[false]
-    opt.anchor = 'SW'
+    if win_conf.row[false] - win_conf.height - #tbl - 4 > 0 then
+      opt.row = win_conf.row[false] - win_conf.height - #tbl - 4
+      opt.anchor = win_conf.anchor
+    else
+      opt.row = win_conf.row[false]
+      opt.anchor = win_conf.anchor:gsub('S', 'N')
+    end
   end
   opt.col = win_conf.col[false]
-  opt.width = win_conf.width
+  opt.width = math.floor(vim.o.columns * 0.4)
   opt.height = #tbl
   opt.no_size_override = true
 
