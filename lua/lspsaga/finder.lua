@@ -628,10 +628,7 @@ function Finder:auto_open_preview()
   end
 
   local content
-  local table_length = 0
-  for key, value in pairs(self.short_link[current_line].preview) do
-    table_length = table_length + 1
-  end
+  local table_length = vim.tbl_count(self.short_link[current_line].preview)
 
   if
     table_length == 0 or (self.short_link[current_line].preview[1] == '' and table_length == 1)
