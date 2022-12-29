@@ -330,7 +330,7 @@ function Action:get_action_diff(num, main_buf)
     local start = v.range.start
     local _end = v.range['end']
     local old_text = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1]
-    if #old_lines == 0  then
+    if #old_lines == 0 then
       table.insert(old_lines, old_text .. '\n')
     end
     api.nvim_buf_set_lines(tmp_buf, 0, -1, false, { old_text })

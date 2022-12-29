@@ -1,5 +1,12 @@
 local api = vim.api
-vim.g.lspsaga_version = '0.2.1'
+
+if vim.g.lspsaga_version then
+  return
+end
+
+vim.g.lspsaga_version = '0.2.3'
+
+local bg = '#1d1536'
 
 local highlights = {
   -- code action
@@ -42,20 +49,24 @@ local highlights = {
   LspSagaRenameBorder = { fg = '#3bb6c4' },
   LspSagaRenameMatch = { link = 'Search' },
   -- diagnostic
-  LspSagaDiagnosticSource = { link = 'Comment' },
-  LspSagaDiagnosticError = { link = 'DiagnosticError' },
-  LspSagaDiagnosticWarn = { link = 'DiagnosticWarn' },
-  LspSagaDiagnosticInfo = { link = 'DiagnosticInfo' },
-  LspSagaDiagnosticHint = { link = 'DiagnosticHint' },
   LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
-  LspSagaDiagnosticHeader = { fg = '#afd700' },
-  DiagnosticTitleIcon = { fg = '#9c255e' },
+  DiagnosticSource = { link = 'Comment' },
+  DiagnosticNormal = { bg = bg },
+  DiagnosticErrorBorder = { bg = bg },
+  DiagnosticWarnBorder = { bg = bg },
+  DiagnosticHintBorder = { bg = bg },
+  DiagnosticInfoBorder = { bg = bg },
+  DiagnosticMsg = { bg = '#61aced', fg = '#000000' },
+  DiagnosticMsgIcon = { bg = '#61aced', fg = '#b7f59a' },
+
+  DiagnosticTitleIcon = { fg = '#9c255e', bg = bg },
   DiagnosticTitleLine = { fg = '#9c255e', bold = true },
   DiagnosticTitleCol = { fg = '#9c255e', bold = true },
+
   DiagnosticText = { fg = '#c77ba7' },
   DiagnosticActionTitle = { fg = '#000000', bg = '#61aced', bold = true },
-  DiagnosticActionText = { fg = '#b7f59a' },
-  DiagnosticActionSymbol = { fg = '#61aced'},
+  DiagnosticActionText = { fg = '#d4bf87' },
+  DiagnosticActionSymbol = { fg = '#61aced' },
   DiagnosticActionPborder = { fg = '#afd700' },
   DiagnosticActionPtitle = { fg = '#CBA6F7' },
   -- Call Hierachry

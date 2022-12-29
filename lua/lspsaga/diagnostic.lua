@@ -10,9 +10,14 @@ local insert = table.insert
 local space = ' '
 
 local diag = {}
-local diag_type = { 'Error', 'Warn', 'Info', 'Hint' }
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
+
+---@private
+local function get_diag_type(severity)
+  local type = { 'Error', 'Warn', 'Hint', 'Info' }
+  return type[severity]
+end
 
 function diag:code_action_cb()
   local contents = {
@@ -91,7 +96,7 @@ end
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
   local content = {
-    ' ',
+    '  Msg ',
   }
   local max_width = window.get_max_float_width()
   self.main_buf = api.nvim_get_current_buf()
@@ -112,8 +117,6 @@ function diag:render_diagnostic_window(entry, option)
   end
   content[#content] = content[#content] .. source
 
-  local hi_name = 'LspSagaDiagnostic' .. diag_type[entry.severity]
-
   if diag_conf.show_code_action then
     act:send_code_action_request(self.main_buf, {
       range = {
@@ -125,10 +128,15 @@ function diag:render_diagnostic_window(entry, option)
     end)
   end
 
+  local diag_type = get_diag_type(entry.severity)
+  local hi_name = 'Diagnostic' .. diag_type
   local content_opts = {
     contents = content,
     filetype = 'plaintext',
-    highlight = hi_name,
+    highlight = {
+      border = hi_name .. 'border',
+      normal = 'DiagnosticNormal',
+    },
   }
 
   local opts = {
@@ -139,9 +147,9 @@ function diag:render_diagnostic_window(entry, option)
 
   if fn.has('nvim-0.9') == 1 then
     opts.title = {
-      { ui.diagnostic, 'DiagnosticTitleIcon' },
-      { 'Line: ' .. (entry.lnum + 1), 'DiagnosticTitleLine' },
-      { ' Col: ' .. (entry.col + 1), 'DiagnosticTitleCol' },
+      { ui.diagnostic[entry.severity], 'Diagnostic' .. diag_type },
+      -- { 'Line: ' .. (entry.lnum + 1), 'DiagnosticTitleLine' },
+      -- { ' Col: ' .. (entry.col + 1), 'DiagnosticTitleCol' },
     }
   end
 
@@ -222,15 +230,20 @@ function diag:render_diagnostic_window(entry, option)
       virt_lines_above = false,
     })
 
-    if i ~= #content + 1 then
+    if i ~= #content + 1 or i > 1 then
       api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticText', i - 1, 0, -1)
     end
   end
 
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticMsg', 0, 8, 14)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticMsgIcon', 0, 3, 8)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', 0, 0, 3)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', 0, 14, -1)
+
   api.nvim_buf_add_highlight(
     self.bufnr,
     0,
-    'LspSagaDiagnosticSource',
+    'DiagnosticSource',
     #content - 1,
     #content[#content] - #source,
     -1
@@ -313,14 +326,9 @@ function diag:show_diagnostics(opts, get_diagnostics)
   local current_buf = api.nvim_get_current_buf()
 
   local severity_sort = if_nil(opts.severity_sort, true)
-  local show_header = if_nil(opts.show_header, true)
 
   local lines = {}
   local highlights = {}
-  if show_header then
-    lines[1] = opts.header()
-    highlights[1] = { 0, 'LspSagaDiagnosticHeader' }
-  end
 
   local diagnostics = get_diagnostics()
   if vim.tbl_isempty(diagnostics) then

@@ -16,8 +16,10 @@ saga.config_values = {
     incoming = ' ',
     outgoing = ' ',
     diagnostic = {
-      Error = '',
-      Warn = '',
+      ' ',
+      ' ',
+      ' ',
+      ' ',
     },
   },
   -- when cusor in saga float window

@@ -2,39 +2,6 @@ local vim, api, lsp = vim, vim.api, vim.lsp
 local M = {}
 local config = require('lspsaga').config_values
 
-local function get_border_style(style, highlight)
-  highlight = highlight or 'FloatBorder'
-  local border_style = {
-    ['none'] = 'none',
-    ['single'] = 'single',
-    ['double'] = 'double',
-    ['rounded'] = 'rounded',
-    ['solid'] = 'solid',
-    ['bold'] = {
-      { '▛', highlight },
-      { '▀', highlight },
-      { '▜', highlight },
-      { '▐', highlight },
-      { '▟', highlight },
-      { '▄', highlight },
-      { '▙', highlight },
-      { '▌', highlight },
-    },
-    ['plus'] = {
-      { '+', highlight },
-      { '─', highlight },
-      { '+', highlight },
-      { '│', highlight },
-      { '+', highlight },
-      { '─', highlight },
-      { '+', highlight },
-      { '│', highlight },
-    },
-  }
-
-  return border_style[style]
-end
-
 local function make_floating_popup_options(width, height, opts)
   vim.validate({
     opts = { opts, 't', true },
@@ -145,10 +112,11 @@ function M.create_win_with_border(content_opts, opts)
 
   local contents, filetype = content_opts.contents, content_opts.filetype
   local enter = content_opts.enter or false
-  local highlight = content_opts.highlight or 'LspFloatWinBorder'
   opts = opts or {}
   opts = generate_win_opts(contents, opts)
-  opts.border = content_opts.border or get_border_style(config.ui.border, highlight)
+
+  local highlight = content_opts.highlight or {}
+  opts.border = content_opts.border or config.ui.border
 
   -- create contents buffer
   local bufnr = content_opts.bufnr or api.nvim_create_buf(false, false)
@@ -176,9 +144,11 @@ function M.create_win_with_border(content_opts, opts)
   api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
-  api.nvim_win_set_option(winid, 'wrap', content_opts.wrap or false)
-  api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
-  api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.ui.winblend)
+  vim.wo[winid].winblend = content_opts.winblend or config.ui.winblend
+  vim.wo[winid].wrap = content_opts.wrap or false
+  local normal = highlight.normal or 'LspNormal'
+  local border = highlight.border or 'LspBorder'
+  api.nvim_win_set_option(winid, 'winhl', 'Normal:' .. normal .. ',FloatBorder:' .. border)
 
   if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
     api.nvim_win_set_option(winid, 'winbar', '')

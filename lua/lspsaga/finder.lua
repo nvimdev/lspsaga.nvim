@@ -264,7 +264,7 @@ function Finder:create_finder_contents(result, method)
       fn.bufload(bufnr)
     end
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
-    if libs.is_windows then
+    if libs.iswin then
       link = link:gsub('^%l', link:sub(1, 1):upper())
     end
     local short_name
@@ -511,11 +511,25 @@ function Finder:lsp_finder_highlight()
   local imp_len = string.len('Implements')
   -- add syntax
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #ui.finder_def)
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'Definitions', 0, #ui.finder_def, #ui.finder_def + def_len)
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    -1,
+    'Definitions',
+    0,
+    #ui.finder_def,
+    #ui.finder_def + def_len
+  )
   api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #ui.finder_def + def_len, -1)
 
   if self.imp_scope then
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'ImplementsIcon', self.imp_scope[1], 0, #ui.finder_imp)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      -1,
+      'ImplementsIcon',
+      self.imp_scope[1],
+      0,
+      #ui.finder_imp
+    )
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,
