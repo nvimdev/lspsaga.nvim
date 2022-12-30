@@ -15,12 +15,6 @@ saga.config_values = {
     code_action = '💡',
     incoming = ' ',
     outgoing = ' ',
-    diagnostic = {
-      ' ',
-      ' ',
-      ' ',
-      ' ',
-    },
     background = '#1d1536',
   },
   diagnostic = {
