@@ -464,7 +464,6 @@ end
 
 function Finder:apply_float_map()
   local action = config.finder_action_keys
-  local move = config.move_in_saga
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local opts = {
     buffer = self.bufnr,
@@ -493,8 +492,6 @@ function Finder:apply_float_map()
   end
 
   local keymaps = {
-    { 'n', move.prev, '<Up>', opts },
-    { 'n', move.next, '<Down>', opts },
     { 'n', action.vsplit, vsplit_func, opts },
     { 'n', action.split, split_func, opts },
     { 'n', action.tabe, tabe_func, opts },

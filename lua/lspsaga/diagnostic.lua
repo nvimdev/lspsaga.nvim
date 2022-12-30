@@ -43,11 +43,7 @@ function diag:code_action_cb()
 
   local start_line = api.nvim_buf_line_count(self.bufnr) + 1
   local win_conf = api.nvim_win_get_config(self.winid)
-  local len = #contents
-  if win_conf.row[false] + win_conf.height + #contents > vim.o.lines - 6 then
-    len = 4
-  end
-  api.nvim_win_set_config(self.winid, { height = win_conf.height + len })
+  api.nvim_win_set_config(self.winid, { height = win_conf.height + #contents })
 
   api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
   api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
@@ -302,6 +298,11 @@ function diag:render_diagnostic_window(entry, option)
 end
 
 function diag:move_cursor(entry)
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_set_current_win(self.winid)
+    return
+  end
+
   if diag_conf.show_code_action then
     act:clear_tmp_data()
   end

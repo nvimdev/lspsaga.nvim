@@ -23,12 +23,6 @@ saga.config_values = {
     },
     background = '#1d1536',
   },
-  -- when cusor in saga float window
-  -- config these keys to move
-  move_in_saga = {
-    prev = '<C-p>',
-    next = '<C-n>',
-  },
   diagnostic = {
     show_code_action = true,
     show_source = true,

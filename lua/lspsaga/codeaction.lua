@@ -81,11 +81,6 @@ function Action:apply_action_keys()
   vim.keymap.set('n', config.code_action_keys.quit, function()
     self:quit_action_window()
   end, { buffer = self.action_bufnr })
-
-  local move = config.move_in_saga
-  local opts = { noremap = true, silent = true, nowait = true }
-  api.nvim_buf_set_keymap(self.action_bufnr, 'n', move.prev, '<Up>', opts)
-  api.nvim_buf_set_keymap(self.action_bufnr, 'n', move.next, '<Down>', opts)
 end
 
 function Action:get_clients(results, options)
