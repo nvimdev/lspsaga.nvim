@@ -54,8 +54,8 @@ function diag:code_action_cb()
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
   api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', start_line, 0, 4)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', start_line, 11, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
 
   for i = 2, #contents do
     api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', start_line + i - 1, 0, -1)
@@ -100,6 +100,7 @@ function diag:render_diagnostic_window(entry, option)
   }
   local max_width = window.get_max_float_width()
   self.main_buf = api.nvim_get_current_buf()
+  local cur_word = fn.expand('<cword>')
 
   local source = ' '
 
@@ -132,7 +133,7 @@ function diag:render_diagnostic_window(entry, option)
   local hi_name = 'Diagnostic' .. diag_type
   local content_opts = {
     contents = content,
-    filetype = 'plaintext',
+    filetype = 'markdown',
     highlight = {
       border = hi_name .. 'border',
       normal = 'DiagnosticNormal',
@@ -143,17 +144,27 @@ function diag:render_diagnostic_window(entry, option)
     relative = 'cursor',
     style = 'minimal',
     move_col = 3,
+    width = max_width,
+    height = #content,
+    no_size_override = true,
   }
 
+  local theme_hi = api.nvim_get_hl_by_name('Diagnostic' .. diag_type, true)
   if fn.has('nvim-0.9') == 1 then
     opts.title = {
-      { ui.diagnostic[entry.severity], 'Diagnostic' .. diag_type },
-      -- { 'Line: ' .. (entry.lnum + 1), 'DiagnosticTitleLine' },
-      -- { ' Col: ' .. (entry.col + 1), 'DiagnosticTitleCol' },
+      { ' ' .. cur_word, 'Diagnostic' .. diag_type .. 'Title' },
     }
+    api.nvim_set_hl(
+      0,
+      'Diagnostic' .. diag_type .. 'Title',
+      { fg = theme_hi.foreground, background = ui.background }
+    )
   end
 
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+  vim.wo[self.winid].conceallevel = 2
+  vim.wo[self.winid].concealcursor = 'niv'
+
   local win_config = api.nvim_win_get_config(self.winid)
 
   local above = win_config['row'][false] < fn.winline()
@@ -173,6 +184,7 @@ function diag:render_diagnostic_window(entry, option)
     opts.title = nil
   end
 
+  opts.height = opts.height + 1
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#content + 1),
     border = 'none',
@@ -237,8 +249,33 @@ function diag:render_diagnostic_window(entry, option)
 
   api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticMsg', 0, 8, 14)
   api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticMsgIcon', 0, 3, 8)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', 0, 0, 3)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionSymbol', 0, 14, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 0, 3)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 14, -1)
+
+  api.nvim_set_hl(0, 'DiagnosticTitleText', {
+    background = ui.background,
+    foreground = '#963656',
+  })
+
+  api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
+    background = theme_hi.foreground,
+    foreground = '#b7f59a',
+  })
+
+  api.nvim_set_hl(0, 'DiagnosticMsg', {
+    background = theme_hi.foreground,
+    foreground = '#000000',
+  })
+
+  api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
+    foreground = theme_hi.foreground,
+    background = ui.background,
+  })
+
+  api.nvim_set_hl(0, 'DiagnosticActionTitle', {
+    background = theme_hi.foreground,
+    foreground = '#000000',
+  })
 
   api.nvim_buf_add_highlight(
     self.bufnr,

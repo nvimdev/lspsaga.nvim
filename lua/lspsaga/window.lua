@@ -164,10 +164,7 @@ function M.open_shadow_float_win(content_opts, opts)
 end
 
 function M.get_max_float_width()
-  -- current window width
-  local WIN_WIDTH = api.nvim_win_get_width(0)
-  local max_width = math.floor(WIN_WIDTH * 0.7)
-  return max_width
+  return math.floor(vim.o.columns * 0.6)
 end
 
 function M.get_max_content_length(contents)

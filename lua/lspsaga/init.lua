@@ -21,6 +21,7 @@ saga.config_values = {
       ' ',
       ' ',
     },
+    background = '#1d1536',
   },
   -- when cusor in saga float window
   -- config these keys to move
@@ -31,7 +32,7 @@ saga.config_values = {
   diagnostic = {
     show_code_action = true,
     show_source = true,
-    auto_enter_float = true,
+    auto_enter_float = false,
     jump_win_keys = {
       exec = 'o',
       quit = 'q',
@@ -135,6 +136,7 @@ function saga.init_lsp_saga(opts)
   extend_config(opts)
   local conf = saga.config_values
 
+  require('lspsaga.highlight').init_highlight()
   if conf.code_action_lightbulb.enable then
     require('lspsaga.lightbulb').lb_autocmd()
   end
