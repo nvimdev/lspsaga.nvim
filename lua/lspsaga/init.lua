@@ -3,7 +3,7 @@ local api = vim.api
 local saga = {}
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
-saga.config_values = {
+local default_config = {
   ui = {
     theme = 'capsule',
     border = 'solid',
@@ -22,18 +22,19 @@ saga.config_values = {
     twice_into = true,
     show_code_action = true,
     show_source = true,
-    jump_win_keys = {
-      exec = 'o',
+    keys = {
+      exec_action = 'o',
       quit = 'q',
     },
   },
-  -- if true can press number to execute the codeaction in codeaction window
-  code_action_num_shortcut = true,
-  code_action_keys = {
-    quit = 'q',
-    exec = '<CR>',
+  code_action = {
+    num_shortcut = true,
+    keys = {
+      quit = 'q',
+      exec = '<CR>',
+    },
   },
-  code_action_lightbulb = {
+  lightbulb = {
     enable = true,
     enable_in_insert = true,
     cache_code_action = true,
@@ -42,30 +43,38 @@ saga.config_values = {
     sign_priority = 40,
     virtual_text = true,
   },
-  preview_lines_above = 0,
-  max_preview_lines = 15,
-  scroll_in_preview = {
+  preview = {
+    lines_above = 0,
+    lines_below = 15,
+  },
+  scroll_preview = {
     scroll_down = '<C-f>',
     scroll_up = '<C-b>',
   },
-  finder_request_timeout = 1500,
-  finder_action_keys = {
-    open = { 'o', '<CR>' },
-    vsplit = 's',
-    split = 'i',
-    tabe = 't',
-    quit = { 'q', '<ESC>' },
+  finder = {
+    request_timeout = 1500,
+    keys = {
+      open = { 'o', '<CR>' },
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      quit = { 'q', '<ESC>' },
+    },
   },
-  definition_action_keys = {
-    edit = '<C-c>o',
-    vsplit = '<C-c>v',
-    split = '<C-c>i',
-    tabe = '<C-c>t',
-    quit = 'q',
-    close = '<Esc>',
+  definition = {
+    keys = {
+      edit = '<C-c>o',
+      vsplit = '<C-c>v',
+      split = '<C-c>i',
+      tabe = '<C-c>t',
+      quit = 'q',
+      close = '<Esc>',
+    },
   },
-  rename_action_quit = '<C-c>',
-  rename_in_select = true,
+  rename = {
+    quit = '<C-c>',
+    in_select = true,
+  },
   -- winbar must nightly
   symbol_in_winbar = {
     in_custom = false,
@@ -74,7 +83,7 @@ saga.config_values = {
     show_file = true,
     click_support = false,
   },
-  show_outline = {
+  outline = {
     win_position = 'right',
     win_with = '',
     win_width = 30,
@@ -101,26 +110,6 @@ saga.config_values = {
   server_filetype_map = {},
 }
 
-local extend_config = function(opts)
-  opts = opts or {}
-  if next(opts) == nil then
-    return
-  end
-  for key, value in pairs(opts) do
-    if saga.config_values[key] == nil then
-      error(string.format('[LspSaga] Key %s not exist in config values', key))
-      return
-    end
-    if type(saga.config_values[key]) == 'table' then
-      for k, v in pairs(value) do
-        saga.config_values[key][k] = v
-      end
-    else
-      saga.config_values[key] = value
-    end
-  end
-end
-
 function saga.theme()
   local theme = {
     ['capsule'] = {
@@ -129,22 +118,21 @@ function saga.theme()
     },
   }
 
-  return theme[saga.config_values.ui.theme]
+  return theme[saga.config.ui.theme]
 end
 
 function saga.init_lsp_saga(opts)
-  extend_config(opts)
-  local conf = saga.config_values
+  saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
   require('lspsaga.highlight').init_highlight()
-  if conf.code_action_lightbulb.enable then
+  if saga.config.lightbulb.enable then
     require('lspsaga.lightbulb').lb_autocmd()
   end
 
   local kind = require('lspsaga.lspkind')
   kind.load_custom_kind()
 
-  if conf.symbol_in_winbar.enable or conf.symbol_in_winbar.in_custom then
+  if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.in_custom then
     kind.gen_symbol_winbar_hi()
     require('lspsaga.symbolwinbar').config_symbol_autocmd()
   end

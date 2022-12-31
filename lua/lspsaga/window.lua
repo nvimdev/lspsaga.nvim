@@ -1,6 +1,5 @@
 local vim, api, lsp = vim, vim.api, vim.lsp
 local M = {}
-local config = require('lspsaga').config_values
 
 local function make_floating_popup_options(width, height, opts)
   vim.validate({
@@ -104,6 +103,7 @@ end
 -- enter boolean into window or not
 -- highlight border highlight string type
 function M.create_win_with_border(content_opts, opts)
+  local config = require('lspsaga').config
   vim.validate({
     content_opts = { content_opts, 't' },
     contents = { content_opts.content, 't', true },

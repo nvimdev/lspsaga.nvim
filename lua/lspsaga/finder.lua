@@ -1,6 +1,6 @@
 local window = require('lspsaga.window')
 local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
-local config = require('lspsaga').config_values
+local config = require('lspsaga').config
 local libs = require('lspsaga.libs')
 local path_sep = libs.path_sep
 local ui = config.ui
@@ -93,7 +93,7 @@ function Finder:loading_bar()
       '██████████',
     },
     interval = 15,
-    timeout = config.finder_request_timeout,
+    timeout = config.finder.request_timeout,
   }
   api.nvim_buf_set_option(spin_buf, 'modifiable', true)
 
@@ -284,8 +284,8 @@ function Finder:create_finder_contents(result, method)
     local range = res.targetRange or res.range
     local lines = api.nvim_buf_get_lines(
       bufnr,
-      range.start.line - config.preview_lines_above,
-      range['end'].line + 1 + config.max_preview_lines,
+      range.start.line - config.preview.lines_above,
+      range['end'].line + 1 + config.preview.lines_below,
       false
     )
 
@@ -463,7 +463,7 @@ function Finder:render_finder_result()
 end
 
 function Finder:apply_float_map()
-  local action = config.finder_action_keys
+  local action = config.finder.keys
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local opts = {
     buffer = self.bufnr,
@@ -715,7 +715,7 @@ function Finder:auto_open_preview()
         self.preview_bufnr,
         self.preview_hl_ns,
         'FinderPreviewSearch',
-        0 + config.preview_lines_above - trimLines,
+        0 + config.preview.lines_above - trimLines,
         start_pos - 1,
         _end_col
       )

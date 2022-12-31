@@ -1,7 +1,7 @@
 local api, lsp = vim.api, vim.lsp
 local libs = {}
 local window = require('lspsaga.window')
-local server_filetype_map = require('lspsaga').config_values.server_filetype_map
+local server_filetype_map = require('lspsaga').config.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
 libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -239,15 +239,15 @@ local function feedkeys(key)
 end
 
 function libs.scroll_in_preview(bufnr, preview_winid)
-  local config = require('lspsaga').config_values
+  local config = require('lspsaga').config
   if preview_winid and api.nvim_win_is_valid(preview_winid) then
-    vim.keymap.set('n', config.scroll_in_preview.scroll_down, function()
+    vim.keymap.set('n', config.scroll_preview.scroll_down, function()
       api.nvim_win_call(preview_winid, function()
         feedkeys('<C-d>')
       end)
     end, { buffer = bufnr })
 
-    vim.keymap.set('n', config.scroll_in_preview.scroll_up, function()
+    vim.keymap.set('n', config.scroll_preview.scroll_up, function()
       api.nvim_win_call(preview_winid, function()
         feedkeys('<C-u>')
       end)

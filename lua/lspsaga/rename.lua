@@ -1,8 +1,6 @@
 local api, util, lsp = vim.api, vim.lsp.util, vim.lsp
 local window = require('lspsaga.window')
-local config = require('lspsaga').config_values
 local libs = require('lspsaga.libs')
-local saga_augroup = require('lspsaga').saga_augroup
 
 local rename = {}
 
@@ -28,7 +26,8 @@ function rename:close_rename_win()
 end
 
 function rename:apply_action_keys()
-  local quit_key = config.rename_action_quit
+  local config = require('lspsaga').config
+  local quit_key = config.rename.quit
   local exec_key = '<CR>'
 
   local modes = { 'i', 'n', 'v' }
@@ -71,14 +70,11 @@ function rename:find_reference()
     if not result then
       return
     end
-
     -- if user has highlight cusorword plugin remove the highlight before
     -- and restore it when rename done
-    if vim.fn.hlexists('CursorWord') == 1 then
-      if next(cursorword_hl) == nil then
-        local cursorword_color = api.nvim_get_hl_by_name('CursorWord', true)
-        cursorword_hl = cursorword_color
-      end
+    local ok, cursorword_color = pcall(api.nvim_get_hl_by_name, 'CursorWord', true)
+    if ok then
+      cursorword_hl = cursorword_color
       api.nvim_set_hl(0, 'CursorWord', { fg = 'none', bg = 'none' })
     end
 
@@ -216,14 +212,16 @@ function rename:lsp_rename()
     self:set_local_options()
     api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
 
-    if config.rename_in_select then
+    local config = require('lspsaga').config
+    if config.in_select then
       vim.cmd([[normal! V]])
       feedkeys('<C-g>', 'n')
     end
 
     local quit_id, close_unfocus
+    local group = require('lspsaga').saga_augroup
     quit_id = api.nvim_create_autocmd('QuitPre', {
-      group = saga_augroup,
+      group = group,
       buffer = self.bufnr,
       once = true,
       nested = true,
@@ -237,7 +235,7 @@ function rename:lsp_rename()
     })
 
     close_unfocus = api.nvim_create_autocmd('WinLeave', {
-      group = saga_augroup,
+      group = group,
       buffer = self.bufnr,
       callback = function()
         api.nvim_win_close(0, true)

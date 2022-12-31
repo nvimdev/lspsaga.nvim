@@ -1,8 +1,7 @@
-local config = require('lspsaga').config_values
+local config = require('lspsaga').config
 local diag_conf, ui = config.diagnostic, config.ui
 local if_nil, lsp, fn, keymap = vim.F.if_nil, vim.lsp, vim.fn, vim.keymap.set
 local window = require('lspsaga.window')
-local wrap = require('lspsaga.wrap')
 local libs = require('lspsaga.libs')
 local act = require('lspsaga.codeaction')
 local api = vim.api
@@ -93,13 +92,13 @@ function diag:do_code_action()
 end
 
 function diag:apply_map()
-  keymap('n', diag_conf.jump_win_keys.exec, function()
+  keymap('n', diag_conf.keys.exec_action, function()
     ctx.do_code_action()
     window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
     act:clear_tmp_data()
   end, { buffer = ctx.bufnr })
 
-  keymap('n', diag_conf.jump_win_keys.quit, function()
+  keymap('n', diag_conf.keys.quit, function()
     api.nvim_win_close(ctx.winid, true)
     window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
     act:clear_tmp_data()
@@ -125,6 +124,7 @@ function diag:render_diagnostic_window(entry, option)
     source = source .. '(' .. entry.code .. ')'
   end
 
+  local wrap = require('lspsaga.wrap')
   local msgs = wrap.diagnostic_msg(entry.message, max_width)
   for _, v in pairs(msgs) do
     table.insert(content, v)
@@ -421,6 +421,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
     or diagnostics
 
   local severities = vim.diagnostic.severity
+  local wrap = require('lspsaga.wrap')
   for i, diagnostic in ipairs(sorted_diagnostics) do
     local prefix = string.format('%d. ', i)
 

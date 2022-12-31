@@ -1,5 +1,5 @@
 local api = vim.api
-local ui = require('lspsaga').config_values.ui
+local ui = require('lspsaga').config.ui
 local bg = ui.background
 
 local highlights = {
@@ -83,6 +83,7 @@ local function init_highlight()
       api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
     end
   end
+  require('lspsaga.lspkind').gen_outline_hi()
   loaded = true
 end
 

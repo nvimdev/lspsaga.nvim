@@ -1,8 +1,7 @@
 local api, uv, lsp = vim.api, vim.loop, vim.lsp
 local libs = require('lspsaga.libs')
-local config = require('lspsaga').config_values
+local config = require('lspsaga').config
 local code_action_method = 'textDocument/codeAction'
--- local codeaction = require('lspsaga.codeaction')
 local lb = {}
 
 local timer = uv.new_timer()
@@ -58,7 +57,7 @@ local function generate_sign(bufnr, line)
     SIGN_GROUP,
     SIGN_NAME,
     bufnr,
-    { lnum = line + 1, priority = config.code_action_lightbulb.sign_priority }
+    { lnum = line + 1, priority = config.lightbulb.sign_priority }
   )
 end
 
@@ -78,20 +77,20 @@ end
 
 local function render_action_virtual_text(bufnr, line, has_actions)
   if not has_actions then
-    if config.code_action_lightbulb.virtual_text then
+    if config.lightbulb.virtual_text then
       _update_virtual_text(bufnr, nil)
     end
-    if config.code_action_lightbulb.sign then
+    if config.lightbulb.sign then
       _update_sign(bufnr, nil)
     end
     return
   end
 
-  if config.code_action_lightbulb.sign then
+  if config.lightbulb.sign then
     _update_sign(bufnr, line)
   end
 
-  if config.code_action_lightbulb.virtual_text then
+  if config.lightbulb.virtual_text then
     _update_virtual_text(bufnr, line)
   end
 end
@@ -146,7 +145,7 @@ function lb.action_lightbulb()
   timer:stop()
 
   local current_buf = api.nvim_get_current_buf()
-  timer:start(config.code_action_lightbulb.update_time, 0, function()
+  timer:start(config.lightbulb.update_time, 0, function()
     vim.schedule(function()
       render_bulb(current_buf)
     end)
@@ -168,7 +167,7 @@ function lb.lb_autocmd()
         callback = lb.action_lightbulb,
       })
 
-      if not config.code_action_lightbulb.enable_in_insert then
+      if not config.lightbulb.enable_in_insert then
         api.nvim_create_autocmd('InsertEnter', {
           group = group,
           buffer = current_buf,

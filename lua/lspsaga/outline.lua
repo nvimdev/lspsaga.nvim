@@ -1,20 +1,17 @@
 local ot = {}
 local api, lsp, fn, keymap = vim.api, vim.lsp, vim.fn, vim.keymap
 local cache = require('lspsaga.symbolwinbar').symbol_cache
-local kind = require('lspsaga.lspkind')
-local hi_prefix = 'LSOutline'
 local space = '  '
-local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local config = require('lspsaga').config_values
-local max_preview_lines = config.max_preview_lines
-local outline_conf, ui = config.show_outline, config.ui
+local config = require('lspsaga').config
+local outline_conf, ui = config.outline, config.ui
 local method = 'textDocument/documentSymbol'
 
 -- alias built in
 local insert = table.insert
 
 function ot:init_data(tbl, level)
+  local hi_prefix = 'LSOutline'
   local current_buf = api.nvim_get_current_buf()
   local icon, hi, line = '', '', ''
 
@@ -26,6 +23,7 @@ function ot:init_data(tbl, level)
     self[current_buf].data = {}
   end
 
+  local kind = require('lspsaga.lspkind')
   for _, node in pairs(tbl) do
     level = level or 1
     icon = kind[node.kind][2]
@@ -95,16 +93,6 @@ local function set_local()
   end
 end
 
-local function gen_outline_hi()
-  for _, v in pairs(kind) do
-    local hi_name = hi_prefix .. v[1]
-    local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
-    if not ok or not tbl.foreground then
-      api.nvim_set_hl(0, hi_name, { fg = v[3] })
-    end
-  end
-end
-
 local virt_id = api.nvim_create_namespace('lspsaga_outline')
 
 function ot:detail_virt_text(bufnr, scope)
@@ -149,8 +137,8 @@ function ot:auto_preview(bufnr)
   local max_width = math.floor(WIN_WIDTH * 0.5)
   local max_height = #content
 
-  if max_height > max_preview_lines then
-    max_height = max_preview_lines
+  if max_height > config.preview.lines_below then
+    max_height = config.preview.lines_below
   end
 
   local opts = {
@@ -184,6 +172,7 @@ function ot:auto_preview(bufnr)
 
   opts.noautocmd = true
 
+  local window = require('lspsaga.window')
   self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
   -- vim.treesitter.start(self.preview_bufnr, self[bufnr].ft)
 
@@ -311,7 +300,7 @@ local create_outline_window = function()
 
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
   vim.cmd(pos .. ' vsplit')
-  vim.cmd('vertical resize ' .. config.show_outline.win_width)
+  vim.cmd('vertical resize ' .. outline_conf.win_width)
 end
 
 ---@private
@@ -366,8 +355,6 @@ function ot:update_outline(symbols, event)
 
   self:init_data(symbols)
 
-  gen_outline_hi()
-
   if not self.winid then
     create_outline_window()
     self.winid = api.nvim_get_current_win()
@@ -390,7 +377,7 @@ function ot:update_outline(symbols, event)
 
   self[current_buf].in_render = true
 
-  if config.show_outline.show_detail then
+  if outline_conf.show_detail then
     self:detail_virt_text(current_buf)
   end
 

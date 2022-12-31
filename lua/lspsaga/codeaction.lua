@@ -1,7 +1,6 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local window = require('lspsaga.window')
-local config = require('lspsaga').config_values
-local ui = config.ui
+local config = require('lspsaga').config
 local libs = require('lspsaga.libs')
 local method = 'textDocument/codeAction'
 local saga_augroup = require('lspsaga').saga_augroup
@@ -69,17 +68,17 @@ function Action:action_callback()
   libs.disable_move_keys(self.action_bufnr)
 
   self:apply_action_keys()
-  if config.code_action_num_shortcut then
+  if config.code_action.num_shortcut then
     self:num_shortcut()
   end
 end
 
 function Action:apply_action_keys()
-  vim.keymap.set('n', config.code_action_keys.exec, function()
+  vim.keymap.set('n', config.code_action.keys.exec, function()
     self:do_code_action()
   end, { buffer = self.action_bufnr })
 
-  vim.keymap.set('n', config.code_action_keys.quit, function()
+  vim.keymap.set('n', config.code_action.keys.quit, function()
     self:quit_action_window()
   end, { buffer = self.action_bufnr })
 end
@@ -139,11 +138,11 @@ local function check_sub_tbl(tbl)
 end
 
 function Action:actions_in_cache()
-  if not config.code_action_lightbulb.enable then
+  if not config.lightbulb.enable then
     return false
   end
 
-  if not config.code_action_lightbulb.cache_code_action then
+  if not config.lightbulb.cache_code_action then
     return false
   end
 

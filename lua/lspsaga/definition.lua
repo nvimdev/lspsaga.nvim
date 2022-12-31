@@ -1,10 +1,9 @@
 local libs, window = require('lspsaga.libs'), require('lspsaga.window')
-local config = require('lspsaga').config_values
+local config = require('lspsaga').config
 local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap.set
 local def = {}
 local method = 'textDocument/definition'
 
---- @deprecated when 0.9 release
 function def:title_text(opts, scope)
   local link = scope.link
   local path_sep = libs.path_sep
@@ -137,6 +136,7 @@ function def:peek_definition()
       highlight = 'DefinitionBorder',
     }
 
+    --@deprecated when 0.9 release
     if fn.has('nvim-0.9') == 1 then
       self:title_text(opts, scope)
     end
@@ -196,7 +196,7 @@ function def:event(bufnr)
 end
 
 function def:apply_aciton_keys(bufnr, pos)
-  local maps = config.definition_action_keys
+  local maps = config.definition.keys
   for action, key in pairs(maps) do
     if action ~= 'close' then
       keymap('n', key, function()
@@ -233,7 +233,7 @@ function def:apply_aciton_keys(bufnr, pos)
 end
 
 function def:clean_buf_map(scope)
-  local maps = config.definition_action_keys
+  local maps = config.definition.keys
   if scope.link == self[scope.main_bufnr].fname and #self[scope.main_bufnr].scopes == 1 then
     for _, v in pairs(maps) do
       vim.keymap.del('n', v, { buffer = scope.bufnr })

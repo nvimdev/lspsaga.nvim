@@ -37,7 +37,7 @@ function hover:open_floating_preview(res, opts)
 
   local theme = require('lspsaga').theme()
   local float_option = {
-    width = max_float_width,
+    width = increase == 0 and max_content_len or max_float_width,
     height = #content + increase,
     no_size_override = true,
     title = {

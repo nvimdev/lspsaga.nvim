@@ -1,5 +1,5 @@
 local lsp, api = vim.lsp, vim.api
-local config = require('lspsaga').config_values.symbol_in_winbar
+local config = require('lspsaga').config.symbol_in_winbar
 local libs = require('lspsaga.libs')
 local symbar = {
   symbol_cache = {},

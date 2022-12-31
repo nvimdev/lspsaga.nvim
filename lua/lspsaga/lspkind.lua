@@ -1,5 +1,5 @@
 local api = vim.api
-local custom_kind = require('lspsaga').config_values.custom_kind
+local custom_kind = require('lspsaga').config.custom_kind
 
 local colors = {
   fg = '#bbc2cf',
@@ -93,6 +93,16 @@ local function gen_symbol_winbar_hi()
   api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, bold = true })
 end
 
+local function gen_outline_hi()
+  for _, v in pairs(kind) do
+    local hi_name = 'LSOutline' .. v[1]
+    local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
+    if not ok or not tbl.foreground then
+      api.nvim_set_hl(0, hi_name, { fg = v[3] })
+    end
+  end
+end
+
 kind = setmetatable(kind, {
   __index = function(_, key)
     if key == 'gen_symbol_winbar_hi' then
@@ -101,6 +111,10 @@ kind = setmetatable(kind, {
 
     if key == 'load_custom_kind' then
       return load_custom_kind
+    end
+
+    if key == 'gen_outline_hi' then
+      return gen_outline_hi
     end
 
     if key == 'colors' then
