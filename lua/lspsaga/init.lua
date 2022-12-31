@@ -5,7 +5,7 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 local default_config = {
   ui = {
-    theme = 'capsule',
+    theme = 'round',
     border = 'solid',
     winblend = 0,
     expand = ' ',
@@ -15,7 +15,9 @@ local default_config = {
     code_action = '💡',
     incoming = ' ',
     outgoing = ' ',
+    --float window normal bakcground color
     normal = '#1d1536',
+    --title background color
     title = '#e29cb1',
   },
   diagnostic = {
@@ -112,7 +114,7 @@ local default_config = {
 
 function saga.theme()
   local theme = {
-    ['capsule'] = {
+    ['round'] = {
       left = '',
       right = '',
     },
