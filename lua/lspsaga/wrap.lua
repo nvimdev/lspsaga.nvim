@@ -6,59 +6,51 @@ local space = ' '
 -- auto wrap according width
 -- fill the space with wrap text
 function wrap.wrap_text(text, width)
-  local ret = {}
-
-  if #text <= width then
-    table.insert(ret, text)
-    return ret
+  local res = {}
+  local tbl = {}
+  if text:find('\n') then
+    text = text:gsub('\n', '')
   end
-
-  local tbl = vim.tbl_filter(function(a)
-    return #a ~= 0
-  end, vim.split(text, '%s'))
-
-  if #tbl == 1 then
-    if tbl[1]:find('──') then
-      table.insert(ret, wrap.generate_spe_line(width))
-      return ret
+  tbl = vim.split(text, '%s', { trimempty = true })
+  local index, count = 1, 0
+  local scopes = {}
+  repeat
+    if count > width then
+      table.insert(scopes, index - 1)
+      count = 0
+    else
+      count = count + #tbl[index]
+      if count > width then
+        table.insert(scopes, index - 1)
+        count = 0
+      elseif index == #tbl then
+        table.insert(scopes, index)
+      end
     end
+
+    index = index + 1
+  until index == #tbl + 1
+
+  for k, v in pairs(scopes) do
+    local prev = k == 1 and 1 or scopes[k - 1]
+    table.insert(res, table.concat(tbl, ' ', prev, v))
   end
+  print(vim.inspect(scopes), #tbl, vim.inspect(tbl))
 
-  local start_index, length = 1, 1
-
-  for i = 1, #tbl do
-    length = length + #tbl[i] + 1
-    if length == width then
-      table.insert(ret, table.concat(tbl, space, start_index, i))
-      start_index = i + 1
-      length = 0
-    end
-
-    if length > width and length - #tbl[i] <= width then
-      table.insert(ret, table.concat(tbl, space, start_index, i - 1))
-      start_index = i
-      length = 0
-    end
-
-    if length < width and i == #tbl then
-      table.insert(ret, table.concat(tbl, space, start_index, i))
-    end
-  end
-
-  return ret
+  return res
 end
 
 function wrap.diagnostic_msg(msg, width)
-  if msg:find('\n') then
-    local t = vim.tbl_filter(function(s)
-      return string.len(s) ~= 0
-    end, vim.split(msg, '\n'))
-    return t
-  end
+  -- if msg:find('\n') then
+  --   local t = vim.tbl_filter(function(s)
+  --     return string.len(s) ~= 0
+  --   end, vim.split(msg, '\n'))
+  --   return t
+  -- end
 
-  if #msg < width then
-    return { msg }
-  end
+  -- if #msg < width then
+  --   return { msg }
+  -- end
 
   return wrap.wrap_text(msg, width)
 end

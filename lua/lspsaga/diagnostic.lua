@@ -280,6 +280,10 @@ function diag:render_diagnostic_window(entry, option)
 
   api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', 0, #ctx.theme.left + 9, -1)
 
+  api.nvim_set_hl(0, 'DiagnosticText', {
+    foreground = colors.foreground,
+  })
+
   api.nvim_set_hl(0, 'DiagnosticTitleText', {
     background = ui.background,
     foreground = '#963656',

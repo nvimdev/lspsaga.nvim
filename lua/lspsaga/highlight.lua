@@ -47,17 +47,13 @@ local highlights = {
   LspSagaRenameBorder = { fg = '#3bb6c4' },
   LspSagaRenameMatch = { link = 'Search' },
   -- diagnostic
-  LspSagaDiagnosticBorder = { fg = '#CBA6F7' },
-  DiagnosticSource = { link = 'Comment' },
+  DiagnosticSource = { fg = 'gray' },
   DiagnosticNormal = { bg = bg },
-
   DiagnosticErrorBorder = { bg = bg },
   DiagnosticWarnBorder = { bg = bg },
   DiagnosticHintBorder = { bg = bg },
   DiagnosticInfoBorder = { bg = bg },
-
-  DiagnosticText = { fg = '#c77ba7' },
-  DiagnosticActionText = { fg = '#d4bf87' },
+  DiagnosticActionText = { fg = '#e8e1c5' },
 
   -- Call Hierachry
   CallHierarchyIcon = { fg = '#CBA6F7' },

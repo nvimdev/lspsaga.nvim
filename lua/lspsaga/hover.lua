@@ -1,61 +1,58 @@
 local api, lsp, util = vim.api, vim.lsp, vim.lsp.util
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local wrap = require('lspsaga.wrap')
 local hover = {}
 
-function hover:open_floating_preview(contents, opts)
+function hover:open_floating_preview(res, opts)
   vim.validate({
-    contents = { contents, 't' },
+    res = { res, 't' },
     opts = { opts, 't', true },
   })
   opts = opts or {}
-  opts.wrap = opts.wrap ~= false -- wrapping by default
   opts.stylize_markdown = opts.stylize_markdown ~= false and vim.g.syntax_on ~= nil
   opts.focus = opts.focus ~= false
 
   local bufnr = api.nvim_get_current_buf()
-
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
-  -- Clean up input: trim empty lines from the end, pad
-  contents = lsp.util._trim(contents, opts)
-
-  -- applies the syntax and sets the lines to the buffer
-  contents = lsp.util.stylize_markdown(self.preview_bufnr, contents, opts)
-
-  -- Compute size of float needed to show (wrapped) lines
-  if opts.wrap then
-    opts.wrap_at = opts.wrap_at or api.nvim_win_get_width(0)
-  else
-    opts.wrap_at = nil
-  end
-  local width, height = lsp.util._make_floating_popup_size(contents, opts)
+  local content = vim.split(res.value, '\n', { trimempty = true })
+  content = vim.tbl_filter(function(s)
+    return #s > 0
+  end, content)
 
   local max_float_width = window.get_max_float_width()
+  local max_content_len = window.get_max_content_length(content)
+  local increase = 0
+  if max_content_len > max_float_width then
+    vim.tbl_map(function(s)
+      if s:find('http') then
+        return
+      end
 
-  if width > max_float_width then
-    width = max_float_width
+      if #s > max_float_width then
+        increase = increase + math.ceil(#s / max_float_width)
+      end
+    end, content)
   end
 
-  local stripped = wrap.wrap_contents(contents, width)
-
-  height = #stripped
-
-  local float_option = lsp.util.make_floating_popup_options(width, height, opts)
+  local float_option = {
+    width = max_float_width,
+    height = #content + increase,
+    no_size_override = true,
+  }
 
   local contents_opt = {
-    contents = stripped,
-    highlight = 'LspSagaHoverBorder',
+    contents = content,
+    filetype = res.kind or 'markdown',
+    wrap = true,
     bufnr = self.preview_bufnr,
   }
   _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
 
-  api.nvim_win_set_option(self.preview_winid, 'conceallevel', 2)
-  api.nvim_win_set_option(self.preview_winid, 'concealcursor', 'n')
-  -- api.nvim_win_set_option(self.preview_winid, 'foldenable', false)
-  -- soft wrapping
-  api.nvim_win_set_option(self.preview_winid, 'wrap', false)
+  vim.wo[self.preview_winid].conceallevel = 2
+  vim.wo[self.preview_winid].concealcursor = 'niv'
+  vim.wo[self.preview_winid].showbreak = 'NONE'
+  vim.treesitter.start(self.preview_bufnr, 'markdown')
 
   vim.keymap.set('n', 'q', function()
     if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
@@ -63,12 +60,12 @@ function hover:open_floating_preview(contents, opts)
     end
   end, { buffer = self.preview_bufnr })
 
-  api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufHidden' }, {
+  api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter' }, {
     buffer = bufnr,
     once = true,
     callback = function()
       if api.nvim_buf_is_loaded(self.preview_bufnr) then
-        libs.delete_scroll_map(bufnr)
+        pcall(libs.delete_scroll_map, bufnr)
       end
 
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
@@ -87,13 +84,7 @@ function hover:handler(result)
     vim.notify('No information available')
     return
   end
-  local markdown_lines = util.convert_input_to_markdown_lines(result.contents)
-  markdown_lines = util.trim_empty_lines(markdown_lines)
-  if vim.tbl_isempty(markdown_lines) then
-    vim.notify('No information available')
-    return
-  end
-  self:open_floating_preview(markdown_lines)
+  self:open_floating_preview(result.contents)
 end
 
 function hover:do_request()
@@ -110,6 +101,10 @@ function hover:do_request()
 end
 
 function hover:render_hover_doc()
+  if vim.fn.has('nvim-0.9') == 0 then
+    vim.notify('[Lspsaga] Hover now only support for neovim 0.9+ Please use neovim 0.9')
+    return
+  end
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
     return
