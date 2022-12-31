@@ -11,6 +11,20 @@ local space = ' '
 
 local diag = {}
 
+local ctx = {}
+function ctx.__newindex(_, k, v)
+  rawset(ctx, k, v)
+end
+
+--- clean ctx table data
+--- notice just make ctx to empty not free memory before gc
+---@private
+local function clean_ctx()
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
+  end
+end
+
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 ---@private
@@ -20,9 +34,13 @@ local function get_diag_type(severity)
 end
 
 function diag:code_action_cb()
+  if not ctx.bufnr and not api.nvim_buf_is_loaded(ctx.bufnr) then
+    return
+  end
+
   local contents = {
     '',
-    '' .. ui.code_action .. 'Fix ' .. '',
+    ctx.theme.left .. ui.code_action .. 'Fix ' .. ctx.theme.right,
   }
 
   for index, client_with_actions in pairs(act.action_tuples) do
@@ -37,30 +55,29 @@ function diag:code_action_cb()
     table.insert(contents, action_title)
   end
 
-  if not self.bufnr and not api.nvim_buf_is_loaded(self.bufnr) then
-    return
-  end
+  local start_line = api.nvim_buf_line_count(ctx.bufnr) + 1
+  local win_conf = api.nvim_win_get_config(ctx.winid)
+  api.nvim_win_set_config(ctx.winid, { height = win_conf.height + #contents })
 
-  local start_line = api.nvim_buf_line_count(self.bufnr) + 1
-  local win_conf = api.nvim_win_get_config(self.winid)
-  api.nvim_win_set_config(self.winid, { height = win_conf.height + #contents })
+  api.nvim_buf_set_option(ctx.bufnr, 'modifiable', true)
+  api.nvim_buf_set_lines(ctx.bufnr, -1, -1, false, contents)
+  api.nvim_buf_set_option(ctx.bufnr, 'modifiable', false)
 
-  api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
-  api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
-  api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
-
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
+  api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
+  api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
+  api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
 
   for i = 2, #contents do
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionText', start_line + i - 1, 0, -1)
+    vim.schedule(function()
+      fn.matchadd('Conceal', '[0-9]', 0, -1, { conceal = '◉', window = ctx.winid })
+    end)
+    api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticActionText', start_line + i - 1, 0, -1)
   end
 
   api.nvim_create_autocmd('CursorMoved', {
-    buffer = self.bufnr,
+    buffer = ctx.bufnr,
     callback = function()
-      self.preview_winid = act:action_preview(self.winid, self.main_buf)
+      ctx.preview_winid = act:action_preview(ctx.winid, ctx.main_buf)
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
@@ -77,25 +94,25 @@ end
 
 function diag:apply_map()
   keymap('n', diag_conf.jump_win_keys.exec, function()
-    self:do_code_action()
-    window.nvim_close_valid_window({ self.winid, self.virt_winid, self.preview_winid })
+    ctx.do_code_action()
+    window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
     act:clear_tmp_data()
-  end, { buffer = self.bufnr })
+  end, { buffer = ctx.bufnr })
 
   keymap('n', diag_conf.jump_win_keys.quit, function()
-    api.nvim_win_close(self.winid, true)
-    window.nvim_close_valid_window({ self.winid, self.virt_winid, self.preview_winid })
+    api.nvim_win_close(ctx.winid, true)
+    window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
     act:clear_tmp_data()
-  end, { buffer = self.bufnr })
+  end, { buffer = ctx.bufnr })
 end
 
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
   local content = {
-    '  Msg ',
+    ctx.theme.left .. '  Msg ' .. ctx.theme.right,
   }
   local max_width = window.get_max_float_width()
-  self.main_buf = api.nvim_get_current_buf()
+  ctx.main_buf = api.nvim_get_current_buf()
   local cur_word = fn.expand('<cword>')
 
   local source = ' '
@@ -115,7 +132,7 @@ function diag:render_diagnostic_window(entry, option)
   content[#content] = content[#content] .. source
 
   if diag_conf.show_code_action then
-    act:send_code_action_request(self.main_buf, {
+    act:send_code_action_request(ctx.main_buf, {
       range = {
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
@@ -145,7 +162,7 @@ function diag:render_diagnostic_window(entry, option)
     no_size_override = true,
   }
 
-  local theme_hi = api.nvim_get_hl_by_name('Diagnostic' .. diag_type, true)
+  local colors = api.nvim_get_hl_by_name('Diagnostic' .. diag_type, true)
   if fn.has('nvim-0.9') == 1 then
     opts.title = {
       { ' ' .. cur_word, 'Diagnostic' .. diag_type .. 'Title' },
@@ -153,15 +170,15 @@ function diag:render_diagnostic_window(entry, option)
     api.nvim_set_hl(
       0,
       'Diagnostic' .. diag_type .. 'Title',
-      { fg = theme_hi.foreground, background = ui.background }
+      { fg = colors.foreground, background = ui.background }
     )
   end
 
-  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
-  vim.wo[self.winid].conceallevel = 2
-  vim.wo[self.winid].concealcursor = 'niv'
+  ctx.bufnr, ctx.winid = window.create_win_with_border(content_opts, opts)
+  vim.wo[ctx.winid].conceallevel = 2
+  vim.wo[ctx.winid].concealcursor = 'niv'
 
-  local win_config = api.nvim_win_get_config(self.winid)
+  local win_config = api.nvim_win_get_config(ctx.winid)
 
   local above = win_config['row'][false] < fn.winline()
 
@@ -181,7 +198,7 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.height = opts.height + 1
-  self.virt_bufnr, self.virt_winid = window.create_win_with_border({
+  ctx.virt_bufnr, ctx.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#content + 1),
     border = 'none',
     winblend = 100,
@@ -210,7 +227,7 @@ function diag:render_diagnostic_window(entry, option)
   for i = 1, #content + 1 do
     local virt_tbl = {}
     if i > 2 then
-      api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
+      api.nvim_buf_add_highlight(ctx.bufnr, -1, hi_name, i - 1, 0, -1)
     end
 
     if not above then
@@ -231,22 +248,37 @@ function diag:render_diagnostic_window(entry, option)
       end
     end
 
-    api.nvim_buf_set_extmark(self.virt_bufnr, virt_ns, i - 1, 0, {
+    api.nvim_buf_set_extmark(ctx.virt_bufnr, virt_ns, i - 1, 0, {
       id = i + 1,
       virt_text = virt_tbl,
       virt_text_pos = pos_char[1],
       virt_lines_above = false,
     })
 
-    if i ~= #content + 1 or i > 1 then
-      api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticText', i - 1, 0, -1)
+    if i ~= #content + 1 and i > 1 then
+      api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticText', i - 1, 0, -1)
     end
   end
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticMsg', 0, 8, 14)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticMsgIcon', 0, 3, 8)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 0, 3)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 14, -1)
+  api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', 0, 0, #ctx.theme.left)
+  api.nvim_buf_add_highlight(
+    ctx.bufnr,
+    0,
+    'DiagnosticMsgIcon',
+    0,
+    #ctx.theme.left,
+    #ctx.theme.left + 5
+  )
+  api.nvim_buf_add_highlight(
+    ctx.bufnr,
+    0,
+    'DiagnosticMsg',
+    0,
+    #ctx.theme.left + 5,
+    #ctx.theme.left + 9
+  )
+
+  api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', 0, #ctx.theme.left + 9, -1)
 
   api.nvim_set_hl(0, 'DiagnosticTitleText', {
     background = ui.background,
@@ -254,27 +286,27 @@ function diag:render_diagnostic_window(entry, option)
   })
 
   api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
-    background = theme_hi.foreground,
+    background = colors.foreground,
     foreground = '#b7f59a',
   })
 
   api.nvim_set_hl(0, 'DiagnosticMsg', {
-    background = theme_hi.foreground,
+    background = colors.foreground,
     foreground = '#000000',
   })
 
   api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
-    foreground = theme_hi.foreground,
+    foreground = colors.foreground,
     background = ui.background,
   })
 
   api.nvim_set_hl(0, 'DiagnosticActionTitle', {
-    background = theme_hi.foreground,
+    background = colors.foreground,
     foreground = '#000000',
   })
 
   api.nvim_buf_add_highlight(
-    self.bufnr,
+    ctx.bufnr,
     0,
     'DiagnosticSource',
     #content - 1,
@@ -285,21 +317,31 @@ function diag:render_diagnostic_window(entry, option)
   local current_buffer = api.nvim_get_current_buf()
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
 
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = ctx.bufnr,
+    once = true,
+    callback = function()
+      if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
+        api.nvim_win_close(ctx.preview_winid, true)
+      end
+      clean_ctx()
+    end,
+  })
+
   self:apply_map()
 
-  if diag_conf.auto_enter_float then
-    api.nvim_set_current_win(self.winid)
-    return
-  end
-
   vim.defer_fn(function()
-    libs.close_preview_autocmd(current_buffer, { self.winid, self.virt_winid }, close_autocmds)
+    libs.close_preview_autocmd(
+      current_buffer,
+      { ctx.winid, ctx.virt_winid, ctx.preview_winid or nil },
+      close_autocmds
+    )
   end, 0)
 end
 
 function diag:move_cursor(entry)
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    api.nvim_set_current_win(self.winid)
+  if diag_conf.twice_into and ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+    api.nvim_set_current_win(ctx.winid)
     return
   end
 
@@ -307,12 +349,9 @@ function diag:move_cursor(entry)
     act:clear_tmp_data()
   end
 
-  local current_winid = api.nvim_get_current_win()
+  ctx.theme = require('lspsaga').theme()
 
-  -- if current position has a diagnostic floatwin when jump to next close
-  -- curren diagnostic floatwin ensure only have one diagnostic floatwin in
-  -- current buffer
-  window.nvim_close_valid_window({ self.winid, self.virt_winid })
+  local current_winid = api.nvim_get_current_win()
 
   api.nvim_win_call(current_winid, function()
     -- Save position in the window's jumplist
@@ -321,6 +360,7 @@ function diag:move_cursor(entry)
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
+
   self:render_diagnostic_window(entry)
 end
 
@@ -413,23 +453,23 @@ function diag:show_diagnostics(opts, get_diagnostics)
     highlight = 'LspSagaDiagnosticBorder',
   }
 
-  self.show_diag_bufnr, self.show_diag_winid = window.create_win_with_border(content_opts)
+  ctx.show_diag_bufnr, ctx.show_diag_winid = window.create_win_with_border(content_opts)
 
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)
     -- Start highlight after the prefix
     if i == 1 then
-      api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, 0, 0, -1)
+      api.nvim_buf_add_highlight(ctx.show_diag_bufnr, -1, hiname, 0, 0, -1)
     else
-      api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, hiname, i, 0, -1)
+      api.nvim_buf_add_highlight(ctx.show_diag_bufnr, -1, hiname, i, 0, -1)
     end
   end
 
-  api.nvim_buf_add_highlight(self.show_diag_bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
+  api.nvim_buf_add_highlight(ctx.show_diag_bufnr, -1, 'LspSagaDiagnosticTruncateLine', 1, 0, -1)
   local close_events = { 'CursorMoved', 'InsertEnter' }
 
-  libs.close_preview_autocmd(current_buf, self.show_diag_winid, close_events)
-  return self.show_diag_winid
+  libs.close_preview_autocmd(current_buf, ctx.show_diag_winid, close_events)
+  return ctx.show_diag_winid
 end
 
 function diag.show_line_diagnostics(opts, bufnr, line_nr, client_id)
@@ -511,4 +551,4 @@ function diag.show_cursor_diagnostics(opts, bufnr, client_id)
   return diag:show_diagnostics(opts, get_cursor_diagnostics)
 end
 
-return diag
+return setmetatable(diag, ctx)

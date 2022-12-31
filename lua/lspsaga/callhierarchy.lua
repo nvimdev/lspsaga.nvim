@@ -19,7 +19,9 @@ function ctx.__newindex(_, k, v)
 end
 
 local function clean_ctx()
-  ctx = {}
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
+  end
 end
 
 ---@private

@@ -117,13 +117,16 @@ function libs.get_config_lsp_filetypes()
   return filetypes
 end
 
-function libs.close_preview_autocmd(bufnr, winids, events)
+function libs.close_preview_autocmd(bufnr, winids, events, cb)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
     once = true,
     callback = function()
       window.nvim_close_valid_window(winids)
+      if cb then
+        cb()
+      end
     end,
   })
 end

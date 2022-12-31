@@ -1,6 +1,7 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local window = require('lspsaga.window')
 local config = require('lspsaga').config_values
+local ui = config.ui
 local libs = require('lspsaga.libs')
 local method = 'textDocument/codeAction'
 local saga_augroup = require('lspsaga').saga_augroup
@@ -388,7 +389,7 @@ function Action:action_preview(main_winid, main_buf)
     end
   else
     if win_conf.row[false] - win_conf.height - #tbl - 4 > 0 then
-      opt.row = win_conf.row[false] - win_conf.height - #tbl - 4
+      opt.row = win_conf.row[false] - win_conf.height - 4
       opt.anchor = win_conf.anchor
     else
       opt.row = win_conf.row[false]
@@ -402,13 +403,16 @@ function Action:action_preview(main_winid, main_buf)
   opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 then
-    opt.title = { { 'Action Preivew', 'DiagnosticActionPtitle' } }
+    opt.title = { { 'Action Preivew', 'ActionPreviewTitle' } }
   end
 
   local content_opts = {
     contents = tbl,
     filetype = 'diff',
-    highlight = 'DiagnosticActionPborder',
+    highlight = {
+      normal = 'ActionPreviewNormal',
+      border = 'ActionPreviewBorder',
+    },
   }
 
   local preview_buf

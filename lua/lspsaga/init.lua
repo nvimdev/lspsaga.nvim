@@ -5,6 +5,7 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 saga.config_values = {
   ui = {
+    theme = 'capsule',
     border = 'solid',
     winblend = 0,
     expand = ' ',
@@ -18,9 +19,9 @@ saga.config_values = {
     background = '#1d1536',
   },
   diagnostic = {
+    twice_into = true,
     show_code_action = true,
     show_source = true,
-    auto_enter_float = false,
     jump_win_keys = {
       exec = 'o',
       quit = 'q',
@@ -118,6 +119,17 @@ local extend_config = function(opts)
       saga.config_values[key] = value
     end
   end
+end
+
+function saga.theme()
+  local theme = {
+    ['capsule'] = {
+      left = '',
+      right = '',
+    },
+  }
+
+  return theme[saga.config_values.ui.theme]
 end
 
 function saga.init_lsp_saga(opts)

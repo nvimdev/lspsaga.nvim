@@ -4,6 +4,10 @@ local bg = ui.background
 
 local highlights = {
   -- code action
+  ActionPreviewNormal = { bg = bg },
+  ActionPreviewBorder = { bg = bg },
+  ActionPreviewTitle = { fg = '#CBA6F7', bg = bg },
+
   LspSagaCodeActionTitle = { fg = '#da8548', bold = true },
   LspSagaCodeActionBorder = { fg = '#CBA6F7' },
   LspSagaCodeActionTrunCateLine = { link = 'LspSagaCodeActionBorder' },
