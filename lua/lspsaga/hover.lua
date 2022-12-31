@@ -41,9 +41,9 @@ function hover:open_floating_preview(res, opts)
     height = #content + increase,
     no_size_override = true,
     title = {
-      { theme.left, 'HoverSymbol' },
-      { 'Hover', 'HoverTitle' },
-      { theme.right, 'HoverSymbol' },
+      { theme.left, 'TitleSymbol' },
+      { 'Hover', 'TitleString' },
+      { theme.right, 'TitleSymbol' },
     },
   }
 

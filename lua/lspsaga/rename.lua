@@ -199,11 +199,23 @@ function rename:lsp_rename()
       width = 30,
     }
 
+    local theme = require('lspsaga').theme()
+    if vim.fn.has('nvim-0.9') == 1 then
+      opts.title = {
+        { theme.left, 'TitleSymbol' },
+        { 'Rename', 'TitleString' },
+        { theme.right, 'TitleSymbol' },
+      }
+    end
+
     local content_opts = {
       contents = {},
       filetype = 'sagarename',
       enter = true,
-      highlight = 'LspSagaRenameBorder',
+      highlight = {
+        normal = 'RenameNormal',
+        border = 'RenameBorder',
+      },
     }
 
     self:find_reference()
@@ -213,7 +225,7 @@ function rename:lsp_rename()
     api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
 
     local config = require('lspsaga').config
-    if config.in_select then
+    if config.rename.in_select then
       vim.cmd([[normal! V]])
       feedkeys('<C-g>', 'n')
     end

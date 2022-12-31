@@ -3,7 +3,6 @@ local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
 local libs = require('lspsaga.libs')
 local path_sep = libs.path_sep
-local ui = config.ui
 local insert = table.insert
 local indent = '    '
 
@@ -74,7 +73,10 @@ function Finder:loading_bar()
 
   local content_opts = {
     contents = {},
-    highlight = 'FinderSpinnerBorder',
+    highlight = {
+      normal = 'FinderNormal',
+      border = 'FinderBorder',
+    },
     enter = false,
   }
 
@@ -235,16 +237,20 @@ function Finder:render_finder()
   self:render_finder_result()
 end
 
-local titles = {
-  [methods[1]] = ui.finder_def .. 'Definition ',
-  [methods[2]] = ui.finder_imp .. 'Implements ',
-  [methods[3]] = ui.finder_ref .. 'References ',
-}
+local function get_content_title(method)
+  local theme = require('lspsaga').theme()
+  local titles = {
+    [methods[1]] = theme.left .. 'Definition' .. theme.right,
+    [methods[2]] = theme.left .. 'Implements' .. theme.right,
+    [methods[3]] = theme.left .. 'References' .. theme.right,
+  }
+  return titles[method]
+end
 
 function Finder:create_finder_contents(result, method)
   local contents = {}
 
-  insert(contents, { titles[method] .. #result .. ' results', false })
+  insert(contents, { get_content_title(method) .. #result .. ' results', false })
   insert(contents, { ' ', false })
 
   if #result == 0 then
@@ -335,12 +341,19 @@ function Finder:render_finder_result()
     contents = self.contents,
     filetype = 'lspsagafinder',
     enter = true,
-    highlight = 'LspSagaLspFinderBorder',
+    highlight = {
+      border = 'FinderBorder',
+      normal = 'FinderNormal',
+    },
   }
 
   if fn.has('nvim-0.9') == 1 then
-    opts.title = { { 'Finder', 'FinderTitle' } }
-    opts.title_pos = 'center'
+    opts.title = {
+      -- { theme.left, 'TitleSymbol' },
+      { config.ui.finder, 'FinderTitleIcon' },
+      { 'Finder', 'FinderTitleString' },
+      -- { theme.right, 'TitleSymbol' },
+    }
   end
 
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
@@ -503,65 +516,29 @@ function Finder:apply_float_map()
 end
 
 function Finder:lsp_finder_highlight()
-  local def_len = string.len('Definition')
-  local ref_len = string.len('References')
-  local imp_len = string.len('Implements')
-  -- add syntax
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionsIcon', 0, 0, #ui.finder_def)
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'Definitions',
-    0,
-    #ui.finder_def,
-    #ui.finder_def + def_len
-  )
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'DefinitionCount', 0, #ui.finder_def + def_len, -1)
+  local len = string.len('Definition')
+  local theme = require('lspsaga').theme()
 
-  if self.imp_scope then
+  for _, v in pairs({ 0, self.ref_scope[1], self.imp_scope and self.imp_scope[1] or nil }) do
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleSymbol', v, 0, #theme.left)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleString', v, #theme.left, #theme.left + len)
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,
-      'ImplementsIcon',
-      self.imp_scope[1],
-      0,
-      #ui.finder_imp
+      'TitleSymbol',
+      v,
+      #theme.left + len,
+      #theme.left + len + #theme.right
     )
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,
-      'Implements',
-      self.imp_scope[1],
-      #ui.finder_imp,
-      #ui.finder_imp + imp_len
-    )
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      -1,
-      'ImplementsCount',
-      self.imp_scope[1],
-      #ui.finder_imp + imp_len,
+      'FinderCount',
+      v,
+      #theme.left + len + #theme.right,
       -1
     )
   end
-
-  api.nvim_buf_add_highlight(self.bufnr, -1, 'ReferencesIcon', self.ref_scope[1], 0, #ui.finder_ref)
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'References',
-    self.ref_scope[1],
-    #ui.finder_ref,
-    #ui.finder_ref + ref_len
-  )
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    -1,
-    'ReferencesCount',
-    self.ref_scope[1],
-    #ui.finder_ref + ref_len,
-    -1
-  )
 end
 
 local finder_ns = api.nvim_create_namespace('finder_select')
@@ -596,21 +573,14 @@ function Finder:set_cursor()
 
   local actual_line = api.nvim_win_get_cursor(0)[1]
   if actual_line == first_def_uri_lnum then
-    api.nvim_buf_add_highlight(
-      0,
-      finder_ns,
-      'LspSagaFinderSelection',
-      2,
-      #indent + #self.f_icon,
-      -1
-    )
+    api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', 2, #indent + #self.f_icon, -1)
   end
 
   api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
   api.nvim_buf_add_highlight(
     0,
     finder_ns,
-    'LspSagaFinderSelection',
+    'FinderSelection',
     actual_line - 1,
     #indent + #self.f_icon,
     -1
@@ -672,8 +642,7 @@ function Finder:auto_open_preview()
       if max_height <= 3 then
         return
       end -- Don't show preview window if too short
-
-      opts.row = finder_win_opts.row + finder_height + 2
+      opts.row = finder_win_opts.row + finder_height + 4
       opts.col = finder_win_opts.col
       opts.width = finder_width
       opts.height = math.min(8, max_height)
@@ -681,12 +650,20 @@ function Finder:auto_open_preview()
 
     local content_opts = {
       contents = content,
-      highlight = 'LspSagaAutoPreview',
+      highlight = {
+        border = 'FinderPreviewBorder',
+        normal = 'FinderNormal',
+      },
     }
 
     if fn.has('nvim-0.9') == 1 then
-      opts.title = { { 'Preview', 'FinderPreview' } }
-      opts.title_pos = 'center'
+      local theme = require('lspsaga').theme()
+      opts.title = {
+        { theme.left, 'TitleSymbol' },
+        { config.ui.preview, 'TitleIcon' },
+        { 'Preview', 'TitleString' },
+        { theme.right, 'TitleSymbol' },
+      }
     end
 
     self:close_auto_preview_win()

@@ -1,6 +1,5 @@
 local api = vim.api
 local wrap = {}
-local space = ' '
 
 -- If the content too long.
 -- auto wrap according width
@@ -35,24 +34,8 @@ function wrap.wrap_text(text, width)
     local prev = k == 1 and 1 or scopes[k - 1]
     table.insert(res, table.concat(tbl, ' ', prev, v))
   end
-  print(vim.inspect(scopes), #tbl, vim.inspect(tbl))
 
   return res
-end
-
-function wrap.diagnostic_msg(msg, width)
-  -- if msg:find('\n') then
-  --   local t = vim.tbl_filter(function(s)
-  --     return string.len(s) ~= 0
-  --   end, vim.split(msg, '\n'))
-  --   return t
-  -- end
-
-  -- if #msg < width then
-  --   return { msg }
-  -- end
-
-  return wrap.wrap_text(msg, width)
 end
 
 function wrap.wrap_contents(contents, width)

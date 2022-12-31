@@ -67,10 +67,11 @@ function diag:code_action_cb()
   api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
 
   for i = 2, #contents do
-    vim.schedule(function()
-      fn.matchadd('Conceal', '[0-9]', 0, -1, { conceal = '◉', window = ctx.winid })
-    end)
-    api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticActionText', start_line + i - 1, 0, -1)
+    api.nvim_buf_set_extmark(ctx.bufnr, virt_ns, start_line + i - 2, 0, {
+      end_col = 2,
+      conceal = '◉',
+    })
+    api.nvim_buf_add_highlight(ctx.bufnr, 0, 'CodeActionText', start_line + i - 1, 0, -1)
   end
 
   api.nvim_create_autocmd('CursorMoved', {
@@ -93,7 +94,7 @@ end
 
 function diag:apply_map()
   keymap('n', diag_conf.keys.exec_action, function()
-    ctx.do_code_action()
+    self:do_code_action()
     window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
     act:clear_tmp_data()
   end, { buffer = ctx.bufnr })
@@ -125,7 +126,7 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   local wrap = require('lspsaga.wrap')
-  local msgs = wrap.diagnostic_msg(entry.message, max_width)
+  local msgs = wrap.wrap_text(entry.message, max_width)
   for _, v in pairs(msgs) do
     table.insert(content, v)
   end
@@ -170,7 +171,7 @@ function diag:render_diagnostic_window(entry, option)
     api.nvim_set_hl(
       0,
       'Diagnostic' .. diag_type .. 'Title',
-      { fg = colors.foreground, background = ui.background }
+      { fg = colors.foreground, background = ui.normal }
     )
   end
 
@@ -338,7 +339,10 @@ function diag:render_diagnostic_window(entry, option)
     libs.close_preview_autocmd(
       current_buffer,
       { ctx.winid, ctx.virt_winid, ctx.preview_winid or nil },
-      close_autocmds
+      close_autocmds,
+      function()
+        act:clear_tmp_data()
+      end
     )
   end, 0)
 end

@@ -31,16 +31,26 @@ function Action:action_callback()
     contents = contents,
     filetype = 'sagacodeaction',
     enter = true,
-    highlight = 'LspSagaCodeActionBorder',
+    highlight = {
+      normal = 'CodeActionNormal',
+      border = 'CodeActionBorder',
+    },
   }
 
   local opt = {}
 
   if fn.has('nvim-0.9') == 1 then
-    opt.title = config.ui.code_action .. 'CodeAction'
+    local theme = require('lspsaga').theme()
+    opt.title = {
+      { theme.left, 'TitleSymbol' },
+      { config.ui.code_action .. ' CodeActions', 'TitleString' },
+      { theme.right, 'TitleSymbol' },
+    }
   end
 
   self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
+  vim.wo[self.action_winid].conceallevel = 2
+  vim.wo[self.action_winid].concealcursor = 'niv'
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
   api.nvim_create_autocmd('CursorMoved', {
@@ -59,10 +69,15 @@ function Action:action_callback()
     end,
   })
 
-  api.nvim_buf_add_highlight(self.action_bufnr, -1, 'LspSagaCodeActionTitle', 0, 0, -1)
-  api.nvim_buf_add_highlight(self.action_bufnr, -1, 'LspSagaCodeActionTrunCateLine', 1, 0, -1)
-  for i = 1, #contents - 2, 1 do
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'LspSagaCodeActionContent', 1 + i, 0, -1)
+  local ns = api.nvim_create_namespace('CodeAction')
+  for i = 1, #contents, 1 do
+    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', i - 1, 0, -1)
+
+    api.nvim_buf_set_extmark(self.action_bufnr, ns, i - 1, 0, {
+      end_col = 3,
+      conceal = '◉',
+    })
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionText', i - 1, 0, -1)
   end
   -- dsiable some move keys in codeaction
   libs.disable_move_keys(self.action_bufnr)
@@ -206,7 +221,7 @@ function Action:send_code_action_request(main_buf, options, cb)
 end
 
 function Action:set_cursor()
-  local col = 1
+  local col = 4
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
   if current_line == #self.action_tuples + 1 then

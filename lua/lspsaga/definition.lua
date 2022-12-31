@@ -6,23 +6,16 @@ local method = 'textDocument/definition'
 
 function def:title_text(opts, scope)
   local link = scope.link
-  local path_sep = libs.path_sep
-  local root_dir = libs.get_lsp_root_dir()
-  if not root_dir then
-    root_dir = ''
+  link = vim.split(link, libs.path_sep, { trimempty = true })
+  if #link > 2 then
+    link = table.concat(link, libs.path_sep, #link - 1, #link)
   end
-
-  local short_name
-  if link:find(root_dir, 1, true) then
-    short_name = link:sub(root_dir:len() + 2)
-  else
-    local _split = vim.split(link, path_sep)
-    if #_split >= 4 then
-      short_name = table.concat(_split, path_sep, #_split - 2, #_split)
-    end
-  end
-  opts.title = short_name
-  opts.title_pos = 'center'
+  local theme = require('lspsaga').theme()
+  opts.title = {
+    { theme.left, 'TitleSymbol' },
+    { link, 'TitleString' },
+    { theme.right, 'TitleSymbol' },
+  }
 end
 
 local function get_uri_data(result)
@@ -64,12 +57,17 @@ end
 --  }
 -- }
 function def:peek_definition()
+  if self.pending_request then
+    vim.notify('[Lspsaga] Already have a peek_definition request please wait', vim.log.levels.WARN)
+    return
+  end
+
   if not libs.check_lsp_active() then
     return
   end
 
   local scope = {}
-
+  self.pending_request = true
   local current_buf = api.nvim_get_current_buf()
 
   if not self[current_buf] then
@@ -95,6 +93,7 @@ function def:peek_definition()
   end
 
   lsp.buf_request_all(current_buf, method, params, function(results)
+    self.pending_request = false
     if not results or next(results) == nil then
       vim.notify('[Lspsaga] response of request method ' .. method .. ' is nil')
       return
@@ -133,9 +132,11 @@ function def:peek_definition()
       contents = {},
       filetype = filetype,
       enter = true,
-      highlight = 'DefinitionBorder',
+      highlight = {
+        border = 'DefinitionBorder',
+        normal = 'DefinitionNormal',
+      },
     }
-
     --@deprecated when 0.9 release
     if fn.has('nvim-0.9') == 1 then
       self:title_text(opts, scope)
@@ -146,10 +147,7 @@ function def:peek_definition()
     api.nvim_win_set_buf(scope.winid, bufnr)
     scope.bufnr = bufnr
     api.nvim_buf_set_option(scope.bufnr, 'bufhidden', 'wipe')
-
-    if fn.has('nvim-0.8') == 1 then
-      api.nvim_win_set_option(scope.winid, 'winbar', '')
-    end
+    api.nvim_win_set_option(scope.winid, 'winbar', '')
     --set the initail cursor pos
     api.nvim_win_set_cursor(scope.winid, { start_line + 1, start_char_pos })
     vim.cmd('normal! zt')
@@ -223,6 +221,9 @@ function def:apply_aciton_keys(bufnr, pos)
 
   keymap('n', maps.close, function()
     local scope = self:find_current_scope()
+    if not scope then
+      return
+    end
     local main_winid = self[scope.main_bufnr].main_winid
     for _, v in pairs(self[scope.main_bufnr].scopes) do
       self:close_window(v)

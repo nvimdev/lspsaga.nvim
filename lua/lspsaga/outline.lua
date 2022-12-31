@@ -6,7 +6,6 @@ local libs = require('lspsaga.libs')
 local config = require('lspsaga').config
 local outline_conf, ui = config.outline, config.ui
 local method = 'textDocument/documentSymbol'
-
 -- alias built in
 local insert = table.insert
 
@@ -148,6 +147,15 @@ function ot:auto_preview(bufnr)
     width = max_width,
   }
 
+  if fn.has('nvim-0.9') == 1 then
+    local theme = require('lspsaga').theme()
+    opts.title = {
+      { theme.left, 'TitleSymbol' },
+      { 'Preivew', 'TitleString' },
+      { theme.right, 'TitleSymbol' },
+    }
+  end
+
   local winid = fn.bufwinid(bufnr)
   if not api.nvim_win_is_valid(winid) then
     return
@@ -167,7 +175,10 @@ function ot:auto_preview(bufnr)
   local content_opts = {
     contents = content,
     filetype = self[bufnr].ft,
-    highlight = 'LSOutlinePreviewBorder',
+    highlight = {
+      normal = 'OutlinePreviewNormal',
+      border = 'OutlinePreviewBorder',
+    },
   }
 
   opts.noautocmd = true

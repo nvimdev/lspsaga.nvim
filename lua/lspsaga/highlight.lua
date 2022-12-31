@@ -1,62 +1,53 @@
 local api = vim.api
 local ui = require('lspsaga').config.ui
-local bg = ui.background
+local bg = ui.normal
 
 local highlights = {
+  -- general
+  TitleString = { bg = ui.title, fg = '#013e77', bold = true },
+  TitleSymbol = { bg = bg, fg = ui.title },
+  TitleIcon = { bg = ui.title, fg = '#89d957' },
+  SagaBorder = { bg = bg },
   -- code action
-  ActionPreviewNormal = { bg = bg },
-  ActionPreviewBorder = { bg = bg },
+  ActionPreviewNormal = { link = 'SagaBorder' },
+  ActionPreviewBorder = { link = 'SagaBorder' },
   ActionPreviewTitle = { fg = '#CBA6F7', bg = bg },
-
-  LspSagaCodeActionTitle = { fg = '#da8548', bold = true },
-  LspSagaCodeActionBorder = { fg = '#CBA6F7' },
-  LspSagaCodeActionTrunCateLine = { link = 'LspSagaCodeActionBorder' },
-  LspSagaCodeActionContent = { fg = '#98be65', bold = true },
+  CodeActionNormal = { link = 'SagaBorder' },
+  CodeActionBorder = { link = 'SagaBorder' },
+  CodeActionText = { fg = '#e8e1c5' },
   -- finder
-  LspSagaLspFinderBorder = { fg = '#51afef' },
-  LspSagaAutoPreview = { fg = '#51afef' },
-  LspSagaFinderSelection = { fg = '#89d957', bold = true },
+  FinderSelection = { fg = '#89d957', bold = true },
   TargetFileName = { fg = '#d1d4cf' },
-  FinderParam = { fg = '#CBA6F7', bg = '#392a52', bold = true },
-  DefinitionsIcon = { fg = '#e3e346' },
-  Definitions = { fg = '#CBA6F7', bold = true },
-  DefinitionCount = { link = 'Title' },
-  ReferencesIcon = { fg = '#e3e346' },
-  References = { fg = '#CBA6F7', bold = true },
-  ReferencesCount = { link = 'Title' },
-  ImplementsIcon = { fg = '#e3e346' },
-  Implements = { fg = '#CBA6F7', bold = true },
-  ImplementsCount = { link = 'Title' },
+  FinderCount = { link = 'Title' },
   --finder spinner
   FinderSpinnerBorder = { fg = '#51afef' },
   FinderSpinnerTitle = { fg = '#b33076', bold = true },
   FinderSpinner = { fg = '#b33076', bold = true },
   FinderPreviewSearch = { link = 'Search' },
-  FinderTitle = { bg = '#876ec2', fg = '#e0c06e' },
-  FinderPreview = { bg = '#876ec2', fg = '#e0c06e' },
   FinderVirtText = { fg = '#c95942' },
+  FinderNormal = { link = 'SagaBorder' },
+  FinderBorder = { link = 'SagaBorder' },
+  FinderPreviewBorder = { link = 'SagaBorder' },
+  FinderTitleString = { bg = bg, fg = '#ffd6b1', bold = true },
+  FinderTitleIcon = { bg = bg, fg = '#89d957' },
   -- definition
-  DefinitionBorder = { fg = '#b3deef' },
-  DefinitionArrow = { fg = '#ad475f' },
+  DefinitionBorder = { link = 'SagaBorder' },
+  DefinitionNormal = { link = 'SagaBorder' },
   DefinitionSearch = { link = 'Search' },
-  DefinitionFile = { bg = '#151838' },
   -- hover
-  HoverNormal = { bg = bg },
-  HoverTitle = { bg = '#f17866', fg = '#ffd6b1', bold = true },
-  HoverSymbol = { bg = bg, fg = '#f17866' },
-  HoverBorder = { bg = bg },
+  HoverNormal = { link = 'SagaBorder' },
+  HoverBorder = { link = 'SagaBorder' },
   -- rename
-  LspSagaRenameBorder = { fg = '#3bb6c4' },
-  LspSagaRenameMatch = { link = 'Search' },
+  RenameBorder = { link = 'SagaBorder' },
+  RenameNormal = { fg = '#f17866', bg = bg },
+  RenameMatch = { link = 'Search' },
   -- diagnostic
   DiagnosticSource = { fg = 'gray' },
-  DiagnosticNormal = { bg = bg },
-  DiagnosticErrorBorder = { bg = bg },
-  DiagnosticWarnBorder = { bg = bg },
-  DiagnosticHintBorder = { bg = bg },
-  DiagnosticInfoBorder = { bg = bg },
-  DiagnosticActionText = { fg = '#e8e1c5' },
-
+  DiagnosticNormal = { link = 'SagaBorder' },
+  DiagnosticErrorBorder = { link = 'SagaBorder' },
+  DiagnosticWarnBorder = { link = 'SagaBorder' },
+  DiagnosticHintBorder = { link = 'SagaBorder' },
+  DiagnosticInfoBorder = { link = 'SagaBorder' },
   -- Call Hierachry
   CallHierarchyIcon = { fg = '#CBA6F7' },
   CallHierarchyTitle = { fg = '#9c255e' },
@@ -64,15 +55,12 @@ local highlights = {
   LspSagaLightBulb = { link = 'DiagnosticSignHint' },
   -- shadow
   SagaShadow = { fg = 'black' },
-  -- float
-  LspSagaBorderTitle = { link = 'String' },
   -- Outline
-  LSOutlinePreviewBorder = { fg = '#52ad70' },
+  OutlinePreviewBorder = { link = 'SagaBorder' },
+  OutlinePreviewNormal = { link = 'SagaBorder' },
   OutlineExpand = { fg = '#c955ae' },
   OutlineCollaspe = { fg = '#b8733e' },
   OutlineDetail = { fg = '#73797e' },
-  -- all floatwindow of lspsaga
-  LspFloatWinNormal = { link = 'Normal' },
 }
 
 local loaded = false
