@@ -35,16 +35,26 @@ function hover:open_floating_preview(res, opts)
     end, content)
   end
 
+  local theme = require('lspsaga').theme()
   local float_option = {
     width = max_float_width,
     height = #content + increase,
     no_size_override = true,
+    title = {
+      { theme.left, 'HoverSymbol' },
+      { 'Hover', 'HoverTitle' },
+      { theme.right, 'HoverSymbol' },
+    },
   }
 
   local contents_opt = {
     contents = content,
     filetype = res.kind or 'markdown',
     wrap = true,
+    highlight = {
+      normal = 'HoverNormal',
+      border = 'HoverBorder',
+    },
     bufnr = self.preview_bufnr,
   }
   _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
@@ -52,6 +62,7 @@ function hover:open_floating_preview(res, opts)
   vim.wo[self.preview_winid].conceallevel = 2
   vim.wo[self.preview_winid].concealcursor = 'niv'
   vim.wo[self.preview_winid].showbreak = 'NONE'
+  vim.wo[self.preview_winid].fillchars = 'lastline: '
   vim.treesitter.start(self.preview_bufnr, 'markdown')
 
   vim.keymap.set('n', 'q', function()

@@ -41,8 +41,10 @@ local highlights = {
   DefinitionSearch = { link = 'Search' },
   DefinitionFile = { bg = '#151838' },
   -- hover
-  LspSagaHoverBorder = { fg = '#f7bb3b' },
-  LspSagaHoverTrunCateLine = { link = 'LspSagaHoverBorder' },
+  HoverNormal = { bg = bg },
+  HoverTitle = { bg = '#f17866', fg = '#ffd6b1', bold = true },
+  HoverSymbol = { bg = bg, fg = '#f17866' },
+  HoverBorder = { bg = bg },
   -- rename
   LspSagaRenameBorder = { fg = '#3bb6c4' },
   LspSagaRenameMatch = { link = 'Search' },
