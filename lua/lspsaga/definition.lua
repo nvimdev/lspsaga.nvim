@@ -212,6 +212,9 @@ function def:apply_aciton_keys(bufnr, pos)
     if action ~= 'close' then
       keymap('n', key, function()
         local scope = self:find_current_scope()
+        if not scope then
+          return
+        end
         local link, def_win_ns = scope.link, scope.def_win_ns
         api.nvim_buf_clear_namespace(bufnr, def_win_ns, 0, -1)
         self:clean_buf_map(scope)
@@ -224,7 +227,9 @@ function def:apply_aciton_keys(bufnr, pos)
           local idx = self:get_scope_index(scope)
           if idx - 1 > 0 then
             local prev_winid = self[scope.main_bufnr].scopes[idx - 1].winid
-            api.nvim_set_current_win(prev_winid)
+            if prev_winid and api.nvim_win_is_valid(prev_winid) then
+              api.nvim_set_current_win(prev_winid)
+            end
           end
         end
         self:remove_scope(scope)

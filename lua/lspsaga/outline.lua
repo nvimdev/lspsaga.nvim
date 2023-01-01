@@ -1,13 +1,19 @@
 local ot = {}
 local api, lsp, fn, keymap = vim.api, vim.lsp, vim.fn, vim.keymap
-local cache = require('lspsaga.symbolwinbar').symbol_cache
-local space = '  '
-local libs = require('lspsaga.libs')
 local config = require('lspsaga').config
 local outline_conf, ui = config.outline, config.ui
-local method = 'textDocument/documentSymbol'
--- alias built in
 local insert = table.insert
+
+function ot:get_symbols(buf)
+  local data = require('lspsaga.symbolwinbar')[buf]
+  if not data or data.pending_request then
+    return
+  end
+  if not data.pending_request and data.symbols then
+    return data.symbols
+  end
+  return nil
+end
 
 function ot:init_data(tbl, level)
   local hi_prefix = 'LSOutline'
@@ -27,7 +33,7 @@ function ot:init_data(tbl, level)
     level = level or 1
     icon = kind[node.kind][2]
     hi = hi_prefix .. kind[node.kind][1]
-    local indent = string.rep(space, level)
+    local indent = string.rep('  ', level)
     local indent_with_icon = indent .. icon
     local prev_indent = 2
 
@@ -189,7 +195,7 @@ function ot:auto_preview(bufnr)
 
   local events = { 'CursorMoved', 'BufLeave' }
   vim.defer_fn(function()
-    libs.close_preview_autocmd(self.winbuf, self.preview_winid, events)
+    self.libs.close_preview_autocmd(self.winbuf, self.preview_winid, events)
   end, 100)
 end
 
@@ -299,7 +305,7 @@ end
 
 local create_outline_window = function()
   if #outline_conf.win_with > 0 then
-    local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
+    local ok, sp_buf = ot.libs.find_buffer_by_filetype(outline_conf.win_with)
 
     if ok then
       local winid = fn.win_findbuf(sp_buf)[1]
@@ -315,23 +321,22 @@ local create_outline_window = function()
 end
 
 ---@private
-local request_and_render = function(event)
-  local bufnr = api.nvim_get_current_buf()
-  local params = { textDocument = lsp.util.make_text_document_params(bufnr) }
-  local client = libs.get_client_by_cap('documentSymbolProvider')
+local request_and_render = function(buf, event)
+  local params = { textDocument = lsp.util.make_text_document_params(buf) }
+  local client = ot.libs.get_client_by_cap('documentSymbolProvider')
 
   if not client then
     return
   end
 
-  client.request(method, params, function(_, result)
+  client.request('textDocument/documentSymbol', params, function(_, result)
     if not result or next(result) == nil then
       return
     end
 
     local symbols = result
-    ot:update_outline(symbols, event)
-  end, bufnr)
+    ot:update_outline(buf, symbols, event)
+  end, buf)
 end
 
 function ot:set_buf_contents(bufnr)
@@ -360,9 +365,8 @@ function ot:set_keymap(bufnr)
   end, { buffer = self.winbuf })
 end
 
-function ot:update_outline(symbols, event)
-  local current_buf = api.nvim_get_current_buf()
-  self[current_buf] = { ft = vim.bo.filetype }
+function ot:update_outline(buf, symbols, event)
+  self[buf] = { ft = vim.bo[buf].filetype }
 
   self:init_data(symbols)
 
@@ -378,7 +382,7 @@ function ot:update_outline(symbols, event)
     end
   end
 
-  self:set_buf_contents(current_buf)
+  self:set_buf_contents(buf)
 
   for k, v in pairs(self) do
     if type(v) == 'table' and self[k].in_render then
@@ -386,24 +390,24 @@ function ot:update_outline(symbols, event)
     end
   end
 
-  self[current_buf].in_render = true
+  self[buf].in_render = true
 
   if outline_conf.show_detail then
-    self:detail_virt_text(current_buf)
+    self:detail_virt_text(buf)
   end
 
   api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
 
-  for i, data in pairs(self[current_buf].data) do
+  for i, data in pairs(self[buf].data) do
     api.nvim_buf_add_highlight(self.winbuf, 0, data.hi, i - 1, 0, data.hi_scope)
     if data.expand_col then
       api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineExpand', i - 1, 0, data.expand_col)
     end
   end
 
-  self:set_keymap(current_buf)
+  self:set_keymap(buf)
   if not event then
-    self:preview_event(current_buf)
+    self:preview_event(buf)
   end
   self:refresh_event()
   self.render_status = true
@@ -434,34 +438,33 @@ function ot:refresh_event()
   api.nvim_create_autocmd('BufEnter', {
     group = self.group,
     callback = function(opt)
-      if vim.bo.filetype == 'lspsagaoutline' then
+      if vim.bo[opt.buf].filetype == 'lspsagaoutline' then
         return
       end
-
-      if vim.bo.buftype == 'nofile' or vim.bo.buftype == 'prompt' then
+      if vim.bo[opt.buf].buftype == 'nofile' or vim.bo[opt.buf].buftype == 'prompt' then
         return
       end
-
-      local buf = api.nvim_get_current_buf()
       -- don't render when the buffer is unnamed buffer
-      if #api.nvim_buf_get_name(buf) == 0 then
+      if #api.nvim_buf_get_name(opt.buf) == 0 then
+        return
+      end
+
+      local clients = lsp.get_active_clients({ bufnr = opt.buf })
+      if #clients == 0 then
         return
       end
 
       local in_render_buf = self:find_in_render_buf()
-      if buf == in_render_buf then
+      if opt.buf == in_render_buf then
         return
       end
 
-      if not libs.check_lsp_active() then
-        return
+      local symbols = self:get_symbols(opt.buf)
+      if not symbols then
+        request_and_render(opt.buf)
+      else
+        self:update_outline(opt.buf, symbols, opt.event)
       end
-
-      if not cache[buf] or next(cache[buf]) == nil then
-        request_and_render(opt.event)
-        return
-      end
-      self:update_outline(cache[buf], opt.event)
     end,
     desc = 'Lspsaga refresh outline',
   })
@@ -494,7 +497,7 @@ function ot:close_when_last()
   api.nvim_create_autocmd('BufEnter', {
     callback = function(opt)
       local wins = api.nvim_list_wins()
-      if #wins == 1 and vim.bo.filetype == 'lspsagaoutline' then
+      if #wins == 1 and vim.bo[opt.buf].filetype == 'lspsagaoutline' then
         api.nvim_buf_delete(self.winbuf, { force = true })
         local bufnr = api.nvim_create_buf(true, true)
         api.nvim_win_set_buf(0, bufnr)
@@ -534,22 +537,17 @@ function ot:render_outline()
     self:close_and_clear()
     return
   end
-
   local current_buf = api.nvim_get_current_buf()
-
-  -- if buffer not lsp client
-  if not libs.check_lsp_active() then
-    return
-  end
+  self.libs = require('lspsaga.libs')
 
   self.group = api.nvim_create_augroup('LSOutline', { clear = true })
 
-  if cache[current_buf] and next(cache[current_buf]) ~= nil then
-    self:update_outline(cache[current_buf])
-    return
+  local symbols = self:get_symbols(current_buf)
+  if not symbols then
+    request_and_render(current_buf)
+  else
+    self:update_outline(current_buf, symbols)
   end
-
-  request_and_render()
 end
 
 return ot
