@@ -38,7 +38,7 @@ local function get_path_info(buf)
   return { unpack(tbl, #tbl - index + 1, #tbl) }
 end
 
-local function get_file_name(buf)
+local function bar_file_name(buf)
   local res = get_path_info(buf)
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
   if #res == 0 then
@@ -172,8 +172,11 @@ local render_symbol_winbar = function(buf, symbols)
   buf = buf or api.nvim_get_current_buf()
   symbols = symbols or cache[buf].symbols
   local winid = vim.fn.bufwinid(buf)
+  if not api.nvim_win_is_valid(winid) then
+    return
+  end
   local current_line = api.nvim_win_get_cursor(winid)[1]
-  local winbar_str = config.show_file and get_file_name(buf) or ''
+  local winbar_str = config.show_file and bar_file_name(buf) or ''
 
   local winbar_elements = {}
 
@@ -203,7 +206,9 @@ local render_symbol_winbar = function(buf, symbols)
   end
 
   winbar_str = winbar_str .. str
-  if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 then
+  local ok = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+  print(ok, winid)
+  if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 and not ok then
     vim.wo[winid].winbar = winbar_str
   end
   return winbar_str
@@ -329,6 +334,12 @@ function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
+      local winid = vim.fn.bufwinid(opt.buf)
+      local ok = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+      if config.show_file and not ok then
+        vim.wo[winid].winbar = bar_file_name(opt.buf)
+      end
+
       symbar:symbol_events(opt.buf)
     end,
     desc = 'Lspsaga get and show symbols',
@@ -336,10 +347,14 @@ function symbar.config_symbol_autocmd()
 end
 
 ---Get buffer symbols
----@return  table with key symbols and pending_request
-function symbar.get_buf_symbols(buf)
+---@return  string | nil
+function symbar.get_winbar(buf)
   buf = buf or api.nvim_get_current_buf()
-  return get_buf_symbol(buf)
+  local symbols = get_buf_symbol(buf)
+  if not symbols then
+    return
+  end
+  return render_symbol_winbar(buf, symbols)
 end
 
 return setmetatable(symbar, cache)

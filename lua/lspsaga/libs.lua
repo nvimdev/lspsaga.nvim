@@ -7,6 +7,7 @@ libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
 
 libs.path_sep = libs.iswin and '\\' or '/'
 
+--get icon hlgroup color
 function libs.icon_from_devicon(ft, color)
   color = color ~= nil and color or false
   local ok, devicons = pcall(require, 'nvim-web-devicons')
