@@ -48,7 +48,7 @@ local kind = {
   -- for completion sb microsoft!!!
   [300] = { 'Text', ' ', colors.green },
   [301] = { 'Snippet', ' ', colors.blue },
-  [302] = { 'Folder', ' ', colors.yellow },
+  [302] = { 'Folder', ' ', colors.yellow },
   [303] = { 'Unit', ' ', colors.cyan },
   [304] = { 'Value', ' ', colors.blue },
 }

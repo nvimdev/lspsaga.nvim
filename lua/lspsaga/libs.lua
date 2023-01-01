@@ -8,6 +8,20 @@ libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
 
 libs.path_sep = libs.iswin and '\\' or '/'
 
+function libs.icon_from_devicon(ft, color)
+  color = color ~= nil and color or false
+  local ok, devicons = pcall(require, 'nvim-web-devicons')
+  if not ok then
+    return nil
+  end
+  local icon, hl = devicons.get_icon_by_filetype(ft)
+  if color then
+    local _, rgb = devicons.get_icon_color_by_filetype(ft)
+    return { icon, rgb }
+  end
+  return { icon, hl }
+end
+
 function libs.get_home_dir()
   if libs.is_win then
     return os.getenv('USERPROFILE')
