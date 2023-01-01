@@ -159,6 +159,11 @@ function diag:render_diagnostic_window(entry, option)
     },
   }
 
+  local max_len = ctx.window.get_max_content_length(content)
+  if max_len < max_width then
+    max_width = max_len
+  end
+
   local opts = {
     relative = 'cursor',
     style = 'minimal',

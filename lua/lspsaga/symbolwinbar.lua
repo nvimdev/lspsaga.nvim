@@ -171,8 +171,8 @@ end
 local render_symbol_winbar = function(buf, symbols)
   buf = buf or api.nvim_get_current_buf()
   symbols = symbols or cache[buf].symbols
-  local current_win = api.nvim_get_current_win()
-  local current_line = api.nvim_win_get_cursor(current_win)[1]
+  local winid = vim.fn.bufwinid(buf)
+  local current_line = api.nvim_win_get_cursor(winid)[1]
   local winbar_str = config.show_file and get_file_name(buf) or ''
 
   local winbar_elements = {}
@@ -180,7 +180,7 @@ local render_symbol_winbar = function(buf, symbols)
   find_in_node(symbols, current_line - 1, winbar_elements)
 
   local lens, over_idx = 0, 0
-  local max_width = math.floor(api.nvim_win_get_width(current_win) * 0.9)
+  local max_width = math.floor(api.nvim_win_get_width(winid) * 0.9)
   for i, item in pairs(winbar_elements) do
     local s = vim.split(item, '#')
     lens = lens + api.nvim_strwidth(s[3]) + api.nvim_strwidth(config.separator)
@@ -203,8 +203,8 @@ local render_symbol_winbar = function(buf, symbols)
   end
 
   winbar_str = winbar_str .. str
-  if not config.in_custom and api.nvim_win_get_height(current_win) - 1 > 1 then
-    vim.wo[current_win].winbar = winbar_str
+  if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 then
+    vim.wo[winid].winbar = winbar_str
   end
   return winbar_str
 end

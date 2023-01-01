@@ -1,44 +1,39 @@
 local api, util, lsp = vim.api, vim.lsp.util, vim.lsp
-local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
-
+local ns = api.nvim_create_namespace('LspsagaRename')
 local rename = {}
 
-local method = 'textDocument/references'
-local cap = 'referencesProvider'
-local ns = api.nvim_create_namespace('LspsagaRename')
-
--- store the CursorWord highlight
-local cursorword_hl = {}
+function rename:clean()
+  for k, v in pairs(self) do
+    if type(v) ~= 'function' then
+      self[k] = nil
+    end
+  end
+end
 
 function rename:close_rename_win()
-  if vim.fn.mode() == 'i' then
+  if api.nvim_get_mode().mode == 'i' then
     vim.cmd([[stopinsert]])
   end
-  window.nvim_close_valid_window(self.winid)
-  api.nvim_win_set_cursor(0, { self.pos[1], self.pos[2] })
-
-  if next(cursorword_hl) ~= nil then
-    pcall(api.nvim_set_hl, 0, 'CursorWord', cursorword_hl)
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
   end
+  api.nvim_win_set_cursor(0, { self.pos[1], self.pos[2] })
 
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
 end
 
 function rename:apply_action_keys()
   local config = require('lspsaga').config
-  local quit_key = config.rename.quit
-  local exec_key = '<CR>'
 
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in pairs(modes) do
-    vim.keymap.set(mode, quit_key, function()
+    vim.keymap.set(mode, config.rename.quit, function()
       self:close_rename_win()
     end, { buffer = self.bufnr })
 
     if i ~= 3 then
-      vim.keymap.set(mode, exec_key, function()
+      vim.keymap.set(mode, config.rename.exec, function()
         self:do_rename()
       end, { buffer = self.bufnr })
     end
@@ -61,21 +56,15 @@ function rename:find_reference()
   local bufnr = api.nvim_get_current_buf()
   local params = util.make_position_params()
   params.context = { includeDeclaration = true }
-  local client = libs.get_client_by_cap(cap)
+  local libs = require('lspsaga.libs')
+  local client = libs.get_client_by_cap('referencesProvider')
   if client == nil then
     return
   end
 
-  client.request(method, params, function(_, result)
+  client.request('textDocument/references', params, function(_, result)
     if not result then
       return
-    end
-    -- if user has highlight cusorword plugin remove the highlight before
-    -- and restore it when rename done
-    local ok, cursorword_color = pcall(api.nvim_get_hl_by_name, 'CursorWord', true)
-    if ok then
-      cursorword_hl = cursorword_color
-      api.nvim_set_hl(0, 'CursorWord', { fg = 'none', bg = 'none' })
     end
 
     for _, v in pairs(result) do
@@ -182,10 +171,6 @@ local function do_prepare_rename(f)
 end
 
 function rename:lsp_rename()
-  if not libs.check_lsp_active(false) then
-    return
-  end
-
   if not support_change() then
     vim.notify('Current is builtin or keyword,you can not rename it', vim.log.levels.WARN)
     return
@@ -220,6 +205,7 @@ function rename:lsp_rename()
 
     self:find_reference()
 
+    local window = require('lspsaga.window')
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
     self:set_local_options()
     api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })

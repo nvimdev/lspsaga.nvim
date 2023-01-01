@@ -75,6 +75,7 @@ local default_config = {
   },
   rename = {
     quit = '<C-c>',
+    exec = '<CR>',
     in_select = true,
   },
   -- winbar must nightly

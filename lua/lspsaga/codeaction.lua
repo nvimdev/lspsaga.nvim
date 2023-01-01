@@ -1,9 +1,5 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
-local window = require('lspsaga.window')
 local config = require('lspsaga').config
-local libs = require('lspsaga.libs')
-local method = 'textDocument/codeAction'
-local saga_augroup = require('lspsaga').saga_augroup
 
 local Action = {}
 Action.__index = Action
@@ -48,11 +44,13 @@ function Action:action_callback()
     }
   end
 
-  self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
+  self.action_bufnr, self.action_winid = self.window.create_win_with_border(content_opts, opt)
   vim.wo[self.action_winid].conceallevel = 2
   vim.wo[self.action_winid].concealcursor = 'niv'
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
+
+  local saga_augroup = require('lspsaga').saga_augroup
   api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.action_bufnr,
@@ -79,6 +77,8 @@ function Action:action_callback()
     })
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionText', i - 1, 0, -1)
   end
+
+  local libs = require('lspsaga.libs')
   -- dsiable some move keys in codeaction
   libs.disable_move_keys(self.action_bufnr)
 
@@ -206,9 +206,9 @@ function Action:send_code_action_request(main_buf, options, cb)
   if self.ctx == nil then
     self.ctx = {}
   end
-  self.ctx = { bufnr = self.bufnr, method = method, params = params }
+  self.ctx = { bufnr = self.bufnr, method = 'textDocument/codeAction', params = params }
 
-  lsp.buf_request_all(self.bufnr, method, params, function(results)
+  lsp.buf_request_all(self.bufnr, 'textDocument/codeAction', params, function(results)
     self:get_clients(results)
     if #self.action_tuples == 0 then
       vim.notify('No code actions available', vim.log.levels.INFO)
@@ -242,6 +242,7 @@ end
 
 function Action:code_action(options)
   self.bufnr = api.nvim_get_current_buf()
+  self.window = require('lspsaga.window')
 
   options = options or {}
   self:send_code_action_request(self.bufnr, options, function()
@@ -272,7 +273,20 @@ function Action:apply_action(action, client)
 end
 
 function Action:do_code_action(num)
-  local number = num and tonumber(num) or tonumber(vim.fn.expand('<cword>'))
+  local number
+  if num then
+    number = tonumber(num)
+  else
+    local cur_text = api.nvim_get_current_line()
+    number = cur_text:match('%[(%d)%]')
+    number = tonumber(number)
+  end
+
+  if not number then
+    vim.notify('[Lspsaga] no action number choice', vim.log.levels.WARN)
+    return
+  end
+
   local action = self.action_tuples[number][2]
   local client = lsp.get_client_by_id(self.action_tuples[number][1])
 
@@ -429,8 +443,11 @@ function Action:action_preview(main_winid, main_buf)
     },
   }
 
+  if not self.window then
+    self.window = require('lspsaga.window')
+  end
   local preview_buf
-  preview_buf, self.preview_winid = window.create_win_with_border(content_opts, opt)
+  preview_buf, self.preview_winid = self.window.create_win_with_border(content_opts, opt)
   vim.bo[preview_buf].syntax = 'on'
   return self.preview_winid
 end
@@ -447,7 +464,7 @@ function Action:quit_action_window()
   if self.action_bufnr == 0 and self.action_winid == 0 then
     return
   end
-  window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
+  self.window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
   self:clear_tmp_data()
 end
 

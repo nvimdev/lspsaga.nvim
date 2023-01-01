@@ -1,20 +1,21 @@
-local api, uv, lsp = vim.api, vim.loop, vim.lsp
-local libs = require('lspsaga.libs')
+local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config
-local code_action_method = 'textDocument/codeAction'
 local lb = {}
 
-local timer = uv.new_timer()
-local SIGN_GROUP = 'sagalightbulb'
-local SIGN_NAME = 'LspSagaLightBulb'
+local function get_hl_group()
+  return 'LspSagaLightBulb'
+end
 
-local hl_group = 'LspSagaLightBulb'
-
-if vim.tbl_isempty(vim.fn.sign_getdefined(SIGN_NAME)) then
-  vim.fn.sign_define(SIGN_NAME, { text = config.ui.code_action, texthl = hl_group })
+function lb:init_sign()
+  self.name = get_hl_group()
+  if not self.defined_sign then
+    fn.sign_define(self.name, { text = config.ui.code_action, texthl = self.name })
+    self.defined_sign = true
+  end
 end
 
 local function check_server_support_codeaction(bufnr)
+  local libs = require('lspsaga.libs')
   local clients = lsp.get_active_clients({ bufnr = bufnr })
   for _, client in pairs(clients) do
     if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
@@ -27,7 +28,7 @@ local function check_server_support_codeaction(bufnr)
     end
 
     if
-      client.supports_method(code_action_method)
+      client.supports_method('textDocument/codeAction')
       and libs.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
     then
       return true
@@ -54,8 +55,8 @@ end
 local function generate_sign(bufnr, line)
   vim.fn.sign_place(
     line,
-    SIGN_GROUP,
-    SIGN_NAME,
+    lb.name,
+    lb.name,
     bufnr,
     { lnum = line + 1, priority = config.lightbulb.sign_priority }
   )
@@ -66,7 +67,7 @@ local function _update_sign(bufnr, line)
     vim.w.lightbulb_line = 1
   end
   if vim.w.lightbulb_line ~= 0 then
-    vim.fn.sign_unplace(SIGN_GROUP, { id = vim.w.lightbulb_line, buffer = bufnr })
+    fn.sign_unplace(lb.name, { id = vim.w.lightbulb_line, buffer = bufnr })
   end
 
   if line then
@@ -105,7 +106,7 @@ local send_request = coroutine.create(function()
     local params = lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
-    lsp.buf_request_all(current_buf, code_action_method, params, function(results)
+    lsp.buf_request_all(current_buf, 'textDocument/codeAction', params, function(results)
       local has_actions = false
       for _, res in pairs(results or {}) do
         if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
@@ -137,56 +138,46 @@ local render_bulb = function(bufnr)
   coroutine.resume(send_request, bufnr)
 end
 
-function lb.action_lightbulb()
-  if not libs.check_lsp_active(false) then
-    return
-  end
-
-  timer:stop()
-
-  local current_buf = api.nvim_get_current_buf()
-  timer:start(config.lightbulb.update_time, 0, function()
-    vim.schedule(function()
-      render_bulb(current_buf)
-    end)
-  end)
-end
-
-local buf_auid = {}
-
 function lb.lb_autocmd()
-  local lightbulb_group = api.nvim_create_augroup('LspSagaLightBulb', { clear = true })
+  lb:init_sign()
   api.nvim_create_autocmd('LspAttach', {
-    group = lightbulb_group,
-    callback = function()
-      local current_buf = api.nvim_get_current_buf()
-      local group = api.nvim_create_augroup('LspSagaLightBulb' .. tostring(current_buf), {})
-      api.nvim_create_autocmd({ 'CursorMoved' }, {
+    group = api.nvim_create_augroup('LspSagaLightBulb', { clear = true }),
+    callback = function(opt)
+      local buf = opt.buf
+      local group = api.nvim_create_augroup(lb.name .. tostring(buf), {})
+      api.nvim_create_autocmd('CursorHold', {
         group = group,
-        buffer = current_buf,
-        callback = lb.action_lightbulb,
+        buffer = buf,
+        callback = function()
+          render_bulb(buf)
+        end,
       })
 
       if not config.lightbulb.enable_in_insert then
         api.nvim_create_autocmd('InsertEnter', {
           group = group,
-          buffer = current_buf,
+          buffer = buf,
           callback = function()
-            _update_sign(current_buf, nil)
-            _update_virtual_text(current_buf, nil)
+            _update_sign(buf, nil)
+            _update_virtual_text(buf, nil)
           end,
         })
       end
 
-      buf_auid[current_buf] = group
+      api.nvim_create_autocmd('BufLeave', {
+        group = group,
+        buffer = buf,
+        callback = function()
+          _update_sign(buf, nil)
+          _update_virtual_text(buf, nil)
+        end,
+      })
 
       api.nvim_create_autocmd('BufDelete', {
-        buffer = current_buf,
-        callback = function(opt)
-          if buf_auid[opt.buf] then
-            pcall(api.nvim_del_augroup_by_id, buf_auid[opt.buf])
-            rawset(buf_auid, opt.buf, nil)
-          end
+        buffer = buf,
+        once = true,
+        callback = function()
+          pcall(api.nvim_del_augroup_by_id, group)
         end,
       })
     end,

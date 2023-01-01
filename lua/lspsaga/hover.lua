@@ -1,6 +1,4 @@
 local api, lsp, util = vim.api, vim.lsp, vim.lsp.util
-local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
 local hover = {}
 
 function hover:open_floating_preview(res, opts)
@@ -20,6 +18,8 @@ function hover:open_floating_preview(res, opts)
     return #s > 0
   end, content)
 
+  local window = require('lspsaga.window')
+  local libs = require('lspsaga.libs')
   local max_float_width = window.get_max_float_width()
   local max_content_len = window.get_max_content_length(content)
   local increase = 0
@@ -116,6 +116,7 @@ function hover:render_hover_doc()
     vim.notify('[Lspsaga] Hover now only support for neovim 0.9+ Please use neovim 0.9')
     return
   end
+
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
     return

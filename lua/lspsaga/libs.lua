@@ -1,6 +1,5 @@
 local api, lsp = vim.api, vim.lsp
 local libs = {}
-local window = require('lspsaga.window')
 local server_filetype_map = require('lspsaga').config.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
@@ -137,6 +136,7 @@ function libs.close_preview_autocmd(bufnr, winids, events, cb)
     buffer = bufnr,
     once = true,
     callback = function()
+      local window = require('lspsaga.window')
       window.nvim_close_valid_window(winids)
       if cb then
         cb()

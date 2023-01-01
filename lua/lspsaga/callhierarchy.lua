@@ -1,27 +1,28 @@
 local api, fn, lsp, validate = vim.api, vim.fn, vim.lsp, vim.validate
-local window = require('lspsaga.window')
-local kind = require('lspsaga.lspkind')
-local libs = require('lspsaga.libs')
-local ui = require('lspsaga').config_values.ui
-local call_conf = require('lspsaga').config_values.call_hierarchy
+local config = require('lspsaga').config
+local call_conf, ui = config.call_hierarchy, config.ui
 local insert = table.insert
-local method = {
-  'textDocument/prepareCallHierarchy',
-  'callHierarchy/incomingCalls',
-  'callHierarchy/outgoingCalls',
-}
 
 local ch = {}
 
 local ctx = {}
 function ctx.__newindex(_, k, v)
-  rawset(ctx, k, v)
+  ctx[k] = v
 end
 
 local function clean_ctx()
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
+end
+
+local get_method = function(type)
+  local method = {
+    'textDocument/prepareCallHierarchy',
+    'callHierarchy/incomingCalls',
+    'callHierarchy/outgoingCalls',
+  }
+  return method[type]
 end
 
 ---@private
@@ -98,6 +99,7 @@ function ch:call_hierarchy(item, parent, level)
     if not res or next(res) == nil then
       return
     end
+    local kind = require('lspsaga.lspkind')
     if not parent then
       for i, v in pairs(res) do
         local target = v.from and v.from or v.to
@@ -152,7 +154,7 @@ function ch:send_prepare_call()
   ctx.main_buf = api.nvim_get_current_buf()
 
   local params = lsp.util.make_position_params()
-  lsp.buf_request(0, method[1], params, function(_, result, data)
+  lsp.buf_request(0, get_method(1), params, function(_, result, data)
     local call_hierarchy_item = pick_call_hierarchy_item(result)
     ctx.client = lsp.get_client_by_id(data.client_id)
     self:call_hierarchy(call_hierarchy_item)
@@ -237,21 +239,17 @@ function ch:render_win(content)
 
   local opt = {}
   if fn.has('nvim-0.9') == 1 then
-    local titles = {
-      [method[2]] = 'InComing',
-      [method[3]] = 'OutGoing',
-    }
-    local icon = ctx.method == method[2] and ui.incoming or ui.outgoing
+    local icon = ctx.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
     opt.title = {
       { icon, 'CallHierarchyIcon' },
-      { ' ' .. titles[ctx.method], 'CallHierarchyTitle' },
+      { ' ' .. ctx.method:match('/(%w+)Calls$'), 'CallHierarchyTitle' },
     }
     opt.title_pos = 'left'
   end
   opt.height = math.floor(vim.o.lines * 0.2)
   opt.width = math.floor(vim.o.columns * 0.4)
   opt.no_size_override = true
-  ctx.winbuf, ctx.winid = window.create_win_with_border(content_opt, opt)
+  ctx.winbuf, ctx.winid = ctx.window.create_win_with_border(content_opt, opt)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.winbuf,
     callback = function()
@@ -364,13 +362,14 @@ function ch:preview()
   }
 
   if fn.has('nvim-0.9') == 1 then
+    local libs = require('lspsaga.libs')
     local fname = api.nvim_buf_get_name(data[1])
     local fname_parts = vim.split(fname, libs.path_sep)
     fname_parts = { unpack(fname_parts, #fname_parts - 1, #fname_parts) }
     opt.title = { { table.concat(fname_parts, libs.path_sep) } }
   end
 
-  ctx.preview_bufnr, ctx.preview_winid = window.create_win_with_border(content_opt, opt)
+  ctx.preview_bufnr, ctx.preview_winid = ctx.window.create_win_with_border(content_opt, opt)
   api.nvim_win_set_buf(ctx.preview_winid, data[1])
   vim.bo[data[1]].filetype = vim.bo[ctx.main_buf].filetype
   vim.bo[data[1]].modifiable = true
@@ -378,17 +377,17 @@ function ch:preview()
 end
 
 function ch:incoming_calls()
-  ctx.method = method[2]
+  ctx.method = get_method(2)
+  ctx.window = require('lspsaga.window')
   ctx.data = {}
   self:send_prepare_call()
 end
 
 function ch:outgoing_calls()
-  ctx.method = method[3]
+  ctx.method = get_method(3)
+  ctx.window = require('lspsaga.window')
   ctx.data = {}
   self:send_prepare_call()
 end
 
-setmetatable(ch, ctx)
-
-return ch
+return setmetatable(ch, ctx)

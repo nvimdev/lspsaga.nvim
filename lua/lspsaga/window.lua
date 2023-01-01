@@ -150,10 +150,7 @@ function M.create_win_with_border(content_opts, opts)
   local border = highlight.border or 'LspBorder'
   api.nvim_win_set_option(winid, 'winhl', 'Normal:' .. normal .. ',FloatBorder:' .. border)
 
-  if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
-    api.nvim_win_set_option(winid, 'winbar', '')
-  end
-
+  vim.wo[winid].winbar = ''
   return bufnr, winid
 end
 
