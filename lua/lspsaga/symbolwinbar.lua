@@ -30,7 +30,8 @@ local function get_path_info(buf)
   if config.folder_level == 1 then
     return { tbl[#tbl] }
   end
-  return { unpack(tbl, #tbl - config.folder_level, #tbl) }
+  local index = config.folder_level > #tbl and #tbl or config.folder_level
+  return { unpack(tbl, #tbl - index, #tbl) }
 end
 
 local function get_file_name(buf)
