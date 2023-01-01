@@ -1,30 +1,33 @@
 local config = require('lspsaga').config
 local diag_conf, ui = config.diagnostic, config.ui
-local if_nil, lsp, fn, keymap = vim.F.if_nil, vim.lsp, vim.fn, vim.keymap.set
-local window = require('lspsaga.window')
+local api, if_nil, lsp, fn, keymap = vim.api, vim.F.if_nil, vim.lsp, vim.fn, vim.keymap.set
 local libs = require('lspsaga.libs')
-local act = require('lspsaga.codeaction')
-local api = vim.api
 local insert = table.insert
-local space = ' '
 
 local diag = {}
 
 local ctx = {}
 function ctx.__newindex(_, k, v)
-  rawset(ctx, k, v)
+  ctx[k] = v
 end
 
 --- clean ctx table data
 --- notice just make ctx to empty not free memory before gc
 ---@private
 local function clean_ctx()
+  if diag_conf.show_code_action and ctx.act then
+    ctx.act:clear_tmp_data()
+  end
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
 end
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
+
+local function get_action_obj()
+  return require('lspsaga.codeaction')
+end
 
 ---@private
 local function get_diag_type(severity)
@@ -42,7 +45,7 @@ function diag:code_action_cb()
     ctx.theme.left .. ui.code_action .. 'Fix ' .. ctx.theme.right,
   }
 
-  for index, client_with_actions in pairs(act.action_tuples) do
+  for index, client_with_actions in pairs(ctx.act.action_tuples) do
     local action_title = ''
     if #client_with_actions ~= 2 then
       vim.notify('There has something wrong in aciton_tuples')
@@ -77,7 +80,7 @@ function diag:code_action_cb()
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.bufnr,
     callback = function()
-      ctx.preview_winid = act:action_preview(ctx.winid, ctx.main_buf)
+      ctx.preview_winid = ctx.act:action_preview(ctx.winid, ctx.main_buf)
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
@@ -89,20 +92,21 @@ function diag:do_code_action()
   if not num then
     return
   end
-  act:do_code_action(num)
+  ctx.act:do_code_action(num)
 end
 
 function diag:apply_map()
   keymap('n', diag_conf.keys.exec_action, function()
     self:do_code_action()
-    window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
-    act:clear_tmp_data()
+    ctx.window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
   end, { buffer = ctx.bufnr })
 
   keymap('n', diag_conf.keys.quit, function()
-    api.nvim_win_close(ctx.winid, true)
-    window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
-    act:clear_tmp_data()
+    for _, id in pairs({ ctx.winid, ctx.virt_winid, ctx.preview_winid }) do
+      if api.nvim_win_is_valid(id) then
+        api.nvim_win_close(id, true)
+      end
+    end
   end, { buffer = ctx.bufnr })
 end
 
@@ -111,7 +115,8 @@ function diag:render_diagnostic_window(entry, option)
   local content = {
     ctx.theme.left .. '  Msg ' .. ctx.theme.right,
   }
-  local max_width = window.get_max_float_width()
+  ctx.window = require('lspsaga.window')
+  local max_width = ctx.window.get_max_float_width()
   ctx.main_buf = api.nvim_get_current_buf()
   local cur_word = fn.expand('<cword>')
 
@@ -133,7 +138,7 @@ function diag:render_diagnostic_window(entry, option)
   content[#content] = content[#content] .. source
 
   if diag_conf.show_code_action then
-    act:send_code_action_request(ctx.main_buf, {
+    ctx.act:send_code_action_request(ctx.main_buf, {
       range = {
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
@@ -175,7 +180,7 @@ function diag:render_diagnostic_window(entry, option)
     )
   end
 
-  ctx.bufnr, ctx.winid = window.create_win_with_border(content_opts, opts)
+  ctx.bufnr, ctx.winid = ctx.window.create_win_with_border(content_opts, opts)
   vim.wo[ctx.winid].conceallevel = 2
   vim.wo[ctx.winid].concealcursor = 'niv'
 
@@ -199,7 +204,7 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.height = opts.height + 1
-  ctx.virt_bufnr, ctx.virt_winid = window.create_win_with_border({
+  ctx.virt_bufnr, ctx.virt_winid = ctx.window.create_win_with_border({
     contents = libs.generate_empty_table(#content + 1),
     border = 'none',
     winblend = 100,
@@ -341,7 +346,7 @@ function diag:render_diagnostic_window(entry, option)
       { ctx.winid, ctx.virt_winid, ctx.preview_winid or nil },
       close_autocmds,
       function()
-        act:clear_tmp_data()
+        clean_ctx()
       end
     )
   end, 0)
@@ -354,7 +359,8 @@ function diag:move_cursor(entry)
   end
 
   if diag_conf.show_code_action then
-    act:clear_tmp_data()
+    ctx.act = get_action_obj()
+    ctx.act:clear_tmp_data()
   end
 
   ctx.theme = require('lspsaga').theme()
@@ -396,7 +402,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
   if not libs.check_lsp_active() then
     return
   end
-  local max_width = window.get_max_float_width()
+  local max_width = ctx.window.get_max_float_width()
 
   -- if there already has diagnostic float window did not show show lines
   -- diagnostic window
@@ -432,6 +438,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
     local hiname = 'Diagnostic' .. severities[diagnostic.severity] or severities[1]
     local message_lines = vim.split(diagnostic.message, '\n', { trimempty = true })
 
+    local space = ' '
     if diag_conf.show_source then
       message_lines[1] = prefix .. message_lines[1] .. space .. '[' .. diagnostic.source .. ']'
     end
@@ -462,7 +469,7 @@ function diag:show_diagnostics(opts, get_diagnostics)
     highlight = 'LspSagaDiagnosticBorder',
   }
 
-  ctx.show_diag_bufnr, ctx.show_diag_winid = window.create_win_with_border(content_opts)
+  ctx.show_diag_bufnr, ctx.show_diag_winid = ctx.window.create_win_with_border(content_opts)
 
   for i, hi in ipairs(highlights) do
     local _, hiname = unpack(hi)

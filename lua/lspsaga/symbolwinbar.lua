@@ -1,7 +1,6 @@
 local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config.symbol_in_winbar
 local libs = require('lspsaga.libs')
-local kind = require('lspsaga.lspkind')
 
 local symbar = {}
 
@@ -19,6 +18,11 @@ local bar_prefix = function()
     prefix = '%#LspSagaWinbar',
     sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*',
   }
+end
+
+local function get_kind_icon(type, index)
+  local kind = require('lspsaga.lspkind')
+  return kind[type][index]
 end
 
 local function get_path_info(buf)
@@ -51,7 +55,7 @@ local function get_file_name(buf)
     else
       tmp = bar.prefix
         .. 'Folder#'
-        .. kind[302][2]
+        .. get_kind_icon(302, 2)
         .. '%*'
         .. bar.prefix
         .. 'FolderLevel'
@@ -125,8 +129,8 @@ local function binary_search(tbl, line)
 end
 
 local function insert_elements(node, elements)
-  local type = kind[node.kind][1]
-  local icon = kind[node.kind][2]
+  local type = get_kind_icon(node.kind, 1)
+  local icon = get_kind_icon(node.kind, 2)
   local bar = bar_prefix()
   local node_context = bar.prefix .. type .. '#' .. icon .. node.name
   table.insert(elements, node_context)
