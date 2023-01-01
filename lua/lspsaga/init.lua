@@ -83,7 +83,7 @@ local default_config = {
     enable = true,
     separator = ' ',
     show_file = true,
-    folder_level = 2,
+    folder_level = 1,
   },
   outline = {
     win_position = 'right',

@@ -2,10 +2,6 @@ local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config.symbol_in_winbar
 local libs = require('lspsaga.libs')
 local kind = require('lspsaga.lspkind')
-local bar_prefix = '%#LspSagaWinbar'
-local winbar_sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*'
-local method = 'textDocument/documentSymbol'
-local cap = 'documentSymbolProvider'
 
 local symbar = {}
 
@@ -18,6 +14,13 @@ function cache.__newindex(_, k, v)
   cache[k] = v
 end
 
+local bar_prefix = function()
+  return {
+    prefix = '%#LspSagaWinbar',
+    sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*',
+  }
+end
+
 local function get_path_info(buf)
   local fname = api.nvim_buf_get_name(buf)
   local tbl = vim.split(fname, libs.path_sep, { trimempty = true })
@@ -27,7 +30,7 @@ local function get_path_info(buf)
   if config.folder_level == 1 then
     return { tbl[#tbl] }
   end
-  return { unpack(tbl, config.folder_level + 1, #tbl) }
+  return { unpack(tbl, #tbl - config.folder_level, #tbl) }
 end
 
 local function get_file_name(buf)
@@ -39,22 +42,23 @@ local function get_file_name(buf)
   local str = ''
   local f_icon = data and data[1] and data[1] .. ' ' or ''
   local f_hl = data and data[2] and data[2] or ''
+  local bar = bar_prefix()
   for i, v in pairs(res) do
     local tmp
     if i == #res then
-      tmp = '%#' .. f_hl .. '#' .. f_icon .. '%*' .. bar_prefix .. 'File#' .. v .. '%*'
+      tmp = '%#' .. f_hl .. '#' .. f_icon .. '%*' .. bar.prefix .. 'File#' .. v .. '%*'
     else
-      tmp = bar_prefix
+      tmp = bar.prefix
         .. 'Folder#'
         .. kind[302][2]
         .. '%*'
-        .. bar_prefix
+        .. bar.prefix
         .. 'FolderLevel'
         .. i
         .. '#'
         .. v
         .. '%*'
-        .. winbar_sep
+        .. bar.sep
     end
     str = str .. tmp
   end
@@ -66,12 +70,12 @@ local do_symbol_request = function(buf, callback)
   buf = buf or api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
 
-  local client = libs.get_client_by_cap(cap)
+  local client = libs.get_client_by_cap('documentSymbolProvider')
   if client == nil then
     return
   end
   cache[buf].pending_request = true
-  client.request(method, params, callback, buf)
+  client.request('textDocument/documentSymbol', params, callback, buf)
 end
 
 local function get_node_range(node)
@@ -122,7 +126,8 @@ end
 local function insert_elements(node, elements)
   local type = kind[node.kind][1]
   local icon = kind[node.kind][2]
-  local node_context = bar_prefix .. type .. '#' .. icon .. node.name
+  local bar = bar_prefix()
+  local node_context = bar.prefix .. type .. '#' .. icon .. node.name
   table.insert(elements, node_context)
 end
 
@@ -185,10 +190,11 @@ local render_symbol_winbar = function(buf, symbols)
     table.insert(winbar_elements, 1, '...')
   end
 
-  local str = table.concat(winbar_elements, winbar_sep)
+  local bar = bar_prefix()
+  local str = table.concat(winbar_elements, bar.sep)
 
   if config.show_file and next(winbar_elements) ~= nil then
-    str = winbar_sep .. str
+    str = bar.sep .. str
   end
 
   winbar_str = winbar_str .. str
