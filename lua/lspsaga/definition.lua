@@ -94,7 +94,7 @@ function def:title_text(opts, link)
     { theme.right, 'TitleSymbol' },
   }
   local data = libs.icon_from_devicon(vim.bo.filetype, true)
-  if data then
+  if #data == 2 then
     table.insert(opts.title, 2, { data[1] .. ' ', 'TitleFileIcon' })
     api.nvim_set_hl(0, 'TitleFileIcon', {
       background = config.ui.title,

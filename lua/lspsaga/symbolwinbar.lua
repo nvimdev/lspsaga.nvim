@@ -1,6 +1,5 @@
 local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config.symbol_in_winbar
-local libs = require('lspsaga.libs')
 
 local symbar = {}
 
@@ -25,21 +24,12 @@ local function get_kind_icon(type, index)
   return kind[type][index]
 end
 
-local function get_path_info(buf)
-  local fname = api.nvim_buf_get_name(buf)
-  local tbl = vim.split(fname, libs.path_sep, { trimempty = true })
-  if config.folder_level == 0 then
-    return {}
-  end
-  if config.folder_level == 1 then
-    return { tbl[#tbl] }
-  end
-  local index = config.folder_level > #tbl and #tbl or config.folder_level
-  return { unpack(tbl, #tbl - index + 1, #tbl) }
-end
-
 local function bar_file_name(buf)
-  local res = get_path_info(buf)
+  local libs = require('lspsaga.libs')
+  local res = libs.get_path_info(buf, config.folder_level)
+  if not res then
+    return
+  end
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
   if #res == 0 then
     return ''
@@ -75,6 +65,7 @@ local do_symbol_request = function(buf, callback)
   buf = buf or api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
 
+  local libs = require('lspsaga.libs')
   local client = libs.get_client_by_cap('documentSymbolProvider')
   if client == nil then
     return

@@ -1,5 +1,4 @@
 local api = vim.api
-
 local saga = {}
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
@@ -8,8 +7,8 @@ local default_config = {
     theme = 'round',
     border = 'solid',
     winblend = 0,
-    expand = ' ',
-    collaspe = ' ',
+    expand = '',
+    collaspe = '',
     finder = ' ',
     preview = ' ',
     code_action = '💡',

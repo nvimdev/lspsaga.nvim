@@ -8,6 +8,8 @@ local highlights = {
   TitleSymbol = { bg = bg, fg = ui.title },
   TitleIcon = { bg = ui.title, fg = '#89d957' },
   SagaBorder = { bg = bg },
+  SagaExpand = { fg = '#c955ae' },
+  SagaCollaspe = { fg = '#b8733e' },
   -- code action
   ActionPreviewNormal = { link = 'SagaBorder' },
   ActionPreviewBorder = { link = 'SagaBorder' },
@@ -49,6 +51,8 @@ local highlights = {
   DiagnosticHintBorder = { link = 'SagaBorder' },
   DiagnosticInfoBorder = { link = 'SagaBorder' },
   -- Call Hierachry
+  CallHierarchyNormal = { link = 'SagaBorder' },
+  CallHierarchyBorder = { link = 'SagaBorder' },
   CallHierarchyIcon = { fg = '#CBA6F7' },
   CallHierarchyTitle = { fg = '#9c255e' },
   -- lightbulb
@@ -58,8 +62,6 @@ local highlights = {
   -- Outline
   OutlinePreviewBorder = { link = 'SagaBorder' },
   OutlinePreviewNormal = { link = 'SagaBorder' },
-  OutlineExpand = { fg = '#c955ae' },
-  OutlineCollaspe = { fg = '#b8733e' },
   OutlineDetail = { fg = '#73797e' },
 }
 

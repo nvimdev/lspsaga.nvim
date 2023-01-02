@@ -1,4 +1,4 @@
-local api, fn, lsp, validate = vim.api, vim.fn, vim.lsp, vim.validate
+local api, fn, lsp, validate, uv = vim.api, vim.fn, vim.lsp, vim.validate, vim.loop
 local config = require('lspsaga').config
 local call_conf, ui = config.call_hierarchy, config.ui
 local insert = table.insert
@@ -62,7 +62,6 @@ function ch:call_hierarchy(item, parent, level)
   local pending_request = true
   local frame = 0
   if ctx.winbuf and api.nvim_buf_is_loaded(ctx.winbuf) and parent then
-    local uv = vim.loop
     local timer = uv.new_timer()
     timer:start(
       0,
@@ -72,24 +71,40 @@ function ch:call_hierarchy(item, parent, level)
         local curline = api.nvim_win_get_cursor(0)[1]
         local replace_icon = text:find(ui.expand) and ui.expand or ui.collaspe
         if pending_request then
+          if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
+            api.nvim_win_close(ctx.preview_winid, true)
+            ctx.preview_winid = nil
+          end
+          ctx.pending_request = true
           local next = frame + 1 == 9 and 1 or frame + 1
           if text:find(replace_icon) then
             text = text:gsub(replace_icon, spinner[next])
           else
             text = text:gsub(spinner[frame], spinner[next])
           end
+          local col_start = text:find(spinner[next])
           vim.bo[ctx.winbuf].modifiable = true
           api.nvim_buf_set_lines(ctx.winbuf, curline - 1, curline, false, { text })
           frame = frame + 1 == 9 and 1 or frame + 1
+          api.nvim_buf_add_highlight(
+            ctx.winbuf,
+            0,
+            'FinderSpinner',
+            curline - 1,
+            col_start,
+            col_start + #spinner[next]
+          )
         end
 
         if not pending_request and not timer:is_closing() then
+          timer:stop()
           timer:close()
           text = text:gsub(spinner[frame], replace_icon)
           if vim.bo[ctx.winbuf].modifiable then
             api.nvim_buf_set_lines(ctx.winbuf, curline - 1, curline, false, { text })
           end
           vim.bo[ctx.winbuf].modifiable = false
+          ctx.pending_request = false
         end
       end)
     )
@@ -234,17 +249,22 @@ function ch:render_win(content)
   local content_opt = {
     contents = content,
     enter = true,
-    highlight = 'CallHierarchyBorder',
+    highlight = {
+      normal = 'CallHierarchyNormal',
+      border = 'CallHierarchyBorder',
+    },
   }
 
   local opt = {}
   if fn.has('nvim-0.9') == 1 then
+    local theme = require('lspsaga').theme()
     local icon = ctx.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
     opt.title = {
-      { icon, 'CallHierarchyIcon' },
-      { ' ' .. ctx.method:match('/(%w+)Calls$'), 'CallHierarchyTitle' },
+      { theme.left, 'TitleSymbol' },
+      { icon, 'TitleIcon' },
+      { ' ' .. ctx.method:match('/(%w+)Calls$'), 'TitleString' },
+      { theme.right, 'TitleSymbol' },
     }
-    opt.title_pos = 'left'
   end
   opt.height = math.floor(vim.o.lines * 0.2)
   opt.width = math.floor(vim.o.columns * 0.4)
@@ -253,9 +273,18 @@ function ch:render_win(content)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.winbuf,
     callback = function()
-      self:preview()
+      if not ctx.pending_request then
+        self:preview()
+      end
     end,
   })
+
+  for i, v in pairs(content) do
+    local char = i == 1 and ui.collaspe or ui.expand
+    local _, pos = v:find(char)
+    api.nvim_buf_add_highlight(ctx.winbuf, 0, 'SagaExpand', i - 1, 0, pos)
+    api.nvim_buf_add_highlight(ctx.winbuf, 0, 'FinderSelection', i - 1, pos, -1)
+  end
 
   self:apply_map()
 end
@@ -358,15 +387,30 @@ function ch:preview()
 
   local content_opt = {
     contents = {},
+    highlight = {
+      border = 'ActionPreviewBorder',
+      normal = 'CallHierarchyNormal',
+    },
     enter = false,
   }
 
   if fn.has('nvim-0.9') == 1 then
     local libs = require('lspsaga.libs')
-    local fname = api.nvim_buf_get_name(data[1])
-    local fname_parts = vim.split(fname, libs.path_sep)
-    fname_parts = { unpack(fname_parts, #fname_parts - 1, #fname_parts) }
-    opt.title = { { table.concat(fname_parts, libs.path_sep) } }
+    local fname_parts = libs.get_path_info(data[1], 2)
+    local tbl = libs.icon_from_devicon(vim.bo[ctx.main_buf].filetype, true)
+    local theme = require('lspsaga').theme()
+    opt.title = {
+      { theme.left, 'TitleSymbol' },
+      { (tbl[1] or '') .. ' ', 'TitleFileIcon' },
+      { table.concat(fname_parts or {}, libs.path_sep), 'TitleString' },
+      { theme.right, 'TitleSymbol' },
+    }
+    if #tbl == 2 then
+      api.nvim_set_hl(0, 'TitleFileIcon', {
+        background = config.ui.title,
+        foreground = tbl[2],
+      })
+    end
   end
 
   ctx.preview_bufnr, ctx.preview_winid = ctx.window.create_win_with_border(content_opt, opt)

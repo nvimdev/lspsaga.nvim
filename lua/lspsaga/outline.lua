@@ -234,7 +234,7 @@ function ot:expand_collaspe(bufnr)
     api.nvim_buf_set_lines(self.winbuf, current_line - 1, _end_pos - 1, false, { current_text })
     api.nvim_buf_set_option(self.winbuf, 'modifiable', false)
     data[actual_index].expand = false
-    api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineCollaspe', current_line - 1, 0, pos)
+    api.nvim_buf_add_highlight(self.winbuf, 0, 'SagaCollaspe', current_line - 1, 0, pos)
     api.nvim_buf_add_highlight(
       self.winbuf,
       0,
@@ -281,7 +281,7 @@ function ot:expand_collaspe(bufnr)
       api.nvim_buf_add_highlight(
         self.winbuf,
         0,
-        'OutlineExpand',
+        'SagaExpand',
         data[i].win_line - 1,
         0,
         data[i].expand_col
@@ -401,7 +401,7 @@ function ot:update_outline(buf, symbols, event)
   for i, data in pairs(self[buf].data) do
     api.nvim_buf_add_highlight(self.winbuf, 0, data.hi, i - 1, 0, data.hi_scope)
     if data.expand_col then
-      api.nvim_buf_add_highlight(self.winbuf, 0, 'OutlineExpand', i - 1, 0, data.expand_col)
+      api.nvim_buf_add_highlight(self.winbuf, 0, 'SagaExpand', i - 1, 0, data.expand_col)
     end
   end
 
