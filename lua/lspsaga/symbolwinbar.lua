@@ -207,7 +207,6 @@ local render_symbol_winbar = function(buf, symbols)
 
   winbar_str = winbar_str .. str
   local ok = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-  print(ok, winid)
   if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 and not ok then
     vim.wo[winid].winbar = winbar_str
   end

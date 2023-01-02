@@ -1,12 +1,19 @@
 local config = require('lspsaga').config
-local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap.set
+local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
 local def = {}
+
+-- a double linked list for store the node infor
 local ctx = {}
 
-local function clean_ctx() end
+local function clean_ctx()
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
+  end
+end
 
----Get current window scope
+---Get current node by id
 ---@private
+---@return table|nil
 local function find_node(winid)
   if vim.tbl_isempty(ctx) then
     return nil
@@ -22,12 +29,30 @@ local function find_node(winid)
   return node
 end
 
----Get scope index in scopes
+---remove a node
 ---@private
-local function get_index(node) end
+local function remove(node)
+  local cur_node = find_node(node.winid)
+  if not cur_node then
+    return false
+  end
+  local prev = cur_node.prev
+  local next = cur_node.next
+  if prev then
+    if next then
+      next.prev = prev
+    end
+    prev.next = next
+  end
+  cur_node = nil
+  local key = vim.tbl_keys(ctx)[1]
+  ctx[key].length = ctx[key].length - 1
+  return true
+end
 
-local function remove(node) end
-
+---find the last node
+---@private
+---@return table
 local function last_node(list)
   local node = list.node
   while true do
@@ -39,9 +64,12 @@ local function last_node(list)
   return node
 end
 
+---push a node into the ctx
+---@private
 local function push(node)
   if vim.tbl_isempty(ctx) then
     ctx[node.main_winid] = {
+      length = 1,
       node = node,
     }
     return
@@ -50,6 +78,7 @@ local function push(node)
   local tail = last_node(ctx[key])
   tail.next = node
   node.prev = tail
+  ctx[key].length = ctx[key].length + 1
 end
 
 function def:title_text(opts, link)
@@ -104,23 +133,16 @@ local function get_uri_data(result)
   return bufnr, link, start_line, start_char_pos, end_char_pos
 end
 
--- { [bufnr] = {
---    main_winid = number,
---    fname = string,
---    scopes = {
---     { bufnr,def_win_ns, link, winid, main_bufnr }
---    }
---  }
--- }
+local in_process = 0
 function def:peek_definition()
   local cur_winid = api.nvim_get_current_win()
-  local cur_node = find_node(cur_winid)
-  if cur_node and cur_node.pending_request then
+  if in_process == cur_winid then
     vim.notify('[Lspsaga] Already have a peek_definition request please wait', vim.log.levels.WARN)
     return
   end
+  in_process = cur_winid
   local current_buf = api.nvim_get_current_buf()
-  -- { next,main_winid,fname, winid, bufnr,pending_request}
+  -- { prev, next,main_winid,fname, winid, bufnr}
   local node = {}
   node.main_bufnr = current_buf
   node.main_winid = cur_winid
@@ -135,9 +157,8 @@ function def:peek_definition()
 
   local params = lsp.util.make_position_params()
 
-  node.pending_request = true
   lsp.buf_request_all(current_buf, 'textDocument/definition', params, function(results)
-    node.pending_request = false
+    in_process = 0
     if not results or next(results) == nil then
       vim.notify(
         '[Lspsaga] response of request method textDocument/definition is nil',
@@ -168,8 +189,7 @@ function def:peek_definition()
       relative = 'cursor',
       style = 'minimal',
     }
-    local WIN_WIDTH = vim.o.columns
-    local max_width = math.floor(WIN_WIDTH * 0.6)
+    local max_width = math.floor(vim.o.columns * 0.6)
     local max_height = math.floor(vim.o.lines * 0.6)
 
     opts.width = max_width
@@ -221,6 +241,9 @@ function def:peek_definition()
       api.nvim_set_hl(node.def_win_ns, 'SignColumn', {
         background = config.ui.normal,
       })
+      api.nvim_set_hl(node.def_win_ns, 'DefinitionBorder', {
+        background = config.ui.normal,
+      })
     end
 
     self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
@@ -242,69 +265,99 @@ function def:event(bufnr)
       pcall(api.nvim_buf_clear_namespace, bufnr, node.def_win_ns, 0, -1)
     end,
   })
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = bufnr,
+    callback = function(opt)
+      local wins = fn.win_findbuf(opt.buf)
+      if #wins == 0 then
+        return
+      end
+      if #wins == 2 then
+        for _, map in pairs(config.definition.keys) do
+          pcall(api.nvim_buf_del_keymap, opt.buf, 'n', map)
+        end
+      end
+      local key = vim.tbl_keys(ctx)[1]
+      if ctx[key].length == 1 then
+        api.nvim_del_autocmd(opt.id)
+      end
+    end,
+  })
+end
+
+local function unpack_maps()
+  local maps = config.definition.keys
+  local res = {}
+  for key, val in pairs(maps) do
+    if key ~= 'quit' or 'close' then
+      res[key] = val
+    end
+  end
+  return res
 end
 
 function def:apply_aciton_keys(bufnr, pos)
-  local maps = config.definition.keys
-  for action, key in pairs(maps) do
-    if action ~= 'close' then
-      keymap('n', key, function()
-        local winid = api.nvim_get_current_win()
-        local node = find_node(winid)
-        if not node then
-          return
-        end
-        api.nvim_buf_clear_namespace(bufnr, node.def_win_ns, 0, -1)
-        self:close_window(node.scope)
-        if action ~= 'quit' then
-          vim.cmd(action .. ' ' .. node.link)
-          api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
-          self:clean_buf_map(node.main_bufnr)
-          clean_ctx()
-        else
-          if node.prev then
-            local prev_winid = node.prev.winid
-            if prev_winid and api.nvim_win_is_valid(prev_winid) then
-              api.nvim_set_current_win(prev_winid)
-            end
-            self:clean_buf_map(node.main_bufnr, node)
-          else
-            self:clean_buf_map(node.main_bufnr)
-          end
-        end
-      end, { buffer = bufnr })
+  local maps = unpack_maps()
+  local opt = { buffer = true, nowait = true }
+
+  local node_with_close = function()
+    local winid = api.nvim_get_current_win()
+    local node = find_node(winid)
+    if not node then
+      return
     end
+    api.nvim_buf_clear_namespace(bufnr, node.def_win_ns, 0, -1)
+    self:close_window(node.winid)
+    return node
+  end
+  for action, key in pairs(maps) do
+    keymap.set('n', key, function()
+      local node = node_with_close()
+      if not node then
+        return
+      end
+      vim.cmd(action .. ' ' .. node.link)
+      api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+      clean_ctx()
+    end, opt)
   end
 
-  keymap('n', maps.close, function()
+  keymap.set('n', config.definition.keys.quit, function()
+    local node = node_with_close()
+    if not node then
+      return
+    end
+    if node.prev and api.nvim_win_is_valid(node.prev.winid) then
+      api.nvim_set_current_win(node.prev.winid)
+      remove(node)
+    else
+      clean_ctx()
+    end
+  end, opt)
+
+  keymap.set('n', config.definition.keys.close, function()
+    if vim.tbl_isempty(ctx) then
+      return
+    end
     local key = vim.tbl_keys(ctx)[1]
-    local node = ctx[key]
+    local node = ctx[key].node
     while true do
+      if node.winid and api.nvim_win_is_valid(node.winid) then
+        api.nvim_win_close(node.winid, true)
+        remove(node)
+      end
+      node = node.next
       if not node then
         break
       end
-      if node.winid and api.nvim_win_is_valid(node.winid) then
-        api.nvim_win_close(node.winid, true)
-      end
-      node = node.next
     end
     clean_ctx()
-  end, { buffer = bufnr })
+  end, opt)
 end
 
-function def:clean_buf_map(buf, scope)
-  local scopes = scope or { scope } or self[buf].scopes
-  local maps = config.definition.keys
-  for _, v in pairs(scopes) do
-    for _, j in pairs(maps) do
-      vim.keymap.del('n', j, { buffer = v.bufnr })
-    end
-  end
-end
-
-function def:close_window(scope)
-  if scope.winid and api.nvim_win_is_valid(scope.winid) then
-    api.nvim_win_close(scope.winid, true)
+function def:close_window(winid)
+  if api.nvim_win_is_valid(winid) then
+    api.nvim_win_close(winid, true)
   end
 end
 

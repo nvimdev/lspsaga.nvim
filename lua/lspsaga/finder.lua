@@ -379,7 +379,6 @@ function Finder:render_finder_result()
     buffer = self.bufnr,
     callback = function()
       self:quit_with_clear()
-      print(vim.inspect(self))
       if finder_group then
         pcall(api.nvim_del_augroup_by_id, finder_group)
       end
