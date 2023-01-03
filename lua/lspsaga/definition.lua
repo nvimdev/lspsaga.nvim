@@ -214,8 +214,10 @@ function def:peek_definition()
 
     local window = require('lspsaga.window')
     _, node.winid = window.create_win_with_border(content_opts, opts)
+    if config.symbol_in_winbar.enable then
+      api.nvim_win_set_var(node.winid, 'disable_winbar', true)
+    end
     vim.opt_local.modifiable = true
-    api.nvim_win_set_var(node.winid, 'disable_winbar', true)
     api.nvim_win_set_buf(node.winid, bufnr)
     node.bufnr = bufnr
     api.nvim_buf_set_option(node.bufnr, 'bufhidden', 'wipe')

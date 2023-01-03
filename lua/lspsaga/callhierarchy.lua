@@ -1,6 +1,6 @@
 local api, fn, lsp, validate, uv = vim.api, vim.fn, vim.lsp, vim.validate, vim.loop
 local config = require('lspsaga').config
-local call_conf, ui = config.call_hierarchy, config.ui
+local call_conf, ui = config.callhierarchy, config.ui
 local insert = table.insert
 
 local ch = {}
@@ -16,7 +16,7 @@ local function clean_ctx()
   end
 end
 
-local get_method = function(type)
+local function get_method(type)
   local method = {
     'textDocument/prepareCallHierarchy',
     'callHierarchy/incomingCalls',
@@ -48,7 +48,7 @@ end
 ---@private
 local function parse_data(tbl)
   local content = {}
-  insert(content, ui.collaspe .. fn.expand('<cword>'))
+  insert(content, ' ' .. fn.expand('<cword>'))
   for _, v in pairs(tbl) do
     insert(content, v.name)
   end
@@ -116,8 +116,10 @@ function ch:call_hierarchy(item, parent, level)
     end
     local kind = require('lspsaga.lspkind')
     if not parent then
+      local icons = {}
       for i, v in pairs(res) do
         local target = v.from and v.from or v.to
+        table.insert(icons, kind[target.kind])
         insert(ctx.data, {
           target = target,
           name = indent .. ui.expand .. kind[target.kind][2] .. target.name,
@@ -129,6 +131,25 @@ function ch:call_hierarchy(item, parent, level)
       end
       local content = parse_data(ctx.data)
       self:render_win(content)
+      for i, v in pairs(content) do
+        local char = i == 1 and ui.collaspe or ui.expand
+        local _, pos = v:find(char)
+        if not pos then
+          pos = 3
+        end
+        api.nvim_buf_add_highlight(ctx.winbuf, 0, 'FinderSelection', i - 1, 0, pos)
+        if i > 1 then
+          api.nvim_buf_add_highlight(
+            ctx.winbuf,
+            0,
+            'LSOutline' .. icons[i - 1][1],
+            i - 1,
+            pos,
+            pos + #icons[i - 1][2]
+          )
+        end
+      end
+
       return
     end
 
@@ -279,13 +300,6 @@ function ch:render_win(content)
     end,
   })
 
-  for i, v in pairs(content) do
-    local char = i == 1 and ui.collaspe or ui.expand
-    local _, pos = v:find(char)
-    api.nvim_buf_add_highlight(ctx.winbuf, 0, 'SagaExpand', i - 1, 0, pos)
-    api.nvim_buf_add_highlight(ctx.winbuf, 0, 'FinderSelection', i - 1, pos, -1)
-  end
-
   self:apply_map()
 end
 
@@ -414,10 +428,14 @@ function ch:preview()
   end
 
   ctx.preview_bufnr, ctx.preview_winid = ctx.window.create_win_with_border(content_opt, opt)
+  if config.symbol_in_winbar.enable then
+    api.nvim_win_set_var(ctx.preview_winid, 'disable_winbar', true)
+  end
   api.nvim_win_set_buf(ctx.preview_winid, data[1])
   vim.bo[data[1]].filetype = vim.bo[ctx.main_buf].filetype
   vim.bo[data[1]].modifiable = true
   api.nvim_win_set_cursor(ctx.preview_winid, { data[2].start.line, data[2].start.character })
+  vim.wo[ctx.preview_winid].signcolumn = 'no'
 end
 
 function ch:incoming_calls()

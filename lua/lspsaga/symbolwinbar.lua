@@ -12,7 +12,7 @@ function cache.__newindex(_, k, v)
   cache[k] = v
 end
 
-local bar_prefix = function()
+local function bar_prefix()
   return {
     prefix = '%#LspSagaWinbar',
     sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*',
@@ -166,6 +166,10 @@ local render_symbol_winbar = function(buf, symbols)
   if not api.nvim_win_is_valid(winid) then
     return
   end
+  local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+  if ok and val then
+    return
+  end
   local current_line = api.nvim_win_get_cursor(winid)[1]
   local winbar_str = config.show_file and bar_file_name(buf) or ''
 
@@ -197,8 +201,8 @@ local render_symbol_winbar = function(buf, symbols)
   end
 
   winbar_str = winbar_str .. str
-  local ok = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-  if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 and not ok then
+
+  if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 then
     vim.wo[winid].winbar = winbar_str
   end
   return winbar_str
@@ -325,8 +329,11 @@ function symbar.config_symbol_autocmd()
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
       local winid = vim.fn.bufwinid(opt.buf)
-      local ok = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-      if config.show_file and not ok then
+      local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+      if ok and val then
+        return
+      end
+      if config.show_file then
         vim.wo[winid].winbar = bar_file_name(opt.buf)
       end
 

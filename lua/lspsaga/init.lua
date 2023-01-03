@@ -100,7 +100,7 @@ local default_config = {
       quit = 'q',
     },
   },
-  call_hierarchy = {
+  callhierarchy = {
     show_detail = false,
     keys = {
       jump_to_preview = 'o',
