@@ -119,7 +119,19 @@ local function binary_search(tbl, line)
   end
 end
 
-local function insert_elements(node, elements)
+local function insert_elements(buf, node, elements)
+  if node.selectionRange then
+    local captures = vim.treesitter.get_captures_at_pos(
+      buf,
+      node.selectionRange.start.line,
+      node.selectionRange.start.character
+    )
+    for _, v in pairs(captures) do
+      if v.capture == 'keyword' or v.capture == 'conditional' then
+        return
+      end
+    end
+  end
   local type = get_kind_icon(node.kind, 1)
   local icon = get_kind_icon(node.kind, 2)
   local bar = bar_prefix()
@@ -128,7 +140,7 @@ local function insert_elements(node, elements)
 end
 
 --@private
-local function find_in_node(tbl, line, elements)
+local function find_in_node(buf, tbl, line, elements)
   local mid = binary_search(tbl, line)
   if mid == nil then
     return
@@ -146,15 +158,15 @@ local function find_in_node(tbl, line, elements)
         and range.start.line > prev_range.start.line
         and range['end'].line <= prev_range['end'].line
       then
-        insert_elements(tbl[i], elements)
+        insert_elements(buf, tbl[i], elements)
       end
     end
   end
 
-  insert_elements(tbl[mid], elements)
+  insert_elements(buf, tbl[mid], elements)
 
   if node.children ~= nil and next(node.children) ~= nil then
-    find_in_node(node.children, line, elements)
+    find_in_node(buf, node.children, line, elements)
   end
 end
 
@@ -175,7 +187,7 @@ local render_symbol_winbar = function(buf, symbols)
 
   local winbar_elements = {}
 
-  find_in_node(symbols, current_line - 1, winbar_elements)
+  find_in_node(buf, symbols, current_line - 1, winbar_elements)
 
   local lens, over_idx = 0, 0
   local max_width = math.floor(api.nvim_win_get_width(winid) * 0.9)
