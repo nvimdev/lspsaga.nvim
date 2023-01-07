@@ -20,7 +20,8 @@ local function bar_prefix()
 end
 
 local function get_kind_icon(type, index)
-  local kind = require('lspsaga.lspkind')
+  local kind = require('lspsaga.highlight').kind
+  ---@diagnostic disable-next-line: need-check-nil
   return kind[type][index]
 end
 
@@ -173,12 +174,13 @@ end
 --@private
 local render_symbol_winbar = function(buf, symbols)
   buf = buf or api.nvim_get_current_buf()
-  local winid = vim.fn.bufwinid(buf)
+  local winid = api.nvim_get_current_win()
   if not api.nvim_win_is_valid(winid) then
     return
   end
   local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
   if ok and val then
+    vim.wo[winid].winbar = ''
     return
   end
   local current_line = api.nvim_win_get_cursor(winid)[1]
@@ -328,19 +330,13 @@ function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
-      local winids = fn.win_findbuf(opt.buf)
-      if vim.tbl_isempty(winids) then
+      local winid = api.nvim_get_current_win()
+      local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+      if ok and val then
         return
       end
-
-      for _, winid in ipairs(winids) do
-        local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-        if ok and val then
-          return
-        end
-        if config.show_file then
-          vim.wo[winid].winbar = bar_file_name(opt.buf)
-        end
+      if config.show_file then
+        vim.wo[winid].winbar = bar_file_name(opt.buf)
       end
 
       symbar:symbol_events(opt.buf)

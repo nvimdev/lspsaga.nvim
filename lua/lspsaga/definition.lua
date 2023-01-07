@@ -97,7 +97,7 @@ function def:title_text(opts, link)
   if #data == 2 then
     table.insert(opts.title, 2, { data[1] .. ' ', 'TitleFileIcon' })
     api.nvim_set_hl(0, 'TitleFileIcon', {
-      background = config.ui.title,
+      background = config.ui.colors.title_bg,
       foreground = data[2],
     })
   end
@@ -200,7 +200,6 @@ function def:peek_definition()
     opts.row = opts.row + 1
     local content_opts = {
       contents = {},
-      filetype = vim.bo[current_buf].filetype,
       enter = true,
       highlight = {
         border = 'DefinitionBorder',
@@ -217,6 +216,7 @@ function def:peek_definition()
     if config.symbol_in_winbar.enable then
       api.nvim_win_set_var(node.winid, 'disable_winbar', true)
     end
+    vim.wo[node.winid].winbar = ''
     vim.opt_local.modifiable = true
     api.nvim_win_set_buf(node.winid, bufnr)
     node.bufnr = bufnr
@@ -235,18 +235,16 @@ function def:peek_definition()
       end_char_pos
     )
 
-    if vim.bo[bufnr].buflisted then
-      api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
-      api.nvim_set_hl(node.def_win_ns, 'Normal', {
-        background = config.ui.normal,
-      })
-      api.nvim_set_hl(node.def_win_ns, 'SignColumn', {
-        background = config.ui.normal,
-      })
-      api.nvim_set_hl(node.def_win_ns, 'DefinitionBorder', {
-        background = config.ui.normal,
-      })
-    end
+    api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
+    api.nvim_set_hl(node.def_win_ns, 'Normal', {
+      background = config.ui.colors.normal_bg,
+    })
+    api.nvim_set_hl(node.def_win_ns, 'SignColumn', {
+      background = config.ui.colors.normal_bg,
+    })
+    api.nvim_set_hl(node.def_win_ns, 'DefinitionBorder', {
+      background = config.ui.colors.normal_bg,
+    })
 
     self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
     self:event(bufnr)
@@ -273,6 +271,13 @@ function def:event(bufnr)
       local wins = fn.win_findbuf(opt.buf)
       if #wins == 0 then
         return
+      end
+      if #wins == 1 then
+        local node = find_node(wins[1])
+        if not node then
+          return
+        end
+        pcall(api.nvim_buf_clear_namespace, node.def_win_ns)
       end
       if #wins == 2 then
         for _, map in pairs(config.definition.keys) do

@@ -296,7 +296,7 @@ function diag:render_diagnostic_window(entry, option)
   })
 
   api.nvim_set_hl(0, 'DiagnosticTitleText', {
-    background = ui.background,
+    background = ui.colors.normal_bg,
     foreground = '#963656',
   })
 
@@ -312,7 +312,7 @@ function diag:render_diagnostic_window(entry, option)
 
   api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
     foreground = colors.foreground,
-    background = ui.background,
+    background = ui.colors.normal_bg,
   })
 
   api.nvim_set_hl(0, 'DiagnosticActionTitle', {

@@ -231,7 +231,7 @@ end
 function Finder:create_finder_contents(result, method)
   local contents = {}
 
-  insert(contents, { self.titles[method] ..' '.. #result .. ' results', false })
+  insert(contents, { self.titles[method] .. ' ' .. #result .. ' results', false })
   insert(contents, { ' ', false })
 
   local msgs = {
@@ -631,7 +631,7 @@ function Finder:auto_open_preview()
       end
     else
       -- Put preview window below the finder window
-      local max_height = self.WIN_HEIGHT - finder_win_opts.row - finder_height - border_width - 2
+      local max_height = vim.o.lines - finder_win_opts.row - finder_height - border_width - 2
       if max_height <= 3 then
         return
       end -- Don't show preview window if too short

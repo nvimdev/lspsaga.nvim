@@ -14,7 +14,14 @@ local default_config = {
     code_action = '💡',
     incoming = ' ',
     outgoing = ' ',
-    colors = {},
+    colors = {
+      --float window normal bakcground color
+      normal_bg = '#1d1536',
+      --title background color
+      title_bg = '#e29cb1',
+      title_fg = '',
+    },
+    kind = {},
   },
   diagnostic = {
     twice_into = false,
@@ -104,7 +111,6 @@ local default_config = {
       expand_collaspe = 'u',
     },
   },
-  custom_kind = {},
   server_filetype_map = {},
 }
 
@@ -122,16 +128,12 @@ end
 function saga.init_lsp_saga(opts)
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
-  require('lspsaga.highlight').init_highlight()
+  require('lspsaga.highlight'):init_highlight()
   if saga.config.lightbulb.enable then
     require('lspsaga.lightbulb').lb_autocmd()
   end
 
-  local kind = require('lspsaga.lspkind')
-  kind.load_custom_kind()
-
   if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.in_custom then
-    kind.gen_symbol_winbar_hi()
     require('lspsaga.symbolwinbar').config_symbol_autocmd()
   end
 end

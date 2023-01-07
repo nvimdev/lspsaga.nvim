@@ -28,10 +28,12 @@ function ot:init_data(tbl, level)
     self[current_buf].data = {}
   end
 
-  local kind = require('lspsaga.lspkind')
+  local kind = require('lspsaga.highlight').kind
   for _, node in pairs(tbl) do
     level = level or 1
+    ---@diagnostic disable: need-check-nil
     icon = kind[node.kind][2]
+    ---@diagnostic disable: need-check-nil
     hi = hi_prefix .. kind[node.kind][1]
     local indent = string.rep('  ', level)
     local indent_with_icon = indent .. icon
