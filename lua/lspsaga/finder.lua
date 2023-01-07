@@ -4,21 +4,16 @@ local insert = table.insert
 
 local Finder = {}
 
-local get_indent = function()
-  return '    '
-end
-
 function Finder:init_data()
   self.methods = {
     'textDocument/definition',
     'textDocument/implementation',
     'textDocument/references',
   }
-  local theme = require('lspsaga').theme()
   self.titles = {
-    [self.methods[1]] = theme.left .. 'Definition' .. theme.right,
-    [self.methods[2]] = theme.left .. 'Implements' .. theme.right,
-    [self.methods[3]] = theme.left .. 'References' .. theme.right,
+    [self.methods[1]] =  'Definition',
+    [self.methods[2]] =  'Implements',
+    [self.methods[3]] =  'References',
   }
   self.window = require('lspsaga.window')
   self.libs = require('lspsaga.libs')
@@ -26,15 +21,14 @@ end
 
 function Finder:lsp_finder()
   self:init_data()
-
   self.client = self.libs.get_client_by_cap('implementationProvider')
 
   -- push a tag stack
   local pos = api.nvim_win_get_cursor(0)
-  local current_word = vim.fn.expand('<cword>')
+  local current_word = fn.expand('<cword>')
   local from = { api.nvim_get_current_buf(), pos[1], pos[2], 0 }
   local items = { { tagname = current_word, from = from } }
-  vim.fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
+  fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
   self.request_result = {}
   local params = lsp.util.make_position_params()
@@ -54,16 +48,13 @@ function Finder:lsp_finder()
 end
 
 function Finder:loading_bar()
-  self.WIN_WIDTH = fn.winwidth(0)
-  self.WIN_HEIGHT = fn.winheight(0)
-
   -- calculate our floating window size
-  local win_height = math.ceil(self.WIN_HEIGHT * 0.6)
-  local win_width = math.ceil(self.WIN_WIDTH * 0.8)
+  local win_height = math.ceil(vim.o.lines * 0.6)
+  local win_width = math.ceil(vim.o.columns * 0.8)
 
   -- and its starting position
-  local row = math.ceil((self.WIN_HEIGHT - win_height) / 2 - 1)
-  local col = math.ceil(self.WIN_WIDTH - win_width)
+  local row = math.ceil((vim.o.lines - win_height) / 2 - 1)
+  local col = math.ceil(vim.o.columns - win_width)
 
   local opts = {
     relative = 'editor',
@@ -175,15 +166,13 @@ function Finder:do_request(params, method)
 end
 
 function Finder:get_file_icon()
-  local ok, devicons = pcall(require, 'nvim-web-devicons')
-  self.f_icon = ''
-  self.f_hl = ''
-  if ok then
-    self.f_icon, self.f_hl = devicons.get_icon_by_filetype(vim.bo.filetype)
+  local res = self.libs.icon_from_devicon(vim.bo.filetype)
+  if #res == 0 then
+    self.f_icon = ''
+  else
+    self.f_icon = res[1] .. ' '
+    self.f_hl = res[2]
   end
-  -- if filetype doesn't match devicon will set f_icon to nil so add a patch
-  self.f_icon = self.f_icon == nil and '' or (self.f_icon .. ' ')
-  self.f_hl = self.f_hl == nil and '' or self.f_hl
 end
 
 function Finder:get_uri_scope(method, start_lnum, end_lnum)
@@ -251,9 +240,9 @@ function Finder:create_finder_contents(result, method)
     [self.methods[3]] = 'No References  Found',
   }
 
-  local indent = get_indent()
+  self.indent = '    '
   if #result == 0 then
-    insert(contents, { indent .. self.f_icon .. msgs[method], false })
+    insert(contents, { self.indent .. self.f_icon .. msgs[method], false })
     insert(contents, { ' ', false })
     return contents
   end
@@ -284,7 +273,7 @@ function Finder:create_finder_contents(result, method)
       end
     end
 
-    local target_line = indent .. self.f_icon .. short_name
+    local target_line = self.indent .. self.f_icon .. short_name
 
     local range = res.targetRange or res.range
     local lines = api.nvim_buf_get_lines(
@@ -399,11 +388,12 @@ function Finder:render_finder_result()
     virt_text_pos = 'overlay',
   })
 
-  local indent = get_indent()
   for i = self.def_scope[1] + 2, self.def_scope[2] - 1, 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
+    if self.f_hl then
+      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
+    end
 
     if i == self.def_scope[2] - 1 then
       insert(virt_texts, { '└', virt_hi })
@@ -428,7 +418,9 @@ function Finder:render_finder_result()
     for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
       local virt_texts = {}
       api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
+      if self.f_hl then
+        api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
+      end
 
       if i == self.imp_scope[2] - 1 then
         insert(virt_texts, { '└', virt_hi })
@@ -453,7 +445,9 @@ function Finder:render_finder_result()
   for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #indent + #self.f_icon)
+    if self.f_hl then
+      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
+    end
 
     if i == self.ref_scope[2] - 1 then
       insert(virt_texts, { '└', virt_hi })
@@ -520,16 +514,16 @@ function Finder:lsp_finder_highlight()
   local theme = require('lspsaga').theme()
 
   for _, v in pairs({ 0, self.ref_scope[1], self.imp_scope and self.imp_scope[1] or nil }) do
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleSymbol', v, 0, #theme.left)
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleString', v, #theme.left, #theme.left + len)
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      -1,
-      'TitleSymbol',
-      v,
-      #theme.left + len,
-      #theme.left + len + #theme.right
-    )
+    -- api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleSymbol', v, 0, #theme.left)
+    -- api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleString', v, #theme.left, #theme.left + len)
+    -- api.nvim_buf_add_highlight(
+    --   self.bufnr,
+    --   -1,
+    --   'TitleSymbol',
+    --   v,
+    --   #theme.left + len,
+    --   #theme.left + len + #theme.right
+    -- )
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,
@@ -545,8 +539,7 @@ local finder_ns = api.nvim_create_namespace('finder_select')
 
 function Finder:set_cursor()
   local current_line = api.nvim_win_get_cursor(0)[1]
-  local indent = get_indent()
-  local column = #indent + #self.f_icon + 1
+  local column = #self.indent + #self.f_icon + 1
 
   local first_def_uri_lnum = self.def_scope[1] + 3
   local last_def_uri_lnum = self.def_scope[2]
@@ -574,7 +567,7 @@ function Finder:set_cursor()
 
   local actual_line = api.nvim_win_get_cursor(0)[1]
   if actual_line == first_def_uri_lnum then
-    api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', 2, #indent + #self.f_icon, -1)
+    api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', 2, #self.indent + #self.f_icon, -1)
   end
 
   api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
@@ -583,7 +576,7 @@ function Finder:set_cursor()
     finder_ns,
     'FinderSelection',
     actual_line - 1,
-    #indent + #self.f_icon,
+    #self.indent + #self.f_icon,
     -1
   )
 end

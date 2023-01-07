@@ -1,19 +1,33 @@
 local api = vim.api
 local ui = require('lspsaga').config.ui
-local bg = ui.normal
+
+local colors = {
+  --float window normal bakcground color
+  normal_bg = '#1d1536',
+  --title background color
+  title_bg = '#e29cb1',
+  title_fg = '',
+  red = '',
+  orange = '',
+  yellow = '',
+  green = '',
+  aqua = '',
+  blue = '',
+  purple = '',
+}
 
 local highlights = {
   -- general
-  TitleString = { bg = ui.title, fg = '#013e77', bold = true },
-  TitleSymbol = { bg = bg, fg = ui.title },
-  TitleIcon = { bg = ui.title, fg = '#89d957' },
-  SagaBorder = { bg = bg },
+  TitleString = { bg = colors.title_bg, fg = '#013e77', bold = true },
+  TitleSymbol = { bg = colors.normal_bg, fg = colors.title_bg },
+  TitleIcon = { bg = colors.title_bg, fg = '#89d957' },
+  SagaBorder = { bg = colors.normal_bg },
   SagaExpand = { fg = '#c955ae' },
   SagaCollaspe = { fg = '#b8733e' },
   -- code action
   ActionPreviewNormal = { link = 'SagaBorder' },
   ActionPreviewBorder = { link = 'SagaBorder' },
-  ActionPreviewTitle = { fg = '#CBA6F7', bg = bg },
+  ActionPreviewTitle = { fg = '#CBA6F7', bg = colors.normal_bg },
   CodeActionNormal = { link = 'SagaBorder' },
   CodeActionBorder = { link = 'SagaBorder' },
   CodeActionText = { fg = '#e8e1c5' },
@@ -30,8 +44,8 @@ local highlights = {
   FinderNormal = { link = 'SagaBorder' },
   FinderBorder = { link = 'SagaBorder' },
   FinderPreviewBorder = { link = 'SagaBorder' },
-  FinderTitleString = { bg = bg, fg = '#ffd6b1', bold = true },
-  FinderTitleIcon = { bg = bg, fg = '#89d957' },
+  FinderTitleString = { bg = colors.normal_bg, fg = '#ffd6b1', bold = true },
+  FinderTitleIcon = { bg = colors.normal_bg, fg = '#89d957' },
   -- definition
   DefinitionBorder = { link = 'SagaBorder' },
   DefinitionNormal = { link = 'SagaBorder' },
@@ -41,7 +55,7 @@ local highlights = {
   HoverBorder = { link = 'SagaBorder' },
   -- rename
   RenameBorder = { link = 'SagaBorder' },
-  RenameNormal = { fg = '#f17866', bg = bg },
+  RenameNormal = { fg = '#f17866', bg = colors.normal_bg },
   RenameMatch = { link = 'Search' },
   -- diagnostic
   DiagnosticSource = { fg = 'gray' },
@@ -67,8 +81,15 @@ local highlights = {
 
 local loaded = false
 
+local function init_color()
+  if not vim.tbl_isempty(ui.colors) then
+    vim.tbl_extend('force', colors, ui.colors)
+  end
+end
+
 local function init_highlight()
   if not loaded then
+    init_color()
     for group, conf in pairs(highlights) do
       api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
     end

@@ -14,13 +14,10 @@ local default_config = {
     code_action = '💡',
     incoming = ' ',
     outgoing = ' ',
-    --float window normal bakcground color
-    normal = '#1d1536',
-    --title background color
-    title = '#e29cb1',
+    colors = {},
   },
   diagnostic = {
-    twice_into = true,
+    twice_into = false,
     show_code_action = true,
     show_source = true,
     keys = {
