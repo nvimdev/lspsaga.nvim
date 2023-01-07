@@ -74,11 +74,10 @@ local default_config = {
     exec = '<CR>',
     in_select = true,
   },
-  -- winbar must nightly
   symbol_in_winbar = {
-    in_custom = false,
     enable = true,
     separator = ' ',
+    hide_keyword = true,
     show_file = true,
     folder_level = 2,
   },

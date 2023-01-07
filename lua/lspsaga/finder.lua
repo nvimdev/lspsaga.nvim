@@ -11,9 +11,9 @@ function Finder:init_data()
     'textDocument/references',
   }
   self.titles = {
-    [self.methods[1]] =  'Definition',
-    [self.methods[2]] =  'Implements',
-    [self.methods[3]] =  'References',
+    [self.methods[1]] = '● Definition',
+    [self.methods[2]] = '● Implements',
+    [self.methods[3]] = '● References',
   }
   self.window = require('lspsaga.window')
   self.libs = require('lspsaga.libs')
@@ -231,13 +231,13 @@ end
 function Finder:create_finder_contents(result, method)
   local contents = {}
 
-  insert(contents, { self.titles[method] .. #result .. ' results', false })
+  insert(contents, { self.titles[method] ..' '.. #result .. ' results', false })
   insert(contents, { ' ', false })
 
   local msgs = {
-    [self.methods[1]] = 'No Definitions Found',
-    [self.methods[2]] = 'No Implements  Found',
-    [self.methods[3]] = 'No References  Found',
+    [self.methods[1]] = 'No Definition Found',
+    [self.methods[2]] = 'No Implement  Found',
+    [self.methods[3]] = 'No Reference  Found',
   }
 
   self.indent = '    '
@@ -295,8 +295,6 @@ function Finder:create_finder_contents(result, method)
   insert(contents, { ' ', false })
   return contents
 end
-
-local ns_id = api.nvim_create_namespace('lspsagafinder')
 
 function Finder:render_finder_result()
   if next(self.contents) == nil then
@@ -383,6 +381,7 @@ function Finder:render_finder_result()
 
   local virt_hi = 'FinderVirtText'
 
+  local ns_id = api.nvim_create_namespace('lspsagafinder')
   api.nvim_buf_set_extmark(0, ns_id, 1, 0, {
     virt_text = { { '│', virt_hi } },
     virt_text_pos = 'overlay',

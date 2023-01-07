@@ -1,4 +1,4 @@
-local lsp, api = vim.lsp, vim.api
+local lsp, api, fn = vim.lsp, vim.api, vim.fn
 local config = require('lspsaga').config.symbol_in_winbar
 
 local symbar = {}
@@ -120,14 +120,14 @@ local function binary_search(tbl, line)
 end
 
 local function insert_elements(buf, node, elements)
-  if node.selectionRange then
+  if config.hide_keyword and node.selectionRange then
     local captures = vim.treesitter.get_captures_at_pos(
       buf,
       node.selectionRange.start.line,
       node.selectionRange.start.character
     )
     for _, v in pairs(captures) do
-      if v.capture == 'keyword' or v.capture == 'conditional' then
+      if v.capture == 'keyword' or v.capture == 'conditional' or v.capture == 'repeat' then
         return
       end
     end
@@ -173,7 +173,6 @@ end
 --@private
 local render_symbol_winbar = function(buf, symbols)
   buf = buf or api.nvim_get_current_buf()
-  symbols = symbols or cache[buf].symbols
   local winid = vim.fn.bufwinid(buf)
   if not api.nvim_win_is_valid(winid) then
     return
@@ -214,7 +213,7 @@ local render_symbol_winbar = function(buf, symbols)
 
   winbar_str = winbar_str .. str
 
-  if not config.in_custom and api.nvim_win_get_height(winid) - 1 > 1 then
+  if config.enable and api.nvim_win_get_height(winid) - 1 > 1 then
     vim.wo[winid].winbar = winbar_str
   end
   return winbar_str
@@ -231,31 +230,25 @@ local function get_buf_symbol(buf)
   end
 
   if cache[buf].pending_request then
-    res.symbols = {}
     res.pending_request = cache[buf].pending_request
+    return res
   end
 
-  local symbols = vim.tbl_get(cache, 'buf', 'symbols')
-  if symbols and not cache[buf].pending_request then
-    res.symbols = symbols
-    res.pending_request = cache[buf].pending_request
-  end
+  res.symbols = cache[buf].symbols
+  res.pending_request = cache[buf].pending_request
   return res
 end
 
-function symbar:refresh_symbol_cache(buf, render_fn, reg_buf_events)
-  local _callback = function(_, result)
-    self.pending_request = false
+function symbar:refresh_symbol_cache(buf, render_fn)
+  self[buf].pending_request = true
+  local _callback = function(_, result, _)
+    self[buf].pending_request = false
     if not result then
       return
     end
 
     if render_fn then
       render_fn(buf, result)
-    end
-
-    if not self[buf].group and reg_buf_events then
-      reg_buf_events()
     end
 
     self[buf].symbols = result
@@ -268,19 +261,16 @@ function symbar:refresh_symbol_cache(buf, render_fn, reg_buf_events)
   do_symbol_request(buf, _callback)
 end
 
-function symbar:init_buf_symbols(buf, render_fn, reg_buf_events)
+function symbar:init_buf_symbols(buf, render_fn)
   local res = get_buf_symbol(buf)
   if res.pending_request then
     return
   end
 
-  if vim.tbl_isempty(res) then
-    self:refresh_symbol_cache(buf, render_fn, reg_buf_events)
-    return
-  end
-  render_fn(buf, res.symbols)
-  if not self[buf].group then
-    reg_buf_events()
+  if not res.symbols then
+    self:refresh_symbol_cache(buf, render_fn)
+  else
+    render_fn(buf, res.symbols)
   end
 end
 
@@ -299,48 +289,46 @@ function symbar:symbol_events(buf)
     self[buf] = {}
   end
 
-  local register_buf_events = function()
-    local augroup = api.nvim_create_augroup('LspsagaSymbol' .. tostring(buf), { clear = true })
-    self[buf].group = augroup
+  self:init_buf_symbols(buf, render_symbol_winbar)
 
-    api.nvim_create_autocmd('CursorMoved', {
-      group = augroup,
-      buffer = buf,
-      callback = function(opt)
-        render_symbol_winbar(opt.buf)
-      end,
-      desc = 'Lspsaga symbols',
-    })
+  local augroup = api.nvim_create_augroup('LspsagaSymbol' .. tostring(buf), { clear = true })
+  self[buf].group = augroup
 
-    api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
-      group = augroup,
-      buffer = buf,
-      callback = function()
-        if not config.in_custom then
-          self:refresh_symbol_cache(buf, render_symbol_winbar)
-        else
-          self:refresh_symbol_cache(buf)
-        end
-      end,
-      desc = 'Lspsaga update symbols',
-    })
+  api.nvim_create_autocmd('CursorMoved', {
+    group = augroup,
+    buffer = buf,
+    callback = function(opt)
+      self:init_buf_symbols(opt.buf, render_symbol_winbar)
+    end,
+    desc = 'Lspsaga symbols',
+  })
 
-    api.nvim_buf_attach(buf, false, {
-      on_detach = function(opt)
-        pcall(api.nvim_del_augroup_by_id, self[buf].group)
-        clean_buf_cache(opt.buf)
-      end,
-    })
-  end
+  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+    group = augroup,
+    buffer = buf,
+    callback = function()
+      if not config.enable then
+        self:refresh_symbol_cache(buf, render_symbol_winbar)
+      else
+        self:refresh_symbol_cache(buf)
+      end
+    end,
+    desc = 'Lspsaga update symbols',
+  })
 
-  self:init_buf_symbols(buf, render_symbol_winbar, register_buf_events)
+  api.nvim_buf_attach(buf, false, {
+    on_detach = function(opt)
+      pcall(api.nvim_del_augroup_by_id, self[buf].group)
+      clean_buf_cache(opt.buf)
+    end,
+  })
 end
 
 function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
-      local winid = vim.fn.bufwinid(opt.buf)
+      local winid = fn.bufwinid(opt.buf)
       local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
       if ok and val then
         return

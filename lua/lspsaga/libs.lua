@@ -20,16 +20,20 @@ function libs.get_path_info(buf, level)
   local index = level > #tbl and #tbl or level
   return { unpack(tbl, #tbl - index + 1, #tbl) }
 end
+
 --get icon hlgroup color
 function libs.icon_from_devicon(ft, color)
   color = color ~= nil and color or false
-  local ok, devicons = pcall(require, 'nvim-web-devicons')
-  if not ok then
-    return {}
+  if not libs.devicons then
+    local ok, devicons = pcall(require, 'nvim-web-devicons')
+    if not ok then
+      return {}
+    end
+    libs.devicons = devicons
   end
-  local icon, hl = devicons.get_icon_by_filetype(ft)
+  local icon, hl = libs.devicons.get_icon_by_filetype(ft)
   if color then
-    local _, rgb = devicons.get_icon_color_by_filetype(ft)
+    local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
     return { icon, rgb }
   end
   return { icon, hl }

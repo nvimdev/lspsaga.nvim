@@ -36,7 +36,7 @@ local function get_diag_type(severity)
 end
 
 function diag:code_action_cb()
-  if not ctx.bufnr and not api.nvim_buf_is_loaded(ctx.bufnr) then
+  if not ctx.bufnr or not api.nvim_buf_is_loaded(ctx.bufnr) then
     return
   end
 
@@ -358,9 +358,13 @@ function diag:render_diagnostic_window(entry, option)
 end
 
 function diag:move_cursor(entry)
-  if diag_conf.twice_into and ctx.winid and api.nvim_win_is_valid(ctx.winid) then
-    api.nvim_set_current_win(ctx.winid)
-    return
+  if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+    if diag_conf.twice_into then
+      api.nvim_set_current_win(ctx.winid)
+      return
+    else
+      api.nvim_win_close(ctx.winid, true)
+    end
   end
 
   if diag_conf.show_code_action then
