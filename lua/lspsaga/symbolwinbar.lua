@@ -328,13 +328,19 @@ function symbar.config_symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
-      local winid = fn.bufwinid(opt.buf)
-      local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-      if ok and val then
+      local winids = fn.win_findbuf(opt.buf)
+      if vim.tbl_isempty(winids) then
         return
       end
-      if config.show_file then
-        vim.wo[winid].winbar = bar_file_name(opt.buf)
+
+      for _, winid in ipairs(winids) do
+        local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+        if ok and val then
+          return
+        end
+        if config.show_file then
+          vim.wo[winid].winbar = bar_file_name(opt.buf)
+        end
       end
 
       symbar:symbol_events(opt.buf)
