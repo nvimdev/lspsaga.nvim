@@ -160,8 +160,9 @@ function M.open_shadow_float_win(content_opts, opts)
   return contents_bufnr, contents_winid, shadow_bufnr, shadow_winid
 end
 
-function M.get_max_float_width()
-  return math.floor(vim.o.columns * 0.6)
+function M.get_max_float_width(percent)
+  percent = percent or 0.6
+  return math.floor(vim.o.columns * percent)
 end
 
 function M.get_max_content_length(contents)
@@ -227,6 +228,20 @@ function M.nvim_win_try_close()
   if has_var and line_diag_winids ~= nil then
     M.nvim_close_valid_window(line_diag_winids)
   end
+end
+
+function M.win_height_increase(content, percent)
+  local increase = 0
+  local max_width = M.get_max_float_width(percent)
+  local max_len = M.get_max_content_length(content)
+  if max_len > max_width then
+    vim.tbl_map(function(s)
+      if #s > max_width then
+        increase = increase + math.floor(#s / max_width)
+      end
+    end, content)
+  end
+  return increase
 end
 
 return M

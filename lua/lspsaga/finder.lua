@@ -25,9 +25,9 @@ function Finder:lsp_finder()
 
   -- push a tag stack
   local pos = api.nvim_win_get_cursor(0)
-  local current_word = fn.expand('<cword>')
+  self.current_word = fn.expand('<cword>')
   local from = { api.nvim_get_current_buf(), pos[1], pos[2], 0 }
-  local items = { { tagname = current_word, from = from } }
+  local items = { { tagname = self.current_word, from = from } }
   fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
   self.request_result = {}
@@ -231,7 +231,7 @@ end
 function Finder:create_finder_contents(result, method)
   local contents = {}
 
-  insert(contents, { self.titles[method] .. ' ' .. #result .. ' results', false })
+  insert(contents, { self.titles[method] .. '  ' .. #result, false })
   insert(contents, { ' ', false })
 
   local msgs = {
@@ -334,11 +334,12 @@ function Finder:render_finder_result()
   }
 
   if fn.has('nvim-0.9') == 1 then
+    local theme = require('lspsaga').theme()
     opts.title = {
-      -- { theme.left, 'TitleSymbol' },
-      { config.ui.finder, 'FinderTitleIcon' },
-      { 'Finder', 'FinderTitleString' },
-      -- { theme.right, 'TitleSymbol' },
+      { theme.left, 'TitleSymbol' },
+      { ' ', 'TitleIcon' },
+      { self.current_word, 'TitleString' },
+      { theme.right, 'TitleSymbol' },
     }
   end
 
@@ -389,7 +390,7 @@ function Finder:render_finder_result()
 
   for i = self.def_scope[1] + 2, self.def_scope[2] - 1, 1 do
     local virt_texts = {}
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderFileName', 1 + i, 0, -1)
     if self.f_hl then
       api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
     end
@@ -513,16 +514,8 @@ function Finder:lsp_finder_highlight()
   local theme = require('lspsaga').theme()
 
   for _, v in pairs({ 0, self.ref_scope[1], self.imp_scope and self.imp_scope[1] or nil }) do
-    -- api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleSymbol', v, 0, #theme.left)
-    -- api.nvim_buf_add_highlight(self.bufnr, -1, 'TitleString', v, #theme.left, #theme.left + len)
-    -- api.nvim_buf_add_highlight(
-    --   self.bufnr,
-    --   -1,
-    --   'TitleSymbol',
-    --   v,
-    --   #theme.left + len,
-    --   #theme.left + len + #theme.right
-    -- )
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderIcon', v, 0, 3)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderType', v, 4, 4 + len)
     api.nvim_buf_add_highlight(
       self.bufnr,
       -1,

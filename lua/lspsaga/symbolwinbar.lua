@@ -20,7 +20,7 @@ local function bar_prefix()
 end
 
 local function get_kind_icon(type, index)
-  local kind = require('lspsaga.highlight').kind
+  local kind = require('lspsaga.highlight').get_kind()
   ---@diagnostic disable-next-line: need-check-nil
   return kind[type][index]
 end
@@ -244,6 +244,10 @@ local function get_buf_symbol(buf)
 end
 
 function symbar:refresh_symbol_cache(buf, render_fn)
+  if not self[buf] then
+    self[buf] = {}
+  end
+
   self[buf].pending_request = true
   local _callback = function(_, result, _)
     self[buf].pending_request = false
@@ -289,10 +293,6 @@ local function clean_buf_cache(buf)
 end
 
 function symbar:symbol_events(buf)
-  if not self[buf] then
-    self[buf] = {}
-  end
-
   self:init_buf_symbols(buf, render_symbol_winbar)
 
   local augroup = api.nvim_create_augroup('LspsagaSymbol' .. tostring(buf), { clear = true })

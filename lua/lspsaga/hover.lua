@@ -20,24 +20,13 @@ function hover:open_floating_preview(res, opts)
 
   local window = require('lspsaga.window')
   local libs = require('lspsaga.libs')
-  local max_float_width = window.get_max_float_width()
+  local max_float_width = math.floor(vim.o.columns * 0.6)
   local max_content_len = window.get_max_content_length(content)
-  local increase = 0
-  if max_content_len > max_float_width then
-    vim.tbl_map(function(s)
-      if s:find('http') then
-        return
-      end
-
-      if #s > max_float_width then
-        increase = increase + math.ceil(#s / max_float_width)
-      end
-    end, content)
-  end
+  local increase = window.win_height_increase(content)
 
   local theme = require('lspsaga').theme()
   local float_option = {
-    width = increase == 0 and max_content_len or max_float_width,
+    width = max_content_len > max_float_width and max_float_width or max_content_len,
     height = #content + increase,
     no_size_override = true,
     title = {
@@ -63,7 +52,9 @@ function hover:open_floating_preview(res, opts)
   vim.wo[self.preview_winid].concealcursor = 'niv'
   vim.wo[self.preview_winid].showbreak = 'NONE'
   vim.wo[self.preview_winid].fillchars = 'lastline: '
-  vim.treesitter.start(self.preview_bufnr, 'markdown')
+  if vim.fn.has('nvim-0.9') then
+    vim.treesitter.start(self.preview_bufnr, 'markdown')
+  end
 
   vim.keymap.set('n', 'q', function()
     if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
@@ -112,11 +103,6 @@ function hover:do_request()
 end
 
 function hover:render_hover_doc()
-  if vim.fn.has('nvim-0.9') == 0 then
-    vim.notify('[Lspsaga] Hover now only support for neovim 0.9+ Please use neovim 0.9')
-    return
-  end
-
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
     return

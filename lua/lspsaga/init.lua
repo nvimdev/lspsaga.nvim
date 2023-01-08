@@ -9,8 +9,7 @@ local default_config = {
     winblend = 0,
     expand = '',
     collaspe = '',
-    finder = ' ',
-    preview = ' ',
+    preview = ' ',
     code_action = '💡',
     incoming = ' ',
     outgoing = ' ',
@@ -18,8 +17,7 @@ local default_config = {
       --float window normal bakcground color
       normal_bg = '#1d1536',
       --title background color
-      title_bg = '#e29cb1',
-      title_fg = '',
+      title_bg = '#afd700',
     },
     kind = {},
   },

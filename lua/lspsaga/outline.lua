@@ -28,7 +28,7 @@ function ot:init_data(tbl, level)
     self[current_buf].data = {}
   end
 
-  local kind = require('lspsaga.highlight').kind
+  local kind = require('lspsaga.highlight').get_kind()
   for _, node in pairs(tbl) do
     level = level or 1
     ---@diagnostic disable: need-check-nil

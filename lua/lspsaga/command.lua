@@ -1,5 +1,4 @@
 local command = {}
-local diagnostic = require('lspsaga.diagnostic')
 
 local subcommands = {
   lsp_finder = function()
@@ -17,10 +16,18 @@ local subcommands = {
   hover_doc = function()
     require('lspsaga.hover'):render_hover_doc()
   end,
-  show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
-  show_line_diagnostics = diagnostic.show_line_diagnostics,
-  diagnostic_jump_next = diagnostic.goto_next,
-  diagnostic_jump_prev = diagnostic.goto_prev,
+  show_cursor_diagnostics = function()
+    require('lspsaga.diagnostic'):show_diagnostics(arg, true)
+  end,
+  show_line_diagnostics = function(arg)
+    require('lspsaga.diagnostic'):show_diagnostics(arg)
+  end,
+  diagnostic_jump_next = function()
+    require('lspsaga.diagnostic').goto_next()
+  end,
+  diagnostic_jump_prev = function()
+    require('lspsaga.diagnostic').goto_prev()
+  end,
   code_action = function()
     require('lspsaga.codeaction'):code_action()
   end,

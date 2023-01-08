@@ -1,56 +1,63 @@
 local api = vim.api
 local ui = require('lspsaga').config.ui
-local hi = {}
+
+local resolved
 
 local function get_colors()
   local colors = {
-    fg = '#bbc2cf',
     red = '#e95678',
     orange = '#FF8700',
     yellow = '#f7bb3b',
     green = '#afd700',
     cyan = '#36d0e0',
     blue = '#61afef',
-    violet = '#CBA6F7',
-    teal = '#1abc9c',
+    purple = '#CBA6F7',
+    white = '#d1d4cf',
+    black = '#1c1c19',
   }
-  for k, v in pairs(ui.colors) do
-    colors[k] = v
+  if not resolved then
+    for k, v in pairs(ui.colors) do
+      colors[k] = v
+    end
+    resolved = function()
+      return colors
+    end
   end
-  return colors
+  return resolved
 end
 
-local function hi_define(colors)
+local function hi_define()
+  local colors = resolved()
   return {
     -- general
-    TitleString = { bg = colors.title_bg, fg = '#013e77', bold = true },
+    TitleString = { bg = colors.title_bg, fg = colors.black, bold = true },
     TitleSymbol = { bg = colors.normal_bg, fg = colors.title_bg },
-    TitleIcon = { bg = colors.title_bg, fg = '#89d957' },
+    TitleIcon = { bg = colors.title_bg, fg = colors.red },
     SagaBorder = { bg = colors.normal_bg },
-    SagaExpand = { fg = '#c955ae' },
-    SagaCollaspe = { fg = '#b8733e' },
+    SagaExpand = { fg = colors.red },
+    SagaCollaspe = { fg = colors.red },
     -- code action
     ActionPreviewNormal = { link = 'SagaBorder' },
     ActionPreviewBorder = { link = 'SagaBorder' },
-    ActionPreviewTitle = { fg = '#CBA6F7', bg = colors.normal_bg },
+    ActionPreviewTitle = { fg = colors.purple, bg = colors.normal_bg },
     CodeActionNormal = { link = 'SagaBorder' },
     CodeActionBorder = { link = 'SagaBorder' },
     CodeActionText = { fg = '#e8e1c5' },
+    CodeActionConceal = { fg = colors.green },
     -- finder
-    FinderSelection = { fg = '#89d957', bold = true },
-    TargetFileName = { fg = '#d1d4cf' },
+    FinderSelection = { fg = colors.cyan, bold = true },
+    FinderFileName = { fg = colors.white },
     FinderCount = { link = 'Title' },
+    FinderIcon = { fg = colors.cyan },
+    FinderType = { fg = colors.purple },
     --finder spinner
-    FinderSpinnerBorder = { fg = '#51afef' },
     FinderSpinnerTitle = { fg = '#b33076', bold = true },
     FinderSpinner = { fg = '#b33076', bold = true },
     FinderPreviewSearch = { link = 'Search' },
-    FinderVirtText = { fg = '#c95942' },
+    FinderVirtText = { fg = colors.red },
     FinderNormal = { link = 'SagaBorder' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },
-    FinderTitleString = { bg = colors.normal_bg, fg = '#ffd6b1', bold = true },
-    FinderTitleIcon = { bg = colors.normal_bg, fg = '#89d957' },
     -- definition
     DefinitionBorder = { link = 'SagaBorder' },
     DefinitionNormal = { link = 'SagaBorder' },
@@ -60,11 +67,12 @@ local function hi_define(colors)
     HoverBorder = { link = 'SagaBorder' },
     -- rename
     RenameBorder = { link = 'SagaBorder' },
-    RenameNormal = { fg = '#f17866', bg = colors.normal_bg },
+    RenameNormal = { fg = colors.orange, bg = colors.normal_bg },
     RenameMatch = { link = 'Search' },
     -- diagnostic
     DiagnosticSource = { fg = 'gray' },
     DiagnosticNormal = { link = 'SagaBorder' },
+    DiagnosticBorder = { link = 'SagaBorder' },
     DiagnosticErrorBorder = { link = 'SagaBorder' },
     DiagnosticWarnBorder = { link = 'SagaBorder' },
     DiagnosticHintBorder = { link = 'SagaBorder' },
@@ -72,8 +80,8 @@ local function hi_define(colors)
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaBorder' },
     CallHierarchyBorder = { link = 'SagaBorder' },
-    CallHierarchyIcon = { fg = '#CBA6F7' },
-    CallHierarchyTitle = { fg = '#9c255e' },
+    CallHierarchyIcon = { fg = colors.purple },
+    CallHierarchyTitle = { fg = colors.red },
     -- lightbulb
     LspSagaLightBulb = { link = 'DiagnosticSignHint' },
     -- shadow
@@ -85,19 +93,27 @@ local function hi_define(colors)
   }
 end
 
-function hi:gen_symbol_winbar_hi(colors)
+local function get_kind(colors)
+  colors = colors or resolved()
+  return require('lspsaga.lspkind').get_kind(colors)()
+end
+
+local function gen_symbol_winbar_hi()
   local prefix = 'LspSagaWinbar'
   local winbar_sep = 'LspSagaWinbarSep'
+  local colors = resolved()
+  local kind = get_kind(colors)
 
-  for _, v in pairs(self.kind) do
+  for _, v in pairs(kind or {}) do
     api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
   end
   api.nvim_set_hl(0, winbar_sep, { fg = colors.red })
-  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, bold = true })
+  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.white, bold = true })
 end
 
-function hi:gen_outline_hi()
-  for _, v in pairs(self.kind) do
+local function gen_outline_hi()
+  local kind = get_kind()
+  for _, v in pairs(kind or {}) do
     local hi_name = 'LSOutline' .. v[1]
     local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
     if not ok or not tbl.foreground then
@@ -106,15 +122,18 @@ function hi:gen_outline_hi()
   end
 end
 
-function hi:init_highlight()
-  local colors = get_colors()
-  for group, conf in pairs(hi_define(colors)) do
+local function init_highlight()
+  get_colors()
+  for group, conf in pairs(hi_define()) do
     api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
   end
 
-  self.kind = require('lspsaga.lspkind').get_kind(colors)
-  self:gen_symbol_winbar_hi(colors)
-  self:gen_outline_hi()
+  gen_symbol_winbar_hi()
+  gen_outline_hi()
 end
 
-return hi
+return {
+  init_highlight = init_highlight,
+  get_kind = get_kind,
+  get_colors = get_colors,
+}
