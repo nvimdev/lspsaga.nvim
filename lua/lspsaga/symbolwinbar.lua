@@ -120,18 +120,26 @@ local function binary_search(tbl, line)
   end
 end
 
-local function insert_elements(buf, node, elements)
-  if config.hide_keyword and node.selectionRange then
-    local captures = vim.treesitter.get_captures_at_pos(
-      buf,
-      node.selectionRange.start.line,
-      node.selectionRange.start.character
-    )
-    for _, v in pairs(captures) do
-      if v.capture == 'keyword' or v.capture == 'conditional' or v.capture == 'repeat' then
-        return
-      end
+function symbar.node_is_keyword(buf, node)
+  if not node.selectionRange then
+    return false
+  end
+  local captures = vim.treesitter.get_captures_at_pos(
+    buf,
+    node.selectionRange.start.line,
+    node.selectionRange.start.character
+  )
+  for _, v in pairs(captures) do
+    if v.capture == 'keyword' or v.capture == 'conditional' or v.capture == 'repeat' then
+      return true
     end
+  end
+  return false
+end
+
+local function insert_elements(buf, node, elements)
+  if config.hide_keyword and symbar.node_is_keyword(buf, node) then
+    return
   end
   local type = get_kind_icon(node.kind, 1)
   local icon = get_kind_icon(node.kind, 2)

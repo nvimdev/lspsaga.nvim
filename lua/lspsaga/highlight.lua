@@ -77,7 +77,7 @@ local function hi_define()
     DiagnosticWarnBorder = { link = 'SagaBorder' },
     DiagnosticHintBorder = { link = 'SagaBorder' },
     DiagnosticInfoBorder = { link = 'SagaBorder' },
-    DiagnosticBeacon = { bg = '#b33076'},
+    DiagnosticBeacon = { bg = '#b33076' },
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaBorder' },
     CallHierarchyBorder = { link = 'SagaBorder' },
@@ -88,9 +88,9 @@ local function hi_define()
     -- shadow
     SagaShadow = { fg = 'black' },
     -- Outline
+    OutlineIndent = { fg = colors.white },
     OutlinePreviewBorder = { link = 'SagaBorder' },
     OutlinePreviewNormal = { link = 'SagaBorder' },
-    OutlineDetail = { fg = '#73797e' },
   }
 end
 

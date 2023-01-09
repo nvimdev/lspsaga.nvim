@@ -421,6 +421,10 @@ function diag:jump_beacon(entry)
     no_size_override = true,
   }
 
+  if opts.width < 0 then
+    opts.width = 1
+  end
+
   local _, winid = ctx.window.create_win_with_border({
     contents = { '' },
     border = 'none',
@@ -438,7 +442,10 @@ function diag:jump_beacon(entry)
       if not api.nvim_win_is_valid(winid) then
         return
       end
-      local blend = vim.wo[winid].winblend + 10
+      local blend = vim.wo[winid].winblend + 7
+      if blend > 100 then
+        blend = 100
+      end
       vim.wo[winid].winblend = blend
       if vim.wo[winid].winblend == 100 and not timer:is_closing() then
         timer:stop()

@@ -20,5 +20,5 @@ end, {
 })
 
 api.nvim_create_user_command('LSoutlineToggle', function()
-  require('lspsaga.outline'):render_outline()
+  require('lspsaga.outline'):outline()
 end, {})
