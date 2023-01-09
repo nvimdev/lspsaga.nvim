@@ -59,8 +59,8 @@ function ch:call_hierarchy(item, parent, level)
   local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
   local indent = '  '
   local client = ctx.client
-  local pending_request = true
   local frame = 0
+  local curline = api.nvim_win_get_cursor(0)[1]
   if ctx.winbuf and api.nvim_buf_is_loaded(ctx.winbuf) and parent then
     local timer = uv.new_timer()
     timer:start(
@@ -68,9 +68,8 @@ function ch:call_hierarchy(item, parent, level)
       50,
       vim.schedule_wrap(function()
         local text = api.nvim_get_current_line()
-        local curline = api.nvim_win_get_cursor(0)[1]
         local replace_icon = text:find(ui.expand) and ui.expand or ui.collaspe
-        if pending_request then
+        if ctx.pending_request then
           if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
             api.nvim_win_close(ctx.preview_winid, true)
             ctx.preview_winid = nil
@@ -96,9 +95,12 @@ function ch:call_hierarchy(item, parent, level)
           )
         end
 
-        if not pending_request and not timer:is_closing() then
+        if not ctx.pending_request and not timer:is_closing() then
           timer:stop()
           timer:close()
+          if not ctx.request_status then
+            return
+          end
           text = text:gsub(spinner[frame], replace_icon)
           if vim.bo[ctx.winbuf].modifiable then
             api.nvim_buf_set_lines(ctx.winbuf, curline - 1, curline, false, { text })
@@ -110,11 +112,14 @@ function ch:call_hierarchy(item, parent, level)
     )
   end
 
+  ctx.pending_request = true
   client.request(ctx.method, { item = item }, function(_, res)
+    ctx.pending_request = false
     if not res or next(res) == nil then
+      ctx.request_status = false
       return
     end
-    local kind = require('lspsaga.lspkind')
+    local kind = require('lspsaga.highlight').get_kind()
     if not parent then
       local icons = {}
       for i, v in pairs(res) do
@@ -123,6 +128,7 @@ function ch:call_hierarchy(item, parent, level)
         insert(ctx.data, {
           target = target,
           name = indent .. ui.expand .. kind[target.kind][2] .. target.name,
+          hi = 'LSOutline' .. kind[target.kind][1],
           winline = i + 1,
           expand = false,
           children = {},
@@ -179,7 +185,6 @@ function ch:call_hierarchy(item, parent, level)
       insert(tbl, name)
     end
 
-    pending_request = false
     api.nvim_buf_set_lines(ctx.winbuf, parent.winline, parent.winline, false, tbl)
     vim.bo.modifiable = false
     self:change_node_winline(parent, #res)
@@ -205,7 +210,9 @@ function ch:expand_collaspe()
 
   if not node.expand then
     if not node.requested then
-      self:call_hierarchy(node.target, node, level)
+      if not ctx.pending_request then
+        self:call_hierarchy(node.target, node, level)
+      end
     else
       node.name = node.name:gsub(ui.expand, ui.collaspe)
       vim.bo.modifiable = true
@@ -220,6 +227,9 @@ function ch:expand_collaspe()
       node.expand = true
       api.nvim_buf_set_lines(ctx.winbuf, node.winline, node.winline, false, tbl)
       vim.bo.modifiable = false
+      local curline = api.nvim_win_get_cursor(0)[1]
+      local s_col, e_col = node.name:find(ui.expand)
+      api.nvim_buf_add_highlight(ctx.main_buf, 0, 'SagaCollaspe', curline - 1, s_col, e_col)
       self:change_node_winline(node, #node.children)
     end
     return
@@ -421,7 +431,7 @@ function ch:preview()
     }
     if #tbl == 2 then
       api.nvim_set_hl(0, 'TitleFileIcon', {
-        background = config.ui.title,
+        background = config.ui.colors.title_bg,
         foreground = tbl[2],
       })
     end

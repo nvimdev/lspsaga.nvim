@@ -26,6 +26,9 @@ local function make_floating_popup_options(width, height, opts)
 
   new_option.relative = opts.relative and opts.relative or 'cursor'
   new_option.anchor = opts.anchor or nil
+  if new_option.relative == 'win' then
+    new_option.bufpos = opts.bufpos or nil
+  end
 
   if opts.title then
     new_option.title = opts.title

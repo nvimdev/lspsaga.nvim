@@ -11,6 +11,7 @@ local default_config = {
     collaspe = '',
     preview = ' ',
     code_action = '💡',
+    diagnostic = '🐞',
     incoming = ' ',
     outgoing = ' ',
     colors = {
@@ -23,6 +24,7 @@ local default_config = {
   },
   diagnostic = {
     twice_into = false,
+    beacon = true,
     show_code_action = true,
     show_source = true,
     keys = {

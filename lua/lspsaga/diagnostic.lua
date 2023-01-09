@@ -1,7 +1,7 @@
 local config = require('lspsaga').config
 local diag_conf, ui = config.diagnostic, config.ui
 local diagnostic = vim.diagnostic
-local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
+local api, fn, keymap, uv = vim.api, vim.fn, vim.keymap.set, vim.loop
 local insert = table.insert
 
 local diag = {}
@@ -113,7 +113,6 @@ function diag:render_diagnostic_window(entry, option)
   local content = {
     ctx.theme.left .. '  Msg ' .. ctx.theme.right,
   }
-  ctx.window = require('lspsaga.window')
   local max_width = ctx.window.get_max_float_width(0.7)
   ctx.main_buf = api.nvim_get_current_buf()
   local cur_word = fn.expand('<cword>')
@@ -383,6 +382,8 @@ function diag:move_cursor(entry)
       api.nvim_win_close(ctx.winid, true)
     end
   end
+
+  ctx.window = require('lspsaga.window')
   ctx.libs = require('lspsaga.libs')
   if diag_conf.show_code_action then
     ctx.act = require('lspsaga.codeaction')
@@ -396,11 +397,56 @@ function diag:move_cursor(entry)
     -- Save position in the window's jumplist
     vim.cmd("normal! m'")
     api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
+    if diag_conf.beacon then
+      self:jump_beacon(entry)
+    end
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
 
   self:render_diagnostic_window(entry)
+end
+
+function diag:jump_beacon(entry)
+  -- print(vim.inspect(entry))
+  local opts = {
+    relative = 'win',
+    bufpos = { entry.lnum, entry.col },
+    height = 1,
+    width = entry.end_col - entry.col,
+    row = 0,
+    col = 0,
+    anchor = 'NW',
+    focusable = false,
+    no_size_override = true,
+  }
+
+  local _, winid = ctx.window.create_win_with_border({
+    contents = { '' },
+    border = 'none',
+    winblend = 0,
+    highlight = {
+      normal = 'DiagnosticBeacon',
+    },
+  }, opts)
+
+  local timer = uv.new_timer()
+  timer:start(
+    0,
+    60,
+    vim.schedule_wrap(function()
+      if not api.nvim_win_is_valid(winid) then
+        return
+      end
+      local blend = vim.wo[winid].winblend + 10
+      vim.wo[winid].winblend = blend
+      if vim.wo[winid].winblend == 100 and not timer:is_closing() then
+        timer:stop()
+        timer:close()
+        api.nvim_win_close(winid, true)
+      end
+    end)
+  )
 end
 
 function diag.goto_next(opts)
@@ -460,7 +506,7 @@ function diag:show(entrys, arg, cursor)
     local title = cursor and 'Cursor' or 'Line'
     opt.title = {
       { theme.left, 'TitleSymbol' },
-      { '🐞', 'TitleIcon' },
+      { config.ui.diagnostic, 'TitleIcon' },
       { title .. ' Diagnostic', 'TitleString' },
       { theme.right, 'TitleSymbol' },
     }

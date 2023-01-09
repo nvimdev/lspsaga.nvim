@@ -77,6 +77,7 @@ local function hi_define()
     DiagnosticWarnBorder = { link = 'SagaBorder' },
     DiagnosticHintBorder = { link = 'SagaBorder' },
     DiagnosticInfoBorder = { link = 'SagaBorder' },
+    DiagnosticBeacon = { bg = '#b33076'},
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaBorder' },
     CallHierarchyBorder = { link = 'SagaBorder' },
