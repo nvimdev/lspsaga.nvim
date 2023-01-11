@@ -31,6 +31,9 @@ local subcommands = {
   code_action = function()
     require('lspsaga.codeaction'):code_action()
   end,
+  outline = function()
+    require('lspsaga.outline'):outline()
+  end,
   incoming_calls = function()
     require('lspsaga.callhierarchy'):incoming_calls()
   end,
