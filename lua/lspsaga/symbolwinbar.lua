@@ -1,15 +1,14 @@
 local lsp, api, fn = vim.lsp, vim.api, vim.fn
 local config = require('lspsaga').config.symbol_in_winbar
-
 local symbar = {}
 
 local cache = {}
-function cache.__index(_, k, _)
-  return cache[k]
+function symbar.__index(_, k, _)
+  return symbar[k]
 end
 
-function cache.__newindex(_, k, v)
-  cache[k] = v
+function symbar.__newindex(t, k, v)
+  rawset(t, k, v)
 end
 
 local function bar_prefix()
@@ -228,6 +227,7 @@ local render_symbol_winbar = function(buf, symbols)
   if config.enable and api.nvim_win_get_height(cur_win) - 1 > 1 then
     vim.wo[cur_win].winbar = winbar_str
   end
+  symbar:register_events(buf)
   return winbar_str
 end
 
@@ -300,9 +300,7 @@ local function clean_buf_cache(buf)
   end
 end
 
-function symbar:symbol_events(buf)
-  self:init_buf_symbols(buf, render_symbol_winbar)
-
+function symbar:register_events(buf)
   local augroup = api.nvim_create_augroup('LspsagaSymbol' .. tostring(buf), { clear = true })
   self[buf].group = augroup
 
@@ -329,9 +327,9 @@ function symbar:symbol_events(buf)
   })
 
   api.nvim_buf_attach(buf, false, {
-    on_detach = function(opt)
+    on_detach = function()
       pcall(api.nvim_del_augroup_by_id, self[buf].group)
-      clean_buf_cache(opt.buf)
+      clean_buf_cache(buf)
     end,
   })
 end
@@ -349,7 +347,7 @@ function symbar.config_symbol_autocmd()
         vim.wo[winid].winbar = bar_file_name(opt.buf)
       end
 
-      symbar:symbol_events(opt.buf)
+      symbar:init_buf_symbols(opt.buf, render_symbol_winbar)
     end,
     desc = 'Lspsaga get and show symbols',
   })
@@ -371,4 +369,4 @@ function symbar.get_winbar(buf)
   return render_symbol_winbar(buf)
 end
 
-return setmetatable(symbar, cache)
+return setmetatable(cache, symbar)

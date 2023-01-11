@@ -293,40 +293,53 @@ function libs.delete_scroll_map(bufnr)
   vim.keymap.del('n', config.scroll_in_preview.scroll_up, { buffer = bufnr })
 end
 
-function libs.async(routine, ...)
-  local f = coroutine.create(function(await, ...)
-    routine(await, ...)
-  end)
-  local await = { error = nil, result = nil, completed = false }
-  local complete = function(arg, err)
-    await.result = arg
-    await.error = err
-    await.completed = true
-    coroutine.resume(f)
+function libs.jump_beacon(bufpos, width)
+  local opts = {
+    relative = 'win',
+    bufpos = bufpos,
+    height = 1,
+    width = width,
+    row = 0,
+    col = 0,
+    anchor = 'NW',
+    focusable = false,
+    no_size_override = true,
+  }
+
+  if opts.width < 0 then
+    opts.width = 1
   end
-  await.resolve = function(arg)
-    complete(arg, nil)
-  end
-  await.reject = function(err)
-    complete(nil, err)
-  end
-  await.__call = function(self, wait, ...)
-    local lastResult = self.result
-    self.completed = false
-    wait(self, ...)
-    if not self.completed then
-      coroutine.yield(f, ...)
-    end
-    if self.error then
-      assert(false, self.error)
-    end
-    self.completed = false
-    local newResult = self.result
-    self.result = lastResult
-    return newResult
-  end
-  setmetatable(await, await)
-  coroutine.resume(f, await, ...)
+
+  local window = require('lspsaga.window')
+  local _, winid = window.create_win_with_border({
+    contents = { '' },
+    border = 'none',
+    winblend = 0,
+    highlight = {
+      normal = 'DiagnosticBeacon',
+    },
+  }, opts)
+
+  local timer = vim.loop.new_timer()
+  timer:start(
+    0,
+    60,
+    vim.schedule_wrap(function()
+      if not api.nvim_win_is_valid(winid) then
+        return
+      end
+      local blend = vim.wo[winid].winblend + 7
+      if blend > 100 then
+        blend = 100
+      end
+      vim.wo[winid].winblend = blend
+      if vim.wo[winid].winblend == 100 and not timer:is_closing() then
+        timer:stop()
+        timer:close()
+        api.nvim_win_close(winid, true)
+      end
+    end)
+  )
 end
 
 return libs

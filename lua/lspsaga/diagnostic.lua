@@ -1,7 +1,7 @@
 local config = require('lspsaga').config
 local diag_conf, ui = config.diagnostic, config.ui
 local diagnostic = vim.diagnostic
-local api, fn, keymap, uv = vim.api, vim.fn, vim.keymap.set, vim.loop
+local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local insert = table.insert
 
 local diag = {}
@@ -397,63 +397,12 @@ function diag:move_cursor(entry)
     -- Save position in the window's jumplist
     vim.cmd("normal! m'")
     api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
-    if diag_conf.beacon then
-      self:jump_beacon(entry)
-    end
+    ctx.libs.jump_beacon({ entry.lnum, entry.col }, entry.end_col - entry.col)
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
 
   self:render_diagnostic_window(entry)
-end
-
-function diag:jump_beacon(entry)
-  -- print(vim.inspect(entry))
-  local opts = {
-    relative = 'win',
-    bufpos = { entry.lnum, entry.col },
-    height = 1,
-    width = entry.end_col - entry.col,
-    row = 0,
-    col = 0,
-    anchor = 'NW',
-    focusable = false,
-    no_size_override = true,
-  }
-
-  if opts.width < 0 then
-    opts.width = 1
-  end
-
-  local _, winid = ctx.window.create_win_with_border({
-    contents = { '' },
-    border = 'none',
-    winblend = 0,
-    highlight = {
-      normal = 'DiagnosticBeacon',
-    },
-  }, opts)
-
-  local timer = uv.new_timer()
-  timer:start(
-    0,
-    60,
-    vim.schedule_wrap(function()
-      if not api.nvim_win_is_valid(winid) then
-        return
-      end
-      local blend = vim.wo[winid].winblend + 7
-      if blend > 100 then
-        blend = 100
-      end
-      vim.wo[winid].winblend = blend
-      if vim.wo[winid].winblend == 100 and not timer:is_closing() then
-        timer:stop()
-        timer:close()
-        api.nvim_win_close(winid, true)
-      end
-    end)
-  )
 end
 
 function diag.goto_next(opts)

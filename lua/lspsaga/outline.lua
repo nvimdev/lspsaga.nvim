@@ -16,6 +16,9 @@ function ot.__index(_, k, _)
 end
 
 local function clean_ctx()
+  if ctx.group then
+    api.nvim_del_augroup_by_id(ctx.group)
+  end
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
@@ -162,9 +165,33 @@ function ot:apply_map()
     if self.winid and api.nvim_win_is_valid(self.winid) then
       api.nvim_win_close(self.winid, true)
     end
+    clean_ctx()
   end, opt)
+
   keymap.set('n', maps.expand_collaspe, function()
     self:expand_collaspe()
+  end, opt)
+
+  keymap.set('n', maps.jump, function()
+    local curline = api.nvim_win_get_cursor(0)[1]
+    local node
+    for _, nodes in pairs(self.data) do
+      _, node = find_node(nodes.data, curline)
+      if node then
+        break
+      end
+    end
+
+    if not node or not node.range then
+      return
+    end
+
+    local winid = fn.bufwinid(self.render_buf)
+    api.nvim_set_current_win(winid)
+    local pos = { node.range.start.line + 1, node.range.start.character }
+    api.nvim_win_set_cursor(winid, pos)
+    local width = #api.nvim_get_current_line()
+    libs.jump_beacon({ pos[1] - 1, pos[2] }, width)
   end, opt)
 end
 
@@ -259,7 +286,7 @@ function ot:auto_refresh()
   api.nvim_create_autocmd('BufEnter', {
     group = self.group,
     callback = function(opt)
-      local ignore = { 'lspsagaoutline', 'terminal' }
+      local ignore = { 'lspsagaoutline', 'terminal', 'help' }
       if vim.tbl_contains(ignore, vim.bo[opt.buf].filetype) or opt.buf == self.render_buf then
         return
       end
@@ -374,7 +401,6 @@ function ot:close_when_last()
         api.nvim_buf_delete(self.bufnr, { force = true })
         local bufnr = api.nvim_create_buf(true, true)
         api.nvim_win_set_buf(0, bufnr)
-        api.nvim_del_augroup_by_id(self.group)
         clean_ctx()
       end
     end,
@@ -470,7 +496,7 @@ function ot:outline(quiet)
   end
   local current_buf = api.nvim_get_current_buf()
   local symbols = get_cache_symbols(current_buf)
-  self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
+  self.group = api.nvim_create_augroup('LspsagaOutline', { clear = true })
   self.render_buf = current_buf
   if not symbols then
     self.pending_request = true

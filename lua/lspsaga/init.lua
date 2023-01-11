@@ -24,7 +24,6 @@ local default_config = {
   },
   diagnostic = {
     twice_into = false,
-    beacon = true,
     show_code_action = true,
     show_source = true,
     keys = {
@@ -50,14 +49,14 @@ local default_config = {
   },
   preview = {
     lines_above = 0,
-    lines_below = 15,
+    lines_below = 10,
   },
   scroll_preview = {
     scroll_down = '<C-f>',
     scroll_up = '<C-b>',
   },
+  request_timeout = 2000,
   finder = {
-    request_timeout = 1500,
     keys = {
       open = { 'o', '<CR>' },
       vsplit = 's',

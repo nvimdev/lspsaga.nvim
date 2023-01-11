@@ -88,7 +88,7 @@ function Finder:loading_bar()
       '██████████',
     },
     interval = 15,
-    timeout = config.finder.request_timeout,
+    timeout = config.request_timeout,
   }
   api.nvim_buf_set_option(spin_buf, 'modifiable', true)
 

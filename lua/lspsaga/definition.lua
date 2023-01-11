@@ -149,7 +149,6 @@ function def:peek_definition()
   local node = {}
   node.main_bufnr = current_buf
   node.main_winid = cur_winid
-  node.fname = api.nvim_buf_get_name(current_buf)
 
   -- push a tag stack
   local pos = api.nvim_win_get_cursor(0)
@@ -223,31 +222,34 @@ function def:peek_definition()
     vim.opt_local.modifiable = true
     api.nvim_win_set_buf(node.winid, bufnr)
     node.bufnr = bufnr
-    api.nvim_buf_set_option(node.bufnr, 'bufhidden', 'wipe')
+    vim.bo[node.bufnr].bufhidden = 'wipe'
     --set the initail cursor pos
     api.nvim_win_set_cursor(node.winid, { start_line + 1, start_char_pos })
     vim.cmd('normal! zt')
 
-    node.def_win_ns = api.nvim_create_namespace('DefinitionWinNs-' .. node.bufnr)
-    api.nvim_buf_add_highlight(
-      bufnr,
-      node.def_win_ns,
-      'DefinitionSearch',
-      start_line,
-      start_char_pos,
-      end_char_pos
-    )
+    if api.nvim_buf_get_name(node.bufnr) == api.nvim_buf_get_name(node.main_bufnr) then
+      node.def_win_ns = api.nvim_create_namespace('DefinitionWinNs-' .. node.bufnr)
+      api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
+      api.nvim_buf_add_highlight(
+        bufnr,
+        node.def_win_ns,
+        'DefinitionSearch',
+        start_line,
+        start_char_pos,
+        end_char_pos
+      )
 
-    api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
-    api.nvim_set_hl(node.def_win_ns, 'Normal', {
-      background = config.ui.colors.normal_bg,
-    })
-    api.nvim_set_hl(node.def_win_ns, 'SignColumn', {
-      background = config.ui.colors.normal_bg,
-    })
-    api.nvim_set_hl(node.def_win_ns, 'DefinitionBorder', {
-      background = config.ui.colors.normal_bg,
-    })
+      api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
+      api.nvim_set_hl(node.def_win_ns, 'Normal', {
+        background = config.ui.colors.normal_bg,
+      })
+      api.nvim_set_hl(node.def_win_ns, 'SignColumn', {
+        background = config.ui.colors.normal_bg,
+      })
+      api.nvim_set_hl(node.def_win_ns, 'DefinitionBorder', {
+        background = config.ui.colors.normal_bg,
+      })
+    end
 
     self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
     self:event(bufnr)
@@ -316,7 +318,9 @@ function def:apply_aciton_keys(bufnr, pos)
     if not node then
       return
     end
-    api.nvim_buf_clear_namespace(bufnr, node.def_win_ns, 0, -1)
+    if node.def_win_ns then
+      api.nvim_buf_clear_namespace(bufnr, node.def_win_ns, 0, -1)
+    end
     self:close_window(node.winid)
     return node
   end
