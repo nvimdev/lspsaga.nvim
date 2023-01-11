@@ -20,6 +20,9 @@ local function find_node(winid)
   end
   local key = vim.tbl_keys(ctx)[1]
   local node = ctx[key].node
+  if not node then
+    return
+  end
   while true do
     if node.winid == winid then
       break
@@ -279,7 +282,7 @@ function def:event(bufnr)
         end
         pcall(api.nvim_buf_clear_namespace, node.def_win_ns)
       end
-      if #wins == 2 then
+      if #wins == 1 then
         for _, map in pairs(config.definition.keys) do
           pcall(api.nvim_buf_del_keymap, opt.buf, 'n', map)
         end

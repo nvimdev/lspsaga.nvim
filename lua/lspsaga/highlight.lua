@@ -6,6 +6,7 @@ local resolved
 local function get_colors()
   local colors = {
     red = '#e95678',
+    magenta = '#b33076',
     orange = '#FF8700',
     yellow = '#f7bb3b',
     green = '#afd700',
@@ -51,8 +52,8 @@ local function hi_define()
     FinderIcon = { fg = colors.cyan },
     FinderType = { fg = colors.purple },
     --finder spinner
-    FinderSpinnerTitle = { fg = '#b33076', bold = true },
-    FinderSpinner = { fg = '#b33076', bold = true },
+    FinderSpinnerTitle = { fg = colors.magenta, bold = true },
+    FinderSpinner = { fg = colors.magenta, bold = true },
     FinderPreviewSearch = { link = 'Search' },
     FinderVirtText = { fg = colors.red },
     FinderNormal = { link = 'SagaBorder' },
@@ -77,7 +78,7 @@ local function hi_define()
     DiagnosticWarnBorder = { link = 'SagaBorder' },
     DiagnosticHintBorder = { link = 'SagaBorder' },
     DiagnosticInfoBorder = { link = 'SagaBorder' },
-    DiagnosticBeacon = { bg = '#b33076' },
+    DiagnosticBeacon = { bg = colors.magenta },
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaBorder' },
     CallHierarchyBorder = { link = 'SagaBorder' },
@@ -88,7 +89,7 @@ local function hi_define()
     -- shadow
     SagaShadow = { fg = 'black' },
     -- Outline
-    OutlineIndent = { fg = colors.white },
+    OutlineIndent = { fg = colors.magenta },
     OutlinePreviewBorder = { link = 'SagaBorder' },
     OutlinePreviewNormal = { link = 'SagaBorder' },
   }
