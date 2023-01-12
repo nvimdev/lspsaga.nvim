@@ -126,6 +126,20 @@ keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 ### Usage Tutorial
 **Notice that title in float window must need neovim version >= 0.9**
 
+### default options
+
+```lua
+  preview = {
+    lines_above = 0,
+    lines_below = 10,
+  },
+  scroll_preview = {
+    scroll_down = '<C-f>',
+    scroll_up = '<C-b>',
+  },
+  request_timeout = 2000,
+```
+
 
 ### :Lspsaga lsp_finder
 
