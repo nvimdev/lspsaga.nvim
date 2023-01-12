@@ -11,9 +11,7 @@ function ot.__newindex(t, k, v)
   rawset(t, k, v)
 end
 
-function ot.__index(_, k, _)
-  return ot[k]
-end
+ot.__index = ot
 
 local function clean_ctx()
   if ctx.group then

@@ -123,7 +123,7 @@ function saga.theme()
   return theme[saga.config.ui.theme]
 end
 
-function saga.init_lsp_saga(opts)
+function saga.setup(opts)
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
   require('lspsaga.highlight'):init_highlight()
@@ -132,7 +132,7 @@ function saga.init_lsp_saga(opts)
   end
 
   if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.in_custom then
-    require('lspsaga.symbolwinbar').config_symbol_autocmd()
+    require('lspsaga.symbolwinbar'):symbol_autocmd()
   end
 end
 

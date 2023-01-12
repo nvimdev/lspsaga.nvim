@@ -147,7 +147,7 @@ default finder options
 <summary>lsp finder show case</summary>
 
 <img
-src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-465d-85c3-3d02d1b88da4.gif" height=60% width=60%>
+src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-465d-85c3-3d02d1b88da4.gif" height=80% width=80%/>
 </details>
 
 
@@ -178,7 +178,7 @@ the step in this gif show case
 - lspsaga will show becacon highlight after jump .
 
 <img
-src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=60% width=60%>
+src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga goto_definition
@@ -207,7 +207,7 @@ options with default value
 - `ga` run `Lspsaga code_action`
 - `j` to move and show the code action preview
 - `<Cr>` to run a action
-<img src="https://user-images.githubusercontent.com/41671631/212005522-bc7fa99b-6c6f-4c0e-b7fc-c95edee5c169.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212005522-bc7fa99b-6c6f-4c0e-b7fc-c95edee5c169.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga Lightbulb
@@ -226,7 +226,7 @@ when there has code action it will show a lightbulb, default options.
 
 <details>
 <summary> lightbulb show case </summary>
-<img src="https://user-images.githubusercontent.com/41671631/212009221-e0fb193e-f69d-4ed6-a4a2-d9ecb589f211.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212009221-e0fb193e-f69d-4ed6-a4a2-d9ecb589f211.gif" height=80% width=80%/>
 </details>
 
 ### :Lspasga hover_doc
@@ -241,7 +241,7 @@ you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. i
 - press `K` again jump into the hover window.
 - `<Esc>` to quit.
    
-<img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" />
+<img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga diagnostic_jump_next
@@ -278,7 +278,7 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 - `j` to move.
 - `o` to execuate an action.
 
-<img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga rename
@@ -299,7 +299,7 @@ lsp rename with select. default options
 - `gr` to run `Lspsaga rename`
 - `stesdd<CR>` 
 
-<img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga outline
@@ -331,7 +331,7 @@ default options
 - `j` move down
 - `o` to jump
 
-<img src="https://user-images.githubusercontent.com/41671631/212017018-6753e470-58e4-498e-8812-5ff416ff27c1.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212017018-6753e470-58e4-498e-8812-5ff416ff27c1.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga incoming_calls
@@ -355,7 +355,7 @@ run lsp callhierarchy incoming_calls.  default options
 
 <details>
 <summary>incoming_calls show case</summary>
-<img src="https://user-images.githubusercontent.com/41671631/212018219-26ed4a5f-00e1-488a-8a87-1a89f2c5d14b.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212018219-26ed4a5f-00e1-488a-8a87-1a89f2c5d14b.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga outgoing_calls
@@ -364,7 +364,7 @@ run lsp callhierarchy outgoing_calls
 
 <details>
 <summary>outgoing show_case</summary>
-<img src="https://user-images.githubusercontent.com/41671631/212024418-cf26f3f7-7acb-46df-a50a-9abe3f8f68f3.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212024418-cf26f3f7-7acb-46df-a50a-9abe3f8f68f3.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga symbols in winbar
@@ -383,10 +383,19 @@ require your neovim version >= 0.8. options with default value
 - `hide_keyword` default is true it will hide some keyword or tmp variable make symbols more clean
 - `folder_level` work with `show_file`
 
+
 <details>
 <summary>symbols in winbar </summary>
-<img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif" height=80% width=80%/>
 </details>
+
+### :Lspaga symbols in custom winbar/statusline
+
+lspsaga provide an api that you can use in your custom winbar or statusline.
+
+```lua
+vim.wo.winbar/ vim.wo.stl = require('lspsaga.symbolwinbar'):get_winbar()
+```
 
 ### :Lspsaga term_toggle
 
@@ -394,7 +403,7 @@ simple floaterm
 
 <details>
 <summary> float terminal toggle</summary>
-<img src="https://user-images.githubusercontent.com/41671631/212027060-56d1cebc-c6a8-412e-bd01-620aac3029ed.gif"/>
+<img src="https://user-images.githubusercontent.com/41671631/212027060-56d1cebc-c6a8-412e-bd01-620aac3029ed.gif" height=80% width=80%/>
 </details>
 
 ## Customize Appearance

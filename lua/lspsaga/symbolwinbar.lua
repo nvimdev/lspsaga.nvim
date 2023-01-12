@@ -3,9 +3,7 @@ local config = require('lspsaga').config.symbol_in_winbar
 local symbar = {}
 
 local cache = {}
-function symbar.__index(_, k, _)
-  return symbar[k]
-end
+symbar.__index = symbar
 
 function symbar.__newindex(t, k, v)
   rawset(t, k, v)
@@ -263,11 +261,6 @@ function symbar:refresh_symbol_cache(buf, render_fn)
     end
 
     self[buf].symbols = result
-
-    api.nvim_exec_autocmds('User', {
-      pattern = 'LSUpdateSymbol',
-      modeline = false,
-    })
   end
   do_symbol_request(buf, callback_fn)
 end
@@ -327,13 +320,15 @@ function symbar:register_events(buf)
 
   api.nvim_buf_attach(buf, false, {
     on_detach = function()
-      pcall(api.nvim_del_augroup_by_id, self[buf].group)
+      if self[buf] and self[buf].group then
+        pcall(api.nvim_del_augroup_by_id, self[buf].group)
+      end
       clean_buf_cache(buf)
     end,
   })
 end
 
-function symbar.config_symbol_autocmd()
+function symbar:symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
@@ -346,8 +341,8 @@ function symbar.config_symbol_autocmd()
         vim.wo[winid].winbar = bar_file_name(opt.buf)
       end
 
-      symbar:init_buf_symbols(opt.buf, render_symbol_winbar)
-      symbar:register_events(opt.buf)
+      self:init_buf_symbols(opt.buf, render_symbol_winbar)
+      self:register_events(opt.buf)
     end,
     desc = 'Lspsaga get and show symbols',
   })
@@ -355,18 +350,27 @@ end
 
 ---Get buffer symbols
 ---@return  string | nil
-function symbar.get_winbar(buf)
-  buf = buf or api.nvim_get_current_buf()
+function symbar:get_winbar()
+  local buf = api.nvim_get_current_buf()
+  if not self[buf] then
+    self[buf] = {}
+  end
+
   local res = get_buf_symbol(buf)
+  if vim.tbl_isempty(res) or not res.symbols then
+    self:refresh_symbol_cache(buf)
+    return
+  end
+
   if res.pending_request then
     return
   end
 
-  if not res.symbols then
-    symbar:refresh_symbol_cache(buf)
-    return
+  self:register_events(buf)
+
+  if res.symbols then
+    return render_symbol_winbar(buf, res.symbols)
   end
-  return render_symbol_winbar(buf)
 end
 
 return setmetatable(cache, symbar)
