@@ -46,6 +46,14 @@ function libs.get_home_dir()
   return os.getenv('HOME')
 end
 
+function libs.tbl_index(tbl, val)
+  for index, v in pairs(tbl) do
+    if v == val then
+      return index
+    end
+  end
+end
+
 function libs.has_value(filetypes, val)
   if type(filetypes) == 'table' then
     for _, v in pairs(filetypes) do
@@ -59,20 +67,6 @@ function libs.has_value(filetypes, val)
     end
   end
   return false
-end
-
-function libs.nvim_create_keymap(definitions)
-  for _, def in pairs(definitions) do
-    local mode, lhs, rhs, opts = def[1], def[2], def[3], def[4]
-
-    if type(lhs) == 'table' then
-      for _, key in ipairs(lhs) do
-        vim.keymap.set(mode, key, rhs, opts)
-      end
-    else
-      vim.keymap.set(mode, lhs, rhs, opts)
-    end
-  end
 end
 
 function libs.check_lsp_active(silent)

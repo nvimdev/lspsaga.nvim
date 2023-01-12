@@ -56,7 +56,7 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
-    open = { 'o', '<CR>' },
+    edit = { 'o', '<CR>' },
     vsplit = 's',
     split = 'i',
     tabe = 't',

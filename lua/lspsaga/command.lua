@@ -1,9 +1,6 @@
 local command = {}
 
 local subcommands = {
-  outline = function()
-    require('lspsaga.outline'):render_outline()
-  end,
   lsp_finder = function()
     require('lspsaga.finder'):lsp_finder()
   end,
@@ -34,7 +31,6 @@ local subcommands = {
   code_action = function()
     require('lspsaga.codeaction'):code_action()
   end,
-
   outline = function()
     require('lspsaga.outline'):outline()
   end,

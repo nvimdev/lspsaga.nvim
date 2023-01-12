@@ -101,7 +101,6 @@ keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
 keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
 
-
 -- Diagnostic jump with filter like Only jump to error
 keymap("n", "[E", function()
   require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
@@ -121,7 +120,6 @@ keymap("n", "<Leader>ci", "<cmd>Lspsaga incoming_calls")
 keymap("n", "<Leader>co", "<cmd>Lspsaga outgoing_calls")
 
 -- Float terminal
-
 keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 ```
 
@@ -151,7 +149,7 @@ default finder options
 
 ```lua
   finder = {
-    open = { 'o', '<CR>' },
+    edit = { 'o', '<CR>' },
     vsplit = 's',
     split = 'i',
     tabe = 't',
@@ -255,7 +253,7 @@ you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. i
 
 - `K` to run `Lspsaga hover_doc`.
 - press `K` again jump into the hover window.
-- `<Esc>` to quit.
+- `q` to quit.
    
 <img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" height=80% width=80%/>
 </details>
