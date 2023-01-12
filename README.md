@@ -147,7 +147,7 @@ default finder options
 <summary>lsp finder show case</summary>
 
 <img
-src="https://user-images.githubusercontent.com/41671631/212000045-99fbcc35-e76e-431e-b849-339550962adb.png">
+src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-465d-85c3-3d02d1b88da4.gif" height=60% width=60%>
 </details>
 
 
@@ -178,7 +178,7 @@ the step in this gif show case
 - lspsaga will show becacon highlight after jump .
 
 <img
-src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif">
+src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=60% width=60%>
 </details>
 
 ### :Lspsaga goto_definition

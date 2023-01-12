@@ -1,5 +1,6 @@
 local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
+local libs = require('lspsaga.libs')
 local insert = table.insert
 
 local Finder = {}
@@ -16,12 +17,11 @@ function Finder:init_data()
     [self.methods[3]] = '● References',
   }
   self.window = require('lspsaga.window')
-  self.libs = require('lspsaga.libs')
 end
 
 function Finder:lsp_finder()
   self:init_data()
-  self.client = self.libs.get_client_by_cap('implementationProvider')
+  self.client = libs.get_client_by_cap('implementationProvider')
 
   -- push a tag stack
   local pos = api.nvim_win_get_cursor(0)
@@ -153,7 +153,7 @@ function Finder:do_request(params, method)
     local result = {}
     for _, res in pairs(results or {}) do
       if res.result and not (res.result.uri or res.result.targetUri) then
-        self.libs.merge_table(result, res.result)
+        libs.merge_table(result, res.result)
       elseif res.result and (res.result.uri or res.result.targetUri) then
         -- this work for some servers like exlixir
         table.insert(result, res.result)
@@ -166,7 +166,7 @@ function Finder:do_request(params, method)
 end
 
 function Finder:get_file_icon()
-  local res = self.libs.icon_from_devicon(vim.bo.filetype)
+  local res = libs.icon_from_devicon(vim.bo.filetype)
   if #res == 0 then
     self.f_icon = ''
   else
@@ -190,7 +190,7 @@ function Finder:get_uri_scope(method, start_lnum, end_lnum)
 end
 
 function Finder:render_finder()
-  self.root_dir = self.libs.get_lsp_root_dir()
+  self.root_dir = libs.get_lsp_root_dir()
 
   self.contents = {}
   self.short_link = {}
@@ -258,11 +258,11 @@ function Finder:create_finder_contents(result, method)
       fn.bufload(bufnr)
     end
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
-    if self.libs.iswin then
+    if libs.iswin then
       link = link:gsub('^%l', link:sub(1, 1):upper())
     end
     local short_name
-    local path_sep = self.libs.path_sep
+    local path_sep = libs.path_sep
     -- reduce filename length by root_dir or home dir
     if self.root_dir and link:find(self.root_dir, 1, true) then
       short_name = link:sub(self.root_dir:len() + 2)
@@ -463,7 +463,7 @@ function Finder:render_finder_result()
     })
   end
   -- disable some move keys in finder window
-  self.libs.disable_move_keys(self.bufnr)
+  libs.disable_move_keys(self.bufnr)
   -- load float window map
   self:apply_float_map()
   self:lsp_finder_highlight()
@@ -471,7 +471,7 @@ end
 
 function Finder:apply_float_map()
   local action = config.finder
-  local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
+  local nvim_create_keymap = libs.nvim_create_keymap
   local opts = {
     buffer = self.bufnr,
     noremap = true,
@@ -663,7 +663,7 @@ function Finder:auto_open_preview()
       api.nvim_buf_set_option(self.preview_bufnr, 'buflisted', false)
       api.nvim_win_set_var(self.preview_winid, 'finder_preview', self.preview_winid)
 
-      self.libs.scroll_in_preview(self.bufnr, self.preview_winid)
+      libs.scroll_in_preview(self.bufnr, self.preview_winid)
 
       if not self.preview_hl_ns then
         self.preview_hl_ns = api.nvim_create_namespace('FinderPreview')
@@ -724,7 +724,9 @@ function Finder:open_link(action_type)
     vim.cmd('write')
   end
   api.nvim_command(action[action_type] .. short_link[current_line].link)
-  fn.cursor(short_link[current_line].row, short_link[current_line].col)
+  api.nvim_win_set_cursor(0, { short_link[current_line].row, short_link[current_line].col })
+  local width = #api.nvim_get_current_line()
+  libs.jump_beacon({ short_link[current_line].row - 1, 0 }, width)
   self:clear_tmp_data()
 end
 
