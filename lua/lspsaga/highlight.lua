@@ -87,11 +87,11 @@ local function hi_define()
     -- lightbulb
     LspSagaLightBulb = { link = 'DiagnosticSignHint' },
     -- shadow
-    SagaShadow = { fg = 'black' },
+    SagaShadow = { bg = colors.black },
     -- Outline
     OutlineIndent = { fg = colors.magenta },
     OutlinePreviewBorder = { link = 'SagaBorder' },
-    OutlinePreviewBorder = { link = 'SagaBorder' },
+    OutlinePreviewNormal = { link = 'SagaBorder' },
     -- Float term
     TerminalBorder = { link = 'SagaBorder' },
     TerminalNormal = { link = 'SagaBorder' },
