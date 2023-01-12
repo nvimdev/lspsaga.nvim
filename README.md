@@ -14,7 +14,7 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 [![](https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white)](https://matrix.to/#/#lspsaga-nvim:matrix.org)
 
 1. [Install](#install)
-   - [Lazy](#lazy.nvim)
+   - [Lazy](#lazy)
    - [Packer](#packer)
 1. [Example Configuration](#example-configuration)
 2. [Usage Turtorial](#usage-tutorial)
@@ -32,7 +32,7 @@ you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install 
 - `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
 - `after` for packer you can use after keyword.
 
-### Lazy.nvim
+### Lazy
 
 ```lua
 require('lazy').setup({
@@ -121,9 +121,7 @@ keymap("n", "<Leader>co", "<cmd>Lspsaga outgoing_calls")
 
 -- Float terminal
 keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
-
 ```
-
 
 ### Usage Tutorial
 **Notice that title in float window must need neovim version >= 0.9**
@@ -397,37 +395,55 @@ simple floaterm
 <details>
 <summary> float terminal toggle</summary>
 <img src="https://user-images.githubusercontent.com/41671631/212027060-56d1cebc-c6a8-412e-bd01-620aac3029ed.gif"/>
-</detials>
+</details>
 
 ## Customize Appearance
 
-### Custom Lsp Kind Icon and Color
+### :Lspsaga UI
 
-You can use the `custom_kind` option to change the default icon and color:
+default ui options
 
 ```lua
--- if only change the color you can do it like
-custom_kind = {
-  Field = '#000000',
-}
-
--- if you  want to change the icon and color
-custom_kind = {
-  Field = {'your icon','your color'},
-}
+  ui = {
+    theme = 'round',
+    border = 'solid',
+    winblend = 0,
+    expand = '',
+    collaspe = '',
+    preview = ' ',
+    code_action = '💡',
+    diagnostic = '🐞',
+    incoming = ' ',
+    outgoing = ' ',
+    colors = {
+      --float window normal bakcground color
+      normal_bg = '#1d1536',
+      --title background color
+      title_bg = '#afd700',
+      red = '#e95678',
+      magenta = '#b33076',
+      orange = '#FF8700',
+      yellow = '#f7bb3b',
+      green = '#afd700',
+      cyan = '#36d0e0',
+      blue = '#61afef',
+      purple = '#CBA6F7',
+      white = '#d1d4cf',
+      black = '#1c1c19',
+    },
+    kind = {},
+  },
 ```
 
-### Highlight Group
+### Custom Highlight
 
-Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
+you can change the default colors or only change some highlight groups which you want change.
+find all highlight groups in [highlight.lua](./lua/lspsaga/highlight.lua)
 
-```vim
-highlight link LspSagaFinderSelection Search
-" or
-highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
-```
+### Custom Kind
 
-The available highlight groups you can find in [here](./plugin/lspsaga.lua).
+`kind` field is a table that key is kind name, value is icon, all kind defined in [lspkind.lua](./lua/lspsaga/lspkind.lua)
+
 
 ## Donate
 
@@ -435,6 +451,6 @@ The available highlight groups you can find in [here](./plugin/lspsaga.lua).
 
 If you'd like to support my work financially, buy me a drink through [paypal](https://paypal.me/bobbyhub).
 
-# License
+## License
 
 Licensed under the [MIT](./LICENSE) license.
