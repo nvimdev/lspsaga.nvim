@@ -97,6 +97,7 @@ local function open_shadow_win()
   local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
   api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
   api.nvim_win_set_option(shadow_winid, 'winblend', 70)
+  api.nvim_buf_set_option(shadow_bufnr, 'bufhidden', 'wipe')
   return shadow_bufnr, shadow_winid
 end
 
@@ -142,9 +143,11 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_buf_set_lines(bufnr, 0, -1, true, content)
   end
 
-  api.nvim_buf_set_option(bufnr, 'modifiable', false)
-  api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
-  api.nvim_buf_set_option(bufnr, 'buftype', 'nofile')
+  if not content_opts.bufnr then
+    api.nvim_buf_set_option(bufnr, 'modifiable', false)
+    api.nvim_buf_set_option(bufnr, 'bufhidden', content_opts.bufhidden or 'wipe')
+    api.nvim_buf_set_option(bufnr, 'buftype', content_opts.buftype or '')
+  end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
   vim.wo[winid].winblend = content_opts.winblend or config.ui.winblend

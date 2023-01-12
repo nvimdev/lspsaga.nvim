@@ -375,6 +375,7 @@ function ot:auto_preview()
 
   local content_opts = {
     contents = content,
+    buftype = 'nofile',
     filetype = vim.bo[self.render_buf].filetype,
     highlight = {
       normal = 'ActionPreviewNormal',

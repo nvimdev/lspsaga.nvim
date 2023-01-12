@@ -40,11 +40,8 @@ local subcommands = {
   outgoing_calls = function()
     require('lspsaga.callhierarchy'):outgoing_calls()
   end,
-  open_floaterm = function(cmd)
+  term_toggle = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)
-  end,
-  close_floaterm = function()
-    require('lspsaga.floaterm'):close_float_terminal()
   end,
 }
 

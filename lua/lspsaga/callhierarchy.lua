@@ -304,6 +304,8 @@ function ch:render_win()
 
   local content_opt = {
     contents = content,
+    filetype = 'lspsagacallhierarchy',
+    buftype = 'nofile',
     enter = true,
     highlight = {
       normal = 'CallHierarchyNormal',
@@ -437,7 +439,7 @@ function ch:preview()
   }
 
   local win_conf = api.nvim_win_get_config(self.winid)
-  if vim.o.columns - (4 + win_conf.col[false] +win_conf.width) > opt.width then
+  if vim.o.columns - (4 + win_conf.col[false] + win_conf.width) > opt.width then
     opt.row = win_conf.row[false]
     opt.col = win_conf.col[false] + win_conf.width + 4
   else

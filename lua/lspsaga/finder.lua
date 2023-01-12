@@ -636,6 +636,7 @@ function Finder:auto_open_preview()
 
     local content_opts = {
       contents = content,
+      buftype = 'nofile',
       highlight = {
         border = 'FinderPreviewBorder',
         normal = 'FinderNormal',

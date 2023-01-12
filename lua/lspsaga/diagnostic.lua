@@ -146,6 +146,7 @@ function diag:render_diagnostic_window(entry, option)
   local content_opts = {
     contents = content,
     filetype = 'markdown',
+    buftype = 'nofile',
     wrap = true,
     highlight = {
       border = hi_name .. 'border',

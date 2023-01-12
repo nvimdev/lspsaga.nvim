@@ -39,6 +39,7 @@ function hover:open_floating_preview(res, opts)
   local contents_opt = {
     contents = content,
     filetype = res.kind or 'markdown',
+    buftype = 'nofile',
     wrap = true,
     highlight = {
       normal = 'HoverNormal',
@@ -103,6 +104,15 @@ function hover:do_request()
 end
 
 function hover:render_hover_doc()
+  local has_parser = api.nvim_get_runtime_file('parser/markdown.so', true)
+  if #has_parser == 0 then
+    vim.notify(
+      '[Lpsaga.nvim] Please install markdown parser in nvim-treesitter',
+      vim.log.levels.WARN
+    )
+    return
+  end
+
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
     return

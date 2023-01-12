@@ -26,6 +26,7 @@ function Action:action_callback()
   local content_opts = {
     contents = contents,
     filetype = 'sagacodeaction',
+    buftype = 'nofile',
     enter = true,
     highlight = {
       normal = 'CodeActionNormal',
@@ -437,6 +438,7 @@ function Action:action_preview(main_winid, main_buf)
   local content_opts = {
     contents = tbl,
     filetype = 'diff',
+    buftype = 'nofile',
     highlight = {
       normal = 'ActionPreviewNormal',
       border = 'ActionPreviewBorder',

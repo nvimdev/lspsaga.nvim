@@ -91,7 +91,10 @@ local function hi_define()
     -- Outline
     OutlineIndent = { fg = colors.magenta },
     OutlinePreviewBorder = { link = 'SagaBorder' },
-    OutlinePreviewNormal = { link = 'SagaBorder' },
+    OutlinePreviewBorder = { link = 'SagaBorder' },
+    -- Float term
+    TerminalBorder = { link = 'SagaBorder' },
+    TerminalNormal = { link = 'SagaBorder' },
   }
 end
 
