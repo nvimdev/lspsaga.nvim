@@ -72,7 +72,7 @@ function rename:find_reference()
         local line = v.range.start.line
         local start_char = v.range.start.character
         local end_char = v.range['end'].character
-        api.nvim_buf_add_highlight(bufnr, ns, 'LspSagaRenameMatch', line, start_char, end_char)
+        api.nvim_buf_add_highlight(bufnr, ns, 'RenameMatch', line, start_char, end_char)
       end
     end
   end, bufnr)

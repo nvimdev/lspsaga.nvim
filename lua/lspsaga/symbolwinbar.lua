@@ -227,7 +227,6 @@ local render_symbol_winbar = function(buf, symbols)
   if config.enable and api.nvim_win_get_height(cur_win) - 1 > 1 then
     vim.wo[cur_win].winbar = winbar_str
   end
-  symbar:register_events(buf)
   return winbar_str
 end
 
@@ -252,12 +251,8 @@ local function get_buf_symbol(buf)
 end
 
 function symbar:refresh_symbol_cache(buf, render_fn)
-  if not self[buf] then
-    self[buf] = {}
-  end
-
   self[buf].pending_request = true
-  local _callback = function(_, result, _)
+  local function callback_fn(_, result, _)
     self[buf].pending_request = false
     if not result then
       return
@@ -274,10 +269,14 @@ function symbar:refresh_symbol_cache(buf, render_fn)
       modeline = false,
     })
   end
-  do_symbol_request(buf, _callback)
+  do_symbol_request(buf, callback_fn)
 end
 
 function symbar:init_buf_symbols(buf, render_fn)
+  if not self[buf] then
+    self[buf] = {}
+  end
+
   local res = get_buf_symbol(buf)
   if res.pending_request then
     return
@@ -348,6 +347,7 @@ function symbar.config_symbol_autocmd()
       end
 
       symbar:init_buf_symbols(opt.buf, render_symbol_winbar)
+      symbar:register_events(opt.buf)
     end,
     desc = 'Lspsaga get and show symbols',
   })

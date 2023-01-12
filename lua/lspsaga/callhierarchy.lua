@@ -292,11 +292,42 @@ function ch:apply_map()
       )
     end
   end, opt)
+
+  for action, key in pairs({
+    edit = keys.edit,
+    vsplit = keys.vsplit,
+    split = keys.split,
+    tabe = keys.tabe,
+  }) do
+    vim.keymap.set('n', key, function()
+      local node = self:get_node_at_cursor()
+      if not node then
+        return
+      end
+      if api.nvim_buf_is_loaded(self.file_buf) then
+        api.nvim_buf_delete(self.file_buf, { force = true })
+      end
+      if api.nvim_win_is_valid(self.winid) then
+        api.nvim_win_close(self.winid, true)
+      end
+      if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+        api.nvim_win_close(self.preview_winid, true)
+      end
+      vim.cmd(action .. ' ' .. vim.uri_to_fname(node.target.uri))
+      api.nvim_win_set_cursor(
+        0,
+        { node.target.selectionRange.start.line + 1, node.target.selectionRange.start.character }
+      )
+      local width = #api.nvim_get_current_line()
+      libs.jump_beacon({ node.target.selectionRange.start.line, 0 }, width)
+      clean_ctx()
+    end, opt)
+  end
 end
 
 function ch:render_win()
   local content = {}
-  insert(content, fn.expand('<cword>'))
+  insert(content, self.cword)
 
   for _, v in pairs(self.data) do
     insert(content, v.name)
@@ -479,6 +510,7 @@ function ch:preview()
     api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
   end
   api.nvim_win_set_buf(self.preview_winid, data[1])
+  self.file_buf = data[1]
   vim.bo[data[1]].filetype = vim.bo[self.main_buf].filetype
   vim.bo[data[1]].modifiable = true
   api.nvim_win_set_cursor(self.preview_winid, { data[2].start.line, data[2].start.character })
@@ -486,6 +518,7 @@ function ch:preview()
 end
 
 function ch:incoming_calls()
+  self.cword = fn.expand('<cword>')
   self.method = get_method(2)
   self.window = require('lspsaga.window')
   self.data = {}
@@ -493,6 +526,7 @@ function ch:incoming_calls()
 end
 
 function ch:outgoing_calls()
+  self.cword = fn.expand('<cword>')
   self.method = get_method(3)
   self.window = require('lspsaga.window')
   self.data = {}

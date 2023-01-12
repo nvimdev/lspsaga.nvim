@@ -470,7 +470,7 @@ function Finder:render_finder_result()
 end
 
 function Finder:apply_float_map()
-  local action = config.finder.keys
+  local action = config.finder
   local nvim_create_keymap = require('lspsaga.libs').nvim_create_keymap
   local opts = {
     buffer = self.bufnr,
@@ -703,7 +703,7 @@ function Finder:close_auto_preview_win()
   end
 end
 
--- action 1 mean enter
+-- action 1 mean edit
 -- action 2 mean vsplit
 -- action 3 mean split
 -- action 4 mean tabe

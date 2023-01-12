@@ -41,9 +41,8 @@ local default_config = {
   lightbulb = {
     enable = true,
     enable_in_insert = true,
-    cache_code_action = true,
+    -- cache_code_action = true,
     sign = true,
-    update_time = 150,
     sign_priority = 40,
     virtual_text = true,
   },
@@ -57,23 +56,19 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
-    keys = {
-      open = { 'o', '<CR>' },
-      vsplit = 's',
-      split = 'i',
-      tabe = 't',
-      quit = { 'q', '<ESC>' },
-    },
+    open = { 'o', '<CR>' },
+    vsplit = 's',
+    split = 'i',
+    tabe = 't',
+    quit = { 'q', '<ESC>' },
   },
   definition = {
-    keys = {
-      edit = '<C-c>o',
-      vsplit = '<C-c>v',
-      split = '<C-c>i',
-      tabe = '<C-c>t',
-      quit = 'q',
-      close = '<Esc>',
-    },
+    edit = '<C-c>o',
+    vsplit = '<C-c>v',
+    split = '<C-c>i',
+    tabe = '<C-c>t',
+    quit = 'q',
+    close = '<Esc>',
   },
   rename = {
     quit = '<C-c>',
@@ -105,6 +100,10 @@ local default_config = {
   callhierarchy = {
     show_detail = false,
     keys = {
+      edit = 'e',
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
       jump = 'o',
       quit = 'q',
       expand_collaspe = 'u',

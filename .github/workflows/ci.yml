@@ -23,14 +23,14 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     name: pandoc to vimdoc
-    # if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v3
       - name: panvimdoc
         uses: kdheepak/panvimdoc@main
         with:
-          vimdoc: mutchar.nvim
-          treesitter: true
+          vimdoc: lspsaga
+          version: Nvim 0.8.0
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: 'chore(doc): auto generate docs'

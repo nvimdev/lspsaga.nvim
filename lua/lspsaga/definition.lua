@@ -1,5 +1,6 @@
 local config = require('lspsaga').config
 local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
+local libs = require('lspsaga.libs')
 local def = {}
 
 -- a double linked list for store the node infor
@@ -85,7 +86,6 @@ local function push(node)
 end
 
 function def:title_text(opts, link)
-  local libs = require('lspsaga.libs')
   link = vim.split(link, libs.path_sep, { trimempty = true })
   if #link > 2 then
     link = table.concat(link, libs.path_sep, #link - 1, #link)
@@ -111,10 +111,10 @@ local function get_uri_data(result)
 
   if type(result[1]) == 'table' then
     uri = result[1].uri or result[1].targetUri
-    range = result[1].range or result[1].targetRange
+    range = result[1].range or result[1].targetSelectionRange
   else
     uri = result.uri or result.targetUri
-    range = result.range or result.targetRange
+    range = result.range or result.targetSelectionRange
   end
 
   if not uri then
@@ -285,7 +285,7 @@ function def:event(bufnr)
         pcall(api.nvim_buf_clear_namespace, node.def_win_ns)
       end
       if #wins == 1 then
-        for _, map in pairs(config.definition.keys) do
+        for _, map in pairs(config.definition) do
           pcall(api.nvim_buf_del_keymap, opt.buf, 'n', map)
         end
       end
@@ -298,7 +298,7 @@ function def:event(bufnr)
 end
 
 local function unpack_maps()
-  local maps = config.definition.keys
+  local maps = config.definition
   local res = {}
   for key, val in pairs(maps) do
     if key ~= 'quit' or 'close' then
@@ -332,11 +332,13 @@ function def:apply_aciton_keys(bufnr, pos)
       end
       vim.cmd(action .. ' ' .. node.link)
       api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
+      local width = #api.nvim_get_current_line()
+      libs.jump_beacon({ pos[1], pos[2] }, width)
       clean_ctx()
     end, opt)
   end
 
-  keymap.set('n', config.definition.keys.quit, function()
+  keymap.set('n', config.definition.quit, function()
     local node = node_with_close()
     if not node then
       return
@@ -349,7 +351,7 @@ function def:apply_aciton_keys(bufnr, pos)
     end
   end, opt)
 
-  keymap.set('n', config.definition.keys.close, function()
+  keymap.set('n', config.definition.close, function()
     if vim.tbl_isempty(ctx) then
       return
     end
@@ -384,6 +386,8 @@ function def:goto_defintion()
     local _, link, start_line, start_char_pos, _ = get_uri_data(result)
     api.nvim_command('edit ' .. link)
     api.nvim_win_set_cursor(0, { start_line + 1, start_char_pos })
+    local width = #api.nvim_get_current_line()
+    libs.jump_beacon({ start_line, start_char_pos }, width)
   end
   lsp.buf.definition()
 end

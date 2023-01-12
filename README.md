@@ -14,20 +14,34 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 [![](https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white)](https://matrix.to/#/#lspsaga-nvim:matrix.org)
 
 1. [Install](#install)
-   - [Vim Plug](#vim-plug)
+   - [Lazy](#lazy.nvim)
    - [Packer](#packer)
-1. [Configuration](#configuration)
-1. [Customize Appearance](#customize-appearance)
-1. [Donate](#donate)
-1. [License](#license)
+1. [Example Configuration](#example-configuration)
+2. [Usage Turtorial](#usage-tutorial)
+3. [Customize Appearance](#customize-appearance)
+4. [Donate](#donate)
+5. [License](#license)
 
 ## Install
 
-### Vim Plug
+you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install `lspsaga` and lazyload by the plugin management keyword.
 
-```vim
-Plug 'neovim/nvim-lspconfig'
-Plug 'glepnir/lspsaga.nvim', { 'branch': 'main' }
+- `cmd` lazylod by `lspsaga` command
+- `ft`  lazy.nvim and packer both provide lazyload by filetype. then you can load the lspsaga according the filetypes which you write and use lsp.
+- `event` lazyload by event like `BufRead,BufReadPost` make sure your lsp plugin also loaded.
+- `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
+- `after` for packer you can use after keyword.
+
+### Lazy.nvim
+
+```lua
+require('lazy').setup({
+    'glepnir/lspsaga.nvim',
+    event = 'BufRead',
+    config = function()
+        require('lspsaga').setup({})
+    end
+},opt)
 ```
 
 ### Packer
@@ -37,292 +51,353 @@ use({
     "glepnir/lspsaga.nvim",
     branch = "main",
     config = function()
-        local saga = require("lspsaga")
-
-        saga.init_lsp_saga({
-            -- your configuration
-        })
+        require('lspsaga').setup({})
     end,
 })
 ```
 
-## Configuration
-
-Notice that title in floatwindow must need neovim version >= 0.9
-
-<details>
-<summary> Example config </summary>
+## Example Configuration
 
 ```lua
+require('laz').setup({
+    'glepnir/lspsaga.nvim',
+    event = 'BufRead',
+    config = function()
+      require('lspaga').setup({})
+    end
+})
+
 local keymap = vim.keymap.set
-local saga = require('lspsaga')
-
-saga.init_lsp_saga()
-
 -- Lsp finder find the symbol definition implement reference
 -- if there is no implement it will hide
 -- when you use action in finder like open vsplit then you can
 -- use <C-t> to jump back
-keymap("n", "gh", "<cmd>Lspsaga lsp_finder<CR>", { silent = true })
+keymap("n", "gh", "<cmd>Lspsaga lsp_finder<CR>")
 
 -- Code action
-keymap({"n","v"}, "<leader>ca", "<cmd>Lspsaga code_action<CR>", { silent = true })
+keymap({"n","v"}, "<leader>ca", "<cmd>Lspsaga code_action<CR>")
 
 -- Rename
-keymap("n", "gr", "<cmd>Lspsaga rename<CR>", { silent = true })
+keymap("n", "gr", "<cmd>Lspsaga rename<CR>")
 
 -- Peek Definition
 -- you can edit the definition file in this flaotwindow
 -- also support open/vsplit/etc operation check definition_action_keys
 -- support tagstack C-t jump back
-keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>", { silent = true })
+keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>")
 
--- Show line diagnostics
-keymap("n", "<leader>cd", "<cmd>Lspsaga show_line_diagnostics<CR>", { silent = true })
+-- Go to Definition
+keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
+
+-- Show line diagnostics you can pass arugment ++unfocus to make
+-- show_line_diagnsotic float window unfocus
+keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
 
 -- Show cursor diagnostic
-keymap("n", "<leader>cd", "<cmd>Lspsaga show_cursor_diagnostics<CR>", { silent = true })
+-- also like show_line_diagnostics  support pass ++unfocus
+keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
 
 -- Diagnsotic jump can use `<c-o>` to jump back
-keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", { silent = true })
-keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>", { silent = true })
+keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
+keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
 
--- Only jump to error
+-- Diagnostic jump with filter like Only jump to error
 keymap("n", "[E", function()
   require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
-end, { silent = true })
+end)
 keymap("n", "]E", function()
   require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
-end, { silent = true })
+end)
 
 -- Outline
-keymap("n","<leader>o", "<cmd>LSoutlineToggle<CR>",{ silent = true })
+keymap("n","<leader>o", "<cmd>Lspsaga outline<CR>")
 
 -- Hover Doc
-keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
+keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>")
+
+-- Callhierarchy
+keymap("n", "<Leader>ci", "<cmd>Lspsaga incoming_calls")
+keymap("n", "<Leader>co", "<cmd>Lspsaga outgoing_calls")
 
 -- Float terminal
-keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm<CR>", { silent = true })
--- if you want pass somc cli command into terminal you can do like this
--- open lazygit in lspsaga float terminal
-keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm lazygit<CR>", { silent = true })
--- close floaterm
-keymap("t", "<A-d>", [[<C-\><C-n><cmd>Lspsaga close_floaterm<CR>]], { silent = true })
-```
-</details>
+keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 
-### Symbols In Winbar
-
-require your neovim version >= 0.8. options with default value
-
-```lua
-symbol_in_winbar = {
-  -- true mean use the api from lspsaga and not use the lspsaga winbar
-  in_custom = false,
-  -- true mean use the lspsaga winbar
-  enable = false,
-  separator = ' ',
-  show_file = true,
-  click_support = false,
-},
 ```
 
-<details>
-<summary> work with custom winbar/statusline </summary>
 
-```lua
-saga.init_lsp_saga({
-    symbol_in_winbar = {
-        in_custom = true
-    }
-})
-```
+### Usage Tutorial
+**Notice that title in float window must need neovim version >= 0.9**
 
-- use `require('lspsaga.symbolwinbar').get_symbol_node` this function in your custom winbar
-to get symbols node and set `User LspsagaUpdateSymbol` event in your autocmds
 
-```lua
--- Example:
-local function get_file_name(include_path)
-    local file_name = require('lspsaga.symbolwinbar').get_file_name()
-    if vim.fn.bufname '%' == '' then return '' end
-    if include_path == false then return file_name end
-    -- Else if include path: ./lsp/saga.lua -> lsp > saga.lua
-    local sep = vim.loop.os_uname().sysname == 'Windows' and '\\' or '/'
-    local path_list = vim.split(string.gsub(vim.fn.expand '%:~:.:h', '%%', ''), sep)
-    local file_path = ''
-    for _, cur in ipairs(path_list) do
-        file_path = (cur == '.' or cur == '~') and '' or
-                    file_path .. cur .. ' ' .. '%#LspSagaWinbarSep#>%*' .. ' %*'
-    end
-    return file_path .. file_name
-end
-
-local function config_winbar_or_statusline()
-    local exclude = {
-        ['terminal'] = true,
-        ['toggleterm'] = true,
-        ['prompt'] = true,
-        ['NvimTree'] = true,
-        ['help'] = true,
-    } -- Ignore float windows and exclude filetype
-    if vim.api.nvim_win_get_config(0).zindex or exclude[vim.bo.filetype] then
-        vim.wo.winbar = ''
-    else
-        local ok, lspsaga = pcall(require, 'lspsaga.symbolwinbar')
-        local sym
-        if ok then sym = lspsaga.get_symbol_node() end
-        local win_val = ''
-        win_val = get_file_name(true) -- set to true to include path
-        if sym ~= nil then win_val = win_val .. sym end
-        vim.wo.winbar = win_val
-        -- if work in statusline
-        vim.wo.stl = win_val
-    end
-end
-
-local events = { 'BufEnter', 'BufWinEnter', 'CursorMoved' }
-
-vim.api.nvim_create_autocmd(events, {
-    pattern = '*',
-    callback = function() config_winbar_or_statusline() end,
-})
-
-vim.api.nvim_create_autocmd('User', {
-    pattern = 'LspsagaUpdateSymbol',
-    callback = function() config_winbar_or_statusline() end,
-})
-```
-
-</details>
-
-<details>
-
-<summary>Support Click in symbols winbar</summary>
-
-To enable click support for winbar define a function similar to [statusline](https://neovim.io/doc/user/options.html#'statusline') (Search for "Start of execute function label")
-
-minwid will be replaced with current node. For example:
-
-```lua
-symbol_in_winbar = {
-    click_support = function(node, clicks, button, modifiers)
-        -- To see all avaiable details: vim.pretty_print(node)
-        local st = node.range.start
-        local en = node.range['end']
-        if button == "l" then
-            if clicks == 2 then
-                -- double left click to do nothing
-            else -- jump to node's starting line+char
-                vim.fn.cursor(st.line + 1, st.character + 1)
-            end
-        elseif button == "r" then
-            if modifiers == "s" then
-                print "lspsaga" -- shift right click to print "lspsaga"
-            end -- jump to node's ending line+char
-            vim.fn.cursor(en.line + 1, en.character + 1)
-        elseif button == "m" then
-            -- middle click to visual select node
-            vim.fn.cursor(st.line + 1, st.character + 1)
-            vim.cmd "normal v"
-            vim.fn.cursor(en.line + 1, en.character + 1)
-        end
-    end
-}
-```
-</details>
-
-### Lsp Finder
+### :Lspsaga lsp_finder
 
 `Finder` to show the defintion,reference,implement(only show when current word is interface or some type)
 
-options with default value
+default finder options
 
 ```lua
-finder_icons = {
-  def = ' ',
-  imp = ' ',
-  ref = ' ',
-},
-finder_request_timeout = 1500,
-finder_action_keys = {
-  open = { 'o', '<CR>' },
-  vsplit = 's',
-  split = 'i',
-  tabe = 't',
-  quit = { 'q', '<ESC>' },
-},
+  finder = {
+    open = { 'o', '<CR>' },
+    vsplit = 's',
+    split = 'i',
+    tabe = 't',
+    quit = { 'q', '<ESC>' },
+  },
 ```
 
 <details>
 <summary>lsp finder show case</summary>
 
-<div align='center'>
 <img
-src="https://user-images.githubusercontent.com/41671631/181253960-cef49f9d-db8b-4b04-92d8-cb6322749414.png" />
-</div>
+src="https://user-images.githubusercontent.com/41671631/212000045-99fbcc35-e76e-431e-b849-339550962adb.png">
 </details>
 
-### Definition
 
-there has two commands `Lspsaga peek_defintion` and `Lspsaga goto_defintion`, the `peek_defitnion` work as vscode that show the target file in a floatwindow you can edit as normalize.
+### :Lspsaga peek_definition
 
-options with default value
-
-```lua
--- notice this option just work in peek_defintion float window
-definition_action_keys = {
-  edit = '<C-c>o',
-  vsplit = '<C-c>v',
-  split = '<C-c>i',
-  tabe = '<C-c>t',
-  quit = 'q',
-  -- close mean close all the peek defintion float window
-  close = '<Esc>',
-}
-```
-
-### Code Action
+there has two commands `Lspsaga peek_defintion` and `Lspsaga goto_defintion`, the `peek_defitnion` work like vscode that show the target file in a floatwindow you can edit as normalize.
 
 options with default value
 
 ```lua
--- code action title icon
-code_action_icon = '💡',
--- if true can press number to execute the codeaction in codeaction window
-code_action_num_shortcut = true,
-code_action_keys = {
-  quit = 'q',
-  exec = '<CR>',
-},
-code_action_lightbulb = {
-  enable = true,
-  enable_in_insert = true,
-  cache_code_action = true,
-  sign = true,
-  update_time = 150,
-  sign_priority = 40,
-  virtual_text = true,
-},
+  definition = {
+    edit = '<C-c>o',
+    vsplit = '<C-c>v',
+    split = '<C-c>i',
+    tabe = '<C-c>t',
+    quit = 'q',
+    close = '<Esc>',
+  }
 ```
 
-### Lightbulb
+<details>
+<summary>peek_definition show case</summary>
 
-### Hover Doc
+the step in this gif show case
+- `gd` run `lspsaga peek_definition`.
+- do some comment edit then `:w` to save.
+- `<C-c> o` jump to this file.
+- lspsaga will show becacon highlight after jump .
 
-### Rename with preview and select
+<img
+src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif">
+</details>
 
-### Diagnostic
+### :Lspsaga goto_definition
 
-### Outline
-
-### Float terminal
+jump to definition and show beacon
 
 
-### Module Contact
+### :Lspsaga code_action
 
-* Enable `symbol_in_winbar` will make render outline fast.
-* Enable `code_action_lightbulb` will make code action fast.
+options with default value
+
+```lua
+  code_action = {
+    num_shortcut = true,
+    keys = {
+      quit = 'q',
+      exec = '<CR>',
+    },
+  },
+```
+- `num_shortcut` it's `true` by default then you can use number to fast run action
+
+<details>
+<summary> code_action show case </summary>
+
+- `ga` run `Lspsaga code_action`
+- `j` to move and show the code action preview
+- `<Cr>` to run a action
+<img src="https://user-images.githubusercontent.com/41671631/212005522-bc7fa99b-6c6f-4c0e-b7fc-c95edee5c169.gif"/>
+</details>
+
+### :Lspsaga Lightbulb
+
+when there has code action it will show a lightbulb, default options.
+
+```lua
+  lightbulb = {
+    enable = true,
+    enable_in_insert = true,
+    sign = true,
+    sign_priority = 40,
+    virtual_text = true,
+  },
+```
+
+<details>
+<summary> lightbulb show case </summary>
+<img src="https://user-images.githubusercontent.com/41671631/212009221-e0fb193e-f69d-4ed6-a4a2-d9ecb589f211.gif"/>
+</details>
+
+### :Lspasga hover_doc
+
+lspsaga use treesitter markdown parser to render hover. so you must install markdown parser.
+you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. in my case is `K`.
+
+<details>
+<summary> hover_doc show case </summary>
+
+- `K` to run `Lspsaga hover_doc`.
+- press `K` again jump into the hover window.
+- `<Esc>` to quit.
+   
+<img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" />
+</details>
+
+### :Lspsaga diagnostic_jump_next
+
+jump to next diagnsotic position then show beacon and show the codeaction. default options
+
+```lua
+  diagnostic = {
+    twice_into = false,
+    show_code_action = true,
+    show_source = true,
+    keys = {
+      exec_action = 'o',
+      quit = 'q',
+    },
+  },
+```
+if `twice_into` set to `true`, press twice the diagnostic jump shortcut it will jump into the floatwindow. other way is use `wincmd` to jump into use `<C-w>w`.
+
+also you can use a filter in diagnostic jump by using lspsaga function. function params is a table
+same as `:h vim.diagnsotic.get_next`
+
+```lua
+-- this is mean only jump to error position
+-- or goto_next
+require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
+```
+
+<details>
+<summary>diagnostic jump show case </summary>
+
+- `[e` to jump next diangostic position.
+- `<C-w>w` jump into the float window.
+- `j` to move.
+- `o` to execuate an action.
+
+<img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif"/>
+</details>
+
+### :Lspsaga rename
+
+lsp rename with select. default options
+
+```lua
+  rename = {
+    quit = '<C-c>',
+    exec = '<CR>',
+    in_select = true,
+  },
+```
+
+<details>
+<summary> rename show case</summary>
+
+- `gr` to run `Lspsaga rename`
+- `stesdd<CR>` 
+
+<img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif"/>
+</details>
+
+### :Lspsaga outline
+
+default options
+
+```lua
+  outline = {
+    win_position = 'right',
+    win_with = '',
+    win_width = 30,
+    show_detail = true,
+    auto_preview = true,
+    auto_refresh = true,
+    auto_close = true,
+    custom_sort = nil,
+    keys = {
+      jump = 'o',
+      expand_collaspe = 'u',
+      quit = 'q',
+    },
+  },
+```
+
+<details>
+<summary>outline show case</summary>
+
+- `<Leader>o` run `Lspsaga outline`
+- `j` move down
+- `o` to jump
+
+<img src="https://user-images.githubusercontent.com/41671631/212017018-6753e470-58e4-498e-8812-5ff416ff27c1.gif"/>
+</details>
+
+### :Lspsaga incoming_calls
+
+run lsp callhierarchy incoming_calls.  default options
+
+```lua
+  callhierarchy = {
+    show_detail = false,
+    keys = {
+      edit = 'e',
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      jump = 'o',
+      quit = 'q',
+      expand_collaspe = 'u',
+    },
+  },
+```
+
+<details>
+<summary>incoming_calls show case</summary>
+<img src="https://user-images.githubusercontent.com/41671631/212018219-26ed4a5f-00e1-488a-8a87-1a89f2c5d14b.gif"/>
+</details>
+
+### :Lspsaga outgoing_calls
+
+run lsp callhierarchy outgoing_calls
+
+<details>
+<summary>outgoing show_case</summary>
+<img src="https://user-images.githubusercontent.com/41671631/212024418-cf26f3f7-7acb-46df-a50a-9abe3f8f68f3.gif"/>
+</details>
+
+### :Lspsaga symbols in winbar
+
+require your neovim version >= 0.8. options with default value
+
+```lua
+  symbol_in_winbar = {
+    enable = true,
+    separator = ' ',
+    hide_keyword = true,
+    show_file = true,
+    folder_level = 2,
+  },
+```
+- `hide_keyword` default is true it will hide some keyword or tmp variable make symbols more clean
+- `folder_level` work with `show_file`
+
+<details>
+<summary>symbols in winbar </summary>
+<img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif"/>
+</details>
+
+### :Lspsaga term_toggle
+
+simple floaterm
+
+<details>
+<summary> float terminal toggle</summary>
+<img src="https://user-images.githubusercontent.com/41671631/212027060-56d1cebc-c6a8-412e-bd01-620aac3029ed.gif"/>
+</detials>
 
 ## Customize Appearance
 
@@ -346,7 +421,6 @@ custom_kind = {
 
 Colors can be simply changed by overwriting the default highlights groups LspSaga is using.
 
-
 ```vim
 highlight link LspSagaFinderSelection Search
 " or
@@ -354,10 +428,6 @@ highlight link LspSagaFinderSelection guifg='#ff0000' guibg='#00ff00' gui='bold'
 ```
 
 The available highlight groups you can find in [here](./plugin/lspsaga.lua).
-
-## Changelog
-
-- [version 0.2 in 2022-08-18](./Changelog.md)
 
 ## Donate
 
