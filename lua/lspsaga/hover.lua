@@ -57,7 +57,7 @@ function hover:open_floating_preview(res, opts)
     vim.treesitter.start(self.preview_bufnr, 'markdown')
   end
 
-  vim.keymap.set('n', 'q', function()
+  vim.keymap.set('n', config.hover_action_quit, function()
     if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
       api.nvim_buf_delete(self.preview_bufnr, { force = true })
     end

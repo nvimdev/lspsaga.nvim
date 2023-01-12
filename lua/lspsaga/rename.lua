@@ -24,7 +24,6 @@ end
 
 function rename:apply_action_keys()
   local config = require('lspsaga').config
-
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in pairs(modes) do

@@ -101,6 +101,7 @@ keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
 keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
 
+
 -- Diagnostic jump with filter like Only jump to error
 keymap("n", "[E", function()
   require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
@@ -120,6 +121,7 @@ keymap("n", "<Leader>ci", "<cmd>Lspsaga incoming_calls")
 keymap("n", "<Leader>co", "<cmd>Lspsaga outgoing_calls")
 
 -- Float terminal
+
 keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 ```
 
