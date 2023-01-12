@@ -126,6 +126,7 @@ local function parse_symbols(buf, symbols)
     else
       for _, item in pairs(v.data) do
         if item.selectionRange then
+          item.pos = { item.selectionRange.start.line, item.selectionRange.start.character }
           item.selectionRange = nil
         end
       end
@@ -188,10 +189,9 @@ function ot:apply_map()
 
     local winid = fn.bufwinid(self.render_buf)
     api.nvim_set_current_win(winid)
-    local pos = { node.range.start.line + 1, node.range.start.character }
-    api.nvim_win_set_cursor(winid, pos)
+    api.nvim_win_set_cursor(winid, { node.pos[1] + 1, node.pos[2] })
     local width = #api.nvim_get_current_line()
-    libs.jump_beacon({ pos[1] - 1, pos[2] }, width)
+    libs.jump_beacon({ node.range.start.line, node.range.start.character }, width)
   end, opt)
 end
 
@@ -301,8 +301,7 @@ function ot:auto_refresh()
 
       --set a delay in there if change buffer quickly only render last one
       vim.defer_fn(function()
-        local cur_buf = api.nvim_get_current_buf()
-        if cur_buf ~= opt.buf then
+        if api.nvim_get_current_buf() ~= opt.buf or not self.bufnr then
           return
         end
         api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
@@ -463,7 +462,6 @@ function ot:register_events()
     group = self.group,
     buffer = self.bufnr,
     callback = function()
-      api.nvim_del_augroup_by_id(self.group)
       clean_ctx()
     end,
   })

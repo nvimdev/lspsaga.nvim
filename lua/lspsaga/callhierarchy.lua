@@ -1,5 +1,6 @@
 local api, fn, lsp, uv = vim.api, vim.fn, vim.lsp, vim.loop
 local config = require('lspsaga').config
+local libs = require('lspsaga.libs')
 local call_conf, ui = config.callhierarchy, config.ui
 local insert = table.insert
 
@@ -50,14 +51,11 @@ local function pick_call_hierarchy_item(call_hierarchy_items)
 end
 
 ---@private
-function ch:call_hierarchy(item, parent, level)
+function ch:call_hierarchy(item, parent)
   local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
-  local indent = '  '
   local client = self.client
   local frame = 0
   local curline = api.nvim_win_get_cursor(0)[1]
-  local start = uv.now()
-  local cur_text = api.nvim_get_current_line()
   if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) and parent then
     local timer = uv.new_timer()
     timer:start(
@@ -67,15 +65,6 @@ function ch:call_hierarchy(item, parent, level)
         local text = api.nvim_get_current_line()
         local replace_icon = text:find(ui.expand) and ui.expand or ui.collaspe
         if self.pending_request then
-          if uv.now() - start > config.request_timeout then
-            self.pending_request = false
-            vim.notify('[Lspsaga.nvim] callhierarchy request timeout')
-            timer:stop()
-            timer:close()
-            api.nvim_buf_set_lines(self.bufnr, curline - 1, curline, false, { cur_text })
-            return
-          end
-
           if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
             api.nvim_win_close(self.preview_winid, true)
             self.preview_winid = nil
@@ -99,6 +88,15 @@ function ch:call_hierarchy(item, parent, level)
             col_start,
             col_start + #spinner[next]
           )
+
+          if parent then
+            for group, scope in pairs(parent.highlights) do
+              if not group:find('Saga') then
+                api.nvim_buf_add_highlight(self.bufnr, 0, group, curline - 1, scope[1], scope[2])
+                break
+              end
+            end
+          end
         end
 
         if not self.pending_request and not timer:is_closing() then
@@ -127,13 +125,13 @@ function ch:call_hierarchy(item, parent, level)
       for i, v in pairs(res) do
         local target = v.from and v.from or v.to
         table.insert(icons, kind[target.kind])
-        local expand_collaspe = indent .. ui.expand
+        local expand_collaspe = '  ' .. ui.expand
         local icon = kind[target.kind][2]
         insert(self.data, {
           target = target,
           name = expand_collaspe .. icon .. target.name,
           highlights = {
-            ['SagaExpand'] = { 0, #expand_collaspe },
+            ['SagaCollaspe'] = { 0, #expand_collaspe },
             ['LSOutline' .. kind[target.kind][1]] = { #expand_collaspe, #expand_collaspe + #icon },
           },
           winline = i + 1,
@@ -154,8 +152,8 @@ function ch:call_hierarchy(item, parent, level)
       parent.name,
     })
 
-    level = level == 1 and level + 1 or level
-    indent = string.rep(indent, level)
+    local _, level = parent.name:find('%s+')
+    local indent = string.rep(' ', level + 1)
 
     local tbl = {}
     for i, v in pairs(res) do
@@ -166,7 +164,7 @@ function ch:call_hierarchy(item, parent, level)
         target = target,
         name = expand_collaspe .. icon .. target.name,
         highlights = {
-          ['SagaExpand'] = { 0, #expand_collaspe },
+          ['SagaCollaspe'] = { 0, #expand_collaspe },
           ['LSOutline' .. kind[target.kind][1]] = { #expand_collaspe, #expand_collaspe + #icon },
         },
         winline = parent.winline + i,
@@ -204,7 +202,7 @@ function ch:send_prepare_call()
 end
 
 function ch:expand_collaspe()
-  local node, level = self:get_node_at_cursor()
+  local node = self:get_node_at_cursor()
   if not node then
     return
   end
@@ -212,11 +210,11 @@ function ch:expand_collaspe()
   if not node.expand then
     if not node.requested then
       if not self.pending_request then
-        self:call_hierarchy(node.target, node, level)
+        self:call_hierarchy(node.target, node)
       end
     else
       node.name = node.name:gsub(ui.expand, ui.collaspe)
-      node.highlights['SagaCollaspe'] = node.highlights['SagaExpand']
+      node.highlights['SagaCollaspe'] = { unpack(node.highlights['SagaExpand']) }
       node.highlights['SagaExpand'] = nil
       vim.bo.modifiable = true
       api.nvim_buf_set_lines(self.bufnr, node.winline - 1, node.winline, false, {
@@ -229,10 +227,14 @@ function ch:expand_collaspe()
       end
       node.expand = true
       api.nvim_buf_set_lines(self.bufnr, node.winline, node.winline, false, tbl)
-      vim.bo.modifiable = false
       for group, scope in pairs(node.highlights) do
-        print(node.winline, group, scope[1], scope[2])
         api.nvim_buf_add_highlight(self.bufnr, 0, group, node.winline - 1, scope[1], scope[2])
+      end
+      vim.bo.modifiable = false
+      for _, child in pairs(node.children) do
+        for group, scope in pairs(child.highlights) do
+          api.nvim_buf_add_highlight(self.bufnr, 0, group, child.winline - 1, scope[1], scope[2])
+        end
       end
       self:change_node_winline(node, #node.children)
     end
@@ -246,6 +248,13 @@ function ch:expand_collaspe()
   api.nvim_buf_set_lines(self.bufnr, cur_line - 1, cur_line + #node.children, false, { text })
   node.expand = false
   vim.bo[self.bufnr].modifiable = false
+  node.highlights['SagaExpand'] = { unpack(node.highlights['SagaCollaspe']) }
+  node.highlights['SagaCollaspe'] = nil
+
+  for group, scope in pairs(node.highlights) do
+    api.nvim_buf_add_highlight(self.bufnr, 0, group, cur_line - 1, scope[1], scope[2])
+  end
+
   for _, v in pairs(node.children) do
     v.winline = -1
   end
@@ -270,9 +279,17 @@ function ch:apply_map()
     self:expand_collaspe()
   end, opt)
 
-  keymap('n', keys.jump_to_preview, function()
+  keymap('n', keys.jump, function()
     if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+      local node = self:get_node_at_cursor()
+      if not node then
+        return
+      end
       api.nvim_set_current_win(self.preview_winid)
+      api.nvim_win_set_cursor(
+        self.preview_winid,
+        { node.target.selectionRange.start.line + 1, node.target.selectionRange.start.character }
+      )
     end
   end, opt)
 end
@@ -294,7 +311,15 @@ function ch:render_win()
     },
   }
 
-  local opt = {}
+  local opt = {
+    relative = 'editor',
+    row = math.floor(vim.o.lines * 0.2),
+    col = math.floor(vim.o.columns * 0.1),
+    height = math.floor(vim.o.lines * 0.2),
+    width = math.floor(vim.o.columns * 0.4),
+    no_size_override = true,
+  }
+
   if fn.has('nvim-0.9') == 1 then
     local theme = require('lspsaga').theme()
     local icon = self.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
@@ -305,9 +330,6 @@ function ch:render_win()
       { theme.right, 'TitleSymbol' },
     }
   end
-  opt.height = math.floor(vim.o.lines * 0.2)
-  opt.width = math.floor(vim.o.columns * 0.4)
-  opt.no_size_override = true
   self.bufnr, self.winid = self.window.create_win_with_border(content_opt, opt)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
@@ -363,16 +385,12 @@ function ch:get_node_at_cursor()
   if cur_line == 1 then
     return
   end
-
-  local node = {}
-  local level = 0
+  local node
 
   local function get_node(data)
     for _, v in pairs(data) do
-      level = level + 1
       if v.winline == cur_line then
         node = v
-        level = level
       end
       if v.children then
         get_node(v.children)
@@ -381,12 +399,11 @@ function ch:get_node_at_cursor()
   end
 
   get_node(self.data)
-
-  return node, level
+  return node
 end
 
 function ch:get_preview_data()
-  local node, _ = self:get_node_at_cursor()
+  local node = self:get_node_at_cursor()
   if not node or vim.tbl_count(node) == 0 then
     return
   end
@@ -407,22 +424,25 @@ function ch:preview()
     api.nvim_win_close(self.preview_winid, true)
   end
 
-  local opt = {}
-  local win_conf = api.nvim_win_get_config(self.winid)
   local data = self:get_preview_data()
   if not data then
     return
   end
 
-  opt.col = win_conf.col[false]
-  opt.width = math.floor(vim.o.columns * 0.7)
-  opt.height = math.floor(vim.o.lines * 0.4)
-  opt.no_size_override = true
-  opt.relative = 'editor'
-  if win_conf.anchor:find('^N') then
-    opt.row = win_conf.row[false] - opt.height - 2
-  else
+  local opt = {
+    relative = 'editor',
+    width = math.floor(vim.o.columns * 0.7),
+    height = math.floor(vim.o.lines * 0.4),
+    no_size_override = true,
+  }
+
+  local win_conf = api.nvim_win_get_config(self.winid)
+  if vim.o.columns - (4 + win_conf.col[false] +win_conf.width) > opt.width then
     opt.row = win_conf.row[false]
+    opt.col = win_conf.col[false] + win_conf.width + 4
+  else
+    opt.row = win_conf.row[false] + win_conf.height + 4
+    opt.col = win_conf.col[false]
   end
 
   local content_opt = {
@@ -435,7 +455,6 @@ function ch:preview()
   }
 
   if fn.has('nvim-0.9') == 1 then
-    local libs = require('lspsaga.libs')
     local fname_parts = libs.get_path_info(data[1], 2)
     local tbl = libs.icon_from_devicon(vim.bo[self.main_buf].filetype, true)
     local theme = require('lspsaga').theme()

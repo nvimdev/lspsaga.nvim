@@ -105,7 +105,7 @@ local default_config = {
   callhierarchy = {
     show_detail = false,
     keys = {
-      jump_to_preview = 'o',
+      jump = 'o',
       quit = 'q',
       expand_collaspe = 'u',
     },
