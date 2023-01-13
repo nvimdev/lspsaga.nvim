@@ -237,7 +237,9 @@ function ot:expand_collapse()
     for _, v in pairs(node.data) do
       v.winline = -1
     end
+    vim.bo[self.bufnr].modifiable = true
     api.nvim_buf_set_lines(self.bufnr, curline - 1, curline + #node.data, false, { text })
+    vim.bo[self.bufnr].modifiable = false
     node.expand = false
     api.nvim_buf_add_highlight(self.bufnr, 0, 'SagaCollapse', curline - 1, 0, 5)
     api.nvim_buf_add_highlight(
@@ -260,7 +262,9 @@ function ot:expand_collapse()
     insert(lines, v.name)
     v.winline = curline + i
   end
+  vim.bo[self.bufnr].modifiable = true
   api.nvim_buf_set_lines(self.bufnr, curline - 1, curline, false, lines)
+  vim.bo[self.bufnr].modifiable = false
   node.expand = true
   api.nvim_buf_add_highlight(self.bufnr, 0, 'SagaExpand', curline - 1, 0, 5)
   api.nvim_buf_add_highlight(
@@ -305,6 +309,7 @@ function ot:auto_refresh()
         if api.nvim_get_current_buf() ~= opt.buf or not self.bufnr then
           return
         end
+        vim.bo[self.bufnr].modifiable = true
         api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
         self:outline(true)
       end, 10)
@@ -464,6 +469,7 @@ function ot:render_outline(buf, symbols)
   end
 
   api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
+  vim.bo[self.bufnr].modifiable = false
   api.nvim_buf_add_highlight(self.bufnr, 0, data[2], 0, 0, 4)
   for k, v in pairs(hi) do
     if not vim.tbl_isempty(v) then
