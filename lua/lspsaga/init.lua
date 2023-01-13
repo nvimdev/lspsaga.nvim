@@ -29,6 +29,7 @@ local default_config = {
     keys = {
       exec_action = 'o',
       quit = 'q',
+      go_action = 'g',
     },
   },
   code_action = {

@@ -271,10 +271,13 @@ jump to next diagnsotic position then show beacon and show the codeaction. defau
     keys = {
       exec_action = 'o',
       quit = 'q',
+      go_action = 'g'
     },
   },
 ```
 if `twice_into` set to `true`, press twice the diagnostic jump shortcut it will jump into the floatwindow. other way is use `wincmd` to jump into use `<C-w>w`.
+
+`go_action` can quickly jump to action line in diagnostic floatwindow
 
 also you can use a filter in diagnostic jump by using lspsaga function. function params is a table
 same as `:h vim.diagnsotic.get_next`

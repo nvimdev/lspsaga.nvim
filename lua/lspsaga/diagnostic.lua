@@ -85,6 +85,11 @@ function diag:code_action_cb()
     })
     api.nvim_buf_add_highlight(ctx.bufnr, 0, 'CodeActionText', start_line + i - 1, 0, -1)
   end
+  keymap('n', diag_conf.keys.go_action, function()
+    if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+      api.nvim_win_set_cursor(ctx.winid, { start_line + 2, 4 })
+    end
+  end, { buffer = ctx.bufnr, nowait = true, noremap = true })
 
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.bufnr,
@@ -108,7 +113,7 @@ function diag:apply_map()
   keymap('n', diag_conf.keys.exec_action, function()
     self:do_code_action()
     ctx.window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
-  end, { buffer = ctx.bufnr })
+  end, { buffer = ctx.bufnr, nowait = true })
 
   keymap('n', diag_conf.keys.quit, function()
     for _, id in pairs({ ctx.winid, ctx.virt_winid, ctx.preview_winid }) do
@@ -116,7 +121,7 @@ function diag:apply_map()
         api.nvim_win_close(id, true)
       end
     end
-  end, { buffer = ctx.bufnr })
+  end, { buffer = ctx.bufnr, nowait = true })
 end
 
 function diag:render_diagnostic_window(entry, option)
