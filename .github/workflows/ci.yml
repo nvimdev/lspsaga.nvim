@@ -29,7 +29,7 @@ jobs:
       - name: panvimdoc
         uses: kdheepak/panvimdoc@main
         with:
-          vimdoc: lspsaga
+          vimdoc: lspsaga.nvim
           version: Nvim 0.8.0
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
