@@ -315,6 +315,10 @@ function act:get_action_diff(num, main_buf)
     text_edits = action.edit.changes[vim.uri_from_bufnr(main_buf)]
   end
 
+  if not text_edits then
+    return
+  end
+
   local tmp_buf = api.nvim_create_buf(false, false)
 
   local remove_whole_line = false
