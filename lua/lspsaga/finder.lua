@@ -170,7 +170,14 @@ function finder:do_request(params, method)
   if method == methods(3) then
     params.context = { includeDeclaration = true }
   end
-  lsp.buf_request(self.main_buf, method, params, function(_, result)
+  lsp.buf_request_all(self.current_buf, method, params, function(results)
+    local result = {}
+    for _, res in pairs(results or {}) do
+      if res.result then
+        libs.merge_table(result, res.result)
+      end
+    end
+
     self.request_result[method] = result
     self.request_status[method] = true
   end)
