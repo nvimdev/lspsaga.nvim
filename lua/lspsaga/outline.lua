@@ -284,6 +284,9 @@ function ot:auto_refresh()
   api.nvim_create_autocmd('BufEnter', {
     group = self.group,
     callback = function(opt)
+      if not api.nvim_buf_is_valid(opt.buf) then
+        return
+      end
       local ignore = { 'lspsagaoutline', 'terminal', 'help', 'prompt', 'nofile' }
       if vim.tbl_contains(ignore, vim.bo[opt.buf].filetype) or opt.buf == self.render_buf then
         return
@@ -402,12 +405,21 @@ function ot:close_when_last()
     group = self.group,
     callback = function(opt)
       local wins = api.nvim_list_wins()
-      if #wins == 1 and vim.bo[opt.buf].filetype == 'lspsagaoutline' then
-        api.nvim_buf_delete(self.bufnr, { force = true })
-        local bufnr = api.nvim_create_buf(true, true)
-        api.nvim_win_set_buf(0, bufnr)
-        clean_ctx()
+      if #wins > 2 then
+        return
       end
+
+      if #wins == 2 and vim.bo[opt.buf].buftype ~= 'nofile' then
+        return
+      end
+
+      if #wins == 1 and vim.bo[opt.buf].filetype ~= 'lspsagaoutline' then
+        return
+      end
+      api.nvim_buf_delete(self.bufnr, { force = true })
+      local bufnr = api.nvim_create_buf(true, true)
+      api.nvim_win_set_buf(0, bufnr)
+      clean_ctx()
     end,
     desc = 'Outline auto close when last one',
   })
