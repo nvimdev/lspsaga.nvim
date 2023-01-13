@@ -1,4 +1,4 @@
-local api, lsp, util = vim.api, vim.lsp, vim.lsp.util
+local api, fn, lsp, util = vim.api, vim.fn, vim.lsp, vim.lsp.util
 local hover = {}
 
 function hover:open_floating_preview(res, opts)
@@ -29,12 +29,15 @@ function hover:open_floating_preview(res, opts)
     width = max_content_len > max_float_width and max_float_width or max_content_len,
     height = #content + increase,
     no_size_override = true,
-    title = {
+  }
+
+  if fn.has('nvim-0.9') == 1 then
+    float_option.title = {
       { theme.left, 'TitleSymbol' },
       { 'Hover', 'TitleString' },
       { theme.right, 'TitleSymbol' },
-    },
-  }
+    }
+  end
 
   local contents_opt = {
     contents = content,
