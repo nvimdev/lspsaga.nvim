@@ -690,7 +690,7 @@ function finder:auto_open_preview()
           break
         end
       end
-      if 0 + config.preview_lines_above - trimLines >= 0 then
+      if 0 + config.preview.lines_above - trimLines >= 0 then
         api.nvim_buf_add_highlight(
           self.preview_bufnr,
           self.preview_hl_ns,
