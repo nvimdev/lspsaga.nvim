@@ -439,7 +439,9 @@ default ui options
 
 ```lua
   ui = {
+    -- currently only round theme
     theme = 'round',
+    -- border type can be single,double,rounded,solid,shadow.
     border = 'solid',
     winblend = 0,
     expand = '',
