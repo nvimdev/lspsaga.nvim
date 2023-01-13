@@ -113,7 +113,6 @@ function diag:render_diagnostic_window(entry, option)
   local content = {
     ctx.theme.left .. '  Msg ' .. ctx.theme.right,
   }
-  local max_width = ctx.window.get_max_float_width(0.7)
   ctx.main_buf = api.nvim_get_current_buf()
   local cur_word = fn.expand('<cword>')
 
@@ -155,6 +154,13 @@ function diag:render_diagnostic_window(entry, option)
   }
 
   local increase = ctx.window.win_height_increase(content, 0.7)
+
+  local max_width = ctx.window.get_max_float_width(0.7)
+  local max_len = ctx.window.get_max_content_length(content)
+
+  if max_width - max_len > 10 then
+    max_width = max_len + 10
+  end
 
   local opts = {
     relative = 'cursor',

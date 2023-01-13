@@ -1,5 +1,7 @@
-local api, util, lsp = vim.api, vim.lsp.util, vim.lsp
+local api, util, lsp, uv, fn = vim.api, vim.lsp.util, vim.lsp, vim.loop, vim.fn
 local ns = api.nvim_create_namespace('LspsagaRename')
+local window = require('lspsaga.window')
+local config = require('lspsaga').config
 local rename = {}
 
 function rename:clean()
@@ -23,7 +25,6 @@ function rename:close_rename_win()
 end
 
 function rename:apply_action_keys()
-  local config = require('lspsaga').config
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in pairs(modes) do
@@ -204,12 +205,10 @@ function rename:lsp_rename()
 
     self:find_reference()
 
-    local window = require('lspsaga.window')
     self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
     self:set_local_options()
     api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { current_word })
 
-    local config = require('lspsaga').config
     if config.rename.in_select then
       vim.cmd([[normal! V]])
       feedkeys('<C-g>', 'n')
