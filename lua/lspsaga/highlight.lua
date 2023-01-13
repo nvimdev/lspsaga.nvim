@@ -37,7 +37,7 @@ local function hi_define()
     TitleIcon = { bg = colors.title_bg, fg = colors.red },
     SagaBorder = { bg = colors.normal_bg },
     SagaExpand = { fg = colors.red },
-    SagaCollaspe = { fg = colors.red },
+    SagaCollapse = { fg = colors.red },
     SagaBeacon = { bg = colors.magenta },
     -- code action
     ActionPreviewNormal = { link = 'SagaBorder' },

@@ -61,7 +61,7 @@ function ch:call_hierarchy(item, parent)
       50,
       vim.schedule_wrap(function()
         local text = api.nvim_get_current_line()
-        local replace_icon = text:find(ui.expand) and ui.expand or ui.collaspe
+        local replace_icon = text:find(ui.expand) and ui.expand or ui.collapse
         if self.pending_request then
           if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
             api.nvim_win_close(self.preview_winid, true)
@@ -123,14 +123,14 @@ function ch:call_hierarchy(item, parent)
       for i, v in pairs(res) do
         local target = v.from and v.from or v.to
         table.insert(icons, kind[target.kind])
-        local expand_collaspe = '  ' .. ui.expand
+        local expand_collapse = '  ' .. ui.expand
         local icon = kind[target.kind][2]
         insert(self.data, {
           target = target,
-          name = expand_collaspe .. icon .. target.name,
+          name = expand_collapse .. icon .. target.name,
           highlights = {
-            ['SagaCollaspe'] = { 0, #expand_collaspe },
-            ['LSOutline' .. kind[target.kind][1]] = { #expand_collaspe, #expand_collaspe + #icon },
+            ['SagaCollapse'] = { 0, #expand_collapse },
+            ['LSOutline' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
           },
           winline = i + 1,
           expand = false,
@@ -145,7 +145,7 @@ function ch:call_hierarchy(item, parent)
     vim.bo.modifiable = true
     parent.requested = true
     parent.expand = true
-    parent.name = parent.name:gsub(ui.expand, ui.collaspe)
+    parent.name = parent.name:gsub(ui.expand, ui.collapse)
     api.nvim_buf_set_lines(self.bufnr, parent.winline - 1, parent.winline, false, {
       parent.name,
     })
@@ -156,21 +156,21 @@ function ch:call_hierarchy(item, parent)
     local tbl = {}
     for i, v in pairs(res) do
       local target = v.from and v.from or v.to
-      local expand_collaspe = indent .. ui.expand
+      local expand_collapse = indent .. ui.expand
       local icon = kind[target.kind][2]
       insert(parent.children, {
         target = target,
-        name = expand_collaspe .. icon .. target.name,
+        name = expand_collapse .. icon .. target.name,
         highlights = {
-          ['SagaCollaspe'] = { 0, #expand_collaspe },
-          ['LSOutline' .. kind[target.kind][1]] = { #expand_collaspe, #expand_collaspe + #icon },
+          ['SagaCollapse'] = { 0, #expand_collapse },
+          ['LSOutline' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
         },
         winline = parent.winline + i,
         expand = false,
         children = {},
         requested = false,
       })
-      insert(tbl, expand_collaspe .. icon .. target.name)
+      insert(tbl, expand_collapse .. icon .. target.name)
     end
 
     api.nvim_buf_set_lines(self.bufnr, parent.winline, parent.winline, false, tbl)
@@ -199,7 +199,7 @@ function ch:send_prepare_call()
   end)
 end
 
-function ch:expand_collaspe()
+function ch:expand_collapse()
   local node = self:get_node_at_cursor()
   if not node then
     return
@@ -211,8 +211,8 @@ function ch:expand_collaspe()
         self:call_hierarchy(node.target, node)
       end
     else
-      node.name = node.name:gsub(ui.expand, ui.collaspe)
-      node.highlights['SagaCollaspe'] = { unpack(node.highlights['SagaExpand']) }
+      node.name = node.name:gsub(ui.expand, ui.collapse)
+      node.highlights['SagaCollapse'] = { unpack(node.highlights['SagaExpand']) }
       node.highlights['SagaExpand'] = nil
       vim.bo.modifiable = true
       api.nvim_buf_set_lines(self.bufnr, node.winline - 1, node.winline, false, {
@@ -241,13 +241,13 @@ function ch:expand_collaspe()
 
   local cur_line = api.nvim_win_get_cursor(0)[1]
   local text = api.nvim_get_current_line()
-  text = text:gsub(ui.collaspe, ui.expand)
+  text = text:gsub(ui.collapse, ui.expand)
   vim.bo[self.bufnr].modifiable = true
   api.nvim_buf_set_lines(self.bufnr, cur_line - 1, cur_line + #node.children, false, { text })
   node.expand = false
   vim.bo[self.bufnr].modifiable = false
-  node.highlights['SagaExpand'] = { unpack(node.highlights['SagaCollaspe']) }
-  node.highlights['SagaCollaspe'] = nil
+  node.highlights['SagaExpand'] = { unpack(node.highlights['SagaCollapse']) }
+  node.highlights['SagaCollapse'] = nil
 
   for group, scope in pairs(node.highlights) do
     api.nvim_buf_add_highlight(self.bufnr, 0, group, cur_line - 1, scope[1], scope[2])
@@ -273,8 +273,8 @@ function ch:apply_map()
     end
   end, opt)
 
-  keymap('n', keys.expand_collaspe, function()
-    self:expand_collaspe()
+  keymap('n', keys.expand_collapse, function()
+    self:expand_collapse()
   end, opt)
 
   keymap('n', keys.jump, function()
