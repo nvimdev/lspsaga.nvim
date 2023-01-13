@@ -1,30 +1,57 @@
-local api = vim.api
+local api, lsp = vim.api, vim.lsp
 local libs = {}
-local window = require('lspsaga.window')
-local server_filetype_map = require('lspsaga').config_values.server_filetype_map
+local server_filetype_map = require('lspsaga').config.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
-function libs.is_windows()
-  return vim.loop.os_uname().sysname:find('Windows', 1, true) and true
+libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
+
+libs.path_sep = libs.iswin and '\\' or '/'
+
+function libs.get_path_info(buf, level)
+  if level == 0 then
+    vim.notify('[Lspsaga] Level must bigger than 0', vim.log.levels.ERROR)
+    return
+  end
+  local fname = api.nvim_buf_get_name(buf)
+  local tbl = vim.split(fname, libs.path_sep, { trimempty = true })
+  if level == 1 then
+    return { tbl[#tbl] }
+  end
+  local index = level > #tbl and #tbl or level
+  return { unpack(tbl, #tbl - index + 1, #tbl) }
 end
 
-libs.path_sep = libs.is_windows() and '\\' or '/'
+--get icon hlgroup color
+function libs.icon_from_devicon(ft, color)
+  color = color ~= nil and color or false
+  if not libs.devicons then
+    local ok, devicons = pcall(require, 'nvim-web-devicons')
+    if not ok then
+      return {}
+    end
+    libs.devicons = devicons
+  end
+  local icon, hl = libs.devicons.get_icon_by_filetype(ft)
+  if color then
+    local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
+    return { icon, rgb }
+  end
+  return { icon, hl }
+end
 
 function libs.get_home_dir()
-  if libs.is_windows() then
+  if libs.is_win then
     return os.getenv('USERPROFILE')
   end
   return os.getenv('HOME')
 end
 
--- check index in table
-function libs.has_key(tab, idx)
-  for index, _ in pairs(tab) do
-    if index == idx then
-      return true
+function libs.tbl_index(tbl, val)
+  for index, v in pairs(tbl) do
+    if v == val then
+      return index
     end
   end
-  return false
 end
 
 function libs.has_value(filetypes, val)
@@ -42,24 +69,10 @@ function libs.has_value(filetypes, val)
   return false
 end
 
-function libs.nvim_create_keymap(definitions)
-  for _, def in pairs(definitions) do
-    local mode, lhs, rhs, opts = def[1], def[2], def[3], def[4]
-
-    if type(lhs) == 'table' then
-      for _, key in ipairs(lhs) do
-        vim.keymap.set(mode, key, rhs, opts)
-      end
-    else
-      vim.keymap.set(mode, lhs, rhs, opts)
-    end
-  end
-end
-
 function libs.check_lsp_active(silent)
   silent = silent or true
   local current_buf = api.nvim_get_current_buf()
-  local active_clients = vim.lsp.get_active_clients({ buffer = current_buf })
+  local active_clients = lsp.get_active_clients({ bufnr = current_buf })
   if next(active_clients) == nil then
     if not silent then
       vim.notify('[LspSaga] Current buffer does not have any lsp server')
@@ -80,7 +93,7 @@ function libs.get_lsp_root_dir()
     return
   end
 
-  local clients = vim.lsp.get_active_clients()
+  local clients = lsp.get_active_clients()
   for _, client in pairs(clients) do
     if client.config.filetypes and client.config.root_dir then
       if libs.has_value(client.config.filetypes, vim.bo.filetype) then
@@ -129,13 +142,17 @@ function libs.get_config_lsp_filetypes()
   return filetypes
 end
 
-function libs.close_preview_autocmd(bufnr, winids, events)
+function libs.close_preview_autocmd(bufnr, winids, events, cb)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
     once = true,
     callback = function()
+      local window = require('lspsaga.window')
       window.nvim_close_valid_window(winids)
+      if cb then
+        cb()
+      end
     end,
   })
 end
@@ -248,15 +265,15 @@ local function feedkeys(key)
 end
 
 function libs.scroll_in_preview(bufnr, preview_winid)
-  local config = require('lspsaga').config_values
+  local config = require('lspsaga').config
   if preview_winid and api.nvim_win_is_valid(preview_winid) then
-    vim.keymap.set('n', config.scroll_in_preview.scroll_down, function()
+    vim.keymap.set('n', config.scroll_preview.scroll_down, function()
       api.nvim_win_call(preview_winid, function()
         feedkeys('<C-d>')
       end)
     end, { buffer = bufnr })
 
-    vim.keymap.set('n', config.scroll_in_preview.scroll_up, function()
+    vim.keymap.set('n', config.scroll_preview.scroll_up, function()
       api.nvim_win_call(preview_winid, function()
         feedkeys('<C-u>')
       end)
@@ -270,40 +287,53 @@ function libs.delete_scroll_map(bufnr)
   vim.keymap.del('n', config.scroll_in_preview.scroll_up, { buffer = bufnr })
 end
 
-function libs.async(routine, ...)
-  local f = coroutine.create(function(await, ...)
-    routine(await, ...)
-  end)
-  local await = { error = nil, result = nil, completed = false }
-  local complete = function(arg, err)
-    await.result = arg
-    await.error = err
-    await.completed = true
-    coroutine.resume(f)
+function libs.jump_beacon(bufpos, width)
+  local opts = {
+    relative = 'win',
+    bufpos = bufpos,
+    height = 1,
+    width = width,
+    row = 0,
+    col = 0,
+    anchor = 'NW',
+    focusable = false,
+    no_size_override = true,
+  }
+
+  if opts.width < 0 then
+    opts.width = 1
   end
-  await.resolve = function(arg)
-    complete(arg, nil)
-  end
-  await.reject = function(err)
-    complete(nil, err)
-  end
-  await.__call = function(self, wait, ...)
-    local lastResult = self.result
-    self.completed = false
-    wait(self, ...)
-    if not self.completed then
-      coroutine.yield(f, ...)
-    end
-    if self.error then
-      assert(false, self.error)
-    end
-    self.completed = false
-    local newResult = self.result
-    self.result = lastResult
-    return newResult
-  end
-  setmetatable(await, await)
-  coroutine.resume(f, await, ...)
+
+  local window = require('lspsaga.window')
+  local _, winid = window.create_win_with_border({
+    contents = { '' },
+    border = 'none',
+    winblend = 0,
+    highlight = {
+      normal = 'SagaBeacon',
+    },
+  }, opts)
+
+  local timer = vim.loop.new_timer()
+  timer:start(
+    0,
+    60,
+    vim.schedule_wrap(function()
+      if not api.nvim_win_is_valid(winid) then
+        return
+      end
+      local blend = vim.wo[winid].winblend + 7
+      if blend > 100 then
+        blend = 100
+      end
+      vim.wo[winid].winblend = blend
+      if vim.wo[winid].winblend == 100 and not timer:is_closing() then
+        timer:stop()
+        timer:close()
+        api.nvim_win_close(winid, true)
+      end
+    end)
+  )
 end
 
 return libs

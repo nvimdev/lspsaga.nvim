@@ -1,38 +1,5 @@
-local vim, api = vim, vim.api
+local vim, api, lsp = vim, vim.api, vim.lsp
 local M = {}
-local config = require('lspsaga').config_values
-
-local function get_border_style(style, highlight)
-  highlight = highlight or 'FloatBorder'
-  local border_style = {
-    ['none'] = 'none',
-    ['single'] = 'single',
-    ['double'] = 'double',
-    ['rounded'] = 'rounded',
-    ['bold'] = {
-      { '┏', highlight },
-      { '─', highlight },
-      { '┓', highlight },
-      { '│', highlight },
-      { '┛', highlight },
-      { '─', highlight },
-      { '┗', highlight },
-      { '│', highlight },
-    },
-    ['plus'] = {
-      { '+', highlight },
-      { '─', highlight },
-      { '+', highlight },
-      { '│', highlight },
-      { '+', highlight },
-      { '─', highlight },
-      { '+', highlight },
-      { '│', highlight },
-    },
-  }
-
-  return border_style[style]
-end
 
 local function make_floating_popup_options(width, height, opts)
   vim.validate({
@@ -48,23 +15,24 @@ local function make_floating_popup_options(width, height, opts)
   new_option.style = 'minimal'
   new_option.width = width
   new_option.height = height
-  new_option.focusable = true
-  if opts.focusable then
+
+  if opts.focusable ~= nil then
     new_option.focusable = opts.focusable
   end
 
-  if opts.noautocmd then
+  if opts.noautocmd ~= nil then
     new_option.noautocmd = opts.noautocmd
   end
 
-  if opts.relative ~= nil then
-    new_option.relative = opts.relative
-  else
-    new_option.relative = 'cursor'
+  new_option.relative = opts.relative and opts.relative or 'cursor'
+  new_option.anchor = opts.anchor or nil
+  if new_option.relative == 'win' then
+    new_option.bufpos = opts.bufpos or nil
   end
 
-  if opts.anchor ~= nil then
-    new_option.anchor = opts.anchor
+  if opts.title then
+    new_option.title = opts.title
+    new_option.title_pos = opts.title_pos or 'center'
   end
 
   if opts.row == nil and opts.col == nil then
@@ -76,24 +44,18 @@ local function make_floating_popup_options(width, height, opts)
     local pum_vis = not vim.tbl_isempty(pum_pos) -- pumvisible() can be true and pum_pos() returns {}
     if pum_vis and vim.fn.line('.') >= pum_pos.row or not pum_vis and lines_above < lines_below then
       new_option.anchor = 'N'
-      new_option.row = 1
+      new_option.row = opts.move_row and opts.move_row or 1
     else
       new_option.anchor = 'S'
-      new_option.row = 0
+      new_option.row = opts.move_row and opts.move_row or 0
     end
 
-    if vim.fn.wincol() + width <= api.nvim_get_option('columns') then
+    if vim.fn.wincol() + width <= vim.o.columns then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = 0
-      if opts.move_col then
-        new_option.col = new_option.col + opts.move_col
-      end
+      new_option.col = opts.move_col and opts.move_col or 0
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = 1
-      if opts.move_col then
-        new_option.col = new_option.col - opts.move_col + 1
-      end
+      new_option.col = opts.move_col and opts.move_col or 1
     end
   else
     new_option.row = opts.row
@@ -106,15 +68,10 @@ end
 local function generate_win_opts(contents, opts)
   opts = opts or {}
   local win_width, win_height
-  -- _make_floating_popup_size doesn't allow the window size to be larger than
-  -- the current window. For the finder preview window, this means it won't let the
-  -- preview window be wider than the finder window. To work around this, the
-  -- no_size_override option can be set to indicate that the size shouldn't be changed
-  -- from what was given.
   if opts.no_size_override and opts.width and opts.height then
     win_width, win_height = opts.width, opts.height
   else
-    win_width, win_height = vim.lsp.util._make_floating_popup_size(contents, opts)
+    win_width, win_height = lsp.util._make_floating_popup_size(contents, opts)
   end
 
   opts = make_floating_popup_options(win_width, win_height, opts)
@@ -135,11 +92,12 @@ end
 
 local function open_shadow_win()
   local opts = get_shadow_config()
-  local shadow_winhl = 'Normal:SagaShadow,NormalNC:SagaShadow,EndOfBuffer:SagaShadow'
+  local shadow_winhl = 'Normal:SagaShadow'
   local shadow_bufnr = api.nvim_create_buf(false, true)
   local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
   api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
   api.nvim_win_set_option(shadow_winid, 'winblend', 70)
+  api.nvim_buf_set_option(shadow_bufnr, 'bufhidden', 'wipe')
   return shadow_bufnr, shadow_winid
 end
 
@@ -149,6 +107,7 @@ end
 -- enter boolean into window or not
 -- highlight border highlight string type
 function M.create_win_with_border(content_opts, opts)
+  local config = require('lspsaga').config
   vim.validate({
     content_opts = { content_opts, 't' },
     contents = { content_opts.content, 't', true },
@@ -157,16 +116,17 @@ function M.create_win_with_border(content_opts, opts)
 
   local contents, filetype = content_opts.contents, content_opts.filetype
   local enter = content_opts.enter or false
-  local highlight = content_opts.highlight or 'LspFloatWinBorder'
   opts = opts or {}
   opts = generate_win_opts(contents, opts)
-  opts.border = content_opts.border or get_border_style(config.border_style, highlight)
+
+  local highlight = content_opts.highlight or {}
+  opts.border = content_opts.border or config.ui.border
 
   -- create contents buffer
-  local bufnr = content_opts.bufnr or api.nvim_create_buf(false, true)
+  local bufnr = content_opts.bufnr or api.nvim_create_buf(false, false)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
-  local content = vim.lsp.util._trim(contents)
+  local content = lsp.util._trim(contents)
 
   if filetype then
     api.nvim_buf_set_option(bufnr, 'filetype', filetype)
@@ -183,20 +143,20 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_buf_set_lines(bufnr, 0, -1, true, content)
   end
 
-  if api.nvim_buf_is_valid(bufnr) then
+  if not content_opts.bufnr then
     api.nvim_buf_set_option(bufnr, 'modifiable', false)
-    api.nvim_buf_set_option(bufnr, 'bufhidden', 'wipe')
+    api.nvim_buf_set_option(bufnr, 'bufhidden', content_opts.bufhidden or 'wipe')
+    api.nvim_buf_set_option(bufnr, 'buftype', content_opts.buftype or '')
   end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
-  api.nvim_win_set_option(winid, 'winhl', 'Normal:LspFloatWinNormal,FloatBorder:' .. highlight)
-  api.nvim_win_set_option(winid, 'winblend', content_opts.winblend or config.saga_winblend)
+  vim.wo[winid].winblend = content_opts.winblend or config.ui.winblend
+  vim.wo[winid].wrap = content_opts.wrap or false
+  local normal = highlight.normal or 'LspNormal'
+  local border = highlight.border or 'LspBorder'
+  api.nvim_win_set_option(winid, 'winhl', 'Normal:' .. normal .. ',FloatBorder:' .. border)
 
-  -- disable winbar in some saga's floatwindow
-  if config.symbol_in_winbar.enable or config.symbol_in_winbar.in_custom then
-    api.nvim_win_set_option(winid, 'winbar', '')
-  end
-
+  vim.wo[winid].winbar = ''
   return bufnr, winid
 end
 
@@ -206,11 +166,9 @@ function M.open_shadow_float_win(content_opts, opts)
   return contents_bufnr, contents_winid, shadow_bufnr, shadow_winid
 end
 
-function M.get_max_float_width()
-  -- current window width
-  local WIN_WIDTH = vim.fn.winwidth(0)
-  local max_width = math.floor(WIN_WIDTH * 0.7)
-  return max_width
+function M.get_max_float_width(percent)
+  percent = percent or 0.6
+  return math.floor(vim.o.columns * percent)
 end
 
 function M.get_max_content_length(contents)
@@ -276,6 +234,20 @@ function M.nvim_win_try_close()
   if has_var and line_diag_winids ~= nil then
     M.nvim_close_valid_window(line_diag_winids)
   end
+end
+
+function M.win_height_increase(content, percent)
+  local increase = 0
+  local max_width = M.get_max_float_width(percent)
+  local max_len = M.get_max_content_length(content)
+  if max_len > max_width then
+    vim.tbl_map(function(s)
+      if #s > max_width then
+        increase = increase + math.floor(#s / max_width)
+      end
+    end, content)
+  end
+  return increase
 end
 
 return M

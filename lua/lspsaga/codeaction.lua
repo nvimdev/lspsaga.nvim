@@ -1,18 +1,11 @@
-local api, util = vim.api, vim.lsp.util
-local window = require('lspsaga.window')
-local config = require('lspsaga').config_values
-local wrap = require('lspsaga.wrap')
-local libs = require('lspsaga.libs')
-local method = 'textDocument/codeAction'
-local saga_augroup = require('lspsaga').saga_augroup
+local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
+local config = require('lspsaga').config
 
 local Action = {}
 Action.__index = Action
 
 function Action:action_callback()
   local contents = {}
-  local title = config['code_action_icon'] .. 'CodeActions:'
-  table.insert(contents, title)
 
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
@@ -30,20 +23,35 @@ function Action:action_callback()
     return
   end
 
-  -- insert blank line
-  local truncate_line = wrap.add_truncate_line(contents)
-  table.insert(contents, 2, truncate_line)
-
   local content_opts = {
     contents = contents,
     filetype = 'sagacodeaction',
+    buftype = 'nofile',
     enter = true,
-    highlight = 'LspSagaCodeActionBorder',
+    highlight = {
+      normal = 'CodeActionNormal',
+      border = 'CodeActionBorder',
+    },
   }
 
-  self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts)
+  local opt = {}
+
+  if fn.has('nvim-0.9') == 1 then
+    local theme = require('lspsaga').theme()
+    opt.title = {
+      { theme.left, 'TitleSymbol' },
+      { config.ui.code_action .. ' CodeActions', 'TitleString' },
+      { theme.right, 'TitleSymbol' },
+    }
+  end
+
+  self.action_bufnr, self.action_winid = self.window.create_win_with_border(content_opts, opt)
+  vim.wo[self.action_winid].conceallevel = 2
+  vim.wo[self.action_winid].concealcursor = 'niv'
   -- initial position in code action window
-  api.nvim_win_set_cursor(self.action_winid, { 3, 1 })
+  api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
+
+  local saga_augroup = require('lspsaga').saga_augroup
   api.nvim_create_autocmd('CursorMoved', {
     group = saga_augroup,
     buffer = self.action_bufnr,
@@ -60,33 +68,35 @@ function Action:action_callback()
     end,
   })
 
-  api.nvim_buf_add_highlight(self.action_bufnr, -1, 'LspSagaCodeActionTitle', 0, 0, -1)
-  api.nvim_buf_add_highlight(self.action_bufnr, -1, 'LspSagaCodeActionTrunCateLine', 1, 0, -1)
-  for i = 1, #contents - 2, 1 do
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'LspSagaCodeActionContent', 1 + i, 0, -1)
+  local ns = api.nvim_create_namespace('CodeAction')
+  for i = 1, #contents, 1 do
+    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', i - 1, 0, -1)
+
+    api.nvim_buf_set_extmark(self.action_bufnr, ns, i - 1, 0, {
+      end_col = 3,
+      conceal = '◉',
+    })
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionText', i - 1, 0, -1)
   end
+
+  local libs = require('lspsaga.libs')
   -- dsiable some move keys in codeaction
   libs.disable_move_keys(self.action_bufnr)
 
   self:apply_action_keys()
-  if config.code_action_num_shortcut then
+  if config.code_action.num_shortcut then
     self:num_shortcut()
   end
 end
 
 function Action:apply_action_keys()
-  vim.keymap.set('n', config.code_action_keys.exec, function()
+  vim.keymap.set('n', config.code_action.keys.exec, function()
     self:do_code_action()
   end, { buffer = self.action_bufnr })
 
-  vim.keymap.set('n', config.code_action_keys.quit, function()
+  vim.keymap.set('n', config.code_action.keys.quit, function()
     self:quit_action_window()
   end, { buffer = self.action_bufnr })
-
-  local move = config.move_in_saga
-  local opts = { noremap = true, silent = true, nowait = true }
-  api.nvim_buf_set_keymap(self.action_bufnr, 'n', move.prev, '<Up>', opts)
-  api.nvim_buf_set_keymap(self.action_bufnr, 'n', move.next, '<Down>', opts)
 end
 
 function Action:get_clients(results, options)
@@ -128,10 +138,6 @@ function Action:get_clients(results, options)
       end
     end
   end
-  if #self.action_tuples == 0 then
-    vim.notify('No code actions available', vim.log.levels.INFO)
-    return
-  end
 end
 
 local function check_sub_tbl(tbl)
@@ -148,11 +154,11 @@ local function check_sub_tbl(tbl)
 end
 
 function Action:actions_in_cache()
-  if not config.code_action_lightbulb.enable then
+  if not config.lightbulb.enable then
     return false
   end
 
-  if not config.code_action_lightbulb.cache_code_action then
+  if not config.lightbulb.cache_code_action then
     return false
   end
 
@@ -165,9 +171,8 @@ function Action:actions_in_cache()
   end
 end
 
-function Action:code_action(options)
-  self.bufnr = api.nvim_get_current_buf()
-  local diagnostics = vim.lsp.diagnostic.get_line_diagnostics(self.bufnr)
+function Action:send_code_action_request(main_buf, options, cb)
+  local diagnostics = lsp.diagnostic.get_line_diagnostics(main_buf)
   local context = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
@@ -179,8 +184,8 @@ function Action:code_action(options)
     params = util.make_given_range_params(start, end_)
   elseif mode == 'v' or mode == 'V' then
     -- [bufnum, lnum, col, off]; both row and column 1-indexed
-    local start = vim.fn.getpos('v')
-    local end_ = vim.fn.getpos('.')
+    local start = fn.getpos('v')
+    local end_ = fn.getpos('.')
     local start_row = start[2]
     local start_col = start[3]
     local end_row = end_[2]
@@ -202,31 +207,30 @@ function Action:code_action(options)
   if self.ctx == nil then
     self.ctx = {}
   end
-  self.ctx = { bufnr = self.bufnr, method = method, params = params }
+  self.ctx = { bufnr = self.bufnr, method = 'textDocument/codeAction', params = params }
 
-  local in_cache = self:actions_in_cache()
-  if in_cache then
-    self:action_callback()
-    return
-  end
-
-  vim.lsp.buf_request_all(self.bufnr, method, params, function(results)
+  lsp.buf_request_all(self.bufnr, 'textDocument/codeAction', params, function(results)
     self:get_clients(results)
-    self:action_callback()
+    if #self.action_tuples == 0 then
+      vim.notify('No code actions available', vim.log.levels.INFO)
+      return
+    end
+    if cb then
+      cb()
+    end
   end)
 end
 
 function Action:set_cursor()
-  local col = 1
+  local col = 4
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
-  if current_line == 1 then
-    api.nvim_win_set_cursor(self.action_winid, { 3, col })
-  elseif current_line == 2 then
-    api.nvim_win_set_cursor(self.action_winid, { 2 + #self.action_tuples, col })
-  elseif current_line == #self.action_tuples + 3 then
-    api.nvim_win_set_cursor(self.action_winid, { 3, col })
+  if current_line == #self.action_tuples + 1 then
+    api.nvim_win_set_cursor(self.action_winid, { 1, col })
+  else
+    api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
+  self:action_preview(self.action_winid, self.bufnr)
 end
 
 function Action:num_shortcut()
@@ -237,36 +241,55 @@ function Action:num_shortcut()
   end
 end
 
+function Action:code_action(options)
+  self.bufnr = api.nvim_get_current_buf()
+  self.window = require('lspsaga.window')
+
+  options = options or {}
+  self:send_code_action_request(self.bufnr, options, function()
+    self:action_callback()
+  end)
+end
+
 function Action:apply_action(action, client)
   if action.edit then
-    vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
+    util.apply_workspace_edit(action.edit, client.offset_encoding)
   end
   if action.command then
     local command = type(action.command) == 'table' and action.command or action
-    local fn = client.commands[command.command] or vim.lsp.commands[command.command]
-    if fn then
+    local func = client.commands[command.command] or lsp.commands[command.command]
+    if func then
       local enriched_ctx = vim.deepcopy(self.ctx)
       enriched_ctx.client_id = client.id
-      fn(command, enriched_ctx)
+      func(command, enriched_ctx)
     else
       local params = {
         command = command.command,
         arguments = command.arguments,
         workDoneToken = command.workDoneToken,
       }
-      -- TODO: find why there must use a timer.
-      -- @see https://github.com/glepnir/lspsaga.nvim/issues/544
-      vim.defer_fn(function()
-        client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
-      end, 180)
+      client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
     end
   end
 end
 
 function Action:do_code_action(num)
-  local number = num and tonumber(num) or tonumber(vim.fn.expand('<cword>'))
+  local number
+  if num then
+    number = tonumber(num)
+  else
+    local cur_text = api.nvim_get_current_line()
+    number = cur_text:match('%[(%d)%]')
+    number = tonumber(number)
+  end
+
+  if not number then
+    vim.notify('[Lspsaga] no action number choice', vim.log.levels.WARN)
+    return
+  end
+
   local action = self.action_tuples[number][2]
-  local client = vim.lsp.get_client_by_id(self.action_tuples[number][1])
+  local client = lsp.get_client_by_id(self.action_tuples[number][1])
 
   if
     not action.edit
@@ -286,19 +309,164 @@ function Action:do_code_action(num)
   self:quit_action_window()
 end
 
+function Action:get_action_diff(num, main_buf)
+  local action = self.action_tuples[tonumber(num)][2]
+  if not action then
+    return
+  end
+
+  local old_lines = {}
+  local client = lsp.get_client_by_id(self.action_tuples[tonumber(num)][1])
+
+  if
+    not action.edit
+    and client
+    and vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
+  then
+    local results = lsp.buf_request_sync(main_buf, 'codeAction/resolve', action, 1000)
+    action = results[client.id].result
+  end
+
+  if not action.edit then
+    return
+  end
+
+  local text_edits
+  if action.edit.documentChanges then
+    text_edits = action.edit.documentChanges[1].edits
+  elseif action.edit.changes then
+    text_edits = action.edit.changes[vim.uri_from_bufnr(main_buf)]
+  end
+
+  local tmp_buf = api.nvim_create_buf(false, false)
+
+  local remove_whole_line = false
+  for _, v in pairs(text_edits) do
+    if #v.newText == 0 and v.range['end'].character - v.range.start.character == 1 then
+      remove_whole_line = true
+    end
+  end
+
+  for _, v in pairs(text_edits) do
+    if #v.newText == 0 then
+      goto skip
+    end
+
+    local start = v.range.start
+    local _end = v.range['end']
+    local old_text = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1]
+    if #old_lines == 0 then
+      table.insert(old_lines, old_text .. '\n')
+    end
+    api.nvim_buf_set_lines(tmp_buf, 0, -1, false, { old_text })
+    v.newText = v.newText:find('\r\n') and v.newText:gsub('\r\n', '\n') or v.newText
+    local newText = vim.split(v.newText, '\n')
+    if not newText[#newText]:find('%w') then
+      table.remove(newText, #newText)
+    end
+    local ecol = api.nvim_strwidth(old_text)
+    if start.character ~= _end.character then
+      if not remove_whole_line then
+        api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
+      else
+        api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
+      end
+    elseif start.character == _end.character then
+      api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
+    end
+    ::skip::
+  end
+  local new_text = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+  new_text = table.concat(new_text, '\n') .. '\n'
+  api.nvim_buf_delete(tmp_buf, { force = true })
+  return vim.diff(table.concat(old_lines, ''), new_text)
+end
+
+function Action:action_preview(main_winid, main_buf)
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
+    self.preview_winid = nil
+  end
+  local line = api.nvim_get_current_line()
+  local num = line:match('%[([1-9])%]')
+  if not num then
+    return
+  end
+
+  local tbl = self:get_action_diff(num, main_buf)
+  if not tbl then
+    return
+  end
+
+  tbl = vim.split(tbl, '\n')
+  table.remove(tbl, 1)
+
+  local win_conf = api.nvim_win_get_config(main_winid)
+
+  local opt = {}
+  opt.relative = 'editor'
+  if win_conf.anchor:find('^N') then
+    if win_conf.row[false] - #tbl > 0 then
+      opt.row = win_conf.row[false]
+      opt.anchor = win_conf.anchor:gsub('N', 'S')
+    else
+      opt.row = win_conf.row[false] + win_conf.height + 2
+      if #vim.wo[fn.bufwinid(main_buf)].winbar > 0 then
+        opt.row = opt.row + 1
+      end
+      opt.anchor = win_conf.anchor
+    end
+  else
+    if win_conf.row[false] - win_conf.height - #tbl - 4 > 0 then
+      opt.row = win_conf.row[false] - win_conf.height - 4
+      opt.anchor = win_conf.anchor
+    else
+      opt.row = win_conf.row[false]
+      opt.anchor = win_conf.anchor:gsub('S', 'N')
+    end
+  end
+  opt.col = win_conf.col[false]
+  local max_width = math.floor(vim.o.columns * 0.4)
+  opt.width = win_conf.width < max_width and max_width or win_conf.width
+  opt.height = #tbl
+  opt.no_size_override = true
+
+  if fn.has('nvim-0.9') == 1 then
+    opt.title = { { 'Action Preivew', 'ActionPreviewTitle' } }
+  end
+
+  local content_opts = {
+    contents = tbl,
+    filetype = 'diff',
+    buftype = 'nofile',
+    highlight = {
+      normal = 'ActionPreviewNormal',
+      border = 'ActionPreviewBorder',
+    },
+  }
+
+  if not self.window then
+    self.window = require('lspsaga.window')
+  end
+  local preview_buf
+  preview_buf, self.preview_winid = self.window.create_win_with_border(content_opts, opt)
+  vim.bo[preview_buf].syntax = 'on'
+  return self.preview_winid
+end
+
 function Action:clear_tmp_data()
-  self.bufnr = 0
-  self.action_bufnr = 0
-  self.action_winid = 0
-  self.action_tuples = {}
-  self.ctx = {}
+  for k, v in pairs(self) do
+    if type(v) ~= 'function' then
+      self[k] = nil
+    end
+  end
 end
 
 function Action:quit_action_window()
   if self.action_bufnr == 0 and self.action_winid == 0 then
     return
   end
-  window.nvim_close_valid_window(self.action_winid)
+  self.window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
   self:clear_tmp_data()
 end
 

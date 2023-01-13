@@ -1,106 +1,78 @@
-local api = vim.api
-local custom_kind = require('lspsaga').config_values.custom_kind
+local ui = require('lspsaga').config.ui
 
-local colors = {
-  fg = '#bbc2cf',
-  red = '#e95678',
-  orange = '#FF8700',
-  yellow = '#f7bb3b',
-  green = '#afd700',
-  cyan = '#36d0e0',
-  blue = '#61afef',
-  violet = '#CBA6F7',
-  teal = '#1abc9c',
-}
+local resolved = nil
 
-local kind = {
-  [1] = { 'File', ' ', colors.fg },
-  [2] = { 'Module', ' ', colors.blue },
-  [3] = { 'Namespace', ' ', colors.orange },
-  [4] = { 'Package', ' ', colors.violet },
-  [5] = { 'Class', ' ', colors.violet },
-  [6] = { 'Method', ' ', colors.violet },
-  [7] = { 'Property', ' ', colors.cyan },
-  [8] = { 'Field', ' ', colors.teal },
-  [9] = { 'Constructor', ' ', colors.blue },
-  [10] = { 'Enum', '了', colors.green },
-  [11] = { 'Interface', ' ', colors.orange },
-  [12] = { 'Function', ' ', colors.violet },
-  [13] = { 'Variable', ' ', colors.blue },
-  [14] = { 'Constant', ' ', colors.cyan },
-  [15] = { 'String', ' ', colors.green },
-  [16] = { 'Number', ' ', colors.green },
-  [17] = { 'Boolean', ' ', colors.orange },
-  [18] = { 'Array', ' ', colors.blue },
-  [19] = { 'Object', ' ', colors.orange },
-  [20] = { 'Key', ' ', colors.red },
-  [21] = { 'Null', ' ', colors.red },
-  [22] = { 'EnumMember', ' ', colors.green },
-  [23] = { 'Struct', ' ', colors.violet },
-  [24] = { 'Event', ' ', colors.violet },
-  [25] = { 'Operator', ' ', colors.green },
-  [26] = { 'TypeParameter', ' ', colors.green },
-  -- ccls
-  [252] = { 'TypeAlias', ' ', colors.green },
-  [253] = { 'Parameter', ' ', colors.blue },
-  [254] = { 'StaticMethod', 'ﴂ ', colors.orange },
-  [255] = { 'Macro', ' ', colors.red },
-}
-
-local function find_index_by_type(k)
-  for index, opts in pairs(kind) do
-    if opts[1] == k then
-      return index
-    end
+local function get_kind(colors)
+  if resolved then
+    return resolved
   end
-  return nil
-end
+  local kind = {
+    [1] = { 'File', ' ', colors.white },
+    [2] = { 'Module', ' ', colors.blue },
+    [3] = { 'Namespace', ' ', colors.orange },
+    [4] = { 'Package', ' ', colors.purple },
+    [5] = { 'Class', ' ', colors.purple },
+    [6] = { 'Method', ' ', colors.purple },
+    [7] = { 'Property', ' ', colors.cyan },
+    [8] = { 'Field', ' ', colors.teal },
+    [9] = { 'Constructor', ' ', colors.blue },
+    [10] = { 'Enum', '了', colors.green },
+    [11] = { 'Interface', ' ', colors.orange },
+    [12] = { 'Function', ' ', colors.purple },
+    [13] = { 'Variable', ' ', colors.blue },
+    [14] = { 'Constant', ' ', colors.cyan },
+    [15] = { 'String', ' ', colors.green },
+    [16] = { 'Number', ' ', colors.green },
+    [17] = { 'Boolean', ' ', colors.orange },
+    [18] = { 'Array', ' ', colors.blue },
+    [19] = { 'Object', ' ', colors.orange },
+    [20] = { 'Key', ' ', colors.red },
+    [21] = { 'Null', ' ', colors.red },
+    [22] = { 'EnumMember', ' ', colors.green },
+    [23] = { 'Struct', ' ', colors.purple },
+    [24] = { 'Event', ' ', colors.purple },
+    [25] = { 'Operator', ' ', colors.green },
+    [26] = { 'TypeParameter', ' ', colors.green },
+    -- ccls
+    [252] = { 'TypeAlias', ' ', colors.green },
+    [253] = { 'Parameter', ' ', colors.blue },
+    [254] = { 'StaticMethod', 'ﴂ ', colors.orange },
+    [255] = { 'Macro', ' ', colors.red },
+    -- for completion sb microsoft!!!
+    [300] = { 'Text', ' ', colors.green },
+    [301] = { 'Snippet', ' ', colors.blue },
+    [302] = { 'Folder', ' ', colors.yellow },
+    [303] = { 'Unit', ' ', colors.cyan },
+    [304] = { 'Value', ' ', colors.blue },
+  }
 
-local function load_custom_kind()
-  if next(custom_kind) ~= nil then
-    for k, conf in pairs(custom_kind) do
+  if not vim.tbl_isempty(ui.kind) then
+    local function find_index_by_type(k)
+      for index, opts in pairs(kind) do
+        if opts[1] == k then
+          return index
+        end
+      end
+      return nil
+    end
+
+    for k, v in pairs(ui.kind) do
       local index = find_index_by_type(k)
       if not index then
-        vim.notify('Does not find this type in kind')
+        vim.notif('[lspsaga.nvim] not found kind in default')
+        return
       end
-
-      if type(conf) == 'string' then
-        kind[index][3] = conf
-      end
-
-      if type(conf) == 'table' then
-        kind[index][2] = conf[1]
-        kind[index][3] = conf[2]
-      end
+      kind[index][2] = v
     end
   end
-end
 
-local function gen_symbol_winbar_hi()
-  local prefix = 'LspSagaWinbar'
-  local winbar_sep = 'LspSagaWinbarSep'
-
-  for _, v in pairs(kind) do
-    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
+  resolved = function()
+    return kind
   end
-  api.nvim_set_hl(0, winbar_sep, { fg = '#d16d9e' })
-  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, bold = true })
+
+  return resolved
 end
 
-kind = setmetatable(kind, {
-  __index = function(_, key)
-    if key == 'gen_symbol_winbar_hi' then
-      return gen_symbol_winbar_hi
-    end
-
-    if key == 'load_custom_kind' then
-      return load_custom_kind
-    end
-
-    if key == 'colors' then
-      return colors
-    end
-  end,
-})
-
-return kind
+return {
+  get_kind = get_kind,
+}

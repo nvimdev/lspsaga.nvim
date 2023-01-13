@@ -1,3 +1,7 @@
+## Version 0.2.3 -- 2023-01-13
+
+- Refactor all
+
 ## Version 0.2.2 -- 2022--09-09
 
 - fix symbolwinbar high memory usage

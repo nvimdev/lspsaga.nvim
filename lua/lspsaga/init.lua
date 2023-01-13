@@ -1,123 +1,138 @@
 local api = vim.api
-
 local saga = {}
-
 saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
-saga.config_values = {
-  debug_print = false,
-  border_style = 'single',
-  saga_winblend = 0,
-  -- when cusor in saga float window
-  -- config these keys to move
-  move_in_saga = {
-    prev = '<C-p>',
-    next = '<C-n>',
+local default_config = {
+  ui = {
+    theme = 'round',
+    border = 'solid',
+    winblend = 0,
+    expand = '',
+    collaspe = '',
+    preview = ' ',
+    code_action = '💡',
+    diagnostic = '🐞',
+    incoming = ' ',
+    outgoing = ' ',
+    colors = {
+      --float window normal bakcground color
+      normal_bg = '#1d1536',
+      --title background color
+      title_bg = '#afd700',
+    },
+    kind = {},
   },
-  -- Error,Warn,Info,Hint
-  diagnostic_header = { ' ', ' ', ' ', ' ' },
-  -- code action title icon
-  code_action_icon = '💡',
-  -- if true can press number to execute the codeaction in codeaction window
-  code_action_num_shortcut = true,
-  code_action_lightbulb = {
+  diagnostic = {
+    twice_into = false,
+    show_code_action = true,
+    show_source = true,
+    keys = {
+      exec_action = 'o',
+      quit = 'q',
+    },
+  },
+  code_action = {
+    num_shortcut = true,
+    keys = {
+      quit = 'q',
+      exec = '<CR>',
+    },
+  },
+  lightbulb = {
     enable = true,
     enable_in_insert = true,
-    cache_code_action = true,
+    -- cache_code_action = true,
     sign = true,
-    update_time = 150,
     sign_priority = 40,
     virtual_text = true,
   },
-  preview_lines_above = 0,
-  max_preview_lines = 15,
-  scroll_in_preview = {
+  preview = {
+    lines_above = 0,
+    lines_below = 10,
+  },
+  scroll_preview = {
     scroll_down = '<C-f>',
     scroll_up = '<C-b>',
   },
-  finder_icons = {
-    def = ' ',
-    imp = ' ',
-    ref = ' ',
-  },
-  finder_request_timeout = 1500,
-  finder_action_keys = {
-    open = { 'o', '<CR>' },
+  request_timeout = 2000,
+  finder = {
+    edit = { 'o', '<CR>' },
     vsplit = 's',
     split = 'i',
     tabe = 't',
     quit = { 'q', '<ESC>' },
   },
-  code_action_keys = {
-    quit = 'q',
-    exec = '<CR>',
-  },
-  definition_action_keys = {
+  definition = {
     edit = '<C-c>o',
     vsplit = '<C-c>v',
     split = '<C-c>i',
     tabe = '<C-c>t',
     quit = 'q',
+    close = '<Esc>',
   },
-  hover_action_quit = 'q',
-  rename_action_quit = '<C-c>',
-  rename_in_select = true,
-  -- winbar must nightly
+  rename = {
+    quit = '<C-c>',
+    exec = '<CR>',
+    in_select = true,
+  },
   symbol_in_winbar = {
-    in_custom = false,
-    enable = false,
+    enable = true,
     separator = ' ',
+    hide_keyword = true,
     show_file = true,
-    click_support = false,
+    folder_level = 2,
   },
-  show_outline = {
+  outline = {
     win_position = 'right',
     win_with = '',
     win_width = 30,
-    auto_enter = true,
+    show_detail = true,
     auto_preview = true,
-    virt_text = '┃',
-    jump_key = 'o',
     auto_refresh = true,
+    auto_close = true,
+    custom_sort = nil,
+    keys = {
+      jump = 'o',
+      expand_collaspe = 'u',
+      quit = 'q',
+    },
   },
-  custom_kind = {},
+  callhierarchy = {
+    show_detail = false,
+    keys = {
+      edit = 'e',
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      jump = 'o',
+      quit = 'q',
+      expand_collaspe = 'u',
+    },
+  },
   server_filetype_map = {},
 }
 
-local extend_config = function(opts)
-  opts = opts or {}
-  if next(opts) == nil then
-    return
-  end
-  for key, value in pairs(opts) do
-    if saga.config_values[key] == nil then
-      error(string.format('[LspSaga] Key %s not exist in config values', key))
-      return
-    end
-    if type(saga.config_values[key]) == 'table' then
-      for k, v in pairs(value) do
-        saga.config_values[key][k] = v
-      end
-    else
-      saga.config_values[key] = value
-    end
-  end
+function saga.theme()
+  local theme = {
+    ['round'] = {
+      left = '',
+      right = '',
+    },
+  }
+
+  return theme[saga.config.ui.theme]
 end
 
-function saga.init_lsp_saga(opts)
-  extend_config(opts)
-  local conf = saga.config_values
+function saga.setup(opts)
+  saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
-  if conf.code_action_lightbulb.enable then
+  require('lspsaga.highlight'):init_highlight()
+  if saga.config.lightbulb.enable then
     require('lspsaga.lightbulb').lb_autocmd()
   end
 
-  local kind = require('lspsaga.lspkind')
-  kind.load_custom_kind()
-
-  if conf.symbol_in_winbar.enable or conf.symbol_in_winbar.in_custom then
-    kind.gen_symbol_winbar_hi()
-    require('lspsaga.symbolwinbar').config_symbol_autocmd()
+  if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.in_custom then
+    require('lspsaga.symbolwinbar'):symbol_autocmd()
   end
 end
 
