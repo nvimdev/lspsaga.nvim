@@ -31,6 +31,17 @@ local function get_diag_type(severity)
   return type[severity]
 end
 
+local function get_colors(severity)
+  local lsa_colors = require('lspsaga.highlight').get_colors()()
+  local type = get_diag_type(severity)
+  local ok, colors = pcall(api.nvim_get_hl_by_name, 'Diagnostic' .. type, true)
+  if ok then
+    return colors
+  end
+  local tbl = { lsa_colors.red, lsa_colors.yellow, lsa_colors.blue, lsa_colors.cyan }
+  return { foreground = tbl[severity], background = ui.colors.normal_bg }
+end
+
 function diag:code_action_cb()
   if not ctx.bufnr or not api.nvim_buf_is_loaded(ctx.bufnr) then
     return
@@ -171,7 +182,7 @@ function diag:render_diagnostic_window(entry, option)
     no_size_override = true,
   }
 
-  local colors = api.nvim_get_hl_by_name('Diagnostic' .. diag_type, true)
+  local colors = get_colors(entry.severity)
   if fn.has('nvim-0.9') == 1 then
     opts.title = {
       { ' ' .. cur_word, 'Diagnostic' .. diag_type .. 'Title' },
@@ -293,11 +304,11 @@ function diag:render_diagnostic_window(entry, option)
 
   api.nvim_buf_add_highlight(ctx.bufnr, 0, 'DiagnosticTitleSymbol', 0, #ctx.theme.left + 9, -1)
 
+  local lsa_colors = require('lspsaga.highlight').get_colors()()
   api.nvim_set_hl(0, 'DiagnosticText', {
     foreground = colors.foreground,
   })
 
-  local lsa_colors = require('lspsaga.highlight').get_colors()()
   api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
     background = colors.foreground,
     foreground = lsa_colors.green,
@@ -509,10 +520,6 @@ function diag:show(entrys, arg, type)
     api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, 'DiagnosticPos', index, 4 + len[k], -1)
     api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, hi, index + 1, 2, -1)
   end
-  local colors_var = api.nvim_get_hl_by_name('@variable', true)
-  api.nvim_set_hl(0, 'DiagnosticWord', {
-    foreground = colors_var.foreground,
-  })
 
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
 
