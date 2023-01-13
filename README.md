@@ -168,7 +168,7 @@ src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-
 
 ## :Lspsaga peek_definition
 
-there has two commands `Lspsaga peek_defintion` and `Lspsaga goto_defintion`, the `peek_defitnion` work like vscode that show the target file in a floatwindow you can edit as normalize.
+there has two commands `Lspsaga peek_definition` and `Lspsaga goto_definition`, the `peek_definition` work like vscode that show the target file in a floatwindow you can edit as normalize.
 
 options with default value
 

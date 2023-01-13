@@ -378,7 +378,7 @@ function def:close_window(winid)
 end
 
 -- override the default the defintion handler
-function def:goto_defintion()
+function def:goto_definition()
   lsp.handlers['textDocument/definition'] = function(_, result, _, _)
     if not result or vim.tbl_isempty(result) then
       return
