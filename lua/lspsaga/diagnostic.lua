@@ -504,8 +504,8 @@ function diag:show(entrys, arg, type)
     api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, hi, index + 1, 2, -1)
   end
   local colors_var = api.nvim_get_hl_by_name('@variable', true)
-  api.nvim_set_hl(0, 'DiagnosticWord',{
-    foreground = colors_var.foreground
+  api.nvim_set_hl(0, 'DiagnosticWord', {
+    foreground = colors_var.foreground,
   })
 
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
