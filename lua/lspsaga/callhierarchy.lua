@@ -7,9 +7,7 @@ local insert = table.insert
 local ctx = {}
 
 local ch = {}
-function ch.__index(_, k, _)
-  return ch[k]
-end
+ch.__index = ch
 
 function ch.__newindex(t, k, v)
   rawset(t, k, v)

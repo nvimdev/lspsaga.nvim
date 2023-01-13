@@ -310,7 +310,7 @@ function libs.jump_beacon(bufpos, width)
     border = 'none',
     winblend = 0,
     highlight = {
-      normal = 'DiagnosticBeacon',
+      normal = 'SagaBeacon',
     },
   }, opts)
 

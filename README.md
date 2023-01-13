@@ -97,6 +97,9 @@ keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
 -- also like show_line_diagnostics  support pass ++unfocus
 keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
 
+-- Show buffer diagnostic
+keymap("n", "<leader>sb", "<cmd>Lspsaga show_buf_diagnostics<CR>")
+
 -- Diagnsotic jump can use `<c-o>` to jump back
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
 keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
@@ -293,6 +296,16 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 - `o` to execuate an action.
 
 <img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif" height=80% width=80%/>
+</details>
+
+
+### :Lspsaga show_diagnsotic
+
+`show_line_diagnsotic` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
+
+<details>
+<summary> show diangostics show case </summary>
+<img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
 </details>
 
 ### :Lspsaga rename

@@ -17,10 +17,13 @@ local subcommands = {
     require('lspsaga.hover'):render_hover_doc()
   end,
   show_cursor_diagnostics = function()
-    require('lspsaga.diagnostic'):show_diagnostics(arg, true)
+    require('lspsaga.diagnostic'):show_diagnostics(arg, 'cursor')
   end,
   show_line_diagnostics = function(arg)
-    require('lspsaga.diagnostic'):show_diagnostics(arg)
+    require('lspsaga.diagnostic'):show_diagnostics(arg, 'line')
+  end,
+  show_buf_diagnostics = function()
+    require('lspsaga.diagnostic'):show_buf_diagnsotic(arg, 'buffer')
   end,
   diagnostic_jump_next = function()
     require('lspsaga.diagnostic').goto_next()

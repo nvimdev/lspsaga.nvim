@@ -422,15 +422,27 @@ function diag.goto_prev(opts)
   diag:move_cursor(prev)
 end
 
-function diag:show(entrys, arg, cursor)
+function diag:show(entrys, arg, type)
   local cur_buf = api.nvim_get_current_buf()
   local content = {}
   local max_width = math.floor(vim.o.columns * 0.6)
   local window = require('lspsaga.window')
+  local len = {}
   for index, entry in pairs(entrys) do
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, entry.col, entry.lnum, entry.end_col, {})
-    local line = '[' .. index .. '] ' .. code_source[1] .. '\n' .. '  ' .. entry.message
+    insert(len, #code_source[1])
+    local line = '['
+      .. index
+      .. '] '
+      .. code_source[1]
+      .. '  '
+      .. entry.lnum + 1
+      .. ':'
+      .. entry.col
+      .. '\n'
+      .. '  '
+      .. entry.message
     if entry.source then
       line = line .. '(' .. entry.source .. ')'
     end
@@ -460,11 +472,10 @@ function diag:show(entrys, arg, cursor)
 
   if fn.has('nvim-0.9') == 1 then
     local theme = require('lspsaga').theme()
-    local title = cursor and 'Cursor' or 'Line'
     opt.title = {
       { theme.left, 'TitleSymbol' },
       { config.ui.diagnostic, 'TitleIcon' },
-      { title .. ' Diagnostic', 'TitleString' },
+      { type .. ' Diagnostic', 'TitleString' },
       { theme.right, 'TitleSymbol' },
     }
   end
@@ -488,9 +499,14 @@ function diag:show(entrys, arg, cursor)
       end_col = 3,
       conceal = '◉',
     })
-    api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, hi, index, 3, -1)
+    api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, 'DiagnosticWord', index, 3, 4 + len[k])
+    api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, 'DiagnosticPos', index, 4 + len[k], -1)
     api.nvim_buf_add_highlight(ctx.lnum_bufnr, 0, hi, index + 1, 2, -1)
   end
+  local colors_var = api.nvim_get_hl_by_name('@variable', true)
+  api.nvim_set_hl(0, 'DiagnosticWord',{
+    foreground = colors_var.foreground
+  })
 
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
 
@@ -499,14 +515,20 @@ function diag:show(entrys, arg, cursor)
   end, 0)
 end
 
-local function get_diagnostic(cursor)
-  cursor = cursor or nil
+local function sort_by_severity(entrys)
+  table.sort(entrys, function(k1, k2)
+    return k1.severity < k2.severity
+  end)
+end
+
+local function get_diagnostic(type)
   local cur_buf = api.nvim_get_current_buf()
   local line, col = unpack(api.nvim_win_get_cursor(0))
   local entrys = diagnostic.get(cur_buf, { lnum = line - 1 })
-  if not cursor then
+  if type ~= 'cursor' then
     return entrys
   end
+
   local res = {}
   for _, v in pairs(entrys) do
     if v.col <= col and v.end_col >= col then
@@ -516,12 +538,22 @@ local function get_diagnostic(cursor)
   return res
 end
 
-function diag:show_diagnostics(arg, cursor)
-  local entrys = get_diagnostic(cursor)
+function diag:show_diagnostics(arg, type)
+  local entrys = get_diagnostic(type)
   if vim.tbl_isempty(entrys) then
     return
   end
-  self:show(entrys, arg, cursor)
+  sort_by_severity(entrys)
+  self:show(entrys, arg, type)
+end
+
+function diag:show_buf_diagnsotic(arg, type)
+  local entrys = vim.diagnostic.get(0)
+  if vim.tbl_isempty(entrys) then
+    return
+  end
+  sort_by_severity(entrys)
+  self:show(entrys, arg, type)
 end
 
 return setmetatable(diag, ctx)

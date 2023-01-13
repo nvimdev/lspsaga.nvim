@@ -742,10 +742,8 @@ function finder:quit_float_window()
 end
 
 function finder:clear_tmp_data()
-  for key, val in pairs(self) do
-    if type(val) ~= 'function' then
-      self[key] = nil
-    end
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
   end
 end
 
