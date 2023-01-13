@@ -58,9 +58,13 @@ function term:open_float_terminal(command)
   if spawn_new then
     vim.fn.termopen(cmd, {
       on_exit = function()
-        for k, _ in pairs(ctx) do
-          ctx[k] = {}
+        if ctx.term_winid and api.nvim_win_is_valid(ctx.term_winid) then
+          api.nvim_win_close(ctx.term_winid, true)
         end
+        if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
+          api.nvim_win_close(ctx.shadow_winid, true)
+        end
+        ctx = {}
       end,
     })
   end
