@@ -1,0 +1,559 @@
+*lspsaga.nvim.txt*         For Nvim 0.8.0         Last change: 2023 January 13
+
+==============================================================================
+Table of Contents                             *lspsaga.nvim-table-of-contents*
+
+1. Install                                              |lspsaga.nvim-install|
+  - Lazy                                                   |lspsaga.nvim-lazy|
+  - Packer                                               |lspsaga.nvim-packer|
+2. Example Configuration                  |lspsaga.nvim-example-configuration|
+  - Usage Tutorial                               |lspsaga.nvim-usage-tutorial|
+  - default options                             |lspsaga.nvim-default-options|
+  - :Lspsaga lsp_finder                     |lspsaga.nvim-:lspsaga-lsp_finder|
+  - :Lspsaga peek_definition           |lspsaga.nvim-:lspsaga-peek_definition|
+  - :Lspsaga goto_definition           |lspsaga.nvim-:lspsaga-goto_definition|
+  - :Lspsaga code_action                   |lspsaga.nvim-:lspsaga-code_action|
+  - :Lspsaga Lightbulb                       |lspsaga.nvim-:lspsaga-lightbulb|
+  - :Lspasga hover_doc                       |lspsaga.nvim-:lspasga-hover_doc|
+  - :Lspsaga diagnostic_jump_next |lspsaga.nvim-:lspsaga-diagnostic_jump_next|
+  - :Lspsaga show_diagnsotic           |lspsaga.nvim-:lspsaga-show_diagnsotic|
+  - :Lspsaga rename                             |lspsaga.nvim-:lspsaga-rename|
+  - :Lspsaga outline                           |lspsaga.nvim-:lspsaga-outline|
+  - :Lspsaga incoming_calls             |lspsaga.nvim-:lspsaga-incoming_calls|
+  - :Lspsaga outgoing_calls             |lspsaga.nvim-:lspsaga-outgoing_calls|
+  - :Lspsaga symbols in winbar       |lspsaga.nvim-:lspsaga-symbols-in-winbar|
+  - :Lspaga symbols in custom winbar/statusline|lspsaga.nvim-:lspaga-symbols-in-custom-winbar/statusline|
+  - :Lspsaga term_toggle                   |lspsaga.nvim-:lspsaga-term_toggle|
+  - Customize Appearance                   |lspsaga.nvim-customize-appearance|
+  - :Lspsaga UI                                     |lspsaga.nvim-:lspsaga-ui|
+3. Custom Highlight                            |lspsaga.nvim-custom-highlight|
+4. Custom Kind                                      |lspsaga.nvim-custom-kind|
+5. Donate                                                |lspsaga.nvim-donate|
+6. License                                              |lspsaga.nvim-license|
+
+>
+                                     __
+                                    / /________  _________ _____ _____ _
+                                   / / ___/ __ \/ ___/ __ `/ __ `/ __ `/
+                                  / (__  ) /_/ (__  ) /_/ / /_/ / /_/ /
+                                 /_/____/ .___/____/\__,_/\__, /\__,_/
+                                       /_/               /____/
+    
+                              ⚡ designed for convenience and efficiency ⚡
+<
+
+
+A light-weight lsp plugin based on neovim’s built-in lsp with a highly
+performant UI.
+
+<img
+src='https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white'
+title=''/> <https://matrix.to/#/#lspsaga-nvim:matrix.org>
+
+
+1. |lspsaga.nvim-install|
+2. |lspsaga.nvim-example-configuration|
+3. |lspsaga.nvim-usage-turtorial|
+4. |lspsaga.nvim-customize-appearance|
+5. |lspsaga.nvim-donate|
+6. |lspsaga.nvim-license|
+
+
+==============================================================================
+1. Install                                              *lspsaga.nvim-install*
+
+you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install
+`lspsaga` and lazyload by the plugin management keyword.
+
+
+- `cmd` lazylod by `lspsaga` command
+- `ft` lazy.nvim and packer both provide lazyload by filetype. then you can load the lspsaga according the filetypes which you write and use lsp.
+- `event` lazyload by event like `BufRead,BufReadPost` make sure your lsp plugin also loaded.
+- `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
+- `after` for packer you can use after keyword.
+
+
+LAZY                                                       *lspsaga.nvim-lazy*
+
+>
+    require('lazy').setup({
+        'glepnir/lspsaga.nvim',
+        event = 'BufRead',
+        config = function()
+            require('lspsaga').setup({})
+        end
+    },opt)
+<
+
+
+PACKER                                                   *lspsaga.nvim-packer*
+
+>
+    use({
+        "glepnir/lspsaga.nvim",
+        branch = "main",
+        config = function()
+            require('lspsaga').setup({})
+        end,
+    })
+<
+
+
+==============================================================================
+2. Example Configuration                  *lspsaga.nvim-example-configuration*
+
+>
+    require('lazy').setup({
+        'glepnir/lspsaga.nvim',
+        event = 'BufRead',
+        config = function()
+          require('lspsaga').setup({})
+        end
+    })
+    
+    local keymap = vim.keymap.set
+    -- Lsp finder find the symbol definition implement reference
+    -- if there is no implement it will hide
+    -- when you use action in finder like open vsplit then you can
+    -- use <C-t> to jump back
+    keymap("n", "gh", "<cmd>Lspsaga lsp_finder<CR>")
+    
+    -- Code action
+    keymap({"n","v"}, "<leader>ca", "<cmd>Lspsaga code_action<CR>")
+    
+    -- Rename
+    keymap("n", "gr", "<cmd>Lspsaga rename<CR>")
+    
+    -- Peek Definition
+    -- you can edit the definition file in this flaotwindow
+    -- also support open/vsplit/etc operation check definition_action_keys
+    -- support tagstack C-t jump back
+    keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>")
+    
+    -- Go to Definition
+    keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
+    
+    -- Show line diagnostics you can pass arugment ++unfocus to make
+    -- show_line_diagnsotic float window unfocus
+    keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
+    
+    -- Show cursor diagnostic
+    -- also like show_line_diagnostics  support pass ++unfocus
+    keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
+    
+    -- Show buffer diagnostic
+    keymap("n", "<leader>sb", "<cmd>Lspsaga show_buf_diagnostics<CR>")
+    
+    -- Diagnsotic jump can use `<c-o>` to jump back
+    keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
+    keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
+    
+    -- Diagnostic jump with filter like Only jump to error
+    keymap("n", "[E", function()
+      require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
+    end)
+    keymap("n", "]E", function()
+      require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
+    end)
+    
+    -- Outline
+    keymap("n","<leader>o", "<cmd>Lspsaga outline<CR>")
+    
+    -- Hover Doc
+    keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>")
+    
+    -- Callhierarchy
+    keymap("n", "<Leader>ci", "<cmd>Lspsaga incoming_calls")
+    keymap("n", "<Leader>co", "<cmd>Lspsaga outgoing_calls")
+    
+    -- Float terminal
+    keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
+<
+
+
+USAGE TUTORIAL                                   *lspsaga.nvim-usage-tutorial*
+
+**Notice that title in float window must need neovim version >= 0.9**
+
+DEFAULT OPTIONS                                 *lspsaga.nvim-default-options*
+
+>
+      preview = {
+        lines_above = 0,
+        lines_below = 10,
+      },
+      scroll_preview = {
+        scroll_down = '<C-f>',
+        scroll_up = '<C-b>',
+      },
+      request_timeout = 2000,
+<
+
+
+:LSPSAGA LSP_FINDER                         *lspsaga.nvim-:lspsaga-lsp_finder*
+
+`Finder` to show the defintion,reference,implement(only show when current word
+is interface or some type)
+
+default finder options
+
+>
+      finder = {
+        edit = { 'o', '<CR>' },
+        vsplit = 's',
+        split = 'i',
+        tabe = 't',
+        quit = { 'q', '<ESC>' },
+      },
+<
+
+
+lsp finder show case
+
+<img
+src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-465d-85c3-3d02d1b88da4.gif" height=80% width=80%/>
+
+:LSPSAGA PEEK_DEFINITION               *lspsaga.nvim-:lspsaga-peek_definition*
+
+there has two commands `Lspsaga peek_defintion` and `Lspsaga goto_defintion`,
+the `peek_defitnion` work like vscode that show the target file in a
+floatwindow you can edit as normalize.
+
+options with default value
+
+>
+      definition = {
+        edit = '<C-c>o',
+        vsplit = '<C-c>v',
+        split = '<C-c>i',
+        tabe = '<C-c>t',
+        quit = 'q',
+        close = '<Esc>',
+      }
+<
+
+
+peek_definition show case
+
+the step in this gif show case - `gd` run `lspsaga peek_definition`. - do some
+comment edit then `:w` to save. - `<C-c> o` jump to this file. - lspsaga will
+show becacon highlight after jump.
+
+<img
+src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=80% width=80%/>
+
+:LSPSAGA GOTO_DEFINITION               *lspsaga.nvim-:lspsaga-goto_definition*
+
+jump to definition and show beacon
+
+:LSPSAGA CODE_ACTION                       *lspsaga.nvim-:lspsaga-code_action*
+
+options with default value
+
+>
+      code_action = {
+        num_shortcut = true,
+        keys = {
+          quit = 'q',
+          exec = '<CR>',
+        },
+      },
+<
+
+
+
+- `num_shortcut` it’s `true` by default then you can use number to fast run action
+
+
+code_action show case
+
+
+- `ga` run `Lspsaga code_action`
+- `j` to move and show the code action preview
+- `<Cr>` to run a action
+    <img src="https://user-images.githubusercontent.com/41671631/212005522-bc7fa99b-6c6f-4c0e-b7fc-c95edee5c169.gif" height=80% width=80%/>
+
+
+:LSPSAGA LIGHTBULB                           *lspsaga.nvim-:lspsaga-lightbulb*
+
+when there has code action it will show a lightbulb, default options.
+
+>
+      lightbulb = {
+        enable = true,
+        enable_in_insert = true,
+        sign = true,
+        sign_priority = 40,
+        virtual_text = true,
+      },
+<
+
+
+lightbulb show case
+
+<img src="https://user-images.githubusercontent.com/41671631/212009221-e0fb193e-f69d-4ed6-a4a2-d9ecb589f211.gif" height=80% width=80%/>
+
+:LSPASGA HOVER_DOC                           *lspsaga.nvim-:lspasga-hover_doc*
+
+lspsaga use treesitter markdown parser to render hover. so you must install
+markdown parser. you can press shotcut of `Lspsaga hover_doc` twice jump into
+the hover window. in my case is `K`.
+
+hover_doc show case
+
+
+- `K` to run `Lspsaga hover_doc`.
+- press `K` again jump into the hover window.
+- `q` to quit.
+
+
+<img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" height=80% width=80%/>
+
+:LSPSAGA DIAGNOSTIC_JUMP_NEXT     *lspsaga.nvim-:lspsaga-diagnostic_jump_next*
+
+jump to next diagnsotic position then show beacon and show the codeaction.
+default options
+
+>
+      diagnostic = {
+        twice_into = false,
+        show_code_action = true,
+        show_source = true,
+        keys = {
+          exec_action = 'o',
+          quit = 'q',
+        },
+      },
+<
+
+
+if `twice_into` set to `true`, press twice the diagnostic jump shortcut it will
+jump into the floatwindow. other way is use `wincmd` to jump into use `<C-w>w`.
+
+also you can use a filter in diagnostic jump by using lspsaga function.
+function params is a table same as `:h vim.diagnsotic.get_next`
+
+>
+    -- this is mean only jump to error position
+    -- or goto_next
+    require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
+<
+
+
+diagnostic jump show case
+
+
+- `[e` to jump next diangostic position.
+- `<C-w>w` jump into the float window.
+- `j` to move.
+- `o` to execuate an action.
+
+
+<img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif" height=80% width=80%/>
+
+:LSPSAGA SHOW_DIAGNSOTIC               *lspsaga.nvim-:lspsaga-show_diagnsotic*
+
+`show_line_diagnsotic` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
+
+show diangostics show case
+
+<img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
+
+:LSPSAGA RENAME                                 *lspsaga.nvim-:lspsaga-rename*
+
+lsp rename with select. default options
+
+>
+      rename = {
+        quit = '<C-c>',
+        exec = '<CR>',
+        in_select = true,
+      },
+<
+
+
+rename show case
+
+
+- `gr` to run `Lspsaga rename`
+- `stesdd<CR>`
+
+
+<img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif" height=80% width=80%/>
+
+:LSPSAGA OUTLINE                               *lspsaga.nvim-:lspsaga-outline*
+
+default options
+
+>
+      outline = {
+        win_position = 'right',
+        win_with = '',
+        win_width = 30,
+        show_detail = true,
+        auto_preview = true,
+        auto_refresh = true,
+        auto_close = true,
+        custom_sort = nil,
+        keys = {
+          jump = 'o',
+          expand_collaspe = 'u',
+          quit = 'q',
+        },
+      },
+<
+
+
+outline show case
+
+
+- `<Leader>o` run `Lspsaga outline`
+- `j` move down
+- `o` to jump
+
+
+<img src="https://user-images.githubusercontent.com/41671631/212017018-6753e470-58e4-498e-8812-5ff416ff27c1.gif" height=80% width=80%/>
+
+:LSPSAGA INCOMING_CALLS                 *lspsaga.nvim-:lspsaga-incoming_calls*
+
+run lsp callhierarchy incoming_calls. default options
+
+>
+      callhierarchy = {
+        show_detail = false,
+        keys = {
+          edit = 'e',
+          vsplit = 's',
+          split = 'i',
+          tabe = 't',
+          jump = 'o',
+          quit = 'q',
+          expand_collaspe = 'u',
+        },
+      },
+<
+
+
+incoming_calls show case
+
+<img src="https://user-images.githubusercontent.com/41671631/212018219-26ed4a5f-00e1-488a-8a87-1a89f2c5d14b.gif" height=80% width=80%/>
+
+:LSPSAGA OUTGOING_CALLS                 *lspsaga.nvim-:lspsaga-outgoing_calls*
+
+run lsp callhierarchy outgoing_calls
+
+outgoing show_case
+
+<img src="https://user-images.githubusercontent.com/41671631/212024418-cf26f3f7-7acb-46df-a50a-9abe3f8f68f3.gif" height=80% width=80%/>
+
+:LSPSAGA SYMBOLS IN WINBAR           *lspsaga.nvim-:lspsaga-symbols-in-winbar*
+
+require your neovim version >= 0.8. options with default value
+
+>
+      symbol_in_winbar = {
+        enable = true,
+        separator = ' ',
+        hide_keyword = true,
+        show_file = true,
+        folder_level = 2,
+      },
+<
+
+
+
+- `hide_keyword` default is true it will hide some keyword or tmp variable make symbols more clean
+- `folder_level` work with `show_file`
+
+
+symbols in winbar
+
+<img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif" height=80% width=80%/>
+
+:LSPAGA SYMBOLS IN CUSTOM WINBAR/STATUSLINE*lspsaga.nvim-:lspaga-symbols-in-custom-winbar/statusline*
+
+lspsaga provide an api that you can use in your custom winbar or statusline.
+
+>
+    vim.wo.winbar/ vim.wo.stl = require('lspsaga.symbolwinbar'):get_winbar()
+<
+
+
+:LSPSAGA TERM_TOGGLE                       *lspsaga.nvim-:lspsaga-term_toggle*
+
+simple floaterm
+
+float terminal toggle
+
+<img src="https://user-images.githubusercontent.com/41671631/212027060-56d1cebc-c6a8-412e-bd01-620aac3029ed.gif" height=80% width=80%/>
+
+CUSTOMIZE APPEARANCE                       *lspsaga.nvim-customize-appearance*
+
+:LSPSAGA UI                                         *lspsaga.nvim-:lspsaga-ui*
+
+default ui options
+
+>
+      ui = {
+        theme = 'round',
+        border = 'solid',
+        winblend = 0,
+        expand = '',
+        collaspe = '',
+        preview = ' ',
+        code_action = '💡',
+        diagnostic = '🐞',
+        incoming = ' ',
+        outgoing = ' ',
+        colors = {
+          --float window normal bakcground color
+          normal_bg = '#1d1536',
+          --title background color
+          title_bg = '#afd700',
+          red = '#e95678',
+          magenta = '#b33076',
+          orange = '#FF8700',
+          yellow = '#f7bb3b',
+          green = '#afd700',
+          cyan = '#36d0e0',
+          blue = '#61afef',
+          purple = '#CBA6F7',
+          white = '#d1d4cf',
+          black = '#1c1c19',
+        },
+        kind = {},
+      },
+<
+
+
+==============================================================================
+3. Custom Highlight                            *lspsaga.nvim-custom-highlight*
+
+you can change the default colors or only change some highlight groups which
+you want change. find all highlight groups in highlight.lua
+<./lua/lspsaga/highlight.lua>
+
+==============================================================================
+4. Custom Kind                                      *lspsaga.nvim-custom-kind*
+
+`kind` field is a table that key is kind name, value is icon, all kind defined
+in lspkind.lua <./lua/lspsaga/lspkind.lua>
+
+==============================================================================
+5. Donate                                                *lspsaga.nvim-donate*
+
+<img
+src='https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white'
+title=''/> <https://paypal.me/bobbyhub>
+
+If you’d like to support my work financially, buy me a drink through paypal
+<https://paypal.me/bobbyhub>.
+
+==============================================================================
+6. License                                              *lspsaga.nvim-license*
+
+Licensed under the MIT <./LICENSE> license.
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:

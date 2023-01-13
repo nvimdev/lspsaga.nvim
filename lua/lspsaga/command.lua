@@ -1,37 +1,50 @@
 local command = {}
-local lsprename = require('lspsaga.rename')
-local diagnostic = require('lspsaga.diagnostic')
-local codeaction = require('lspsaga.codeaction')
-local finder = require('lspsaga.finder')
 
 local subcommands = {
-  outline = function()
-    require('lspsaga.outline'):render_outline()
-  end,
   lsp_finder = function()
-    finder:lsp_finder()
+    require('lspsaga.finder'):lsp_finder()
   end,
   peek_definition = function()
     require('lspsaga.definition'):peek_definition()
   end,
+  goto_defintion = function()
+    require('lspsaga.definition'):goto_defintion()
+  end,
   rename = function()
-    lsprename:lsp_rename()
+    require('lspsaga.rename'):lsp_rename()
   end,
   hover_doc = function()
     require('lspsaga.hover'):render_hover_doc()
   end,
-  show_cursor_diagnostics = diagnostic.show_cursor_diagnostics,
-  show_line_diagnostics = diagnostic.show_line_diagnostics,
-  diagnostic_jump_next = diagnostic.goto_next,
-  diagnostic_jump_prev = diagnostic.goto_prev,
+  show_cursor_diagnostics = function()
+    require('lspsaga.diagnostic'):show_diagnostics(arg, 'cursor')
+  end,
+  show_line_diagnostics = function(arg)
+    require('lspsaga.diagnostic'):show_diagnostics(arg, 'line')
+  end,
+  show_buf_diagnostics = function()
+    require('lspsaga.diagnostic'):show_buf_diagnsotic(arg, 'buffer')
+  end,
+  diagnostic_jump_next = function()
+    require('lspsaga.diagnostic').goto_next()
+  end,
+  diagnostic_jump_prev = function()
+    require('lspsaga.diagnostic').goto_prev()
+  end,
   code_action = function()
-    codeaction:code_action()
+    require('lspsaga.codeaction'):code_action()
   end,
-  open_floaterm = function(cmd)
+  outline = function()
+    require('lspsaga.outline'):outline()
+  end,
+  incoming_calls = function()
+    require('lspsaga.callhierarchy'):incoming_calls()
+  end,
+  outgoing_calls = function()
+    require('lspsaga.callhierarchy'):outgoing_calls()
+  end,
+  term_toggle = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)
-  end,
-  close_floaterm = function()
-    require('lspsaga.floaterm'):close_float_terminal()
   end,
 }
 

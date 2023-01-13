@@ -2,20 +2,29 @@ local api = vim.api
 local window = require('lspsaga.window')
 local term = {}
 
+local ctx = {}
+
 function term:open_float_terminal(command)
+  local cur_buf = api.nvim_get_current_buf()
+
+  if not vim.tbl_isempty(ctx) and ctx.term_bufnr == cur_buf then
+    api.nvim_win_close(ctx.term_winid, true)
+    if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
+      api.nvim_win_close(ctx.shadow_winid, true)
+    end
+    ctx.term_winid = nil
+    ctx.shadow_winid = nil
+    return
+  end
+
   local cmd = command or os.getenv('SHELL')
-
-  -- get dimensions
-  local width = api.nvim_get_option('columns')
-  local height = api.nvim_get_option('lines')
-
   -- calculate our floating window size
-  local win_height = math.ceil(height * 0.7)
-  local win_width = math.ceil(width * 0.7)
+  local win_height = math.ceil(vim.o.lines * 0.7)
+  local win_width = math.ceil(vim.o.columns * 0.7)
 
   -- and its starting position
-  local row = math.ceil((height - win_height) * 0.4)
-  local col = math.ceil((width - win_width) * 0.5)
+  local row = math.ceil((vim.o.lines - win_height) * 0.4)
+  local col = math.ceil((vim.o.columns - win_width) * 0.5)
 
   -- set some options
   local opts = {
@@ -30,32 +39,43 @@ function term:open_float_terminal(command)
   local content_opts = {
     contents = {},
     enter = true,
-    winblend = 0,
+    bufhidden = 'hide',
+    highlight = {
+      normal = 'TerminalNormal',
+      border = 'TerminalBorder',
+    },
   }
-  if self.term_bufnr then
-    content_opts.bufnr = self.term_bufnr
-    if api.nvim_buf_is_valid(self.term_bufnr) then
-      api.nvim_buf_set_option(self.term_bufnr, 'modified', false)
-    end
+  local spawn_new = vim.tbl_isempty(ctx) and true or false
+
+  if not spawn_new then
+    content_opts.bufnr = ctx.term_bufnr
+    api.nvim_buf_set_option(ctx.term_bufnr, 'modified', false)
   end
 
-  self.term_bufnr, self.term_winid, self.shadow_bufnr, self.shadow_winid =
+  ctx.term_bufnr, ctx.term_winid, ctx.shadow_bufnr, ctx.shadow_winid =
     window.open_shadow_float_win(content_opts, opts)
 
-  if not self.first_open then
-    self.first_open = true
+  if spawn_new then
     vim.fn.termopen(cmd, {
-      on_exit = function(...) end,
+      on_exit = function()
+        for k, _ in pairs(ctx) do
+          ctx[k] = {}
+        end
+      end,
     })
   end
-  vim.cmd('startinsert!')
-end
 
-function term:close_float_terminal()
-  if self.term_winid and api.nvim_win_is_valid(self.term_winid) then
-    api.nvim_win_hide(self.term_winid)
-    api.nvim_win_hide(self.shadow_winid)
-  end
+  vim.cmd('startinsert!')
+
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = ctx.term_bufnr,
+    callback = function()
+      if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
+        api.nvim_win_close(ctx.shadow_winid, true)
+        ctx.shadow_winid = nil
+      end
+    end,
+  })
 end
 
 return term
