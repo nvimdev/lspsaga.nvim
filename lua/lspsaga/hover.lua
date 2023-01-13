@@ -56,7 +56,7 @@ function hover:open_floating_preview(res, opts)
   vim.wo[self.preview_winid].concealcursor = 'niv'
   vim.wo[self.preview_winid].showbreak = 'NONE'
   vim.wo[self.preview_winid].fillchars = 'lastline: '
-  if vim.fn.has('nvim-0.9') then
+  if fn.has('nvim-0.9') == 1 then
     vim.treesitter.start(self.preview_bufnr, 'markdown')
   end
 
