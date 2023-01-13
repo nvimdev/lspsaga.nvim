@@ -255,7 +255,7 @@ local function get_msg(method)
 end
 
 function finder:create_finder_contents(result, method)
-  if not result or vim.tbl_isempty(result) then
+  if (not result or vim.tbl_isempty(result)) and method == methods(2) then
     return
   end
   self:get_file_icon()
