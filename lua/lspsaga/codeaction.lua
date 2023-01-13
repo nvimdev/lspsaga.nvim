@@ -1,10 +1,15 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
+local window = require('lspsaga.window')
+local act = {}
+local ctx = {}
 
-local Action = {}
-Action.__index = Action
+act.__index = act
+function act.__newindex(t, k, v)
+  rawset(t, k, v)
+end
 
-function Action:action_callback()
+function act:action_callback()
   local contents = {}
 
   for index, client_with_actions in pairs(self.action_tuples) do
@@ -17,10 +22,6 @@ function Action:action_callback()
       action_title = '[' .. index .. ']' .. ' ' .. client_with_actions[2].title
     end
     table.insert(contents, action_title)
-  end
-
-  if #contents == 1 then
-    return
   end
 
   local content_opts = {
@@ -45,15 +46,15 @@ function Action:action_callback()
     }
   end
 
-  self.action_bufnr, self.action_winid = self.window.create_win_with_border(content_opts, opt)
+  self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
   vim.wo[self.action_winid].conceallevel = 2
   vim.wo[self.action_winid].concealcursor = 'niv'
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
 
-  local saga_augroup = require('lspsaga').saga_augroup
+  local group = api.nvim_create_augroup('CodeAction' .. self.bufnr, { clear = true })
   api.nvim_create_autocmd('CursorMoved', {
-    group = saga_augroup,
+    group = group,
     buffer = self.action_bufnr,
     callback = function()
       self:set_cursor()
@@ -61,7 +62,7 @@ function Action:action_callback()
   })
 
   api.nvim_create_autocmd('QuitPre', {
-    group = saga_augroup,
+    group = group,
     buffer = self.action_bufnr,
     callback = function()
       self:quit_action_window()
@@ -89,7 +90,7 @@ function Action:action_callback()
   end
 end
 
-function Action:apply_action_keys()
+function act:apply_action_keys()
   vim.keymap.set('n', config.code_action.keys.exec, function()
     self:do_code_action()
   end, { buffer = self.action_bufnr })
@@ -99,7 +100,7 @@ function Action:apply_action_keys()
   end, { buffer = self.action_bufnr })
 end
 
-function Action:get_clients(results, options)
+function act:get_clients(results, options)
   local function action_filter(a)
     -- filter by specified action kind
     if options and options.context and options.context.only then
@@ -140,38 +141,7 @@ function Action:get_clients(results, options)
   end
 end
 
-local function check_sub_tbl(tbl)
-  for _, t in pairs(tbl) do
-    if type(t[1]) ~= 'number' then
-      return false
-    end
-
-    if type(t[2]) ~= 'table' or next(t[2]) == nil then
-      return false
-    end
-  end
-  return true
-end
-
-function Action:actions_in_cache()
-  if not config.lightbulb.enable then
-    return false
-  end
-
-  if not config.lightbulb.cache_code_action then
-    return false
-  end
-
-  if
-    self.action_tuples
-    and next(self.action_tuples) ~= nil
-    and check_sub_tbl(self.action_tuples)
-  then
-    return true
-  end
-end
-
-function Action:send_code_action_request(main_buf, options, cb)
+function act:send_code_action_request(main_buf, options, cb)
   local diagnostics = lsp.diagnostic.get_line_diagnostics(main_buf)
   local context = { diagnostics = diagnostics }
   local params
@@ -204,12 +174,12 @@ function Action:send_code_action_request(main_buf, options, cb)
     params = util.make_range_params()
   end
   params.context = context
-  if self.ctx == nil then
-    self.ctx = {}
+  if not self.ctx then
+    self.ctx = { bufnr = self.bufnr, method = 'textDocument/codeAction', params = params }
   end
-  self.ctx = { bufnr = self.bufnr, method = 'textDocument/codeAction', params = params }
 
   lsp.buf_request_all(self.bufnr, 'textDocument/codeAction', params, function(results)
+    self.pending_request = false
     self:get_clients(results)
     if #self.action_tuples == 0 then
       vim.notify('No code actions available', vim.log.levels.INFO)
@@ -221,7 +191,7 @@ function Action:send_code_action_request(main_buf, options, cb)
   end)
 end
 
-function Action:set_cursor()
+function act:set_cursor()
   local col = 4
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
@@ -233,7 +203,7 @@ function Action:set_cursor()
   self:action_preview(self.action_winid, self.bufnr)
 end
 
-function Action:num_shortcut()
+function act:num_shortcut()
   for num, _ in pairs(self.action_tuples) do
     vim.keymap.set('n', tostring(num), function()
       self:do_code_action(num)
@@ -241,17 +211,24 @@ function Action:num_shortcut()
   end
 end
 
-function Action:code_action(options)
+function act:code_action(options)
+  if self.pending_request then
+    vim.notify(
+      '[lspsaga.nvim] there already have a code action request please wait',
+      vim.log.levels.WARN
+    )
+    return
+  end
+  self.pending_request = true
   self.bufnr = api.nvim_get_current_buf()
-  self.window = require('lspsaga.window')
-
   options = options or {}
+
   self:send_code_action_request(self.bufnr, options, function()
     self:action_callback()
   end)
 end
 
-function Action:apply_action(action, client)
+function act:apply_action(action, client)
   if action.edit then
     util.apply_workspace_edit(action.edit, client.offset_encoding)
   end
@@ -273,7 +250,7 @@ function Action:apply_action(action, client)
   end
 end
 
-function Action:do_code_action(num)
+function act:do_code_action(num)
   local number
   if num then
     number = tonumber(num)
@@ -309,7 +286,7 @@ function Action:do_code_action(num)
   self:quit_action_window()
 end
 
-function Action:get_action_diff(num, main_buf)
+function act:get_action_diff(num, main_buf)
   local action = self.action_tuples[tonumber(num)][2]
   if not action then
     return
@@ -382,7 +359,7 @@ function Action:get_action_diff(num, main_buf)
   return vim.diff(table.concat(old_lines, ''), new_text)
 end
 
-function Action:action_preview(main_winid, main_buf)
+function act:action_preview(main_winid, main_buf)
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
     self.preview_winid = nil
@@ -445,29 +422,24 @@ function Action:action_preview(main_winid, main_buf)
     },
   }
 
-  if not self.window then
-    self.window = require('lspsaga.window')
-  end
   local preview_buf
-  preview_buf, self.preview_winid = self.window.create_win_with_border(content_opts, opt)
+  preview_buf, self.preview_winid = window.create_win_with_border(content_opts, opt)
   vim.bo[preview_buf].syntax = 'on'
   return self.preview_winid
 end
 
-function Action:clear_tmp_data()
-  for k, v in pairs(self) do
-    if type(v) ~= 'function' then
-      self[k] = nil
-    end
+function act:clear_tmp_data()
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
   end
 end
 
-function Action:quit_action_window()
+function act:quit_action_window()
   if self.action_bufnr == 0 and self.action_winid == 0 then
     return
   end
-  self.window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
+  window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
   self:clear_tmp_data()
 end
 
-return Action
+return setmetatable(ctx, act)
