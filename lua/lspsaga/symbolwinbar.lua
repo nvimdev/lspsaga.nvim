@@ -332,6 +332,10 @@ function symbar:symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', {}),
     callback = function(opt)
+      if vim.bo[opt.buf].buftype == 'nofile' then
+        return
+      end
+
       local winid = api.nvim_get_current_win()
       local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
       if ok and val then

@@ -374,7 +374,6 @@ function ot:auto_preview()
   local content_opts = {
     contents = content,
     buftype = 'nofile',
-    filetype = vim.bo[self.render_buf].filetype,
     highlight = {
       normal = 'ActionPreviewNormal',
       border = 'ActionPreviewBorder',
@@ -383,7 +382,10 @@ function ot:auto_preview()
 
   local window = require('lspsaga.window')
   self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
-
+  -- this is will trigger filetype event
+  -- when 0.9 release use vim.treesitter.start would be better
+  vim.bo[self.preview_bufnr].filetype = vim.bo[self.render_buf].filetype
+  api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
   local events = { 'CursorMoved', 'BufLeave' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(self.bufnr, self.preview_winid, events)
@@ -491,6 +493,13 @@ function ot:outline(quiet)
     vim.notify('[lspsaga.nvim] there already have a request for outline please wait')
     return
   end
+
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
+    clean_ctx()
+    return
+  end
+
   local current_buf = api.nvim_get_current_buf()
   local symbols = get_cache_symbols(current_buf)
   self.group = api.nvim_create_augroup('LspsagaOutline', { clear = true })
