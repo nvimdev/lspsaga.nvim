@@ -1,0 +1,55 @@
+name: Bug Report
+description: Report a problem in Lspsaga
+labels: [bug]
+body:
+
+  - type: textarea
+    attributes:
+      label: "Describe the bug"
+      description: "Describe the current behavior. May include logs, images, or videos."
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Steps to reproduce"
+      description: |
+        - How to reproduce with a min config.
+        - better to provide some example codes which can reproduce.
+      placeholder: |
+        nvim --clean -u min.lua
+        :edit foo
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Expected behavior"
+      description: "Describe the behavior you expect."
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "Neovim version (nvim -v)"
+      placeholder: "0.6.0 commit db1b0ee3b30f"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Operating system/version"
+      placeholder: "macOS 11.5"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Terminal name/version"
+      placeholder: "xterm 3.1"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "$TERM environment variable"
+      placeholder: "xterm-256color"
+    validations:
+      required: true
