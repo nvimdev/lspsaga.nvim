@@ -139,7 +139,7 @@ end
 ---@deprecated
 function saga.init_lsp_saga()
   vim.notify(
-    'lspsaga.nvim version 0.2.3 is breakchange please read doc and use setup function!',
+    'lspsaga.nvim v0.2.3+ has braking changes. Please read the docs and migrate your configuration to the new "setup" function!',
     vim.log.levels.ERROR
   )
 end
