@@ -8,7 +8,7 @@ local subcommands = {
     require('lspsaga.definition'):peek_definition()
   end,
   goto_definition = function()
-    require('lspsaga.definition'):goto_defintion()
+    require('lspsaga.definition'):goto_definition()
   end,
   rename = function()
     require('lspsaga.rename'):lsp_rename()
