@@ -110,7 +110,7 @@ keymap("n", "]E", function()
   require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
 end)
 
--- Outline
+-- Toglle Outline
 keymap("n","<leader>o", "<cmd>Lspsaga outline<CR>")
 
 -- Hover Doc

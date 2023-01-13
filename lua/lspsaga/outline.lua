@@ -487,14 +487,14 @@ function ot:register_events()
   self.registerd = true
 end
 
-function ot:outline(quiet)
-  quiet = quiet or false
-  if self.pending_request and not quiet then
+function ot:outline(no_close)
+  no_close = no_close or false
+  if self.pending_request then
     vim.notify('[lspsaga.nvim] there already have a request for outline please wait')
     return
   end
 
-  if self.winid and api.nvim_win_is_valid(self.winid) then
+  if self.winid and api.nvim_win_is_valid(self.winid) and not no_close then
     api.nvim_win_close(self.winid, true)
     clean_ctx()
     return
@@ -502,7 +502,7 @@ function ot:outline(quiet)
 
   local current_buf = api.nvim_get_current_buf()
   local symbols = get_cache_symbols(current_buf)
-  self.group = api.nvim_create_augroup('LspsagaOutline', { clear = true })
+  self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
   self.render_buf = current_buf
   if not symbols then
     self.pending_request = true
