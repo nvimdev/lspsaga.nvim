@@ -14,15 +14,13 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 [![](https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white)](https://matrix.to/#/#lspsaga-nvim:matrix.org)
 
 1. [Install](#install)
-   - [Lazy](#lazy)
-   - [Packer](#packer)
-1. [Example Configuration](#example-configuration)
-2. [Usage Turtorial](#usage-tutorial)
-3. [Customize Appearance](#customize-appearance)
-4. [Donate](#donate)
-5. [License](#license)
+2. [Example Configuration](#example-configuration)
+3. [Usage Turtorial](#usage-tutorial)
+4. [Customize Appearance](#customize-appearance)
+5. [Donate](#donate)
+6. [License](#license)
 
-## Install
+# Install
 
 you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install `lspsaga` and lazyload by the plugin management keyword.
 
@@ -32,7 +30,7 @@ you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install 
 - `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
 - `after` for packer you can use after keyword.
 
-### Lazy
+## Lazy
 
 ```lua
 require('lazy').setup({
@@ -44,7 +42,7 @@ require('lazy').setup({
 },opt)
 ```
 
-### Packer
+## Packer
 
 ```lua
 use({
@@ -56,7 +54,7 @@ use({
 })
 ```
 
-## Example Configuration
+# Example Configuration
 
 ```lua
 require('laz').setup({
@@ -126,10 +124,10 @@ keymap("n", "<Leader>co", "<cmd>Lspsaga outgoing_calls")
 keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 ```
 
-### Usage Tutorial
+## Usage Tutorial
 **Notice that title in float window must need neovim version >= 0.9**
 
-### default options
+## default options
 
 ```lua
   preview = {
@@ -144,7 +142,7 @@ keymap({"n", "t"} "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 ```
 
 
-### :Lspsaga lsp_finder
+## :Lspsaga lsp_finder
 
 `Finder` to show the defintion,reference,implement(only show when current word is interface or some type)
 
@@ -168,7 +166,7 @@ src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-
 </details>
 
 
-### :Lspsaga peek_definition
+## :Lspsaga peek_definition
 
 there has two commands `Lspsaga peek_defintion` and `Lspsaga goto_defintion`, the `peek_defitnion` work like vscode that show the target file in a floatwindow you can edit as normalize.
 
@@ -198,12 +196,12 @@ the step in this gif show case
 src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga goto_definition
+## :Lspsaga goto_definition
 
 jump to definition and show beacon
 
 
-### :Lspsaga code_action
+## :Lspsaga code_action
 
 options with default value
 
@@ -227,7 +225,7 @@ options with default value
 <img src="https://user-images.githubusercontent.com/41671631/212005522-bc7fa99b-6c6f-4c0e-b7fc-c95edee5c169.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga Lightbulb
+## :Lspsaga Lightbulb
 
 when there has code action it will show a lightbulb, default options.
 
@@ -246,7 +244,7 @@ when there has code action it will show a lightbulb, default options.
 <img src="https://user-images.githubusercontent.com/41671631/212009221-e0fb193e-f69d-4ed6-a4a2-d9ecb589f211.gif" height=80% width=80%/>
 </details>
 
-### :Lspasga hover_doc
+## :Lspasga hover_doc
 
 lspsaga use treesitter markdown parser to render hover. so you must install markdown parser.
 you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. in my case is `K`.
@@ -261,7 +259,7 @@ you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. i
 <img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga diagnostic_jump_next
+## :Lspsaga diagnostic_jump_next
 
 jump to next diagnsotic position then show beacon and show the codeaction. default options
 
@@ -299,7 +297,7 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 </details>
 
 
-### :Lspsaga show_diagnsotic
+## :Lspsaga show_diagnsotic
 
 `show_line_diagnsotic` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
 
@@ -308,7 +306,7 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 <img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga rename
+## :Lspsaga rename
 
 lsp rename with select. default options
 
@@ -329,7 +327,7 @@ lsp rename with select. default options
 <img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga outline
+## :Lspsaga outline
 
 default options
 
@@ -361,7 +359,7 @@ default options
 <img src="https://user-images.githubusercontent.com/41671631/212017018-6753e470-58e4-498e-8812-5ff416ff27c1.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga incoming_calls
+## :Lspsaga incoming_calls
 
 run lsp callhierarchy incoming_calls.  default options
 
@@ -385,7 +383,7 @@ run lsp callhierarchy incoming_calls.  default options
 <img src="https://user-images.githubusercontent.com/41671631/212018219-26ed4a5f-00e1-488a-8a87-1a89f2c5d14b.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga outgoing_calls
+## :Lspsaga outgoing_calls
 
 run lsp callhierarchy outgoing_calls
 
@@ -394,7 +392,7 @@ run lsp callhierarchy outgoing_calls
 <img src="https://user-images.githubusercontent.com/41671631/212024418-cf26f3f7-7acb-46df-a50a-9abe3f8f68f3.gif" height=80% width=80%/>
 </details>
 
-### :Lspsaga symbols in winbar
+## :Lspsaga symbols in winbar
 
 require your neovim version >= 0.8. options with default value
 
@@ -416,7 +414,7 @@ require your neovim version >= 0.8. options with default value
 <img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif" height=80% width=80%/>
 </details>
 
-### :Lspaga symbols in custom winbar/statusline
+## :Lspaga symbols in custom winbar/statusline
 
 lspsaga provide an api that you can use in your custom winbar or statusline.
 
@@ -424,7 +422,7 @@ lspsaga provide an api that you can use in your custom winbar or statusline.
 vim.wo.winbar/ vim.wo.stl = require('lspsaga.symbolwinbar'):get_winbar()
 ```
 
-### :Lspsaga term_toggle
+## :Lspsaga term_toggle
 
 simple floaterm
 
@@ -435,7 +433,7 @@ simple floaterm
 
 ## Customize Appearance
 
-### :Lspsaga UI
+## :Lspsaga UI
 
 default ui options
 
@@ -471,22 +469,22 @@ default ui options
   },
 ```
 
-### Custom Highlight
+# Custom Highlight
 
 you can change the default colors or only change some highlight groups which you want change.
 find all highlight groups in [highlight.lua](./lua/lspsaga/highlight.lua)
 
-### Custom Kind
+# Custom Kind
 
 `kind` field is a table that key is kind name, value is icon, all kind defined in [lspkind.lua](./lua/lspsaga/lspkind.lua)
 
 
-## Donate
+# Donate
 
 [![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
 
 If you'd like to support my work financially, buy me a drink through [paypal](https://paypal.me/bobbyhub).
 
-## License
+# License
 
 Licensed under the [MIT](./LICENSE) license.
