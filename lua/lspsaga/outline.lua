@@ -284,12 +284,12 @@ function ot:auto_refresh()
   api.nvim_create_autocmd('BufEnter', {
     group = self.group,
     callback = function(opt)
-      local ignore = { 'lspsagaoutline', 'terminal', 'help' }
+      local ignore = { 'lspsagaoutline', 'terminal', 'help', 'prompt', 'nofile' }
       if vim.tbl_contains(ignore, vim.bo[opt.buf].filetype) or opt.buf == self.render_buf then
         return
       end
 
-      if vim.bo[opt.buf].buftype == 'prompt' then
+      if vim.tbl_contains(ignore, vim.bo[opt.buf].buftype) then
         return
       end
 
