@@ -416,7 +416,7 @@ function ot:close_when_last()
       if #wins == 1 and vim.bo[opt.buf].filetype ~= 'lspsagaoutline' then
         return
       end
-      api.nvim_buf_delete(self.bufnr, { force = true })
+      -- api.nvim_buf_delete(self.bufnr, { force = true })
       local bufnr = api.nvim_create_buf(true, true)
       api.nvim_win_set_buf(0, bufnr)
       clean_ctx()
