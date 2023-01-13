@@ -35,14 +35,17 @@ local function methods(index)
   return t[index]
 end
 
-local function supports_method(method, buf)
-  local support = true
+local function supports_implement(buf)
+  local support = {}
   for _, client in pairs(lsp.get_active_clients({ bufnr = buf })) do
-    if not client.supports_method(method) then
-      support = false
+    if not client.supports_method(methods(2)) then
+      table.insert(support, false)
     end
   end
-  return support
+  if vim.tbl_contains(support, false) then
+    return false
+  end
+  return true
 end
 
 function finder:lsp_finder()
@@ -59,13 +62,16 @@ function finder:lsp_finder()
 
   local params = lsp.util.make_position_params()
   ---@diagnostic disable-next-line: param-type-mismatch
-  for _, method in pairs(methods()) do
-    if not supports_method(method, self.main_buf) then
-      self.request_result[method] = {}
-      self.request_status[method] = true
-    else
-      self:do_request(params, method)
-    end
+  local meths = methods()
+  if not supports_implement(self.main_buf) then
+    self.request_result[meths[2]] = {}
+    self.request_status[meths[2]] = true
+    ---@diagnostic disable-next-line: param-type-mismatch
+    table.remove(meths, 2)
+  end
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for _, method in pairs(meths) do
+    self:do_request(params, method)
   end
   -- make a spinner
   self:loading_bar()
