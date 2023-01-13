@@ -57,11 +57,11 @@ use({
 # Example Configuration
 
 ```lua
-require('laz').setup({
+require('lazy').setup({
     'glepnir/lspsaga.nvim',
     event = 'BufRead',
     config = function()
-      require('lspaga').setup({})
+      require('lspsaga').setup({})
     end
 })
 
