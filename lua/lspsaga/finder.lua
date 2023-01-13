@@ -281,9 +281,10 @@ function finder:create_finder_contents(result, method)
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     if not api.nvim_buf_is_loaded(bufnr) then
-      vim.opt.eventignore:prepend({ 'FileType' })
+      --TODO: find a better way to avoid trigger autocmd
+      vim.opt.eventignore:append({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
       fn.bufload(bufnr)
-      vim.opt.eventignore:remove({ 'FileType' })
+      vim.opt.eventignore:remove({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
     end
 
     if libs.iswin then

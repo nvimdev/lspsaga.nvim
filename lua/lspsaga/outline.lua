@@ -382,10 +382,15 @@ function ot:auto_preview()
 
   local window = require('lspsaga.window')
   self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
-  -- this is will trigger filetype event
-  -- when 0.9 release use vim.treesitter.start would be better
-  vim.bo[self.preview_bufnr].filetype = vim.bo[self.render_buf].filetype
-  api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
+  if fn.has('nvim-0.9') == 1 then
+    local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.render_buf].filetype)
+    vim.treesitter.start(self.preview_bufnr, lang)
+  else
+    -- this is will trigger filetype event
+    -- when 0.9 release use vim.treesitter.start would be better
+    vim.bo[self.preview_bufnr].filetype = vim.bo[self.render_buf].filetype
+    api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
+  end
   local events = { 'CursorMoved', 'BufLeave' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(self.bufnr, self.preview_winid, events)

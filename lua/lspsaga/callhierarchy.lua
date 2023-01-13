@@ -444,7 +444,10 @@ function ch:get_preview_data()
   local bufnr = vim.uri_to_bufnr(uri)
 
   if not api.nvim_buf_is_loaded(bufnr) then
+    --TODO: find a better way to avoid trigger autocmd
+    vim.opt.eventignore:append({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
     fn.bufload(bufnr)
+    vim.opt.eventignore:remove({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
   end
 
   return { bufnr, range }
