@@ -282,9 +282,9 @@ function libs.scroll_in_preview(bufnr, preview_winid)
 end
 
 function libs.delete_scroll_map(bufnr)
-  local config = require('lspsaga').config_values
-  vim.keymap.del('n', config.scroll_in_preview.scroll_down, { buffer = bufnr })
-  vim.keymap.del('n', config.scroll_in_preview.scroll_up, { buffer = bufnr })
+  local config = require('lspsaga').config
+  vim.keymap.del('n', config.scroll_preview.scroll_down, { buffer = bufnr })
+  vim.keymap.del('n', config.scroll_preview.scroll_up, { buffer = bufnr })
 end
 
 function libs.jump_beacon(bufpos, width)

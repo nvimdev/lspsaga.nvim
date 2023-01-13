@@ -72,7 +72,8 @@ function hover:open_floating_preview(res, opts)
     once = true,
     callback = function()
       if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
-        pcall(libs.delete_scroll_map, bufnr)
+        libs.delete_scroll_map(bufnr)
+        api.nvim_buf_delete(self.preview_bufnr, { force = true })
       end
 
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
@@ -84,6 +85,13 @@ function hover:open_floating_preview(res, opts)
   })
 
   libs.scroll_in_preview(bufnr, self.preview_winid)
+  -- api.nvim_create_autocmd('BufDelete', {
+  --   buffer = self.preview_bufnr,
+  --   once = true,
+  --   callback = function()
+  --     libs.delete_scroll_map(bufnr)
+  --   end,
+  -- })
 end
 
 function hover:handler(result)
