@@ -343,7 +343,7 @@ default options
     custom_sort = nil,
     keys = {
       jump = 'o',
-      expand_collaspe = 'u',
+      expand_collapse = 'u',
       quit = 'q',
     },
   },
@@ -373,7 +373,7 @@ run lsp callhierarchy incoming_calls.  default options
       tabe = 't',
       jump = 'o',
       quit = 'q',
-      expand_collaspe = 'u',
+      expand_collapse = 'u',
     },
   },
 ```
@@ -445,7 +445,7 @@ default ui options
     border = 'solid',
     winblend = 0,
     expand = '',
-    collaspe = '',
+    collapse = '',
     preview = ' ',
     code_action = '💡',
     diagnostic = '🐞',

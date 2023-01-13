@@ -167,8 +167,8 @@ function ot:apply_map()
     clean_ctx()
   end, opt)
 
-  keymap.set('n', maps.expand_collaspe, function()
-    self:expand_collaspe()
+  keymap.set('n', maps.expand_collapse, function()
+    self:expand_collapse()
   end, opt)
 
   keymap.set('n', maps.jump, function()
@@ -212,7 +212,7 @@ function ot:request_and_render(buf)
   end, buf)
 end
 
-function ot:expand_collaspe()
+function ot:expand_collapse()
   local curline = api.nvim_win_get_cursor(0)[1]
   local idx, node = find_node(self.data, curline)
   if not node then
@@ -233,13 +233,13 @@ function ot:expand_collaspe()
 
   if node.expand then
     local text = api.nvim_get_current_line()
-    text = text:gsub(config.ui.collaspe, config.ui.expand)
+    text = text:gsub(config.ui.collapse, config.ui.expand)
     for _, v in pairs(node.data) do
       v.winline = -1
     end
     api.nvim_buf_set_lines(self.bufnr, curline - 1, curline + #node.data, false, { text })
     node.expand = false
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'SagaCollaspe', curline - 1, 0, 5)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'SagaCollapse', curline - 1, 0, 5)
     api.nvim_buf_add_highlight(
       self.bufnr,
       0,
@@ -254,7 +254,7 @@ function ot:expand_collaspe()
 
   local lines = {}
   local text = api.nvim_get_current_line()
-  text = text:gsub(config.ui.expand, config.ui.collaspe)
+  text = text:gsub(config.ui.expand, config.ui.collapse)
   insert(lines, text)
   for i, v in pairs(node.data) do
     insert(lines, v.name)
@@ -426,9 +426,9 @@ function ot:render_outline(buf, symbols)
 
   for k, v in pairs(res) do
     local scope = {}
-    local indent_with_icon = '  ' .. config.ui.collaspe
+    local indent_with_icon = '  ' .. config.ui.collapse
     insert(lines, indent_with_icon .. ' ' .. kind[k][1])
-    scope['SagaCollaspe'] = { 0, #indent_with_icon }
+    scope['SagaCollapse'] = { 0, #indent_with_icon }
     scope[prefix .. kind[k][1]] = { #indent_with_icon, -1 }
     insert(hi, scope)
     v.winline = #lines
