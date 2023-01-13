@@ -55,8 +55,8 @@ function hover:open_floating_preview(res, opts)
   vim.wo[self.preview_winid].conceallevel = 2
   vim.wo[self.preview_winid].concealcursor = 'niv'
   vim.wo[self.preview_winid].showbreak = 'NONE'
-  vim.wo[self.preview_winid].fillchars = 'lastline: '
   if fn.has('nvim-0.9') == 1 then
+    vim.wo[self.preview_winid].fcs = 'lastline: '
     vim.treesitter.start(self.preview_bufnr, 'markdown')
   end
 
@@ -70,13 +70,13 @@ function hover:open_floating_preview(res, opts)
     buffer = bufnr,
     once = true,
     callback = function()
-      if api.nvim_buf_is_loaded(self.preview_bufnr) then
+      if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
         pcall(libs.delete_scroll_map, bufnr)
       end
 
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
         api.nvim_win_close(self.preview_winid, true)
-        self.preview_winid = nil
+        self:remove_data()
       end
     end,
     desc = '[Lspsaga] Auto close hover window',
@@ -106,6 +106,14 @@ function hover:do_request()
   end)
 end
 
+function hover:remove_data()
+  for k, v in pairs(self) do
+    if type(v) ~= 'function' then
+      self[k] = nil
+    end
+  end
+end
+
 function hover:render_hover_doc()
   local has_parser = api.nvim_get_runtime_file('parser/markdown.so', true)
   if #has_parser == 0 then
@@ -118,6 +126,7 @@ function hover:render_hover_doc()
 
   if hover.preview_winid and api.nvim_win_is_valid(hover.preview_winid) then
     api.nvim_set_current_win(hover.preview_winid)
+    self:remove_data()
     return
   end
 
