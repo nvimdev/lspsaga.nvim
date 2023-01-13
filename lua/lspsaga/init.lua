@@ -136,4 +136,12 @@ function saga.setup(opts)
   end
 end
 
+---@deprecated
+function saga.init_lsp_saga()
+  vim.notify(
+    'lspsaga.nvim version 0.2.3 is breakchange please read doc and use setup function!',
+    vim.log.levels.ERROR
+  )
+end
+
 return saga
