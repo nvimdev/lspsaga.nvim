@@ -582,7 +582,18 @@ function finder:auto_open_preview()
   if not self.short_link[current_line] then
     return
   end
-  local content = self.short_link[current_line].preview or {}
+
+  local content
+  local table_length = vim.tbl_count(self.short_link[current_line].preview)
+
+  if
+    table_length == 0 or (self.short_link[current_line].preview[1] == '' and table_length == 1)
+  then
+    content = { 'the file is empty' }
+  else
+    content = self.short_link[current_line].preview
+  end
+
   local start_pos = self.short_link[current_line].col
   local _end_col = self.short_link[current_line]._end_col
 
@@ -679,14 +690,16 @@ function finder:auto_open_preview()
           break
         end
       end
-      api.nvim_buf_add_highlight(
-        self.preview_bufnr,
-        self.preview_hl_ns,
-        'finderPreviewSearch',
-        0 + config.preview.lines_above - trimLines,
-        start_pos - 1,
-        _end_col
-      )
+      if 0 + config.preview_lines_above - trimLines >= 0 then
+        api.nvim_buf_add_highlight(
+          self.preview_bufnr,
+          self.preview_hl_ns,
+          'finderPreviewSearch',
+          0 + config.preview.lines_above - trimLines,
+          start_pos - 1,
+          _end_col
+        )
+      end
     end, 10)
   end
 end
