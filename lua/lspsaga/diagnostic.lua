@@ -451,8 +451,10 @@ function diag:show(entrys, arg, type)
   local window = require('lspsaga.window')
   local len = {}
   for index, entry in pairs(entrys) do
+    local start_col = entry.end_col > entry.col and entry.col or entry.end_col
+    local end_col = entry.end_col > entry.col and entry.end_col or entry.col
     local code_source =
-      api.nvim_buf_get_text(entry.bufnr, entry.lnum, entry.col, entry.lnum, entry.end_col, {})
+      api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
     local line = '['
       .. index
