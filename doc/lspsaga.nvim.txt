@@ -103,11 +103,11 @@ PACKER                                                   *lspsaga.nvim-packer*
 2. Example Configuration                  *lspsaga.nvim-example-configuration*
 
 >
-    require('laz').setup({
+    require('lazy').setup({
         'glepnir/lspsaga.nvim',
         event = 'BufRead',
         config = function()
-          require('lspaga').setup({})
+          require('lspsaga').setup({})
         end
     })
     
