@@ -247,18 +247,224 @@ function rename:lsp_rename()
   do_prepare_rename(try_to_rename)
 end
 
+local context = {}
+
+local function get_lsp_result()
+  local original = lsp.handlers['textDocument/rename']
+  lsp.handlers['textDocument/rename'] = lsp.with(function(_, result, ctx, config)
+    if not result or not result.changes then
+      return
+    end
+    for uri, data in pairs(result.changes) do
+      if not context[uri] then
+        context[uri] = {}
+      end
+      table.insert(context[uri], data.range)
+    end
+    original(_, result, ctx, config)
+  end, {})
+end
+
 function rename:do_rename()
   local new_name = vim.trim(api.nvim_get_current_line())
   self:close_rename_win()
   local current_name = vim.fn.expand('<cword>')
+  local current_buf = api.nvim_get_current_buf()
   if not (new_name and #new_name > 0) or new_name == current_name then
     return
   end
   local current_win = api.nvim_get_current_win()
   api.nvim_win_set_cursor(current_win, self.pos)
+  get_lsp_result()
   lsp.buf.rename(new_name)
-  api.nvim_win_set_cursor(current_win, { self.pos[1], self.pos[2] + 1 })
+  local lnum, col = unpack(self.pos)
   self.pos = nil
+  api.nvim_win_set_cursor(current_win, { lnum, col + 1 })
+  if config.rename.whole_project and fn.executable('rg') == 1 then
+    local timer = uv.new_timer()
+    timer:start(
+      0,
+      5,
+      vim.schedule_wrap(function()
+        if vim.tbl_count(context) > 0 and not timer:is_closing() then
+          self:whole_project(current_buf, current_name, lnum)
+          timer:stop()
+          timer:close()
+        end
+      end)
+    )
+  end
 end
 
+function rename:p_preview()
+  if self.pp_winid and api.nvim_win_is_valid(self.pp_winid) then
+    api.nvim_win_close(self.pp_winid, true)
+  end
+  local lnum = api.nvim_win_get_cursor(0)[1]
+  local lines = {}
+  for _, data in pairs(context) do
+    if data[1].winline == lnum then
+      for _, item in pairs(data) do
+        local tbl = api.nvim_buf_get_lines(item.bufnr, item.lnum - 1, item.lnum, false)
+        vim.list_extend(lines, tbl)
+      end
+    end
+  end
+
+  local win_conf = api.nvim_win_get_config(self.p_winid)
+
+  local opt = {}
+  opt.relative = 'editor'
+  if win_conf.anchor:find('^N') then
+    if win_conf.row[false] - #lines > 0 then
+      opt.row = win_conf.row[false]
+      opt.anchor = win_conf.anchor:gsub('N', 'S')
+    else
+      opt.row = win_conf.row[false] + win_conf.height + 3
+      opt.anchor = win_conf.anchor
+    end
+  else
+    if win_conf.row[false] - win_conf.height - #lines - 4 > 0 then
+      opt.row = win_conf.row[false] - win_conf.height - 4
+      opt.anchor = win_conf.anchor
+    else
+      opt.row = win_conf.row[false]
+      opt.anchor = win_conf.anchor:gsub('S', 'N')
+    end
+  end
+  opt.col = win_conf.col[false]
+  local max_width = math.floor(vim.o.columns * 0.4)
+  opt.width = win_conf.width < max_width and max_width or win_conf.width
+  opt.height = #lines
+  opt.no_size_override = true
+  print(vim.inspect(opt))
+  -- self.pp_bufnr, self.pp_winid = window.create_win_with_border({
+  --   contents = lines,
+  --   highlight = {
+  --     normal = 'RenameNormal',
+  --     border = 'RenameBorder',
+  --   },
+  -- }, opt)
+end
+
+function rename:popup_win(lines)
+  local opt = {}
+  local max_len = window.get_max_content_length(lines)
+  local max_width = window.get_max_float_width()
+  if max_width - max_len > 10 then
+    opt.width = max_len + 5
+  end
+
+  local max_height = math.floor(vim.o.lines * 0.3)
+  opt.height = max_height > #context and max_height or #context
+  opt.no_size_override = true
+
+  self.p_bufnr, self.p_winid = window.create_win_with_border({
+    contents = lines,
+    enter = true,
+    buftype = 'nofile',
+    highlight = {
+      normal = 'RenameNormal',
+      border = 'RenameBorder',
+    },
+  }, opt)
+
+  api.nvim_create_autocmd('CursorMoved', {
+    buffer = self.p_bufnr,
+    callback = function()
+      vim.defer_fn(function()
+        self:p_preview()
+      end, 10)
+    end,
+  })
+end
+
+local function check_in(uri, lnum)
+  if not context[uri] then
+    return
+  end
+  for _, item in pairs(context[uri]) do
+    if item.start.line + 1 == lnum then
+      return true
+    end
+  end
+  return false
+end
+
+function rename:whole_project(cur_buf, cur_name, lnum)
+  local root_dir = lsp.get_active_clients({ bufnr = cur_buf })[1].config.root_dir
+  if not root_dir then
+    return
+  end
+  local stdout = uv.new_pipe(false)
+  local stderr = uv.new_pipe(false)
+  local stdin = uv.new_pipe(false)
+
+  local function safe_close(handle)
+    if not uv.is_closing(handle) then
+      uv.close(handle)
+    end
+  end
+
+  local handle, pid
+  handle, pid = uv.spawn('rg', {
+    args = { cur_name, root_dir, '--json' },
+    stdio = { stdin, stdout, stderr },
+  }, function(_, _)
+    print(pid .. ' exit')
+    uv.read_stop(stdout)
+    uv.read_stop(stderr)
+    safe_close(handle)
+    safe_close(stdout)
+    safe_close(stderr)
+  end)
+
+  local res = {}
+  uv.read_start(
+    stdout,
+    vim.schedule_wrap(function(err, data)
+      assert(not err, err)
+      if data then
+        local tbl = vim.split(data, '\n', { trimempty = true })
+        for _, v in pairs(tbl) do
+          local tmp = vim.json.decode(v)
+          if
+            tmp.type == 'match'
+            and vim.tbl_get(tmp, 'data', 'path', 'text')
+            and not check_in(vim.uri_from_fname(tmp.data.path.text), tmp.line_number)
+          then
+            table.insert(res, tmp)
+          end
+        end
+        -- clean
+        context = {}
+
+        local lines = {}
+        for i, item in pairs(res) do
+          local uri = vim.uri_from_fname(item.data.path.text)
+          local short = item.data.path.text:gsub(root_dir, '')
+          table.insert(lines, short)
+          local bufnr = vim.uri_to_bufnr(uri)
+          if not api.nvim_buf_is_loaded(bufnr) then
+            -- avoid lsp attached this buffer
+            vim.opt.eventignore:append({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
+            fn.bufload(bufnr)
+            vim.opt.eventignore:remove({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
+            if not context[uri] then
+              context[uri] = {}
+            end
+            table.insert(context[uri], {
+              bufnr = bufnr,
+              lnum = item.data.line_number,
+              submatches = item.data.submatches,
+              winline = i,
+            })
+          end
+        end
+
+        self:popup_win(lines)
+      end
+    end)
+  )
+end
 return rename

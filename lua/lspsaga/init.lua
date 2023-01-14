@@ -75,6 +75,7 @@ local default_config = {
     quit = '<C-c>',
     exec = '<CR>',
     in_select = true,
+    whole_project = true,
   },
   symbol_in_winbar = {
     enable = true,
