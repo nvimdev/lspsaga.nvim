@@ -23,9 +23,9 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 
 # Install
 
-you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install `lspsaga` and lazyload by the plugin management keyword.
+you can use some plugins management like `lazy.nvim`, `packer.nvim` to install `lspsaga` and lazyload by the plugin management keyword.
 
-- `cmd` lazylod by `lspsaga` command
+- `cmd` lazyload by `lspsaga` command
 - `ft`  lazy.nvim and packer both provide lazyload by filetype. then you can load the lspsaga according the filetypes which you write and use lsp.
 - `event` lazyload by event like `BufRead,BufReadPost` make sure your lsp plugin also loaded.
 - `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
