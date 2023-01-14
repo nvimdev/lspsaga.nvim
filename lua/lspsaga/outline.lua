@@ -423,7 +423,7 @@ function ot:close_when_last()
 
       local both_nofile = {}
       for _, buf in pairs(bufs) do
-        if buf ~= self.bufnr and vim.bo[buf].buftype == 'nofile' or #vim.bo[buf].buftype == 0 then
+        if buf ~= self.bufnr and (vim.bo[buf].buftype == 'nofile' or #vim.bo[buf].buftype == 0) then
           table.insert(both_nofile, true)
         end
       end
