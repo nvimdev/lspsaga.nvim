@@ -13,8 +13,8 @@ local subcommands = {
   rename = function()
     require('lspsaga.rename'):lsp_rename()
   end,
-  hover_doc = function()
-    require('lspsaga.hover'):render_hover_doc()
+  hover_doc = function(arg)
+    require('lspsaga.hover'):render_hover_doc(arg)
   end,
   show_cursor_diagnostics = function()
     require('lspsaga.diagnostic'):show_diagnostics(arg, 'cursor')

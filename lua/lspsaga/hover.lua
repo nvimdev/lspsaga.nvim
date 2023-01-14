@@ -13,7 +13,16 @@ function hover:open_floating_preview(res, opts)
   local bufnr = api.nvim_get_current_buf()
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
-  local content = vim.split(res.value, '\n', { trimempty = true })
+  local content = {}
+  if res.value then
+    content = vim.split(res.value, '\n', { trimempty = true })
+  elseif vim.tbl_islist(res) then
+    for _, item in pairs(res) do
+      for _, v in pairs(vim.split(item, '\n', { trimempty = true }) or {}) do
+        table.insert(content, v)
+      end
+    end
+  end
   content = vim.tbl_filter(function(s)
     return #s > 0
   end, content)
@@ -87,14 +96,17 @@ function hover:open_floating_preview(res, opts)
   libs.scroll_in_preview(bufnr, self.preview_winid)
 end
 
-function hover:do_request()
+function hover:do_request(arg)
   local params = util.make_position_params()
   lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
+
     if not result or not result.contents or next(result.contents) == nil then
-      vim.notify('No information available')
+      if not arg or arg ~= '++quiet' then
+        vim.notify('No information available')
+      end
       return
     end
     self:open_floating_preview(result.contents)
@@ -109,7 +121,7 @@ function hover:remove_data()
   end
 end
 
-function hover:render_hover_doc()
+function hover:render_hover_doc(arg)
   local has_parser = api.nvim_get_runtime_file('parser/markdown.so', true)
   if #has_parser == 0 then
     vim.notify(
@@ -129,7 +141,7 @@ function hover:render_hover_doc()
     return
   end
 
-  self:do_request()
+  self:do_request(arg)
 end
 
 return hover

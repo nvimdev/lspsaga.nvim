@@ -114,6 +114,8 @@ end)
 keymap("n","<leader>o", "<cmd>Lspsaga outline<CR>")
 
 -- Hover Doc
+-- if there has no hover will have a notify no information available
+-- to disable it just Lspsaga hover_doc ++quiet
 keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>")
 
 -- Callhierarchy
