@@ -62,7 +62,13 @@ local function get_kind(colors)
         vim.notify('[lspsaga.nvim] not found kind in default')
         return
       end
-      kind[index][2] = v
+      if type(v) == 'table' then
+        kind[index][2], kind[index][3] = unpack(v)
+      elseif type(v) == 'string' then
+        kind[index][2] = v
+      else
+        vim.notify('[Lspsaga.nvim] value must be string or table')
+      end
     end
   end
 

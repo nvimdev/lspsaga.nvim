@@ -484,7 +484,9 @@ find all highlight groups in [highlight.lua](./lua/lspsaga/highlight.lua)
 
 # Custom Kind
 
-`kind` field is a table that key is kind name, value is icon, all kind defined in [lspkind.lua](./lua/lspsaga/lspkind.lua)
+through `ui.kind` to modified the all kinds defined in [lspkind.lua](./lua/lspsaga/lspkind.lua)
+the key in `ui.kind` is kind name, value can be string or table if string type is icon if table type
+is `{icon, color}`.
 
 
 # Donate
