@@ -215,8 +215,8 @@ end
 
 function finder:render_finder()
   self.root_dir = libs.get_lsp_root_dir()
-  self.contents = {}
   self.short_link = {}
+  self.contents = {}
 
   local lnum, start_lnum = 0, 0
 
@@ -237,9 +237,13 @@ function finder:render_finder()
   end
 
   ---@diagnostic disable-next-line: param-type-mismatch
-  for _, method in pairs(methods()) do
+  for i, method in pairs(methods()) do
+    if i == 2 and #self.request_result[method] == 0 then
+      goto skip
+    end
     local tbl = self:create_finder_contents(self.request_result[method], method)
     generate_contents(tbl, method)
+    ::skip::
   end
   self:render_finder_result()
 end
@@ -255,9 +259,6 @@ local function get_msg(method)
 end
 
 function finder:create_finder_contents(result, method)
-  if (not result or vim.tbl_isempty(result)) and method == methods(2) then
-    return
-  end
   self:get_file_icon()
 
   local contents = {}
