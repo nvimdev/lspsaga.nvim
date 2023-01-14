@@ -1,5 +1,6 @@
 local lsp, api, fn = vim.lsp, vim.api, vim.fn
 local config = require('lspsaga').config.symbol_in_winbar
+local libs = require('lspsaga.libs')
 local symbar = {}
 
 local cache = {}
@@ -22,16 +23,33 @@ local function get_kind_icon(type, index)
   return kind[type][index]
 end
 
+local function respect_lsp_root(buf)
+  local clients = lsp.get_active_clients({ bufnr = buf })
+  if #clients == 0 then
+    return
+  end
+  local root_dir = clients[1].config.root_dir
+  local parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
+  local bufname = api.nvim_buf_get_name(buf)
+  local bufname_parts = vim.split(bufname, libs.path_sep, { trimempty = true })
+  return { unpack(bufname_parts, #parts + 1) }
+end
+
 local function bar_file_name(buf)
-  local libs = require('lspsaga.libs')
-  local res = libs.get_path_info(buf, config.folder_level)
+  local res
+  if config.respect_root then
+    res = respect_lsp_root()
+  end
+
+  --fallback to config.folder_level
   if not res then
+    res = libs.get_path_info(buf, config.folder_level)
+  end
+
+  if not res or #res == 0 then
     return
   end
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
-  if #res == 0 then
-    return ''
-  end
   local str = ''
   local f_icon = data and data[1] and data[1] .. ' ' or ''
   local f_hl = data and data[2] and data[2] or ''

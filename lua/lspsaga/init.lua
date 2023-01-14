@@ -82,6 +82,7 @@ local default_config = {
     hide_keyword = true,
     show_file = true,
     folder_level = 2,
+    respect_root = false,
   },
   outline = {
     win_position = 'right',
