@@ -481,7 +481,8 @@ default ui options
 
 # Custom Highlight
 
-you can change the default colors or only change some highlight groups which you want change.
+If you don't like config the colors or you use switch colorschem according time then you can use 
+the old way. change the highlight group in your colorscheme or config.
 find all highlight groups in [highlight.lua](./lua/lspsaga/highlight.lua)
 
 # Custom Kind
@@ -490,6 +491,10 @@ through `ui.kind` to modified the all kinds defined in [lspkind.lua](./lua/lspsa
 the key in `ui.kind` is kind name, value can be string or table if string type is icon if table type
 is `{icon, color}`.
 
+# Backers
+Thanks for all!!
+[@Bojan Wilytsch](https://github.com/bwilytsch)
+[@HendrikPetertje](https://github.com/HendrikPetertje)
 
 # Donate
 
