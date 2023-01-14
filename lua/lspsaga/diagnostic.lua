@@ -420,7 +420,11 @@ function diag:move_cursor(entry)
     -- Save position in the window's jumplist
     vim.cmd("normal! m'")
     api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
-    ctx.libs.jump_beacon({ entry.lnum, entry.col }, entry.end_col - entry.col)
+    local width = entry.end_col - entry.col
+    if width == 0 then
+      width = #api.nvim_get_current_line()
+    end
+    ctx.libs.jump_beacon({ entry.lnum, entry.col }, width)
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
