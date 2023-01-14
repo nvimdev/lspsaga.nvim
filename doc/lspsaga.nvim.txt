@@ -56,8 +56,9 @@ title=''/> <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 2. |lspsaga.nvim-example-configuration|
 3. |lspsaga.nvim-usage-turtorial|
 4. |lspsaga.nvim-customize-appearance|
-5. |lspsaga.nvim-donate|
-6. |lspsaga.nvim-license|
+5. |lspsaga.nvim-backers|
+6. |lspsaga.nvim-donate|
+7. |lspsaga.nvim-license|
 
 
 ==============================================================================
@@ -555,7 +556,9 @@ string or table if string type is icon if table type is `{icon, color}`.
 ==============================================================================
 5. Backers                                              *lspsaga.nvim-backers*
 
-Thanks for all!! Boja Wilytsch <https://github.com/bwilytsch> HendrikPetertj
+Thanks for all.
+
+Boja Wilytsch <https://github.com/bwilytsch> HendrikPetertj
 <https://github.com/HendrikPetertje>
 
 ==============================================================================
