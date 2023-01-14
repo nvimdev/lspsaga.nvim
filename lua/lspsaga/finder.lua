@@ -750,7 +750,7 @@ function finder:open_link(action)
     vim.cmd('write')
   end
   vim.cmd(action .. ' ' .. uv.fs_realpath(short_link[current_line].link))
-  api.nvim_win_set_cursor(0, { short_link[current_line].row, short_link[current_line].col })
+  api.nvim_win_set_cursor(0, { short_link[current_line].row, short_link[current_line].col - 1 })
   local width = #api.nvim_get_current_line()
   libs.jump_beacon({ short_link[current_line].row - 1, 0 }, width)
   self:clear_tmp_data()
