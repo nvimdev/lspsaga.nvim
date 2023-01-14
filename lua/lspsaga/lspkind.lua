@@ -59,7 +59,7 @@ local function get_kind(colors)
     for k, v in pairs(ui.kind) do
       local index = find_index_by_type(k)
       if not index then
-        vim.notif('[lspsaga.nvim] not found kind in default')
+        vim.notify('[lspsaga.nvim] not found kind in default')
         return
       end
       kind[index][2] = v
