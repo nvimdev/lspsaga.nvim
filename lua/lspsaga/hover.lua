@@ -26,8 +26,14 @@ function hover:open_floating_preview(res, opts)
 
   local new = {}
   for _, line in pairs(content) do
-    if line:find('&nbsp') then
-      line = line:gsub('&nbsp', ' ')
+    if line:find('&nbsp;') then
+      line = line:gsub('&nbsp;', ' ')
+    end
+    if line:find('&lt;') then
+      line = line:gsub('&lt;', '<')
+    end
+    if line:find('&gt;') then
+      line = line:gsub('&gt;', '>')
     end
     if line:find('<pre>') then
       line = line:gsub('<pre>', '```')
