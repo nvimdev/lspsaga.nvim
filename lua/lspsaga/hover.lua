@@ -23,9 +23,23 @@ function hover:open_floating_preview(res, opts)
       end
     end
   end
-  content = vim.tbl_filter(function(s)
-    return #s > 0
-  end, content)
+
+  local new = {}
+  for _, line in pairs(content) do
+    if line:find('&nbsp') then
+      line = line:gsub('&nbsp', ' ')
+    end
+    if line:find('<pre>') then
+      line = line:gsub('<pre>', '```')
+    end
+    if line:find('</pre>') then
+      line = line:gsub('</pre>', '```')
+    end
+    if #line > 0 then
+      table.insert(new, line)
+    end
+  end
+  content = new
 
   local window = require('lspsaga.window')
   local libs = require('lspsaga.libs')
@@ -103,18 +117,18 @@ function hover:do_request(arg)
       return
     end
 
-    if type(result.contents) == 'string' then
-      result.contents = {
-        kind = 'markdown',
-        value = result.contents,
-      }
-    end
-
     if not result or not result.contents or next(result.contents) == nil then
       if not arg or arg ~= '++quiet' then
         vim.notify('No information available')
       end
       return
+    end
+
+    if type(result.contents) == 'string' then
+      result.contents = {
+        kind = 'markdown',
+        value = result.contents,
+      }
     end
     self:open_floating_preview(result.contents)
   end)
