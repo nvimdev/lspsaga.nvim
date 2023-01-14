@@ -17,8 +17,9 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 2. [Example Configuration](#example-configuration)
 3. [Usage Turtorial](#usage-tutorial)
 4. [Customize Appearance](#customize-appearance)
-5. [Donate](#donate)
-6. [License](#license)
+5. [Backers](#backers)
+6. [Donate](#donate)
+7. [License](#license)
 
 # Install
 
@@ -492,7 +493,8 @@ the key in `ui.kind` is kind name, value can be string or table if string type i
 is `{icon, color}`.
 
 # Backers
-Thanks for all!!
+Thanks for all.
+
 [@Bojan Wilytsch](https://github.com/bwilytsch)
 [@HendrikPetertje](https://github.com/HendrikPetertje)
 
