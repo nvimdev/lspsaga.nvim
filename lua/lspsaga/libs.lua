@@ -27,7 +27,7 @@ function libs.icon_from_devicon(ft, color)
   if not libs.devicons then
     local ok, devicons = pcall(require, 'nvim-web-devicons')
     if not ok then
-      return {}
+      return { ' ', ' ' }
     end
     libs.devicons = devicons
   end
