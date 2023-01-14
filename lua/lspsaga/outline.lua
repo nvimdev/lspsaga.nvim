@@ -408,7 +408,7 @@ end
 function ot:close_when_last()
   api.nvim_create_autocmd('BufEnter', {
     group = self.group,
-    callback = function()
+    callback = function(opt)
       local wins = api.nvim_list_wins()
       if #wins > 2 then
         return
@@ -428,6 +428,7 @@ function ot:close_when_last()
         end
       end
 
+      print(opt.buf, 'here')
       if #both_nofile + 1 == #bufs or #wins == 1 then
         api.nvim_buf_delete(self.bufnr, { force = true })
       end
@@ -491,17 +492,15 @@ function ot:render_outline(buf, symbols)
     end
   end
   self:apply_map()
-end
 
-function ot:register_events()
-  api.nvim_create_autocmd('BufDelete', {
-    group = self.group,
-    buffer = self.bufnr,
-    callback = function()
+  api.nvim_buf_attach(self.bufnr, false, {
+    on_detach = function()
       clean_ctx()
     end,
   })
+end
 
+function ot:register_events()
   if outline_conf.auto_close then
     self:close_when_last()
   end
