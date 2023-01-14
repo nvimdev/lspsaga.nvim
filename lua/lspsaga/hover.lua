@@ -103,6 +103,13 @@ function hover:do_request(arg)
       return
     end
 
+    if type(result.contents) == 'string' then
+      result.contents = {
+        kind = 'markdown',
+        value = result.contents,
+      }
+    end
+
     if not result or not result.contents or next(result.contents) == nil then
       if not arg or arg ~= '++quiet' then
         vim.notify('No information available')
