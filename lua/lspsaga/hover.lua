@@ -93,7 +93,7 @@ function hover:do_request()
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
-    if not (result and result.contents) then
+    if not result or not result.contents or next(result.contents) == nil then
       vim.notify('No information available')
       return
     end
