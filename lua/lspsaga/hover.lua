@@ -85,33 +85,19 @@ function hover:open_floating_preview(res, opts)
   })
 
   libs.scroll_in_preview(bufnr, self.preview_winid)
-  -- api.nvim_create_autocmd('BufDelete', {
-  --   buffer = self.preview_bufnr,
-  --   once = true,
-  --   callback = function()
-  --     libs.delete_scroll_map(bufnr)
-  --   end,
-  -- })
-end
-
-function hover:handler(result)
-  if not result.contents then
-    vim.notify('No information available')
-    return
-  end
-  self:open_floating_preview(result.contents)
 end
 
 function hover:do_request()
   local params = util.make_position_params()
-  lsp.buf_request_all(0, 'textDocument/hover', params, function(results)
-    local result = {}
-    for _, res in pairs(results) do
-      if res and res.result and res.result.contents then
-        result = res.result
-      end
+  lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
+    if api.nvim_get_current_buf() ~= ctx.bufnr then
+      return
     end
-    self:handler(result)
+    if not (result and result.contents) then
+      vim.notify('No information available')
+      return
+    end
+    self:open_floating_preview(result.contents)
   end)
 end
 
