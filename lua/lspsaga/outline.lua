@@ -423,13 +423,12 @@ function ot:close_when_last()
 
       local both_nofile = {}
       for _, buf in pairs(bufs) do
-        if buf ~= self.bufnr and vim.bo[buf].buftype == 'nofile' then
+        if buf ~= self.bufnr and vim.bo[buf].buftype == 'nofile' or #vim.bo[buf].buftype == 0 then
           table.insert(both_nofile, true)
         end
       end
 
-      print(opt.buf, 'here')
-      if #both_nofile + 1 == #bufs or #wins == 1 then
+      if #both_nofile + 1 == #bufs then
         api.nvim_buf_delete(self.bufnr, { force = true })
       end
 
