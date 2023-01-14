@@ -156,7 +156,7 @@ end
 
 function ot:apply_map()
   local maps = outline_conf.keys
-  local opt = { buffer = true, nowait = true }
+  local opt = { buffer = self.bufnr, nowait = true }
   keymap.set('n', maps.quit, function()
     if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
       api.nvim_buf_delete(self.bufnr, { force = true })
