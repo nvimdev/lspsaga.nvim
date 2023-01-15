@@ -240,21 +240,21 @@ function rename:do_rename()
   local lnum, col = unpack(self.pos)
   self.pos = nil
   api.nvim_win_set_cursor(current_win, { lnum, col + 1 })
-  -- local root_dir = lsp.get_active_clients({ bufnr = current_buf })[1].config.root_dir
-  -- if config.rename.whole_project and fn.executable('rg') == 1 and root_dir then
-  --   local timer = uv.new_timer()
-  --   timer:start(
-  --     0,
-  --     5,
-  --     vim.schedule_wrap(function()
-  --       if vim.tbl_count(context) > 0 and not timer:is_closing() then
-  --         self:whole_project(current_name, new_name, root_dir)
-  --         timer:stop()
-  --         timer:close()
-  --       end
-  --     end)
-  --   )
-  -- end
+  local root_dir = lsp.get_active_clients({ bufnr = current_buf })[1].config.root_dir
+  if config.rename.whole_project and fn.executable('rg') == 1 and root_dir then
+    local timer = uv.new_timer()
+    timer:start(
+      0,
+      5,
+      vim.schedule_wrap(function()
+        if vim.tbl_count(context) > 0 and not timer:is_closing() then
+          self:whole_project(current_name, new_name, root_dir)
+          timer:stop()
+          timer:close()
+        end
+      end)
+    )
+  end
 end
 
 function rename:p_preview()
