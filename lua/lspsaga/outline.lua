@@ -331,15 +331,19 @@ function ot:auto_preview()
       break
     end
   end
+  if not node then
+    return
+  end
 
-  if not node or not node.range then
+  local range = node.location and node.location.range or node.range
+  if not range then
     return
   end
 
   local content = api.nvim_buf_get_lines(
     self.render_buf,
-    node.range.start.line,
-    node.range['end'].line + config.preview.lines_below,
+    range.start.line,
+    range['end'].line + config.preview.lines_below,
     false
   )
 

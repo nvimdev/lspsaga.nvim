@@ -81,7 +81,6 @@ local do_symbol_request = function(buf, callback)
   buf = buf or api.nvim_get_current_buf()
   local params = { textDocument = lsp.util.make_text_document_params() }
 
-  local libs = require('lspsaga.libs')
   local client = libs.get_client_by_cap('documentSymbolProvider')
   if client == nil then
     return
@@ -91,8 +90,8 @@ local do_symbol_request = function(buf, callback)
 end
 
 local function get_node_range(node)
-  if node.localtion then
-    return node.localtion.range
+  if node.location then
+    return node.location.range
   end
 
   if node.range then
@@ -293,7 +292,7 @@ function symbar:init_buf_symbols(buf, render_fn)
     return
   end
 
-  if not res.symbols then
+  if not res.symbols or (next(res.symbols) == nil and not res.pending_request) then
     self:refresh_symbol_cache(buf, render_fn)
   else
     render_fn(buf, res.symbols)
