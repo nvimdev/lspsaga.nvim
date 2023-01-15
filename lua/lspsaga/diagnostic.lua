@@ -226,6 +226,7 @@ function diag:render_diagnostic_window(entry, option)
     contents = ctx.libs.generate_empty_table(#content + 1),
     border = 'none',
     buftype = 'nofile',
+    filetype = 'diagvirt',
     highlight = {
       normal = 'SagaVirtNormal',
     },
