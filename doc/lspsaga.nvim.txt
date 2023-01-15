@@ -581,8 +581,8 @@ Boja Wilytsch <https://github.com/bwilytsch> HendrikPetertj
 src='https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white'
 title=''/> <https://paypal.me/bobbyhub>
 
-If you’d like to support my work financially, buy me a drink through paypal
-<https://paypal.me/bobbyhub>.
+Currently I need some donate. If you’d like to support my work financially,
+donate through paypal <https://paypal.me/bobbyhub>. Thanks!
 
 ==============================================================================
 7. License                                              *lspsaga.nvim-license*
