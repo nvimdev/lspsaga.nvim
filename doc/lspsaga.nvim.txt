@@ -371,12 +371,22 @@ show diangostics show case
 lsp rename with select. default options
 
 >
+    
       rename = {
         quit = '<C-c>',
         exec = '<CR>',
+        mark = 'x',
+        confirm = '<CR>',
         in_select = true,
+        whole_project = true,
       },
 <
+
+
+
+- `whole_project` support rename whole project after using lsp rename by `rg`.
+- `mark` after lsp rename if there still have this word in project then wil popup a window that inclue the files which include the word.then you can use this key mark the line that you want changed.
+- `confirm` when you markd the lines then press this keymap to execute.
 
 
 rename show case
