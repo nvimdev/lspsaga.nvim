@@ -90,12 +90,21 @@ function act:action_callback()
   end
 end
 
+local function map_keys(mode, keys, action, options)
+  if type(keys) == 'string' then
+    keys = { keys }
+  end
+  for _, key in ipairs(keys) do
+    vim.keymap.set(mode, key, action, options)
+  end
+end
+
 function act:apply_action_keys()
-  vim.keymap.set('n', config.code_action.keys.exec, function()
+  map_keys('n', config.code_action.keys.exec, function()
     self:do_code_action()
   end, { buffer = self.action_bufnr })
 
-  vim.keymap.set('n', config.code_action.keys.quit, function()
+  map_keys('n', config.code_action.keys.quit, function()
     self:quit_action_window()
   end, { buffer = self.action_bufnr })
 end
