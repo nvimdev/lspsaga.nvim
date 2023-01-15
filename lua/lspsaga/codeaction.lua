@@ -316,7 +316,7 @@ function act:get_action_diff(num, main_buf)
   if not text_edits then
     return
   end
-  print(vim.inspect(text_edits))
+  -- print(vim.inspect(text_edits))
 
   local old_lines = {}
   local new_text = {}
@@ -348,7 +348,9 @@ function act:get_action_diff(num, main_buf)
     local ecol = api.nvim_strwidth(old_text)
     if start.character ~= _end.character then
       if not remove_whole_line then
-        api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
+        if start.character < _end.character then
+          api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
+        end
       else
         api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
       end
