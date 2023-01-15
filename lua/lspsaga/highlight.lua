@@ -118,6 +118,7 @@ local function gen_symbol_winbar_hi()
   end
   api.nvim_set_hl(0, winbar_sep, { fg = colors.red, default = true })
   api.nvim_set_hl(0, prefix .. 'File', { fg = colors.white, bold = true, default = true })
+  api.nvim_set_hl(0, prefix .. 'Word', { fg = colors.white, default = true })
 end
 
 local function gen_outline_hi()

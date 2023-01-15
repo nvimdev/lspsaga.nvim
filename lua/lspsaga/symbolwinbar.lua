@@ -158,8 +158,20 @@ local function insert_elements(buf, node, elements)
   local type = get_kind_icon(node.kind, 1)
   local icon = get_kind_icon(node.kind, 2)
   local bar = bar_prefix()
-  local node_context = bar.prefix .. type .. '#' .. icon .. node.name
-  table.insert(elements, node_context)
+  if config.color_mode then
+    local node_context = bar.prefix .. type .. '#' .. icon .. node.name
+    table.insert(elements, node_context)
+  else
+    local node_context = bar.prefix
+      .. type
+      .. '#'
+      .. icon
+      .. bar.prefix
+      .. 'Word'
+      .. '#'
+      .. node.name
+    table.insert(elements, node_context)
+  end
 end
 
 --@private
