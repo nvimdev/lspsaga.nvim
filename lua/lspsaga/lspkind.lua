@@ -14,7 +14,7 @@ local function get_kind(colors)
     [5] = { 'Class', ' ', colors.purple },
     [6] = { 'Method', ' ', colors.purple },
     [7] = { 'Property', ' ', colors.cyan },
-    [8] = { 'Field', ' ', colors.teal },
+    [8] = { 'Field', ' ', colors.yellow },
     [9] = { 'Constructor', ' ', colors.blue },
     [10] = { 'Enum', '了', colors.green },
     [11] = { 'Interface', ' ', colors.orange },
