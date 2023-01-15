@@ -418,12 +418,15 @@ require your neovim version >= 0.8. options with default value
     show_file = true,
     folder_level = 2,
     respect_root = false,
+    color_mode = false,
   },
 ```
 - `hide_keyword` default is true it will hide some keyword or tmp variable make symbols more clean
 - `folder_level` work with `show_file`
 - `respect_root` will respect lsp root if this is true will ignore the folder_level. if there is no
   lsp client usage then fallback to folder_level
+- `color_mode` default is false that mean only the icon have color when true the icon and word
+  both have highlight.
 
 
 <details>
