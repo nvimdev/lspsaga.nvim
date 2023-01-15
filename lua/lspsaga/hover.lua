@@ -18,7 +18,9 @@ function hover:open_floating_preview(res, opts)
     content = vim.split(res.value, '\n', { trimempty = true })
   elseif vim.tbl_islist(res) then
     for _, item in pairs(res) do
-      for _, v in pairs(vim.split(item, '\n', { trimempty = true }) or {}) do
+      -- item's type is MarkedString
+      -- type MarkedString = string | { language: string; value: string };
+      for _, v in pairs(vim.split(type(item) == "string" and item or item.value, '\n', { trimempty = true }) or {}) do
         table.insert(content, v)
       end
     end
