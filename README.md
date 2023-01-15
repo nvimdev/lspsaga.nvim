@@ -317,12 +317,20 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 lsp rename with select. default options
 
 ```lua
+
   rename = {
     quit = '<C-c>',
     exec = '<CR>',
+    mark = 'x',
+    confirm = '<CR>',
     in_select = true,
+    whole_project = true,
   },
 ```
+
+- `whole_project` support rename whole project after using lsp rename by `rg`.
+- `mark` after lsp rename if there still have this word in project then wil popup a window that inclue the files which include the word.then you can use this key mark the line that you want changed.
+- `confirm` when you markd the lines then press this keymap to execute.
 
 <details>
 <summary> rename show case</summary>

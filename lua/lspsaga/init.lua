@@ -74,6 +74,8 @@ local default_config = {
   rename = {
     quit = '<C-c>',
     exec = '<CR>',
+    mark = 'x',
+    confirm = '<CR>',
     in_select = true,
     whole_project = true,
   },
