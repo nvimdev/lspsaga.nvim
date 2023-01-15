@@ -33,11 +33,6 @@ end
 
 local function get_colors(severity)
   local lsa_colors = require('lspsaga.highlight').get_colors()()
-  local type = get_diag_type(severity)
-  local ok, colors = pcall(api.nvim_get_hl_by_name, 'Diagnostic' .. type, true)
-  if ok then
-    return colors
-  end
   local tbl = { lsa_colors.red, lsa_colors.yellow, lsa_colors.blue, lsa_colors.cyan }
   return { foreground = tbl[severity], background = ui.colors.normal_bg }
 end
@@ -322,25 +317,21 @@ function diag:render_diagnostic_window(entry, option)
   api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
     background = colors.foreground,
     foreground = lsa_colors.green,
-    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticMsg', {
     background = colors.foreground,
     foreground = lsa_colors.black,
-    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
     foreground = colors.foreground,
     background = ui.colors.normal_bg,
-    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticActionTitle', {
     background = colors.foreground,
     foreground = lsa_colors.black,
-    default = true,
   })
 
   api.nvim_buf_add_highlight(
