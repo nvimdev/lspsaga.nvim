@@ -13,18 +13,7 @@ function hover:open_floating_preview(res, opts)
   local bufnr = api.nvim_get_current_buf()
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
-  local content = {}
-  if res.value then
-    content = vim.split(res.value, '\n', { trimempty = true })
-  elseif vim.tbl_islist(res) then
-    for _, item in pairs(res) do
-      -- item's type is MarkedString
-      -- type MarkedString = string | { language: string; value: string };
-      for _, v in pairs(vim.split(type(item) == "string" and item or item.value, '\n', { trimempty = true }) or {}) do
-        table.insert(content, v)
-      end
-    end
-  end
+  local content = vim.split(res.value, '\n', { trimempty = true })
 
   local new = {}
   for _, line in pairs(content) do
@@ -132,12 +121,28 @@ function hover:do_request(arg)
       return
     end
 
-    if type(result.contents) == 'string' then
-      result.contents = {
-        kind = 'markdown',
-        value = result.contents,
-      }
+    -- MarkedString | MarkedString[] | MarkupContent;
+    -- type MarkedString = string | { language: string; value: string };
+    -- interface MarkupContent { kind: MarkupKind; value: string; }
+    local value
+    if type(result.contents) == 'string' then -- MarkedString
+      value = result.contents
+    elseif result.contents.language then -- MarkedString
+      value = result.contents.value
+    elseif vim.tbl_islist(result.contents) then -- MarkedString[]
+      local values = {}
+      for _, ms in ipairs(result.contents) do
+        table.insert(values, type(ms) == 'string' and ms or ms.value)
+      end
+      value = table.concat(values, '\n')
+    elseif result.contents.kind then -- MarkupContent
+      value = result.contents.value
     end
+
+    result.contents = {
+      kind = 'markdown',
+      value = value,
+    }
     self:open_floating_preview(result.contents)
   end)
 end
