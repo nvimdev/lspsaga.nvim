@@ -216,7 +216,7 @@ function diag:render_diagnostic_window(entry, option)
     opts.move_row = 1
   end
 
-  -- opts.focusable = false
+  opts.focusable = false
   if fn.has('nvim-0.9') == 1 then
     opts.title = nil
   end

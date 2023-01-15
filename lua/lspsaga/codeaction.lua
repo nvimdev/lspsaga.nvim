@@ -316,8 +316,10 @@ function act:get_action_diff(num, main_buf)
   if not text_edits then
     return
   end
+  print(vim.inspect(text_edits))
 
   local old_lines = {}
+  local new_text = {}
   local remove_whole_line = false
   local tmp_buf = api.nvim_create_buf(false, false)
   for _, v in pairs(text_edits) do
@@ -342,10 +344,7 @@ function act:get_action_diff(num, main_buf)
     end
     api.nvim_buf_set_lines(tmp_buf, 0, -1, false, { old_text })
     v.newText = v.newText:find('\r\n') and v.newText:gsub('\r\n', '\n') or v.newText
-    local newText = vim.split(v.newText, '\n')
-    if not newText[#newText]:find('%w') then
-      table.remove(newText, #newText)
-    end
+    local newText = v.newText:find('\n') and vim.split(v.newText, '\n') or { v.newText }
     local ecol = api.nvim_strwidth(old_text)
     if start.character ~= _end.character then
       if not remove_whole_line then
@@ -354,14 +353,17 @@ function act:get_action_diff(num, main_buf)
         api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
       end
     elseif start.character == _end.character then
-      api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
+      api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
+    end
+    local buf_lines = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+    for _, item in pairs(buf_lines) do
+      table.insert(new_text, item)
     end
     ::skip::
   end
-  local new_text = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
-  new_text = table.concat(new_text, '\n') .. '\n'
+  local new = table.concat(new_text, '\n') .. '\n'
   api.nvim_buf_delete(tmp_buf, { force = true })
-  return vim.diff(table.concat(old_lines, ''), new_text)
+  return vim.diff(table.concat(old_lines, ''), new)
 end
 
 function act:action_preview(main_winid, main_buf)
@@ -376,7 +378,7 @@ function act:action_preview(main_winid, main_buf)
   end
 
   local tbl = self:get_action_diff(num, main_buf)
-  if not tbl then
+  if not tbl or #tbl == 0 then
     return
   end
 
