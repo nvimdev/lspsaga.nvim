@@ -143,6 +143,7 @@ end
 
 function act:send_code_action_request(main_buf, options, cb)
   local diagnostics = lsp.diagnostic.get_line_diagnostics(main_buf)
+  self.bufnr = main_buf
   local context = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
@@ -175,10 +176,10 @@ function act:send_code_action_request(main_buf, options, cb)
   end
   params.context = context
   if not self.ctx then
-    self.ctx = { bufnr = self.bufnr, method = 'textDocument/codeAction', params = params }
+    self.ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
   end
 
-  lsp.buf_request_all(self.bufnr, 'textDocument/codeAction', params, function(results)
+  lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)
     self.pending_request = false
     self:get_clients(results)
     if #self.action_tuples == 0 then
@@ -220,10 +221,9 @@ function act:code_action(options)
     return
   end
   self.pending_request = true
-  self.bufnr = api.nvim_get_current_buf()
   options = options or {}
 
-  self:send_code_action_request(self.bufnr, options, function()
+  self:send_code_action_request(api.nvim_get_current_buf(), options, function()
     self:action_callback()
   end)
 end
