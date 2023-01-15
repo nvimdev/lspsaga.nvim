@@ -513,7 +513,8 @@ Thanks for all.
 
 [![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
 
-If you'd like to support my work financially, buy me a drink through [paypal](https://paypal.me/bobbyhub).
+Currently I need some donate. If you'd like to support my work financially, donate through [paypal](https://paypal.me/bobbyhub).
+Thanks!
 
 # License
 
