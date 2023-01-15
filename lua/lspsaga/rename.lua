@@ -1,6 +1,7 @@
 local api, util, lsp, uv, fn = vim.api, vim.lsp.util, vim.lsp, vim.loop, vim.fn
 local ns = api.nvim_create_namespace('LspsagaRename')
 local window = require('lspsaga.window')
+local libs = require('lspsaga.libs')
 local config = require('lspsaga').config
 local rename = {}
 
@@ -56,7 +57,6 @@ function rename:find_reference()
   local bufnr = api.nvim_get_current_buf()
   local params = util.make_position_params()
   params.context = { includeDeclaration = true }
-  local libs = require('lspsaga.libs')
   local client = libs.get_client_by_cap('referencesProvider')
   if client == nil then
     return
@@ -485,12 +485,12 @@ function rename:whole_project(cur_name, new_name, root_dir)
     end
     -- clean
     context = {}
-
     local lines = {}
     for i, item in pairs(data) do
-      -- print(vim.inspect(item))
       local uri = vim.uri_from_fname(item.data.path.text)
-      local short = item.data.path.text:gsub(root_dir, '')
+      local root_parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
+      local fname_parts = vim.split(item.data.path.text, libs.path_sep, { trimempty = true })
+      local short = table.concat({ unpack(fname_parts, #root_parts + 1) }, libs.path_sep)
       table.insert(lines, short)
       local bufnr = vim.uri_to_bufnr(uri)
       if not api.nvim_buf_is_loaded(bufnr) then
