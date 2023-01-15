@@ -221,7 +221,7 @@ function diag:render_diagnostic_window(entry, option)
     opts.move_row = 1
   end
 
-  opts.focusable = false
+  -- opts.focusable = false
   if fn.has('nvim-0.9') == 1 then
     opts.title = nil
   end
@@ -230,6 +230,10 @@ function diag:render_diagnostic_window(entry, option)
   ctx.virt_bufnr, ctx.virt_winid = ctx.window.create_win_with_border({
     contents = ctx.libs.generate_empty_table(#content + 1),
     border = 'none',
+    buftype = 'nofile',
+    highlight = {
+      normal = 'SagaVirtNormal',
+    },
     winblend = 100,
   }, opts)
 

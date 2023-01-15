@@ -146,15 +146,20 @@ function M.create_win_with_border(content_opts, opts)
   if not content_opts.bufnr then
     api.nvim_buf_set_option(bufnr, 'modifiable', false)
     api.nvim_buf_set_option(bufnr, 'bufhidden', content_opts.bufhidden or 'wipe')
-    api.nvim_buf_set_option(bufnr, 'buftype', content_opts.buftype or '')
+    api.nvim_buf_set_option(bufnr, 'buftype', content_opts.buftype or 'nofile')
   end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
   vim.wo[winid].winblend = content_opts.winblend or config.ui.winblend
   vim.wo[winid].wrap = content_opts.wrap or false
   local normal = highlight.normal or 'LspNormal'
+  local normal_float = highlight.normal_float or 'LspNormalFloat'
   local border = highlight.border or 'LspBorder'
-  api.nvim_win_set_option(winid, 'winhl', 'Normal:' .. normal .. ',FloatBorder:' .. border)
+  api.nvim_win_set_option(
+    winid,
+    'winhl',
+    'Normal:' .. normal .. ',FloatBorder:' .. border .. ',NormalFloat:' .. normal_float
+  )
 
   vim.wo[winid].winbar = ''
   return bufnr, winid

@@ -107,6 +107,7 @@ function finder:loading_bar()
 
   local content_opts = {
     contents = {},
+    buftype = 'nofile',
     highlight = {
       normal = 'finderNormal',
       border = 'finderBorder',
