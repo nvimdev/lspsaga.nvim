@@ -195,7 +195,7 @@ function diag:render_diagnostic_window(entry, option)
     api.nvim_set_hl(
       0,
       'Diagnostic' .. diag_type .. 'Title',
-      { fg = colors.foreground, background = ui.colors.normal_bg }
+      { fg = colors.foreground, background = ui.colors.normal_bg, default = true }
     )
   end
 
@@ -312,26 +312,31 @@ function diag:render_diagnostic_window(entry, option)
   local lsa_colors = require('lspsaga.highlight').get_colors()()
   api.nvim_set_hl(0, 'DiagnosticText', {
     foreground = colors.foreground,
+    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
     background = colors.foreground,
     foreground = lsa_colors.green,
+    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticMsg', {
     background = colors.foreground,
     foreground = lsa_colors.black,
+    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
     foreground = colors.foreground,
     background = ui.colors.normal_bg,
+    default = true,
   })
 
   api.nvim_set_hl(0, 'DiagnosticActionTitle', {
     background = colors.foreground,
     foreground = lsa_colors.black,
+    default = true,
   })
 
   api.nvim_buf_add_highlight(
