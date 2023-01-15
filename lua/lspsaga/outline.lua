@@ -181,15 +181,20 @@ function ot:apply_map()
       end
     end
 
-    if not node or not node.range then
+    if not node then
       return
     end
+    local range = node.range and node.range or node.location.range
 
     local winid = fn.bufwinid(self.render_buf)
     api.nvim_set_current_win(winid)
-    api.nvim_win_set_cursor(winid, { node.pos[1] + 1, node.pos[2] })
+    if node.pos then
+      api.nvim_win_set_cursor(winid, { node.pos[1] + 1, node.pos[2] })
+    else
+      api.nvim_win_set_cursor(winid, { range.start.line + 1, range.start.character })
+    end
     local width = #api.nvim_get_current_line()
-    libs.jump_beacon({ node.range.start.line, node.range.start.character }, width)
+    libs.jump_beacon({ range.start.line, range.start.character }, width)
   end, opt)
 end
 
