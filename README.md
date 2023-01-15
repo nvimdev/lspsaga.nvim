@@ -212,6 +212,7 @@ options with default value
   code_action = {
     num_shortcut = true,
     keys = {
+      -- string |table type
       quit = 'q',
       exec = '<CR>',
     },
