@@ -102,7 +102,7 @@ function def:title_text(opts, link)
     api.nvim_set_hl(0, 'TitleFileIcon', {
       background = config.ui.colors.title_bg,
       foreground = data[2],
-    })
+    }, { default = true })
   end
 end
 

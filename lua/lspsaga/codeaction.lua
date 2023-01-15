@@ -292,9 +292,7 @@ function act:get_action_diff(num, main_buf)
     return
   end
 
-  local old_lines = {}
   local client = lsp.get_client_by_id(self.action_tuples[tonumber(num)][1])
-
   if
     not action.edit
     and client
@@ -319,9 +317,9 @@ function act:get_action_diff(num, main_buf)
     return
   end
 
-  local tmp_buf = api.nvim_create_buf(false, false)
-
+  local old_lines = {}
   local remove_whole_line = false
+  local tmp_buf = api.nvim_create_buf(false, false)
   for _, v in pairs(text_edits) do
     if #v.newText == 0 and v.range['end'].character - v.range.start.character == 1 then
       remove_whole_line = true
@@ -336,6 +334,9 @@ function act:get_action_diff(num, main_buf)
     local start = v.range.start
     local _end = v.range['end']
     local old_text = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1]
+    if not old_text then
+      goto skip
+    end
     if #old_lines == 0 then
       table.insert(old_lines, old_text .. '\n')
     end

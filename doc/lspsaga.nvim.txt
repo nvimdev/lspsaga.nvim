@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*         For Nvim 0.8.0         Last change: 2023 January 14
+*lspsaga.nvim.txt*         For Nvim 0.8.0         Last change: 2023 January 15
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -28,8 +28,9 @@ Table of Contents                             *lspsaga.nvim-table-of-contents*
   - :Lspsaga UI                                     |lspsaga.nvim-:lspsaga-ui|
 3. Custom Highlight                            |lspsaga.nvim-custom-highlight|
 4. Custom Kind                                      |lspsaga.nvim-custom-kind|
-5. Donate                                                |lspsaga.nvim-donate|
-6. License                                              |lspsaga.nvim-license|
+5. Backers                                              |lspsaga.nvim-backers|
+6. Donate                                                |lspsaga.nvim-donate|
+7. License                                              |lspsaga.nvim-license|
 
 >
                                      __
@@ -55,18 +56,19 @@ title=''/> <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 2. |lspsaga.nvim-example-configuration|
 3. |lspsaga.nvim-usage-turtorial|
 4. |lspsaga.nvim-customize-appearance|
-5. |lspsaga.nvim-donate|
-6. |lspsaga.nvim-license|
+5. |lspsaga.nvim-backers|
+6. |lspsaga.nvim-donate|
+7. |lspsaga.nvim-license|
 
 
 ==============================================================================
 1. Install                                              *lspsaga.nvim-install*
 
-you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install
+you can use some plugins management like `lazy.nvim`, `packer.nvim` to install
 `lspsaga` and lazyload by the plugin management keyword.
 
 
-- `cmd` lazylod by `lspsaga` command
+- `cmd` lazyload by `lspsaga` command
 - `ft` lazy.nvim and packer both provide lazyload by filetype. then you can load the lspsaga according the filetypes which you write and use lsp.
 - `event` lazyload by event like `BufRead,BufReadPost` make sure your lsp plugin also loaded.
 - `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
@@ -156,7 +158,7 @@ PACKER                                                   *lspsaga.nvim-packer*
       require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
     end)
     
-    -- Toglle Outline
+    -- Toggle Outline
     keymap("n","<leader>o", "<cmd>Lspsaga outline<CR>")
     
     -- Hover Doc
@@ -539,8 +541,9 @@ default ui options
 ==============================================================================
 3. Custom Highlight                            *lspsaga.nvim-custom-highlight*
 
-you can change the default colors or only change some highlight groups which
-you want change. find all highlight groups in highlight.lua
+If you don’t like config the colors or you use switch colorschem according
+time then you can use the old way. change the highlight group in your
+colorscheme or config. find all highlight groups in highlight.lua
 <./lua/lspsaga/highlight.lua>
 
 ==============================================================================
@@ -551,7 +554,15 @@ through `ui.kind` to modified the all kinds defined in lspkind.lua
 string or table if string type is icon if table type is `{icon, color}`.
 
 ==============================================================================
-5. Donate                                                *lspsaga.nvim-donate*
+5. Backers                                              *lspsaga.nvim-backers*
+
+Thanks for all.
+
+Boja Wilytsch <https://github.com/bwilytsch> HendrikPetertj
+<https://github.com/HendrikPetertje>
+
+==============================================================================
+6. Donate                                                *lspsaga.nvim-donate*
 
 <img
 src='https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white'
@@ -561,7 +572,7 @@ If you’d like to support my work financially, buy me a drink through paypal
 <https://paypal.me/bobbyhub>.
 
 ==============================================================================
-6. License                                              *lspsaga.nvim-license*
+7. License                                              *lspsaga.nvim-license*
 
 Licensed under the MIT <./LICENSE> license.
 

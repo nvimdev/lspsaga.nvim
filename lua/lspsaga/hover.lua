@@ -13,19 +13,30 @@ function hover:open_floating_preview(res, opts)
   local bufnr = api.nvim_get_current_buf()
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
-  local content = {}
-  if res.value then
-    content = vim.split(res.value, '\n', { trimempty = true })
-  elseif vim.tbl_islist(res) then
-    for _, item in pairs(res) do
-      for _, v in pairs(vim.split(item, '\n', { trimempty = true }) or {}) do
-        table.insert(content, v)
-      end
+  local content = vim.split(res.value, '\n', { trimempty = true })
+
+  local new = {}
+  for _, line in pairs(content) do
+    if line:find('&nbsp;') then
+      line = line:gsub('&nbsp;', ' ')
+    end
+    if line:find('&lt;') then
+      line = line:gsub('&lt;', '<')
+    end
+    if line:find('&gt;') then
+      line = line:gsub('&gt;', '>')
+    end
+    if line:find('<pre>') then
+      line = line:gsub('<pre>', '```')
+    end
+    if line:find('</pre>') then
+      line = line:gsub('</pre>', '```')
+    end
+    if #line > 0 then
+      table.insert(new, line)
     end
   end
-  content = vim.tbl_filter(function(s)
-    return #s > 0
-  end, content)
+  content = new
 
   local window = require('lspsaga.window')
   local libs = require('lspsaga.libs')
@@ -103,19 +114,35 @@ function hover:do_request(arg)
       return
     end
 
-    if type(result.contents) == 'string' then
-      result.contents = {
-        kind = 'markdown',
-        value = result.contents,
-      }
-    end
-
     if not result or not result.contents or next(result.contents) == nil then
       if not arg or arg ~= '++quiet' then
         vim.notify('No information available')
       end
       return
     end
+
+    -- MarkedString | MarkedString[] | MarkupContent;
+    -- type MarkedString = string | { language: string; value: string };
+    -- interface MarkupContent { kind: MarkupKind; value: string; }
+    local value
+    if type(result.contents) == 'string' then -- MarkedString
+      value = result.contents
+    elseif result.contents.language then -- MarkedString
+      value = result.contents.value
+    elseif vim.tbl_islist(result.contents) then -- MarkedString[]
+      local values = {}
+      for _, ms in ipairs(result.contents) do
+        table.insert(values, type(ms) == 'string' and ms or ms.value)
+      end
+      value = table.concat(values, '\n')
+    elseif result.contents.kind then -- MarkupContent
+      value = result.contents.value
+    end
+
+    result.contents = {
+      kind = 'markdown',
+      value = value,
+    }
     self:open_floating_preview(result.contents)
   end)
 end

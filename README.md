@@ -17,14 +17,15 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 2. [Example Configuration](#example-configuration)
 3. [Usage Turtorial](#usage-tutorial)
 4. [Customize Appearance](#customize-appearance)
-5. [Donate](#donate)
-6. [License](#license)
+5. [Backers](#backers)
+6. [Donate](#donate)
+7. [License](#license)
 
 # Install
 
-you can use some plugins management like `lazy.nvim`, `packaer.nvim` to install `lspsaga` and lazyload by the plugin management keyword.
+you can use some plugins management like `lazy.nvim`, `packer.nvim` to install `lspsaga` and lazyload by the plugin management keyword.
 
-- `cmd` lazylod by `lspsaga` command
+- `cmd` lazyload by `lspsaga` command
 - `ft`  lazy.nvim and packer both provide lazyload by filetype. then you can load the lspsaga according the filetypes which you write and use lsp.
 - `event` lazyload by event like `BufRead,BufReadPost` make sure your lsp plugin also loaded.
 - `dependices` for lazy.nvim you can set the `lspsaga` into `nvim-lspconfig` or other lsp plugin `dependices` keyword.
@@ -110,7 +111,7 @@ keymap("n", "]E", function()
   require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
 end)
 
--- Toglle Outline
+-- Toggle Outline
 keymap("n","<leader>o", "<cmd>Lspsaga outline<CR>")
 
 -- Hover Doc
@@ -481,7 +482,8 @@ default ui options
 
 # Custom Highlight
 
-you can change the default colors or only change some highlight groups which you want change.
+If you don't like config the colors or you use switch colorschem according time then you can use 
+the old way. change the highlight group in your colorscheme or config.
 find all highlight groups in [highlight.lua](./lua/lspsaga/highlight.lua)
 
 # Custom Kind
@@ -490,6 +492,11 @@ through `ui.kind` to modified the all kinds defined in [lspkind.lua](./lua/lspsa
 the key in `ui.kind` is kind name, value can be string or table if string type is icon if table type
 is `{icon, color}`.
 
+# Backers
+Thanks for all.
+
+[@Bojan Wilytsch](https://github.com/bwilytsch)
+[@HendrikPetertje](https://github.com/HendrikPetertje)
 
 # Donate
 
