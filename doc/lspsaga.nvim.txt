@@ -572,8 +572,9 @@ string or table if string type is icon if table type is `{icon, color}`.
 
 Thanks for all.
 
-Boja Wilytsch <https://github.com/bwilytsch> HendrikPetertj
-<https://github.com/HendrikPetertje>
+HendrikPetertj <https://github.com/HendrikPetertje> Boja Wilytsch
+<https://github.com/bwilytsch> Burges Darrion
+<https://github.com/ca-mantis-shrimp>
 
 ==============================================================================
 6. Donate                                                *lspsaga.nvim-donate*
