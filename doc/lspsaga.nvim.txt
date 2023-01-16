@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*         For Nvim 0.8.0         Last change: 2023 January 15
+*lspsaga.nvim.txt*         For Nvim 0.8.0         Last change: 2023 January 16
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -16,13 +16,13 @@ Table of Contents                             *lspsaga.nvim-table-of-contents*
   - :Lspsaga Lightbulb                       |lspsaga.nvim-:lspsaga-lightbulb|
   - :Lspasga hover_doc                       |lspsaga.nvim-:lspasga-hover_doc|
   - :Lspsaga diagnostic_jump_next |lspsaga.nvim-:lspsaga-diagnostic_jump_next|
-  - :Lspsaga show_diagnsotic           |lspsaga.nvim-:lspsaga-show_diagnsotic|
+  - :Lspsaga show_diagnostic           |lspsaga.nvim-:lspsaga-show_diagnostic|
   - :Lspsaga rename                             |lspsaga.nvim-:lspsaga-rename|
   - :Lspsaga outline                           |lspsaga.nvim-:lspsaga-outline|
   - :Lspsaga incoming_calls             |lspsaga.nvim-:lspsaga-incoming_calls|
   - :Lspsaga outgoing_calls             |lspsaga.nvim-:lspsaga-outgoing_calls|
   - :Lspsaga symbols in winbar       |lspsaga.nvim-:lspsaga-symbols-in-winbar|
-  - :Lspaga symbols in custom winbar/statusline|lspsaga.nvim-:lspaga-symbols-in-custom-winbar/statusline|
+  - :Lspsaga symbols in custom winbar/statusline|lspsaga.nvim-:lspsaga-symbols-in-custom-winbar/statusline|
   - :Lspsaga term_toggle                   |lspsaga.nvim-:lspsaga-term_toggle|
   - Customize Appearance                   |lspsaga.nvim-customize-appearance|
   - :Lspsaga UI                                     |lspsaga.nvim-:lspsaga-ui|
@@ -54,7 +54,7 @@ title=''/> <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 
 1. |lspsaga.nvim-install|
 2. |lspsaga.nvim-example-configuration|
-3. |lspsaga.nvim-usage-turtorial|
+3. |lspsaga.nvim-usage-tutorial|
 4. |lspsaga.nvim-customize-appearance|
 5. |lspsaga.nvim-backers|
 6. |lspsaga.nvim-donate|
@@ -135,8 +135,8 @@ PACKER                                                   *lspsaga.nvim-packer*
     -- Go to Definition
     keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
     
-    -- Show line diagnostics you can pass arugment ++unfocus to make
-    -- show_line_diagnsotic float window unfocus
+    -- Show line diagnostics you can pass argument ++unfocus to make
+    -- show_line_diagnostics float window unfocus
     keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
     
     -- Show cursor diagnostic
@@ -146,7 +146,7 @@ PACKER                                                   *lspsaga.nvim-packer*
     -- Show buffer diagnostic
     keymap("n", "<leader>sb", "<cmd>Lspsaga show_buf_diagnostics<CR>")
     
-    -- Diagnsotic jump can use `<c-o>` to jump back
+    -- Diagnostic jump can use `<c-o>` to jump back
     keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
     keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
     
@@ -316,7 +316,7 @@ hover_doc show case
 
 :LSPSAGA DIAGNOSTIC_JUMP_NEXT     *lspsaga.nvim-:lspsaga-diagnostic_jump_next*
 
-jump to next diagnsotic position then show beacon and show the codeaction.
+jump to next diagnostic position then show beacon and show the codeaction.
 default options
 
 >
@@ -339,7 +339,7 @@ jump into the floatwindow. other way is use `wincmd` to jump into use `<C-w>w`.
 `go_action` can quickly jump to action line in diagnostic floatwindow
 
 also you can use a filter in diagnostic jump by using lspsaga function.
-function params is a table same as `:h vim.diagnsotic.get_next`
+function params is a table same as `:h vim.diagnostic.get_next`
 
 >
     -- this is mean only jump to error position
@@ -351,19 +351,19 @@ function params is a table same as `:h vim.diagnsotic.get_next`
 diagnostic jump show case
 
 
-- `[e` to jump next diangostic position.
+- `[e` to jump next diagnostic position.
 - `<C-w>w` jump into the float window.
 - `j` to move.
-- `o` to execuate an action.
+- `o` to execute an action.
 
 
 <img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif" height=80% width=80%/>
 
-:LSPSAGA SHOW_DIAGNSOTIC               *lspsaga.nvim-:lspsaga-show_diagnsotic*
+:LSPSAGA SHOW_DIAGNOSTIC               *lspsaga.nvim-:lspsaga-show_diagnostic*
 
-`show_line_diagnsotic` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
+`show_line_diagnostics` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
 
-show diangostics show case
+show diagnostics show case
 
 <img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
 
@@ -386,8 +386,8 @@ lsp rename with select. default options
 
 
 - `whole_project` support rename whole project after using lsp rename by `rg`.
-- `mark` after lsp rename if there still have this word in project then wil popup a window that inclue the files which include the word.then you can use this key mark the line that you want changed.
-- `confirm` when you markd the lines then press this keymap to execute.
+- `mark` after lsp rename if there still have this word in project then will popup a window that include the files which include the word.then you can use this key mark the line that you want changed.
+- `confirm` when you marked the lines then press this keymap to execute.
 
 
 rename show case
@@ -494,7 +494,7 @@ symbols in winbar
 
 <img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif" height=80% width=80%/>
 
-:LSPAGA SYMBOLS IN CUSTOM WINBAR/STATUSLINE*lspsaga.nvim-:lspaga-symbols-in-custom-winbar/statusline*
+:LSPSAGA SYMBOLS IN CUSTOM WINBAR/STATUSLINE*lspsaga.nvim-:lspsaga-symbols-in-custom-winbar/statusline*
 
 lspsaga provide an api that you can use in your custom winbar or statusline.
 
@@ -532,7 +532,7 @@ default ui options
         incoming = ' ',
         outgoing = ' ',
         colors = {
-          --float window normal bakcground color
+          --float window normal background color
           normal_bg = '#1d1536',
           --title background color
           title_bg = '#afd700',
