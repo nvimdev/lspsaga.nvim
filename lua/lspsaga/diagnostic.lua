@@ -461,7 +461,7 @@ function diag:show(entrys, arg, type)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local line = '['
+    local line = '  ['
       .. index
       .. '] '
       .. code_source[1]
