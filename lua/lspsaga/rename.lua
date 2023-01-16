@@ -493,6 +493,10 @@ function rename:whole_project(cur_name, root_dir)
       end
     end
 
+    if #lines == 0 then
+      return
+    end
+
     self:popup_win(lines)
   end
 
