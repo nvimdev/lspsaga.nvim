@@ -303,6 +303,12 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 <img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
 </details>
 
+- if you want to see the code action. you can using `<C-w>w` jump into the floatwindow
+- `g` go to the action line see the code action preview
+- `o` execute the action
+
+<img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
+
 
 ## :Lspsaga show_diagnostic
 
