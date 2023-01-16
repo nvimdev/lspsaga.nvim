@@ -507,8 +507,9 @@ is `{icon, color}`.
 # Backers
 Thanks for all.
 
-[@Bojan Wilytsch](https://github.com/bwilytsch)
 [@HendrikPetertje](https://github.com/HendrikPetertje)
+[@Bojan Wilytsch](https://github.com/bwilytsch)
+[@Burgess Darrion](https://github.com/ca-mantis-shrimp)
 
 # Donate
 
