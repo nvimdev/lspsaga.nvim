@@ -260,8 +260,9 @@ you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. i
 - `K` to run `Lspsaga hover_doc`.
 - press `K` again jump into the hover window.
 - `q` to quit.
-   
+
 <img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" height=80% width=80%/>
+
 </details>
 
 ## :Lspsaga diagnostic_jump_next
@@ -301,7 +302,6 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 - press number `2` to execute code action no need jump into that window
 
 <img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
-</details>
 
 - if you want to see the code action. you can using `<C-w>w` jump into the floatwindow
 - `g` go to the action line see the code action preview
@@ -309,6 +309,7 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 
 <img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
 
+</details>
 
 ## :Lspsaga show_diagnostic
 
