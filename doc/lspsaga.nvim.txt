@@ -177,7 +177,8 @@ PACKER                                                   *lspsaga.nvim-packer*
 
 USAGE TUTORIAL                                   *lspsaga.nvim-usage-tutorial*
 
-**Notice that title in float window must need neovim version >= 0.9**
+**Notice that title in float window must need neovim version >= 0.9** you can
+find these doc in neovim by `:h lspsaga`
 
 DEFAULT OPTIONS                                 *lspsaga.nvim-default-options*
 
