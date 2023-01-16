@@ -272,6 +272,7 @@ jump to next diagnostic position then show beacon and show the codeaction. defau
     twice_into = false,
     show_code_action = true,
     show_source = true,
+    jump_num_shortcut = true,
     keys = {
       exec_action = 'o',
       quit = 'q',
@@ -295,12 +296,10 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 <details>
 <summary>diagnostic jump show case </summary>
 
-- `[e` to jump next diagnostic position.
-- `<C-w>w` jump into the float window.
-- `j` to move.
-- `o` to execute an action.
+- `[e` to jump next diagnostic position and show beacon and code actions in diagnostic window
+- press number `2` to execute code action no need jump into that window
 
-<img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
 </details>
 
 
