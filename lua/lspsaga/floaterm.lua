@@ -15,7 +15,7 @@ function term:open_float_terminal(command)
     ctx.shadow_winid = nil
     if ctx.cur_win and ctx.pos then
       api.nvim_set_current_win(ctx.cur_win)
-      api.nvim_win_set_cursor(0,ctx.pos)
+      api.nvim_win_set_cursor(0, ctx.pos)
       ctx.cur_win = nil
       ctx.pos = nil
     end
@@ -58,7 +58,6 @@ function term:open_float_terminal(command)
   end
   ctx.cur_win = api.nvim_get_current_win()
   ctx.pos = api.nvim_win_get_cursor(0)
-
 
   ctx.term_bufnr, ctx.term_winid, ctx.shadow_bufnr, ctx.shadow_winid =
     window.open_shadow_float_win(content_opts, opts)
