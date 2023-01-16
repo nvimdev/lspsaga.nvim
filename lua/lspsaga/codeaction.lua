@@ -284,65 +284,34 @@ function act:get_action_diff(num, main_buf)
     return
   end
 
-  local text_edits
+  local all_changes = {}
   if action.edit.documentChanges then
-    text_edits = action.edit.documentChanges[1].edits
+    for _, item in pairs(action.edit.documentChanges) do
+      if not all_changes[item.textDocument.uri] then
+        all_changes[item.textDocument.uri] = {}
+      end
+      for _, edit in pairs(item.edits) do
+        table.insert(all_changes[item.textDocument.uri], edit)
+      end
+    end
   elseif action.edit.changes then
-    text_edits = action.edit.changes[vim.uri_from_bufnr(main_buf)]
+    all_changes = action.edit.changes
   end
 
-  if not text_edits then
+  if not (all_changes and not vim.tbl_isempty(all_changes)) then
     return
   end
 
-  local old_lines = {}
-  local new_text = {}
-  local remove_whole_line = false
   local tmp_buf = api.nvim_create_buf(false, false)
-  for _, v in pairs(text_edits) do
-    if #v.newText == 0 and v.range['end'].character - v.range.start.character == 1 then
-      remove_whole_line = true
-    end
-  end
+  local lines = api.nvim_buf_get_lines(main_buf, 0, -1, false)
+  api.nvim_buf_set_lines(tmp_buf, 0, -1, false, lines)
 
-  for _, v in pairs(text_edits) do
-    if #v.newText == 0 then
-      goto skip
-    end
-
-    local start = v.range.start
-    local _end = v.range['end']
-    local old_text = api.nvim_buf_get_lines(main_buf, start.line, _end.line + 1, false)[1]
-    if not old_text then
-      goto skip
-    end
-    if #old_lines == 0 then
-      table.insert(old_lines, old_text .. '\n')
-    end
-    api.nvim_buf_set_lines(tmp_buf, 0, -1, false, { old_text })
-    v.newText = v.newText:find('\r\n') and v.newText:gsub('\r\n', '\n') or v.newText
-    local newText = v.newText:find('\n') and vim.split(v.newText, '\n') or { v.newText }
-    local ecol = api.nvim_strwidth(old_text)
-    if start.character ~= _end.character then
-      if not remove_whole_line then
-        if start.character < _end.character then
-          api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
-        end
-      else
-        api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, ecol, newText)
-      end
-    elseif start.character == _end.character then
-      api.nvim_buf_set_text(tmp_buf, 0, start.character, -1, _end.character, newText)
-    end
-    local buf_lines = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
-    for _, item in pairs(buf_lines) do
-      table.insert(new_text, item)
-    end
-    ::skip::
+  for _, changes in pairs(all_changes) do
+    util.apply_text_edits(changes, tmp_buf, client.offset_encoding)
   end
-  local new = table.concat(new_text, '\n') .. '\n'
-  api.nvim_buf_delete(tmp_buf, { force = true })
-  return vim.diff(table.concat(old_lines, ''), new)
+  local data = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+  local diff = vim.diff(table.concat(lines, '\n'), table.concat(data, '\n'))
+  return diff
 end
 
 function act:action_preview(main_winid, main_buf)
@@ -389,8 +358,11 @@ function act:action_preview(main_winid, main_buf)
     end
   end
   opt.col = win_conf.col[false]
-  local max_width = math.floor(vim.o.columns * 0.4)
-  opt.width = win_conf.width < max_width and max_width or win_conf.width
+
+  local max_width = math.floor(vim.o.columns * 0.6)
+  local max_len = window.get_max_content_length(tbl)
+
+  opt.width = max_len < max_width and max_len or max_width
   opt.height = #tbl
   opt.no_size_override = true
 
