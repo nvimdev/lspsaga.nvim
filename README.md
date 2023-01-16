@@ -15,7 +15,7 @@ A light-weight lsp plugin based on neovim's built-in lsp with a highly performan
 
 1. [Install](#install)
 2. [Example Configuration](#example-configuration)
-3. [Usage Turtorial](#usage-tutorial)
+3. [Usage Tutorial](#usage-tutorial)
 4. [Customize Appearance](#customize-appearance)
 5. [Backers](#backers)
 6. [Donate](#donate)
@@ -88,8 +88,8 @@ keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>")
 -- Go to Definition
 keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
 
--- Show line diagnostics you can pass arugment ++unfocus to make
--- show_line_diagnsotic float window unfocus
+-- Show line diagnostics you can pass argument ++unfocus to make
+-- show_line_diagnostics float window unfocus
 keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
 
 -- Show cursor diagnostic
@@ -99,7 +99,7 @@ keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
 -- Show buffer diagnostic
 keymap("n", "<leader>sb", "<cmd>Lspsaga show_buf_diagnostics<CR>")
 
--- Diagnsotic jump can use `<c-o>` to jump back
+-- Diagnostic jump can use `<c-o>` to jump back
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
 keymap("n", "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>")
 
@@ -265,7 +265,7 @@ you can press shotcut of `Lspsaga hover_doc` twice jump into the hover window. i
 
 ## :Lspsaga diagnostic_jump_next
 
-jump to next diagnsotic position then show beacon and show the codeaction. default options
+jump to next diagnostic position then show beacon and show the codeaction. default options
 
 ```lua
   diagnostic = {
@@ -284,7 +284,7 @@ if `twice_into` set to `true`, press twice the diagnostic jump shortcut it will 
 `go_action` can quickly jump to action line in diagnostic floatwindow
 
 also you can use a filter in diagnostic jump by using lspsaga function. function params is a table
-same as `:h vim.diagnsotic.get_next`
+same as `:h vim.diagnostic.get_next`
 
 ```lua
 -- this is mean only jump to error position
@@ -295,21 +295,21 @@ require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERR
 <details>
 <summary>diagnostic jump show case </summary>
 
-- `[e` to jump next diangostic position.
+- `[e` to jump next diagnostic position.
 - `<C-w>w` jump into the float window.
 - `j` to move.
-- `o` to execuate an action.
+- `o` to execute an action.
 
 <img src="https://user-images.githubusercontent.com/41671631/212014091-ebeb4571-47e4-4c47-9d05-d57b173faa22.gif" height=80% width=80%/>
 </details>
 
 
-## :Lspsaga show_diagnsotic
+## :Lspsaga show_diagnostic
 
-`show_line_diagnsotic` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
+`show_line_diagnostics` , `show_buf_diagnostics` ,`show_cursor_diagnostics`
 
 <details>
-<summary> show diangostics show case </summary>
+<summary> show diagnostics show case </summary>
 <img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
 </details>
 
@@ -330,8 +330,8 @@ lsp rename with select. default options
 ```
 
 - `whole_project` support rename whole project after using lsp rename by `rg`.
-- `mark` after lsp rename if there still have this word in project then wil popup a window that inclue the files which include the word.then you can use this key mark the line that you want changed.
-- `confirm` when you markd the lines then press this keymap to execute.
+- `mark` after lsp rename if there still have this word in project then will popup a window that include the files which include the word.then you can use this key mark the line that you want changed.
+- `confirm` when you marked the lines then press this keymap to execute.
 
 <details>
 <summary> rename show case</summary>
@@ -435,7 +435,7 @@ require your neovim version >= 0.8. options with default value
 <img src="https://user-images.githubusercontent.com/41671631/212026278-11012b17-209c-4b55-b76c-1c3d8d9a2eb2.gif" height=80% width=80%/>
 </details>
 
-## :Lspaga symbols in custom winbar/statusline
+## :Lspsaga symbols in custom winbar/statusline
 
 lspsaga provide an api that you can use in your custom winbar or statusline.
 
@@ -473,7 +473,7 @@ default ui options
     incoming = ' ',
     outgoing = ' ',
     colors = {
-      --float window normal bakcground color
+      --float window normal background color
       normal_bg = '#1d1536',
       --title background color
       title_bg = '#afd700',
