@@ -1,6 +1,7 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
+local libs = require('lspsaga.libs')
 local act = {}
 local ctx = {}
 
@@ -75,18 +76,17 @@ function act:action_callback()
 
     api.nvim_buf_set_extmark(self.action_bufnr, ns, i - 1, 0, {
       end_col = 3,
-      conceal = '◉',
+      conceal = i <= 10 and libs.unicode_number(i) or '◉',
     })
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionText', i - 1, 0, -1)
   end
 
-  local libs = require('lspsaga.libs')
   -- dsiable some move keys in codeaction
   libs.disable_move_keys(self.action_bufnr)
 
   self:apply_action_keys()
   if config.code_action.num_shortcut then
-    self:num_shortcut()
+    self:num_shortcut(self.action_bufnr)
   end
 end
 
@@ -213,11 +213,14 @@ function act:set_cursor()
   self:action_preview(self.action_winid, self.bufnr)
 end
 
-function act:num_shortcut()
+function act:num_shortcut(bufnr, callback)
   for num, _ in pairs(self.action_tuples) do
     vim.keymap.set('n', tostring(num), function()
+      if callback then
+        callback()
+      end
       self:do_code_action(num)
-    end, { buffer = self.action_bufnr })
+    end, { buffer = bufnr })
   end
 end
 

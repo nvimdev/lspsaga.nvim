@@ -26,6 +26,7 @@ local default_config = {
     twice_into = false,
     show_code_action = true,
     show_source = true,
+    jump_num_shortcut = true,
     keys = {
       exec_action = 'o',
       quit = 'q',

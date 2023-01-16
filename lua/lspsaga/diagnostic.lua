@@ -76,7 +76,7 @@ function diag:code_action_cb()
     api.nvim_buf_set_extmark(ctx.bufnr, virt_ns, start_line + i - 2, 0, {
       hl_group = 'CodeActionConceal',
       end_col = 2,
-      conceal = '◉',
+      conceal = i - 2 <= 10 and ctx.libs.unicode_number((i - 2 == 0 and 1 or i - 2)) or '◉',
     })
     api.nvim_buf_add_highlight(ctx.bufnr, 0, 'CodeActionText', start_line + i - 1, 0, -1)
   end
@@ -85,6 +85,20 @@ function diag:code_action_cb()
       api.nvim_win_set_cursor(ctx.winid, { start_line + 2, 4 })
     end
   end, { buffer = ctx.bufnr, nowait = true, noremap = true })
+
+  if diag_conf.jump_num_shortcut then
+    ctx.act:num_shortcut(ctx.main_buf, function()
+      if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+        api.nvim_win_close(ctx.winid, true)
+      end
+      if ctx.preview_winid and api.nvim_win_is_valid(ctx.preview_winid) then
+        api.nvim_win_close(ctx.preview_winid, true)
+      end
+      vim.defer_fn(function()
+        clean_ctx()
+      end, 10)
+    end)
+  end
 
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.bufnr,
@@ -461,7 +475,7 @@ function diag:show(entrys, arg, type)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local line = '['
+    local line = ' ['
       .. index
       .. '] '
       .. code_source[1]

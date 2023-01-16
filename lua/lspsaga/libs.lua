@@ -7,6 +7,23 @@ libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
 
 libs.path_sep = libs.iswin and '\\' or '/'
 
+function libs.unicode_number(num)
+  print(num)
+  local tbl = {
+    '❶ ',
+    '❷ ',
+    '❸ ',
+    '❹ ',
+    '❺ ',
+    '❻ ',
+    '❼ ',
+    '❽ ',
+    '❾ ',
+    '❿ ',
+  }
+  return tbl[num]
+end
+
 function libs.get_path_info(buf, level)
   if level == 0 then
     vim.notify('[Lspsaga] Level must bigger than 0', vim.log.levels.ERROR)
