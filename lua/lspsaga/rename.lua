@@ -4,13 +4,15 @@ local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config
 local rename = {}
+local context = {}
 
-function rename:clean()
-  for k, v in pairs(self) do
-    if type(v) ~= 'function' then
-      self[k] = nil
-    end
-  end
+rename.__index = rename
+rename.__newindex = function(t, k, v)
+  rawset(t, k, v)
+end
+
+local function clean_context()
+  context = {}
 end
 
 function rename:close_rename_win()
@@ -187,68 +189,80 @@ function rename:lsp_rename()
   self:apply_action_keys()
 end
 
-local context = {}
-
-local function get_lsp_result()
+function rename:get_lsp_result()
   -- local original = lsp.handlers['textDocument/rename']
   lsp.handlers['textDocument/rename'] = function(_, result, ctx, _)
-    print(vim.inspect(result))
     if not result then
       vim.notify("Language server couldn't provide rename result", vim.log.levels.INFO)
       return
     end
     local client = vim.lsp.get_client_by_id(ctx.client_id)
     lsp.util.apply_workspace_edit(result, client.offset_encoding)
-    local change
-    if result.changes then
-      change = result.changes
-    elseif result.documentChanges then
-      for _, data in pairs(result.documentChanges) do
-        if not change[data['textDocument'].uri] then
-          change[data['textDocument'].uri] = {}
-        end
-        for _, edit in pairs(data.edits) do
-          table.insert(change[data['textDocument'].uri], edit)
-        end
+    if config.rename.whole_project and fn.executable('rg') == 1 then
+      if not self.lspres then
+        self.lspres = {}
       end
-    end
 
-    for uri, data in pairs(change) do
-      local fname = vim.uri_to_fname(uri)
-      if not context[fname] then
-        context[fname] = {}
-      end
-      for _, item in pairs(data) do
-        table.insert(context[fname], item)
+      if result.changes then
+        for uri, change in pairs(result.changes) do
+          local fname = vim.uri_to_fname(uri)
+          if not self.lspres[fname] then
+            self.lspres[fname] = {}
+          end
+          for _, edit in pairs(change) do
+            table.insert(self.lspres[fname], edit.range)
+          end
+        end
+      elseif result.documentChanges then
+        for _, change in pairs(result.documentChanges) do
+          if not change.kind or change.kind == 'rename' then
+            local fname = vim.uri_to_fname(change.textDocument.uri)
+            if not self.lspres[fname] then
+              self.lspres[fname] = {}
+            end
+            for _, edit in pairs(change.edits) do
+              table.insert(self.lspres[fname], edit.range or edit.location.range)
+            end
+          end
+        end
       end
     end
   end
 end
 
 function rename:do_rename()
-  local new_name = vim.trim(api.nvim_get_current_line())
+  self.new_name = vim.trim(api.nvim_get_current_line())
   self:close_rename_win()
   local current_name = vim.fn.expand('<cword>')
   local current_buf = api.nvim_get_current_buf()
-  if not (new_name and #new_name > 0) or new_name == current_name then
+  if not (self.new_name and #self.new_name > 0) or self.new_name == current_name then
     return
   end
   local current_win = api.nvim_get_current_win()
   api.nvim_win_set_cursor(current_win, self.pos)
-  get_lsp_result()
-  lsp.buf.rename(new_name)
+  self:get_lsp_result()
+  lsp.buf.rename(self.new_name)
   local lnum, col = unpack(self.pos)
   self.pos = nil
   api.nvim_win_set_cursor(current_win, { lnum, col + 1 })
+  if not config.rename.whole_project then
+    clean_context()
+    return
+  end
+
   local root_dir = lsp.get_active_clients({ bufnr = current_buf })[1].config.root_dir
-  if config.rename.whole_project and fn.executable('rg') == 1 and root_dir then
+  if not root_dir then
+    return
+  end
+
+  if fn.executable('rg') == 1 then
     local timer = uv.new_timer()
     timer:start(
       0,
       5,
       vim.schedule_wrap(function()
-        if vim.tbl_count(context) > 0 and not timer:is_closing() then
-          self:whole_project(current_name, new_name, root_dir)
+        if self.lspres and vim.tbl_count(self.lspres) > 0 and not timer:is_closing() then
+          self:whole_project(current_name, root_dir)
           timer:stop()
           timer:close()
         end
@@ -263,12 +277,15 @@ function rename:p_preview()
   end
   local current_line = api.nvim_win_get_cursor(0)[1]
   local lines = {}
-  for _, data in pairs(context) do
-    if data[1].winline == current_line then
-      for _, item in pairs(data) do
-        local tbl = api.nvim_buf_get_lines(item.bufnr, item.lnum - 1, item.lnum, false)
-        vim.list_extend(lines, tbl)
-      end
+  for i, item in pairs(self.rg_data) do
+    if i == current_line then
+      local tbl = api.nvim_buf_get_lines(
+        item.data.bufnr,
+        item.data.line_number - 1,
+        item.data.line_number,
+        false
+      )
+      vim.list_extend(lines, tbl)
     end
   end
 
@@ -299,6 +316,16 @@ function rename:p_preview()
   opt.height = #lines
   opt.no_size_override = true
 
+  if fn.has('nvim-0.9') == 1 then
+    local theme = require('lspsaga').theme()
+    opt.title = {
+      { theme.left, 'TitleSymbol' },
+      { config.ui.preview, 'TitleIcon' },
+      { 'Preview', 'TitleString' },
+      { theme.right, 'TitleSymbol' },
+    }
+  end
+
   self.pp_bufnr, self.pp_winid = window.create_win_with_border({
     contents = lines,
     buftype = 'nofile',
@@ -309,19 +336,22 @@ function rename:p_preview()
   }, opt)
 end
 
-local confirmed = {}
-
 function rename:popup_win(lines)
   local opt = {}
-  local max_len = window.get_max_content_length(lines)
-  local max_width = window.get_max_float_width()
-  if max_width - max_len > 10 then
-    opt.width = max_len + 5
-  end
+  opt.width = window.get_max_float_width()
 
   local max_height = math.floor(vim.o.lines * 0.3)
   opt.height = max_height > #context and max_height or #context
   opt.no_size_override = true
+
+  if fn.has('nvim-0.9') == 1 then
+    local theme = require('lspsaga').theme()
+    opt.title = {
+      { theme.left, 'TitleSymbol' },
+      { 'Files', 'TitleString' },
+      { theme.right, 'TitleSymbol' },
+    }
+  end
 
   self.p_bufnr, self.p_winid = window.create_win_with_border({
     contents = lines,
@@ -342,11 +372,14 @@ function rename:popup_win(lines)
     end,
   })
   vim.keymap.set('n', config.rename.mark, function()
+    if not self.confirmed then
+      self.confirmed = {}
+    end
     local line = api.nvim_win_get_cursor(0)[1]
-    for i, data in pairs(confirmed) do
+    for i, data in pairs(self.confirmed) do
       for _, item in pairs(data) do
         if item.winline == line then
-          table.remove(confirmed, i)
+          table.remove(self.confirmed, i)
           api.nvim_buf_clear_namespace(0, ns, 0, -1)
           return
         end
@@ -354,57 +387,54 @@ function rename:popup_win(lines)
     end
 
     api.nvim_buf_add_highlight(0, ns, 'FinderSelection', line - 1, 0, -1)
-    for _, data in pairs(context) do
-      if data[1].winline == line then
-        table.insert(confirmed, data)
+    for i, data in pairs(self.rg_data) do
+      if i == line then
+        table.insert(self.confirmed, data)
       end
     end
   end, { buffer = self.p_bufnr, nowait = true })
 
   vim.keymap.set('n', config.rename.confirm, function()
-    for _, data in pairs(confirmed) do
-      for _, item in pairs(data) do
-        for _, match in pairs(item.submatches) do
-          api.nvim_buf_set_text(
-            item.bufnr,
-            item.lnum - 1,
-            match.start,
-            item.lnum - 1,
-            match['end'],
-            { item.new }
-          )
-          api.nvim_buf_call(item.bufnr, function()
-            vim.cmd.write()
-          end)
-        end
+    for _, item in pairs(self.confirmed) do
+      for _, match in pairs(item.data.submatches) do
+        api.nvim_buf_set_text(
+          item.data.bufnr,
+          item.data.line_number - 1,
+          match.start,
+          item.data.line_number - 1,
+          match['end'],
+          { self.new_name }
+        )
+        api.nvim_buf_call(item.data.bufnr, function()
+          vim.cmd.write()
+        end)
       end
     end
-    -- clean confirmed
-    confirmed = {}
+
     if self.p_winid and api.nvim_win_is_valid(self.p_winid) then
       api.nvim_win_close(self.p_winid, true)
     end
     if self.pp_winid and api.nvim_win_is_valid(self.pp_winid) then
       api.nvim_win_close(self.pp_winid, true)
     end
-    self:clean()
+    clean_context()
   end, { buffer = self.p_bufnr, nowait = true })
 end
 
-local function check_in(fname, lnum)
-  if not context[fname] then
+function rename:check_in_lspres(fname, lnum)
+  if not self.lspres[fname] then
     return false
   end
 
-  for _, item in pairs(context[fname]) do
-    if item.range.start.line + 1 == lnum then
+  for _, range in pairs(self.lspres[fname]) do
+    if range.start.line + 1 == lnum then
       return true
     end
   end
   return false
 end
 
-function rename:whole_project(cur_name, new_name, root_dir)
+function rename:whole_project(cur_name, root_dir)
   local stdout = uv.new_pipe(false)
   local stderr = uv.new_pipe(false)
   local stdin = uv.new_pipe(false)
@@ -431,40 +461,33 @@ function rename:whole_project(cur_name, new_name, root_dir)
     end
 
     local parsed = decode()
-    local data = {}
+    if not self.rg_data then
+      self.rg_data = {}
+    end
 
     for _, v in pairs(parsed) do
       local path = vim.tbl_get(v, 'data', 'path', 'text')
       local lnum = vim.tbl_get(v, 'data', 'line_number')
-      if v.type == 'match' and path and lnum and not check_in(path, lnum) then
-        table.insert(data, v)
+      if v.type == 'match' and path and lnum and not self:check_in_lspres(path, lnum) then
+        table.insert(self.rg_data, v)
       end
     end
-    -- clean
-    context = {}
+    self.lspres = nil
+
     local lines = {}
-    for i, item in pairs(data) do
-      local uri = vim.uri_from_fname(item.data.path.text)
+    for _, item in pairs(self.rg_data) do
       local root_parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
       local fname_parts = vim.split(item.data.path.text, libs.path_sep, { trimempty = true })
       local short = table.concat({ unpack(fname_parts, #root_parts + 1) }, libs.path_sep)
       table.insert(lines, short)
+      local uri = vim.uri_from_fname(item.data.path.text)
       local bufnr = vim.uri_to_bufnr(uri)
+      item.data.bufnr = bufnr
       if not api.nvim_buf_is_loaded(bufnr) then
         -- avoid lsp attached this buffer
         vim.opt.eventignore:append({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
         fn.bufload(bufnr)
         vim.opt.eventignore:remove({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
-        if not context[uri] then
-          context[uri] = {}
-        end
-        table.insert(context[uri], {
-          bufnr = bufnr,
-          new = new_name,
-          lnum = item.data.line_number,
-          submatches = item.data.submatches,
-          winline = i,
-        })
       end
     end
 
@@ -494,4 +517,5 @@ function rename:whole_project(cur_name, new_name, root_dir)
     end
   end)
 end
-return rename
+
+return setmetatable(context, rename)
