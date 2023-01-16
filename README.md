@@ -129,6 +129,7 @@ keymap({"n", "t"}, "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 
 ## Usage Tutorial
 **Notice that title in float window must need neovim version >= 0.9**
+you can find these doc in neovim by `:h lspsaga`
 
 ## default options
 
