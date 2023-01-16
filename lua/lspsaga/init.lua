@@ -23,7 +23,6 @@ local default_config = {
     kind = {},
   },
   diagnostic = {
-    twice_into = false,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,

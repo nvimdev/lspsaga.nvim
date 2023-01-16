@@ -412,12 +412,7 @@ end
 
 function diag:move_cursor(entry)
   if self.winid and api.nvim_win_is_valid(self.winid) then
-    if diag_conf.twice_into then
-      api.nvim_set_current_win(self.winid)
-      return
-    else
-      api.nvim_win_close(self.winid, true)
-    end
+    api.nvim_win_close(self.winid, true)
   end
 
   self.theme = require('lspsaga').theme()
