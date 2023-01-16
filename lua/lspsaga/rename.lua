@@ -12,7 +12,9 @@ rename.__newindex = function(t, k, v)
 end
 
 local function clean_context()
-  context = {}
+  for k, _ in pairs(context) do
+    context[k] = nil
+  end
 end
 
 function rename:close_rename_win()

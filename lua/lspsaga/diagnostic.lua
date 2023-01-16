@@ -1,4 +1,7 @@
 local config = require('lspsaga').config
+local act = require('lspsaga.codeaction')
+local window = require('lspsaga.window')
+local libs = require('lspsaga.libs')
 local diag_conf, ui = config.diagnostic, config.ui
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
@@ -15,9 +18,6 @@ end
 --- notice just make ctx to empty not free memory before gc
 ---@private
 local function clean_ctx()
-  if diag_conf.show_code_action and ctx.act then
-    ctx.act:clear_tmp_data()
-  end
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
@@ -47,7 +47,7 @@ function diag:code_action_cb()
     ctx.theme.left .. ui.code_action .. 'Fix ' .. ctx.theme.right,
   }
 
-  for index, client_with_actions in pairs(ctx.act.action_tuples) do
+  for index, client_with_actions in pairs(act.action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('There has something wrong in aciton_tuples')
       return
@@ -59,8 +59,7 @@ function diag:code_action_cb()
   end
 
   local win_conf = api.nvim_win_get_config(ctx.winid)
-  local increase =
-    ctx.window.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
+  local increase = window.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
   local start_line = api.nvim_buf_line_count(ctx.bufnr) + 1
   api.nvim_win_set_config(ctx.winid, { height = win_conf.height + increase + #contents })
 
@@ -76,7 +75,7 @@ function diag:code_action_cb()
     api.nvim_buf_set_extmark(ctx.bufnr, virt_ns, start_line + i - 2, 0, {
       hl_group = 'CodeActionConceal',
       end_col = 2,
-      conceal = i - 2 <= 10 and ctx.libs.unicode_number((i - 2 == 0 and 1 or i - 2)) or '◉',
+      conceal = i - 2 <= 10 and libs.unicode_number((i - 2 == 0 and 1 or i - 2)) or '◉',
     })
     api.nvim_buf_add_highlight(ctx.bufnr, 0, 'CodeActionText', start_line + i - 1, 0, -1)
   end
@@ -87,7 +86,7 @@ function diag:code_action_cb()
   end, { buffer = ctx.bufnr, nowait = true, noremap = true })
 
   if diag_conf.jump_num_shortcut then
-    ctx.act:num_shortcut(ctx.main_buf, function()
+    act:num_shortcut(ctx.main_buf, function()
       if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
         api.nvim_win_close(ctx.winid, true)
       end
@@ -103,7 +102,7 @@ function diag:code_action_cb()
   api.nvim_create_autocmd('CursorMoved', {
     buffer = ctx.bufnr,
     callback = function()
-      ctx.preview_winid = ctx.act:action_preview(ctx.winid, ctx.main_buf)
+      ctx.preview_winid = act:action_preview(ctx.winid, ctx.main_buf)
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
@@ -115,13 +114,13 @@ function diag:do_code_action()
   if not num then
     return
   end
-  ctx.act:do_code_action(num)
+  act:do_code_action(num)
 end
 
 function diag:apply_map()
   keymap('n', diag_conf.keys.exec_action, function()
     self:do_code_action()
-    ctx.window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
+    window.nvim_close_valid_window({ ctx.winid, ctx.virt_winid, ctx.preview_winid })
   end, { buffer = ctx.bufnr, nowait = true })
 
   keymap('n', diag_conf.keys.quit, function()
@@ -155,7 +154,7 @@ function diag:render_diagnostic_window(entry, option)
   content[#content] = content[#content] .. source
 
   if diag_conf.show_code_action then
-    ctx.act:send_code_action_request(ctx.main_buf, {
+    act:send_code_action_request(ctx.main_buf, {
       range = {
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
@@ -178,10 +177,10 @@ function diag:render_diagnostic_window(entry, option)
     },
   }
 
-  local increase = ctx.window.win_height_increase(content, 0.7)
+  local increase = window.win_height_increase(content, 0.7)
 
-  local max_width = ctx.window.get_max_float_width(0.7)
-  local max_len = ctx.window.get_max_content_length(content)
+  local max_width = window.get_max_float_width(0.7)
+  local max_len = window.get_max_content_length(content)
 
   if max_width - max_len > 10 then
     max_width = max_len + 10
@@ -208,7 +207,7 @@ function diag:render_diagnostic_window(entry, option)
     )
   end
 
-  ctx.bufnr, ctx.winid = ctx.window.create_win_with_border(content_opts, opts)
+  ctx.bufnr, ctx.winid = window.create_win_with_border(content_opts, opts)
   vim.wo[ctx.winid].conceallevel = 2
   vim.wo[ctx.winid].concealcursor = 'niv'
   vim.wo[ctx.winid].showbreak = 'NONE'
@@ -236,8 +235,8 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.height = opts.height + 1
-  ctx.virt_bufnr, ctx.virt_winid = ctx.window.create_win_with_border({
-    contents = ctx.libs.generate_empty_table(#content + 1),
+  ctx.virt_bufnr, ctx.virt_winid = window.create_win_with_border({
+    contents = libs.generate_empty_table(#content + 1),
     border = 'none',
     buftype = 'nofile',
     filetype = 'diagvirt',
@@ -359,7 +358,6 @@ function diag:render_diagnostic_window(entry, option)
   )
 
   local current_buffer = api.nvim_get_current_buf()
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
 
   api.nvim_create_autocmd('BufLeave', {
     buffer = ctx.bufnr,
@@ -397,15 +395,14 @@ function diag:render_diagnostic_window(entry, option)
 
   self:apply_map()
 
+  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
   vim.defer_fn(function()
-    ctx.libs.close_preview_autocmd(
+    libs.close_preview_autocmd(
       current_buffer,
       { ctx.winid, ctx.virt_winid, ctx.preview_winid or nil },
       close_autocmds,
       function()
-        if ctx.act then
-          ctx.act:clear_tmp_data()
-        end
+        act:clean_context()
       end
     )
   end, 0)
@@ -421,13 +418,6 @@ function diag:move_cursor(entry)
     end
   end
 
-  ctx.window = require('lspsaga.window')
-  ctx.libs = require('lspsaga.libs')
-  if diag_conf.show_code_action then
-    ctx.act = require('lspsaga.codeaction')
-    ctx.act:clear_tmp_data()
-  end
-
   ctx.theme = require('lspsaga').theme()
   local current_winid = api.nvim_get_current_win()
 
@@ -439,7 +429,7 @@ function diag:move_cursor(entry)
     if width == 0 then
       width = #api.nvim_get_current_line()
     end
-    ctx.libs.jump_beacon({ entry.lnum, entry.col }, width)
+    libs.jump_beacon({ entry.lnum, entry.col }, width)
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
@@ -467,7 +457,6 @@ function diag:show(entrys, arg, type)
   local cur_buf = api.nvim_get_current_buf()
   local content = {}
   local max_width = math.floor(vim.o.columns * 0.6)
-  local window = require('lspsaga.window')
   local len = {}
   for index, entry in pairs(entrys) do
     local start_col = entry.end_col > entry.col and entry.col or entry.end_col
@@ -550,7 +539,7 @@ function diag:show(entrys, arg, type)
   local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
 
   vim.defer_fn(function()
-    require('lspsaga.libs').close_preview_autocmd(cur_buf, ctx.lnum_winid, close_autocmds)
+    libs.close_preview_autocmd(cur_buf, ctx.lnum_winid, close_autocmds)
   end, 0)
 end
 

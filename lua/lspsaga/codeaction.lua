@@ -10,6 +10,12 @@ function act.__newindex(t, k, v)
   rawset(t, k, v)
 end
 
+local function clean_ctx()
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
+  end
+end
+
 function act:action_callback()
   local contents = {}
 
@@ -53,20 +59,10 @@ function act:action_callback()
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
 
-  local group = api.nvim_create_augroup('CodeAction' .. self.bufnr, { clear = true })
   api.nvim_create_autocmd('CursorMoved', {
-    group = group,
     buffer = self.action_bufnr,
     callback = function()
       self:set_cursor()
-    end,
-  })
-
-  api.nvim_create_autocmd('QuitPre', {
-    group = group,
-    buffer = self.action_bufnr,
-    callback = function()
-      self:quit_action_window()
     end,
   })
 
@@ -105,55 +101,15 @@ function act:apply_action_keys()
   end, { buffer = self.action_bufnr })
 
   map_keys('n', config.code_action.keys.quit, function()
-    self:quit_action_window()
+    self:close_action_window()
+    clean_ctx()
   end, { buffer = self.action_bufnr })
-end
-
-function act:get_clients(results, options)
-  local function action_filter(a)
-    -- filter by specified action kind
-    if options and options.context and options.context.only then
-      if not a.kind then
-        return false
-      end
-      local found = false
-      for _, o in ipairs(options.context.only) do
-        -- action kinds are hierarchical with . as a separator: when requesting only
-        -- 'quickfix' this filter allows both 'quickfix' and 'quickfix.foo', for example
-        if a.kind:find('^' .. o .. '$') or a.kind:find('^' .. o .. '%.') then
-          found = true
-          break
-        end
-      end
-      if not found then
-        return false
-      end
-    end
-    -- filter by user function
-    if options and options.filter and not options.filter(a) then
-      return false
-    end
-    -- no filter removed this action
-    return true
-  end
-
-  if self.action_tuples == nil then
-    self.action_tuples = {}
-  end
-
-  for client_id, result in pairs(results) do
-    for _, action in pairs(result.result or {}) do
-      if action_filter(action) then
-        table.insert(self.action_tuples, { client_id, action })
-      end
-    end
-  end
 end
 
 function act:send_code_action_request(main_buf, options, cb)
   local diagnostics = lsp.diagnostic.get_line_diagnostics(main_buf)
   self.bufnr = main_buf
-  local context = { diagnostics = diagnostics }
+  local ctx_diags = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
   options = options or {}
@@ -183,14 +139,23 @@ function act:send_code_action_request(main_buf, options, cb)
   else
     params = util.make_range_params()
   end
-  params.context = context
-  if not self.ctx then
-    self.ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
+  params.context = ctx_diags
+  if not self.enriched_ctx then
+    self.enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
   end
 
   lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)
     self.pending_request = false
-    self:get_clients(results)
+    if self.action_tuples == nil then
+      self.action_tuples = {}
+    end
+
+    for client_id, result in pairs(results) do
+      for _, action in pairs(result.result or {}) do
+        table.insert(self.action_tuples, { client_id, action })
+      end
+    end
+
     if #self.action_tuples == 0 then
       vim.notify('No code actions available', vim.log.levels.INFO)
       return
@@ -248,7 +213,7 @@ function act:apply_action(action, client)
     local command = type(action.command) == 'table' and action.command or action
     local func = client.commands[command.command] or lsp.commands[command.command]
     if func then
-      local enriched_ctx = vim.deepcopy(self.ctx)
+      local enriched_ctx = vim.deepcopy(self.enriched_ctx)
       enriched_ctx.client_id = client.id
       func(command, enriched_ctx)
     else
@@ -257,7 +222,7 @@ function act:apply_action(action, client)
         arguments = command.arguments,
         workDoneToken = command.workDoneToken,
       }
-      client.request('workspace/executeCommand', params, nil, self.ctx.bufnr)
+      client.request('workspace/executeCommand', params, nil, self.enriched_ctx.bufnr)
     end
   end
 end
@@ -295,7 +260,8 @@ function act:do_code_action(num)
   else
     self:apply_action(action, client)
   end
-  self:quit_action_window()
+  self:close_action_window()
+  clean_ctx()
 end
 
 function act:get_action_diff(num, main_buf)
@@ -328,7 +294,6 @@ function act:get_action_diff(num, main_buf)
   if not text_edits then
     return
   end
-  -- print(vim.inspect(text_edits))
 
   local old_lines = {}
   local new_text = {}
@@ -436,7 +401,7 @@ function act:action_preview(main_winid, main_buf)
   local content_opts = {
     contents = tbl,
     filetype = 'diff',
-    buftype = 'nofile',
+    bufhidden = 'wipe',
     highlight = {
       normal = 'ActionPreviewNormal',
       border = 'ActionPreviewBorder',
@@ -449,18 +414,17 @@ function act:action_preview(main_winid, main_buf)
   return self.preview_winid
 end
 
-function act:clear_tmp_data()
-  for k, _ in pairs(ctx) do
-    ctx[k] = nil
+function act:close_action_window()
+  if self.action_winid and api.nvim_win_is_valid(self.action_winid) then
+    api.nvim_win_close(self.action_winid, true)
+  end
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
   end
 end
 
-function act:quit_action_window()
-  if self.action_bufnr == 0 and self.action_winid == 0 then
-    return
-  end
-  window.nvim_close_valid_window({ self.action_winid, self.preview_winid })
-  self:clear_tmp_data()
+function act:clean_context()
+  clean_ctx()
 end
 
 return setmetatable(ctx, act)

@@ -8,7 +8,6 @@ libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
 libs.path_sep = libs.iswin and '\\' or '/'
 
 function libs.unicode_number(num)
-  print(num)
   local tbl = {
     '❶ ',
     '❷ ',
