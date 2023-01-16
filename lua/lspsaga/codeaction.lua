@@ -303,6 +303,7 @@ function act:get_action_diff(num, main_buf)
   end
 
   local tmp_buf = api.nvim_create_buf(false, false)
+  vim.bo[tmp_buf].bufhidden = 'wipe'
   local lines = api.nvim_buf_get_lines(main_buf, 0, -1, false)
   api.nvim_buf_set_lines(tmp_buf, 0, -1, false, lines)
 
@@ -310,6 +311,7 @@ function act:get_action_diff(num, main_buf)
     util.apply_text_edits(changes, tmp_buf, client.offset_encoding)
   end
   local data = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+  api.nvim_buf_delete(tmp_buf, { force = true })
   local diff = vim.diff(table.concat(lines, '\n'), table.concat(data, '\n'))
   return diff
 end
