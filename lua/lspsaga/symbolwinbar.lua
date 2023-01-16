@@ -38,7 +38,7 @@ end
 local function bar_file_name(buf)
   local res
   if config.respect_root then
-    res = respect_lsp_root()
+    res = respect_lsp_root(buf)
   end
 
   --fallback to config.folder_level
