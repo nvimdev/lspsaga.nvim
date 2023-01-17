@@ -6,6 +6,7 @@ local default_config = {
   ui = {
     theme = 'round',
     border = 'solid',
+    title = true,
     winblend = 0,
     expand = '',
     collapse = '',

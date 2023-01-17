@@ -53,7 +53,7 @@ function act:action_callback()
 
   local opt = {}
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
     opt.title = {
       { theme.left, 'TitleSymbol' },
@@ -398,7 +398,7 @@ function act:action_preview(main_winid, main_buf)
   opt.width = max_len < max_width and max_len or max_width
   opt.no_size_override = true
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = { { 'Action Preivew', 'ActionPreviewTitle' } }
   end
 

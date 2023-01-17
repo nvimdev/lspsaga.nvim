@@ -132,7 +132,7 @@ function rename:lsp_rename()
   }
 
   local theme = require('lspsaga').theme()
-  if vim.fn.has('nvim-0.9') == 1 then
+  if vim.fn.has('nvim-0.9') == 1 and config.ui.title then
     opts.title = {
       { theme.left, 'TitleSymbol' },
       { 'Rename', 'TitleString' },
@@ -318,7 +318,7 @@ function rename:p_preview()
   opt.height = #lines
   opt.no_size_override = true
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
     opt.title = {
       { theme.left, 'TitleSymbol' },
@@ -346,7 +346,7 @@ function rename:popup_win(lines)
   opt.height = max_height > #context and max_height or #context
   opt.no_size_override = true
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
     opt.title = {
       { theme.left, 'TitleSymbol' },

@@ -210,7 +210,7 @@ function def:peek_definition()
       },
     }
     --@deprecated when 0.9 release
-    if fn.has('nvim-0.9') == 1 then
+    if fn.has('nvim-0.9') == 1 and config.ui.title then
       self:title_text(opts, link)
     end
 

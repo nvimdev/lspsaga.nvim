@@ -351,7 +351,7 @@ function ch:render_win()
     no_size_override = true,
   }
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
     local icon = self.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
     opt.title = {
@@ -488,7 +488,7 @@ function ch:preview()
     enter = false,
   }
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and ui.title then
     local fname_parts = libs.get_path_info(data[1], 2)
     local tbl = libs.icon_from_devicon(vim.bo[self.main_buf].filetype, true)
     local theme = require('lspsaga').theme()

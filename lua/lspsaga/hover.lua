@@ -1,4 +1,5 @@
 local api, fn, lsp, util = vim.api, vim.fn, vim.lsp, vim.lsp.util
+local config = require('lspsaga').config
 local hover = {}
 
 function hover:open_floating_preview(res, opts)
@@ -52,7 +53,7 @@ function hover:open_floating_preview(res, opts)
     no_size_override = true,
   }
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     float_option.title = {
       { theme.left, 'TitleSymbol' },
       { 'Hover', 'TitleString' },
