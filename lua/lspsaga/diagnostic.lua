@@ -495,8 +495,9 @@ function diag:show(entrys, arg, type)
   }
 
   local increase = window.win_height_increase(content)
+  local max_len = window.get_max_content_length(content)
   local opt = {
-    width = max_width,
+    width = max_len + 10 < max_width and max_len + 5 or max_width,
     height = #content * 2 + increase,
     no_size_override = true,
   }
