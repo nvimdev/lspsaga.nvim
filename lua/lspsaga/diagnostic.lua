@@ -467,9 +467,9 @@ function diag:show(entrys, arg, type)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local line = ' ['
+    local line = ' '
       .. index
-      .. '] '
+      .. ' '
       .. code_source[1]
       .. '  '
       .. entry.lnum + 1
@@ -532,7 +532,8 @@ function diag:show(entrys, arg, type)
     local hi = 'Diagnostic' .. get_diag_type(entrys[k].severity)
     api.nvim_buf_set_extmark(self.lnum_bufnr, ns, index, 0, {
       hl_group = hi,
-      end_col = 3,
+      end_row = index,
+      end_col = 2,
       conceal = '◉',
     })
     api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticWord', index, 3, 4 + len[k])
