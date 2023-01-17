@@ -351,7 +351,7 @@ function act:action_preview(main_winid, main_buf)
     self.preview_winid = nil
   end
   local line = api.nvim_get_current_line()
-  local num = line:match('%[([1-9])%]')
+  local num = line:match('(%d+)%s+%w')
   if not num then
     return
   end
