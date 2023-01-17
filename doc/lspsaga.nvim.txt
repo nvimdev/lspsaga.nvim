@@ -535,6 +535,7 @@ default ui options
       ui = {
         -- currently only round theme
         theme = 'round',
+        title = true,
         -- border type can be single,double,rounded,solid,shadow.
         border = 'solid',
         winblend = 0,
