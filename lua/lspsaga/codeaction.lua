@@ -29,12 +29,13 @@ function act:action_callback()
 
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
+    local indent = index > 9 and '' or ' '
     if #client_with_actions ~= 2 then
       vim.notify('There has something wrong in aciton_tuples')
       return
     end
     if client_with_actions[2].title then
-      action_title = '[' .. index .. ']' .. ' ' .. client_with_actions[2].title
+      action_title = indent .. index .. '  ' .. client_with_actions[2].title
     end
     table.insert(contents, action_title)
   end
@@ -79,15 +80,17 @@ function act:action_callback()
     end,
   })
 
-  local ns = api.nvim_create_namespace('CodeAction')
+  local bgrange = { 'green', 'purple', 'red', 'orange', 'yellow', 'cyan', 'blue' }
+  local colors = require('lspsaga.highlight').get_colors()()
   for i = 1, #contents, 1 do
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', i - 1, 0, -1)
-
-    api.nvim_buf_set_extmark(self.action_bufnr, ns, i - 1, 0, {
-      end_col = 3,
-      conceal = i <= 10 and libs.unicode_number(i) or '◉',
+    local row = i - 1
+    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionBg' .. row, row, 0, 3)
+    local idx = i % 7 == 0 and 7 or i % 7
+    api.nvim_set_hl(0, 'CodeActionBg' .. row, {
+      background = colors[bgrange[idx]],
+      foreground = colors.black,
     })
-    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionText', i - 1, 0, -1)
   end
 
   -- dsiable some move keys in codeaction
@@ -259,7 +262,7 @@ function act:do_code_action(num)
     number = tonumber(num)
   else
     local cur_text = api.nvim_get_current_line()
-    number = cur_text:match('%[(%d)%]')
+    number = cur_text:match('(%d+)%s+%w')
     number = tonumber(number)
   end
 

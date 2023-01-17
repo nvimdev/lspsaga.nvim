@@ -55,7 +55,8 @@ function diag:code_action_cb()
       return
     end
     if client_with_actions[2].title then
-      local action_title = '[' .. index .. ']' .. ' ' .. client_with_actions[2].title
+      local indent = index > 9 and '' or ' '
+      local action_title = indent .. index .. ' ' .. client_with_actions[2].title
       table.insert(contents, action_title)
     end
   end
@@ -73,14 +74,19 @@ function diag:code_action_cb()
   api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
   api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
 
+  local bgrange = { 'green', 'purple', 'red', 'orange', 'yellow', 'cyan', 'blue' }
+  local colors = require('lspsaga.highlight').get_colors()()
   for i = 2, #contents do
-    api.nvim_buf_set_extmark(self.bufnr, virt_ns, start_line + i - 2, 0, {
-      hl_group = 'CodeActionConceal',
-      end_col = 2,
-      conceal = i - 2 <= 10 and libs.unicode_number((i - 2 == 0 and 1 or i - 2)) or '◉',
+    local row = start_line + i - 1
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionBg' .. row, row, 0, 3)
+    local idx = i % 7 == 0 and 7 or i % 7
+    api.nvim_set_hl(0, 'CodeActionBg' .. row, {
+      background = colors[bgrange[idx]],
+      foreground = colors.black,
     })
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', start_line + i - 1, 0, -1)
   end
+
   keymap('n', diag_conf.keys.go_action, function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
       api.nvim_win_set_cursor(self.winid, { start_line + 2, 4 })
@@ -112,7 +118,7 @@ end
 
 function diag:do_code_action()
   local line = api.nvim_get_current_line()
-  local num = line:match('%[([1-9])%]')
+  local num = line:match('(%d+)%s%w')
   if not num then
     return
   end
