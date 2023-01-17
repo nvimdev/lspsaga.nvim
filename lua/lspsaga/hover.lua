@@ -43,11 +43,12 @@ function hover:open_floating_preview(res, opts)
   local max_float_width = math.floor(vim.o.columns * 0.6)
   local max_content_len = window.get_max_content_length(content)
   local increase = window.win_height_increase(content)
+  local max_height = math.floor(vim.o.lines * 0.8)
 
   local theme = require('lspsaga').theme()
   local float_option = {
     width = max_content_len + 10 < max_float_width and max_content_len + 5 or max_float_width,
-    height = #content + increase,
+    height = #content + increase > max_height and max_height or #content + increase,
     no_size_override = true,
   }
 
