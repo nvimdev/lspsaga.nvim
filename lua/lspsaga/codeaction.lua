@@ -365,11 +365,13 @@ function act:action_preview(main_winid, main_buf)
   table.remove(tbl, 1)
 
   local win_conf = api.nvim_win_get_config(main_winid)
-
   local opt = {}
   opt.relative = 'editor'
+  local max_height = math.floor(vim.o.lines * 0.4)
+  opt.height = #tbl > max_height and max_height or #tbl
+
   if win_conf.anchor:find('^N') then
-    if win_conf.row[false] - #tbl > 0 then
+    if win_conf.row[false] - opt.height > 0 then
       opt.row = win_conf.row[false]
       opt.anchor = win_conf.anchor:gsub('N', 'S')
     else
@@ -380,7 +382,7 @@ function act:action_preview(main_winid, main_buf)
       opt.anchor = win_conf.anchor
     end
   else
-    if win_conf.row[false] - win_conf.height - #tbl - 4 > 0 then
+    if win_conf.row[false] - win_conf.height - opt.height - 4 > 0 then
       opt.row = win_conf.row[false] - win_conf.height - 4
       opt.anchor = win_conf.anchor
     else
@@ -394,7 +396,6 @@ function act:action_preview(main_winid, main_buf)
   local max_len = window.get_max_content_length(tbl)
 
   opt.width = max_len < max_width and max_len or max_width
-  opt.height = #tbl
   opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 then
