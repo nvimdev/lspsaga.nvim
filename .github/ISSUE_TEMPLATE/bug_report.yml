@@ -37,19 +37,13 @@ body:
       required: true
   - type: input
     attributes:
-      label: "Operating system/version"
-      placeholder: "macOS 11.5"
+      label: "lspsaga commit"
+      placeholder: "commit"
     validations:
       required: true
   - type: input
     attributes:
       label: "Terminal name/version"
       placeholder: "xterm 3.1"
-    validations:
-      required: true
-  - type: input
-    attributes:
-      label: "$TERM environment variable"
-      placeholder: "xterm-256color"
     validations:
       required: true
