@@ -538,6 +538,12 @@ function ot:register_events()
 end
 
 function ot:outline(no_close)
+  if self.winid and api.nvim_win_is_valid(self.winid) and not no_close then
+    api.nvim_win_close(self.winid, true)
+    clean_ctx()
+    return
+  end
+
   local current_buf = api.nvim_get_current_buf()
   if #lsp.get_active_clients({ bufnr = current_buf }) == 0 then
     vim.notify('[Lspsaga.nvim] there is no server attatched this buffer')
@@ -546,12 +552,6 @@ function ot:outline(no_close)
   no_close = no_close or false
   if self.pending_request then
     vim.notify('[lspsaga.nvim] there already have a request for outline please wait')
-    return
-  end
-
-  if self.winid and api.nvim_win_is_valid(self.winid) and not no_close then
-    api.nvim_win_close(self.winid, true)
-    clean_ctx()
     return
   end
 
