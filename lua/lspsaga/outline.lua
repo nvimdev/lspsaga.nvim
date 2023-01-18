@@ -538,7 +538,9 @@ function ot:register_events()
 end
 
 function ot:outline(no_close)
-  if libs.check_lsp_active(false) then
+  local current_buf = api.nvim_get_current_buf()
+  if #lsp.get_active_clients({ bufnr = current_buf }) == 0 then
+    vim.notify('[Lspsaga.nvim] there is no server attatched this buffer')
     return
   end
   no_close = no_close or false
@@ -553,7 +555,6 @@ function ot:outline(no_close)
     return
   end
 
-  local current_buf = api.nvim_get_current_buf()
   local symbols = get_cache_symbols(current_buf)
   self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
   self.render_buf = current_buf
