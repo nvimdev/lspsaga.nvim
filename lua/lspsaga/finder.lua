@@ -367,7 +367,7 @@ function finder:render_finder_result()
     },
   }
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
     opts.title = {
       { theme.left, 'TitleSymbol' },
@@ -674,7 +674,7 @@ function finder:auto_open_preview()
       },
     }
 
-    if fn.has('nvim-0.9') == 1 then
+    if fn.has('nvim-0.9') == 1 and config.ui.title then
       local theme = require('lspsaga').theme()
       opts.title = {
         { theme.left, 'TitleSymbol' },
