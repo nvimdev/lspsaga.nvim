@@ -538,6 +538,9 @@ function ot:register_events()
 end
 
 function ot:outline(no_close)
+  if libs.check_lsp_active(false) then
+    return
+  end
   no_close = no_close or false
   if self.pending_request then
     vim.notify('[lspsaga.nvim] there already have a request for outline please wait')
