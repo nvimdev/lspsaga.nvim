@@ -521,6 +521,7 @@ is `{icon, color}`.
 # Backers
 Thanks for all.
 
+@Möller Lukas
 [@HendrikPetertje](https://github.com/HendrikPetertje)
 [@Bojan Wilytsch](https://github.com/bwilytsch)
 [@Burgess Darrion](https://github.com/ca-mantis-shrimp)
