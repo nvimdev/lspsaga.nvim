@@ -207,7 +207,10 @@ end
 
 --@private
 local render_symbol_winbar = function(buf, symbols)
-  buf = buf or api.nvim_get_current_buf()
+  local cur_buf = api.nvim_get_current_buf()
+  if cur_buf ~= buf then
+    return
+  end
   local all_wins = fn.win_findbuf(buf)
   local cur_win = api.nvim_get_current_win()
   if not vim.tbl_contains(all_wins, cur_win) then
