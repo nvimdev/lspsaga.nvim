@@ -116,7 +116,7 @@ function hover:do_request(arg)
       return
     end
 
-    if not result or not result.contents or next(result.contents) == nil then
+    if not result or not result.contents then
       if not arg or arg ~= '++quiet' then
         vim.notify('No information available')
       end
