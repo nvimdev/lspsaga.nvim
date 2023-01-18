@@ -128,8 +128,15 @@ keymap({"n", "t"}, "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 ```
 
 ## Usage Tutorial
+
 **Notice that title in float window must need neovim version >= 0.9**
-you can find these doc in neovim by `:h lspsaga`
+**So if you are using the nvim 0.8 version you can't see title**
+**If you are using nvim 0.9 and want disable title see [#customize-appearance]
+
+**For some new you don't need copy all options into setup function. just set the options that you**
+**changed into setup function it will extend to default options!**
+
+you can find these doc in neovim by `:h lspsaga` . 
 
 ## default options
 
@@ -426,16 +433,14 @@ require your neovim version >= 0.8. options with default value
     show_file = true,
     folder_level = 2,
     respect_root = false,
-    color_mode = false,
+    color_mode = true,
   },
 ```
 - `hide_keyword` default is true it will hide some keyword or tmp variable make symbols more clean
 - `folder_level` work with `show_file`
 - `respect_root` will respect lsp root if this is true will ignore the folder_level. if there is no
   lsp client usage then fallback to folder_level
-- `color_mode` default is false that mean only the icon have color when true the icon and word
-  both have highlight.
-
+- `color_mode` default is true, false mean only icon have color.
 
 <details>
 <summary>symbols in winbar </summary>
@@ -469,6 +474,7 @@ default ui options
   ui = {
     -- currently only round theme
     theme = 'round',
+    -- this option only work in neovim 0.9
     title = true,
     -- border type can be single,double,rounded,solid,shadow.
     border = 'solid',
