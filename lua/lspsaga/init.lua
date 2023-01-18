@@ -131,6 +131,7 @@ function saga.theme()
 end
 
 function saga.setup(opts)
+  opts = opts or {}
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
   require('lspsaga.highlight'):init_highlight()
