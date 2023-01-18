@@ -46,7 +46,7 @@ local function hi_define()
     ActionPreviewTitle = { fg = colors.purple, bg = colors.normal_bg },
     CodeActionNormal = { link = 'SagaBorder' },
     CodeActionBorder = { link = 'SagaBorder' },
-    CodeActionText = { fg = '#e8e1c5' },
+    CodeActionText = { fg = colors.yellow },
     CodeActionConceal = { fg = colors.green },
     -- finder
     FinderSelection = { fg = colors.cyan, bold = true },
