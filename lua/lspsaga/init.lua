@@ -87,7 +87,7 @@ local default_config = {
     show_file = true,
     folder_level = 2,
     respect_root = false,
-    color_mode = false,
+    color_mode = true,
   },
   outline = {
     win_position = 'right',
