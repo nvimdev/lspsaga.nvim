@@ -279,8 +279,8 @@ end
 
 function symbar:refresh_symbol_cache(buf, render_fn)
   self[buf].pending_request = true
-  local function callback_fn(_, result, _)
-    self[buf].pending_request = false
+  local function callback_fn(_, result, ctx)
+    self[ctx.bufnr].pending_request = false
     if not result then
       return
     end
@@ -289,7 +289,7 @@ function symbar:refresh_symbol_cache(buf, render_fn)
       render_fn(buf, result)
     end
 
-    self[buf].symbols = result
+    self[ctx.buf].symbols = result
   end
   do_symbol_request(buf, callback_fn)
 end
