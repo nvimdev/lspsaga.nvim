@@ -1,6 +1,6 @@
 local api, lsp = vim.api, vim.lsp
+local saga_conf = require('lspsaga').config
 local libs = {}
-local server_filetype_map = require('lspsaga').config.server_filetype_map
 local saga_augroup = require('lspsaga').saga_augroup
 
 libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -109,14 +109,15 @@ function libs.get_lsp_root_dir()
     return
   end
 
-  local clients = lsp.get_active_clients()
+  local cur_buf = api.nvim_get_current_buf()
+  local clients = lsp.get_active_clients({ bufnr = cur_buf })
   for _, client in pairs(clients) do
     if client.config.filetypes and client.config.root_dir then
-      if libs.has_value(client.config.filetypes, vim.bo.filetype) then
+      if libs.has_value(client.config.filetypes, vim.bo[cur_buf].filetype) then
         return client.config.root_dir
       end
     else
-      for name, fts in pairs(server_filetype_map) do
+      for name, fts in pairs(saga_conf.server_filetype_map) do
         for _, ft in pairs(fts) do
           if ft == vim.bo.filetype and client.config.name == name and client.config.root_dir then
             return client.config.root_dir
@@ -143,15 +144,17 @@ function libs.get_config_lsp_filetypes()
     end
   end
 
-  if next(server_filetype_map) ~= nil then
-    for _, fts in pairs(server_filetype_map) do
-      if type(fts) == 'table' then
-        for _, ft in pairs(fts) do
-          table.insert(filetypes, ft)
-        end
-      elseif type(fts) == 'string' then
-        table.insert(filetypes, fts)
+  if next(saga_conf.server_filetype_map) == nil then
+    return filetypes
+  end
+
+  for _, fts in pairs(saga_conf.server_filetype_map) do
+    if type(fts) == 'table' then
+      for _, ft in pairs(fts) do
+        table.insert(filetypes, ft)
       end
+    elseif type(fts) == 'string' then
+      table.insert(filetypes, fts)
     end
   end
 
