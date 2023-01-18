@@ -328,8 +328,8 @@ function symbar:register_events(buf)
   api.nvim_create_autocmd('CursorMoved', {
     group = augroup,
     buffer = buf,
-    callback = function(opt)
-      self:init_buf_symbols(opt.buf, render_symbol_winbar)
+    callback = function()
+      self:init_buf_symbols(buf, render_symbol_winbar)
     end,
     desc = 'Lspsaga symbols',
   })
