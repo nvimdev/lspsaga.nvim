@@ -289,7 +289,7 @@ function symbar:refresh_symbol_cache(buf, render_fn)
       render_fn(buf, result)
     end
 
-    self[ctx.buf].symbols = result
+    self[ctx.bufnr].symbols = result
   end
   do_symbol_request(buf, callback_fn)
 end
