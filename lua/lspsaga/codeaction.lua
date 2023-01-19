@@ -52,6 +52,12 @@ function act:action_callback()
   }
 
   local opt = {}
+  local max_height = math.floor(vim.o.lines * 0.5)
+  opt.height = max_height < #contents and max_height or #contents
+  local max_width = math.floor(vim.o.columns * 0.7)
+  local max_len = window.get_max_content_length(contents)
+  opt.width = max_len + 10 < max_width and max_len + 5 or max_width
+  opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
