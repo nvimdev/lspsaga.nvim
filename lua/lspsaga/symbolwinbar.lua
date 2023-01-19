@@ -76,19 +76,6 @@ local function bar_file_name(buf)
   return str
 end
 
----@private
-local do_symbol_request = function(buf, callback)
-  buf = buf or api.nvim_get_current_buf()
-  local params = { textDocument = lsp.util.make_text_document_params() }
-
-  local client = libs.get_client_by_cap('documentSymbolProvider')
-  if client == nil then
-    return
-  end
-  cache[buf].pending_request = true
-  client.request('textDocument/documentSymbol', params, callback, buf)
-end
-
 local function get_node_range(node)
   if node.location then
     return node.location.range
@@ -280,9 +267,24 @@ local function get_buf_symbol(buf)
   return res
 end
 
+function symbar:do_symbol_request(buf, callback)
+  local params = { textDocument = lsp.util.make_text_document_params() }
+
+  local client = libs.get_client_by_cap('documentSymbolProvider')
+  if client == nil then
+    return
+  end
+  self[buf].pending_request = true
+  client.request('textDocument/documentSymbol', params, callback, buf)
+end
+
 function symbar:refresh_symbol_cache(buf, render_fn)
   self[buf].pending_request = true
-  local function callback_fn(_, result, ctx)
+  local function handler(_, result, ctx)
+    if api.nvim_get_current_buf() ~= buf or not self[ctx.bufnr] then
+      return
+    end
+
     self[ctx.bufnr].pending_request = false
     if not result then
       return
@@ -294,14 +296,10 @@ function symbar:refresh_symbol_cache(buf, render_fn)
 
     self[ctx.bufnr].symbols = result
   end
-  do_symbol_request(buf, callback_fn)
+  self:do_symbol_request(buf, handler)
 end
 
 function symbar:init_buf_symbols(buf, render_fn)
-  if not self[buf] then
-    self[buf] = {}
-  end
-
   local res = get_buf_symbol(buf)
   if res.pending_request then
     return
@@ -375,6 +373,10 @@ function symbar:symbol_autocmd()
       end
       if config.show_file then
         vim.wo[winid].winbar = bar_file_name(opt.buf)
+      end
+
+      if not self[opt.buf] then
+        self[opt.buf] = {}
       end
 
       self:init_buf_symbols(opt.buf, render_symbol_winbar)
