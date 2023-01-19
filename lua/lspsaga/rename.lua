@@ -397,7 +397,7 @@ function rename:popup_win(lines)
   end, { buffer = self.p_bufnr, nowait = true })
 
   vim.keymap.set('n', config.rename.confirm, function()
-    for _, item in pairs(self.confirmed) do
+    for _, item in pairs(self.confirmed or {}) do
       for _, match in pairs(item.data.submatches) do
         api.nvim_buf_set_text(
           item.data.bufnr,
