@@ -594,7 +594,7 @@ string or table if string type is icon if table type is `{icon, color}`.
 
 Thanks for all.
 
-Mölle Lukas(https://github.com/lmllrjr) HendrikPetertj
+@Möller Lukas <https://github.com/lmllrjr> HendrikPetertj
 <https://github.com/HendrikPetertje> Boja Wilytsch
 <https://github.com/bwilytsch> Burges Darrion
 <https://github.com/ca-mantis-shrimp>
