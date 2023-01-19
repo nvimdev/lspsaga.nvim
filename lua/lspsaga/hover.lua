@@ -132,6 +132,10 @@ function hover:do_request(arg)
     elseif result.contents.language then -- MarkedString
       value = result.contents.value
     elseif vim.tbl_islist(result.contents) then -- MarkedString[]
+      if vim.tbl_isempty(result.contents) then
+        vim.notify('No information available')
+        return
+      end
       local values = {}
       for _, ms in ipairs(result.contents) do
         table.insert(values, type(ms) == 'string' and ms or ms.value)
