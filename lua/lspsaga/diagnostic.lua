@@ -158,7 +158,8 @@ function diag:render_diagnostic_window(entry, option)
     source = source .. '(' .. entry.code .. ')'
   end
 
-  table.insert(content, '  ' .. entry.message)
+  local convert = vim.split(entry.message, '\n', { trimempty = true })
+  vim.list_extend(content, convert)
   content[#content] = content[#content] .. source
 
   if diag_conf.show_code_action then
@@ -187,11 +188,11 @@ function diag:render_diagnostic_window(entry, option)
 
   local increase = window.win_height_increase(content, 0.7)
 
-  local max_width = window.get_max_float_width(0.7)
+  local max_width = math.floor(vim.o.columns * 0.7)
   local max_len = window.get_max_content_length(content)
 
   if max_width - max_len > 10 then
-    max_width = max_len + 10
+    max_width = max_len + 5
   end
 
   local opts = {

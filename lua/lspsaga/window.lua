@@ -180,22 +180,12 @@ function M.get_max_content_length(contents)
   vim.validate({
     contents = { contents, 't' },
   })
-
-  local max = 0
-
-  if next(contents) == nil then
-    return max
-  end
-  if #contents == 1 then
-    return #contents[1]
-  end
-
+  local cells = {}
   for _, v in pairs(contents) do
-    if #v > max then
-      max = #v
-    end
+    table.insert(cells, api.nvim_strwidth(v))
   end
-  return max
+  table.sort(cells)
+  return cells[#cells]
 end
 
 function M.nvim_close_valid_window(winid)
