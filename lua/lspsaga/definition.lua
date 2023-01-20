@@ -85,6 +85,14 @@ local function push(node)
   ctx[key].length = ctx[key].length + 1
 end
 
+local function list_length()
+  if vim.tbl_isempty(ctx) then
+    return 0
+  end
+  local key = vim.tbl_keys(ctx)[1]
+  return ctx[key].length
+end
+
 function def:title_text(opts, link)
   link = vim.split(link, libs.path_sep, { trimempty = true })
   if #link > 2 then
@@ -187,20 +195,24 @@ function def:peek_definition()
 
     local bufnr, link, start_line, start_char_pos, end_char_pos = get_uri_data(result)
     node.link = link
+    local opts = {}
+    if list_length() == 0 then
+      opts = {
+        relative = 'cursor',
+        style = 'minimal',
+      }
+      local max_width = math.floor(vim.o.columns * 0.6)
+      local max_height = math.floor(vim.o.lines * 0.6)
 
-    local opts = {
-      relative = 'cursor',
-      style = 'minimal',
-    }
-    local max_width = math.floor(vim.o.columns * 0.6)
-    local max_height = math.floor(vim.o.lines * 0.6)
+      opts.width = max_width
+      opts.height = max_height
 
-    opts.width = max_width
-    opts.height = max_height
+      opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
+      opts.row = opts.row + 1
+    else
+      opts = api.nvim_win_get_config(cur_winid)
+    end
 
-    opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
-
-    opts.row = opts.row + 1
     local content_opts = {
       contents = {},
       enter = true,
