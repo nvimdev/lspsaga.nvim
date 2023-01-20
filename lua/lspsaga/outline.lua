@@ -72,9 +72,9 @@ local function get_kind()
 end
 
 local function find_node(data, line)
-  for idx, node in pairs(data or {}) do
+  for kind, node in pairs(data or {}) do
     if node.winline == line then
-      return idx, node
+      return kind, node
     end
   end
 end
@@ -220,16 +220,17 @@ end
 
 function ot:expand_collapse()
   local curline = api.nvim_win_get_cursor(0)[1]
-  local idx, node = find_node(self.data, curline)
+  local kind_idx, node = find_node(self.data, curline)
   if not node then
     return
   end
   local prefix = get_hi_prefix()
   local kind = get_kind()
 
-  local function increase_or_reduce(pos, num)
+  local function increase_or_reduce(idx, num)
     for k, v in pairs(self.data) do
-      if pos > k then
+      if k > idx then
+        self.data[k].winline = self.data[k].winline + num
         for _, item in pairs(v.data) do
           item.winline = item.winline + num
         end
@@ -256,7 +257,7 @@ function ot:expand_collapse()
       5,
       -1
     )
-    increase_or_reduce(idx, -#node.data)
+    increase_or_reduce(kind_idx, -#node.data)
     return
   end
 
@@ -287,7 +288,7 @@ function ot:expand_collapse()
     end
   end
 
-  increase_or_reduce(idx, #node.data)
+  increase_or_reduce(kind_idx, #node.data)
 end
 
 function ot:auto_refresh()
