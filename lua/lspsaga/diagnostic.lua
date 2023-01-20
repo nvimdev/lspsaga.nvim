@@ -25,6 +25,11 @@ local function clean_ctx()
   end
 end
 
+local function get_diagnostic_sign(type)
+  local prefix = 'DiagnosticSign'
+  return fn.sign_getdefined(prefix .. type)
+end
+
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 ---@private
@@ -468,8 +473,8 @@ function diag:show(entrys, arg, type)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local line = ' '
-      .. index
+    local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1]
+    local line = sign.text
       .. ' '
       .. code_source[1]
       .. '  '
@@ -524,21 +529,31 @@ function diag:show(entrys, arg, type)
   vim.wo[self.lnum_winid].breakindent = true
   vim.wo[self.lnum_winid].breakindentopt = ''
 
-  local ns = api.nvim_create_namespace('DiagnosticLnum')
   local index = 0
   for k, _ in pairs(content) do
     if k > 1 then
       index = index + 2
     end
-    local hi = 'Diagnostic' .. get_diag_type(entrys[k].severity)
-    api.nvim_buf_set_extmark(self.lnum_bufnr, ns, index, 0, {
-      hl_group = hi,
-      end_row = index,
-      end_col = 2,
-      conceal = '◉',
-    })
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticWord', index, 3, 4 + len[k])
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticPos', index, 4 + len[k], -1)
+    local diag_type = get_diag_type(entrys[k].severity)
+    local hi = 'Diagnostic' .. diag_type
+    local sign = get_diagnostic_sign(diag_type)[1]
+    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index, 0, #sign.text + 1)
+    api.nvim_buf_add_highlight(
+      self.lnum_bufnr,
+      0,
+      'DiagnosticWord',
+      index,
+      #sign.text + 1,
+      #sign.text + 1 + len[k]
+    )
+    api.nvim_buf_add_highlight(
+      self.lnum_bufnr,
+      0,
+      'DiagnosticPos',
+      index,
+      #sign.text + len[k] + 1,
+      -1
+    )
     api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index + 1, 2, -1)
   end
 
