@@ -313,6 +313,9 @@ function act:get_action_diff(num, main_buf)
   then
     local results = lsp.buf_request_sync(main_buf, 'codeAction/resolve', action, 1000)
     action = results[client.id].result
+    if not action then
+      return
+    end
   end
 
   if not action.edit then

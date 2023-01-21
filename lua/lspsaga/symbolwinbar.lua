@@ -242,6 +242,8 @@ local render_symbol_winbar = function(buf, symbols)
   winbar_str = winbar_str .. str
 
   if config.enable and api.nvim_win_get_height(cur_win) - 1 > 1 then
+    --TODO: some string has invalida character handle this string
+    --ref: neovim/filetype/detect.lua scroll in 1588 line
     vim.wo[cur_win].winbar = winbar_str
   end
   return winbar_str
