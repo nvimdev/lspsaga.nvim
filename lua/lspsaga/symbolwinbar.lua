@@ -273,7 +273,7 @@ function symbar:do_symbol_request(buf, callback)
   local params = { textDocument = lsp.util.make_text_document_params() }
 
   local client = libs.get_client_by_cap('documentSymbolProvider')
-  if client == nil then
+  if not client then
     return
   end
   self[buf].pending_request = true
@@ -281,7 +281,6 @@ function symbar:do_symbol_request(buf, callback)
 end
 
 function symbar:refresh_symbol_cache(buf, render_fn)
-  self[buf].pending_request = true
   local function handler(_, result, ctx)
     if api.nvim_get_current_buf() ~= buf or not self[ctx.bufnr] then
       return
