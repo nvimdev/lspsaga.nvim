@@ -21,12 +21,7 @@ diag.__index = diag
 --- notice just make ctx to empty not free memory before gc
 ---@private
 local function clean_ctx()
-  for k, v in pairs(ctx) do
-    if type(v) == 'function' then
-      v()
-    end
-    ctx[k] = nil
-  end
+  ctx = {}
 end
 
 local function get_diagnostic_sign(type)
@@ -431,6 +426,7 @@ function diag:render_diagnostic_window(entry, option)
       close_autocmds,
       function()
         act:clean_context()
+        self.remove_num_map()
         clean_ctx()
       end
     )
