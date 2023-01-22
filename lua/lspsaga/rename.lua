@@ -118,13 +118,14 @@ local function support_change()
   return true
 end
 
-function rename:lsp_rename()
+function rename:lsp_rename(arg)
   if not support_change() then
     vim.notify('Current is builtin or keyword,you can not rename it', vim.log.levels.WARN)
     return
   end
   local cword = fn.expand('<cword>')
   self.pos = api.nvim_win_get_cursor(0)
+  self.arg = arg
 
   local opts = {
     height = 1,
@@ -200,31 +201,38 @@ function rename:get_lsp_result()
     end
     local client = vim.lsp.get_client_by_id(ctx.client_id)
     lsp.util.apply_workspace_edit(result, client.offset_encoding)
-    if config.rename.whole_project and fn.executable('rg') == 1 then
-      if not self.lspres then
-        self.lspres = {}
-      end
 
-      if result.changes then
-        for uri, change in pairs(result.changes) do
-          local fname = vim.uri_to_fname(uri)
+    if self.arg and self.arg ~= '++project' then
+      return
+    end
+
+    if fn.executable('rg') == 0 then
+      return
+    end
+
+    if not self.lspres then
+      self.lspres = {}
+    end
+
+    if result.changes then
+      for uri, change in pairs(result.changes) do
+        local fname = vim.uri_to_fname(uri)
+        if not self.lspres[fname] then
+          self.lspres[fname] = {}
+        end
+        for _, edit in pairs(change) do
+          table.insert(self.lspres[fname], edit.range)
+        end
+      end
+    elseif result.documentChanges then
+      for _, change in pairs(result.documentChanges) do
+        if not change.kind or change.kind == 'rename' then
+          local fname = vim.uri_to_fname(change.textDocument.uri)
           if not self.lspres[fname] then
             self.lspres[fname] = {}
           end
-          for _, edit in pairs(change) do
-            table.insert(self.lspres[fname], edit.range)
-          end
-        end
-      elseif result.documentChanges then
-        for _, change in pairs(result.documentChanges) do
-          if not change.kind or change.kind == 'rename' then
-            local fname = vim.uri_to_fname(change.textDocument.uri)
-            if not self.lspres[fname] then
-              self.lspres[fname] = {}
-            end
-            for _, edit in pairs(change.edits) do
-              table.insert(self.lspres[fname], edit.range or edit.location.range)
-            end
+          for _, edit in pairs(change.edits) do
+            table.insert(self.lspres[fname], edit.range or edit.location.range)
           end
         end
       end
@@ -247,8 +255,13 @@ function rename:do_rename()
   local lnum, col = unpack(self.pos)
   self.pos = nil
   api.nvim_win_set_cursor(current_win, { lnum, col + 1 })
-  if not config.rename.whole_project then
+
+  if self.arg and self.arg ~= '++project' then
     clean_context()
+    return
+  end
+
+  if fn.executable('rg') == 0 then
     return
   end
 
@@ -257,20 +270,18 @@ function rename:do_rename()
     return
   end
 
-  if fn.executable('rg') == 1 then
-    local timer = uv.new_timer()
-    timer:start(
-      0,
-      5,
-      vim.schedule_wrap(function()
-        if self.lspres and vim.tbl_count(self.lspres) > 0 and not timer:is_closing() then
-          self:whole_project(current_name, root_dir)
-          timer:stop()
-          timer:close()
-        end
-      end)
-    )
-  end
+  local timer = uv.new_timer()
+  timer:start(
+    0,
+    5,
+    vim.schedule_wrap(function()
+      if self.lspres and vim.tbl_count(self.lspres) > 0 and not timer:is_closing() then
+        self:whole_project(current_name, root_dir)
+        timer:stop()
+        timer:close()
+      end
+    end)
+  )
 end
 
 function rename:p_preview()

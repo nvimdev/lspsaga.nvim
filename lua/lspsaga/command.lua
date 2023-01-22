@@ -10,8 +10,8 @@ local subcommands = {
   goto_definition = function()
     require('lspsaga.definition'):goto_definition()
   end,
-  rename = function()
-    require('lspsaga.rename'):lsp_rename()
+  rename = function(arg)
+    require('lspsaga.rename'):lsp_rename(arg)
   end,
   hover_doc = function(arg)
     require('lspsaga.hover'):render_hover_doc(arg)
