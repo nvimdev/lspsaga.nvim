@@ -245,7 +245,6 @@ function diag:render_diagnostic_window(entry, option)
     opts.move_col = -2
   elseif win_config['anchor'] == 'SW' then
     opts.move_col = nil
-    opts.move_row = 1
   end
 
   opts.focusable = false
@@ -254,12 +253,13 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.height = opts.height + 1
+  opts.width = 4
 
   local theme_bg = api.nvim_get_hl_by_name('Normal', true)
   local winblend = theme_bg.background and 100 or 0
 
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
-    contents = libs.generate_empty_table(#content + 1),
+    contents = libs.generate_empty_table(#content + 2),
     border = 'none',
     buftype = 'nofile',
     filetype = 'diagvirt',
@@ -289,7 +289,7 @@ function diag:render_diagnostic_window(entry, option)
 
   local pos_char = get_pos_with_char()
 
-  for i = 1, #content + 1 do
+  for i = 1, #content + 2 do
     local virt_tbl = {}
     if i > 2 then
       api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
