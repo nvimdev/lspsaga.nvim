@@ -309,7 +309,7 @@ same as `:h vim.diagnostic.get_next`
 ```lua
 -- this is mean only jump to error position
 -- or goto_next
-require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
+require("lspsaga.diagnostic"):goto_prev({ severity = vim.diagnostic.severity.ERROR })
 ```
 
 <details>
