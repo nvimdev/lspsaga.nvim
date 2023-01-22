@@ -259,7 +259,7 @@ peek_definition show case
 
 the step in this gif show case - `gd` run `lspsaga peek_definition`. - do some
 comment edit then `:w` to save. - `<C-c> o` jump to this file. - lspsaga will
-show becacon highlight after jump.
+show beacon highlight after jump.
 
 <img
 src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=80% width=80%/>
