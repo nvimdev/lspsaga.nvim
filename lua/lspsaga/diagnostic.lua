@@ -264,7 +264,7 @@ function diag:render_diagnostic_window(entry, option)
     buftype = 'nofile',
     filetype = 'diagvirt',
     highlight = {
-      normal = 'SagaBorder',
+      normal = 'SagaNormal',
     },
     winblend = winblend,
   }, opts)

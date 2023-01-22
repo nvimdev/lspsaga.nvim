@@ -36,15 +36,16 @@ local function hi_define()
     TitleString = { bg = colors.title_bg, fg = colors.black, bold = true },
     TitleSymbol = { bg = colors.normal_bg, fg = colors.title_bg },
     TitleIcon = { bg = colors.title_bg, fg = colors.red },
-    SagaBorder = { bg = colors.normal_bg },
+    SagaBorder = { bg = colors.normal_bg, fg = colors.blue },
+    SagaNormal = { bg = colors.normal_bg },
     SagaExpand = { fg = colors.red },
     SagaCollapse = { fg = colors.red },
     SagaBeacon = { bg = colors.magenta },
     -- code action
-    ActionPreviewNormal = { link = 'SagaBorder' },
+    ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
     ActionPreviewTitle = { fg = colors.purple, bg = colors.normal_bg },
-    CodeActionNormal = { link = 'SagaBorder' },
+    CodeActionNormal = { link = 'SagaNormal' },
     CodeActionBorder = { link = 'SagaBorder' },
     CodeActionText = { fg = colors.yellow },
     CodeActionConceal = { fg = colors.green },
@@ -59,15 +60,15 @@ local function hi_define()
     FinderSpinner = { fg = colors.magenta, bold = true },
     FinderPreviewSearch = { link = 'Search' },
     FinderVirtText = { fg = colors.red },
-    FinderNormal = { link = 'SagaBorder' },
+    FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },
     -- definition
     DefinitionBorder = { link = 'SagaBorder' },
-    DefinitionNormal = { link = 'SagaBorder' },
+    DefinitionNormal = { link = 'SagaNormal' },
     DefinitionSearch = { link = 'Search' },
     -- hover
-    HoverNormal = { link = 'SagaBorder' },
+    HoverNormal = { link = 'SagaNormal' },
     HoverBorder = { link = 'SagaBorder' },
     -- rename
     RenameBorder = { link = 'SagaBorder' },
@@ -75,7 +76,7 @@ local function hi_define()
     RenameMatch = { link = 'Search' },
     -- diagnostic
     DiagnosticSource = { fg = 'gray' },
-    DiagnosticNormal = { link = 'SagaBorder' },
+    DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticBorder = { link = 'SagaBorder' },
     DiagnosticErrorBorder = { link = 'SagaBorder' },
     DiagnosticWarnBorder = { link = 'SagaBorder' },
@@ -84,7 +85,7 @@ local function hi_define()
     DiagnosticPos = { fg = colors.gray },
     DiagnosticWord = { fg = colors.fg },
     -- Call Hierachry
-    CallHierarchyNormal = { link = 'SagaBorder' },
+    CallHierarchyNormal = { link = 'SagaNormal' },
     CallHierarchyBorder = { link = 'SagaBorder' },
     CallHierarchyIcon = { fg = colors.purple },
     CallHierarchyTitle = { fg = colors.red },
@@ -94,11 +95,11 @@ local function hi_define()
     SagaShadow = { bg = colors.black },
     -- Outline
     OutlineIndent = { fg = colors.magenta },
-    OutlinePreviewBorder = { link = 'SagaBorder' },
+    OutlinePreviewBorder = { link = 'SagaNormal' },
     OutlinePreviewNormal = { link = 'SagaBorder' },
     -- Float term
     TerminalBorder = { link = 'SagaBorder' },
-    TerminalNormal = { link = 'SagaBorder' },
+    TerminalNormal = { link = 'SagaNormal' },
   }
 end
 
