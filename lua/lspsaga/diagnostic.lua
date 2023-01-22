@@ -100,7 +100,7 @@ function diag:code_action_cb()
   if diag_conf.jump_num_shortcut then
     self.remove_num_map = function()
       for i = 3, #contents do
-        vim.keymap.del('n', tostring(i - 2), { buffer = self.main_buf })
+        pcall(vim.keymap.del, 'n', tostring(i - 2), { buffer = self.main_buf })
       end
     end
 
@@ -426,7 +426,9 @@ function diag:render_diagnostic_window(entry, option)
       close_autocmds,
       function()
         act:clean_context()
-        self.remove_num_map()
+        if self.remove_num_map then
+          self.remove_num_map()
+        end
         clean_ctx()
       end
     )
