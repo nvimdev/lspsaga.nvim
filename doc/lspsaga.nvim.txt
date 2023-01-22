@@ -127,6 +127,9 @@ PACKER                                                   *lspsaga.nvim-packer*
     -- Rename
     keymap("n", "gr", "<cmd>Lspsaga rename<CR>")
     
+    -- Rename word in whole project
+    keymap("n", "gr", "<cmd>Lspsaga rename ++project<CR>")
+    
     -- Peek Definition
     -- you can edit the definition file in this float window
     -- also support open/vsplit/etc operation check definition_action_keys
@@ -407,15 +410,13 @@ lsp rename with select. default options
         mark = 'x',
         confirm = '<CR>',
         in_select = true,
-        whole_project = true,
       },
 <
 
 
 
-- `whole_project` support rename whole project after using lsp rename by `rg`.
-- `mark` after lsp rename if there still have this word in project then will popup a window that include the files which include the word.then you can use this key mark the line that you want changed.
-- `confirm` when you marked the lines then press this keymap to execute.
+- `mark` used for `++project` used to markd the file which you want als rename.
+- `confirm` after you marked the lines then press this keymap to execute.
 
 
 rename show case
@@ -425,7 +426,17 @@ rename show case
 - `stesdd<CR>`
 
 
-<img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif" height=80% width=80%/>
+<img
+src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif"
+height=80% width=80%/>
+
+
+- `gR` to run `Lspsaga rename ++project`
+- `x` to mark the file
+- `CR` to execute rename
+
+
+<img src="https://user-images.githubusercontent.com/41671631/213900326-066036bf-848a-403c-bf05-ac661e424e63.gif"  height=80% width=80%/>
 
 :LSPSAGA OUTLINE                               *lspsaga.nvim-:lspsaga-outline*
 
