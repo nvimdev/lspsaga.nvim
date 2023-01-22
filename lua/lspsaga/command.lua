@@ -26,10 +26,10 @@ local subcommands = {
     require('lspsaga.diagnostic'):show_buf_diagnsotic(arg, 'buffer')
   end,
   diagnostic_jump_next = function()
-    require('lspsaga.diagnostic').goto_next()
+    require('lspsaga.diagnostic'):goto_next()
   end,
   diagnostic_jump_prev = function()
-    require('lspsaga.diagnostic').goto_prev()
+    require('lspsaga.diagnostic'):goto_prev()
   end,
   code_action = function()
     require('lspsaga.codeaction'):code_action()
