@@ -259,15 +259,19 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.height = opts.height + 1
+
+  local theme_bg = api.nvim_get_hl_by_name('Normal', true)
+  local winblend = theme_bg.background and 100 or 0
+
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#content + 1),
     border = 'none',
     buftype = 'nofile',
     filetype = 'diagvirt',
     highlight = {
-      normal = 'SagaVirtNormal',
+      normal = 'SagaBorder',
     },
-    winblend = 100,
+    winblend = winblend,
   }, opts)
 
   local get_pos_with_char = function()
