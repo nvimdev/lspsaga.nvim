@@ -39,7 +39,8 @@ require('lazy').setup({
     event = 'BufRead',
     config = function()
         require('lspsaga').setup({})
-    end
+    end,
+    dependices = { {'nvim-tree/nvim-web-devicons'} }
 },opt)
 ```
 
