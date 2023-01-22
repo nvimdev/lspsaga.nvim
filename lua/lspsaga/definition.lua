@@ -1,15 +1,14 @@
 local config = require('lspsaga').config
 local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
 local libs = require('lspsaga.libs')
+local window = require('lspsaga.window')
 local def = {}
 
 -- a double linked list for store the node infor
 local ctx = {}
 
 local function clean_ctx()
-  for k, _ in pairs(ctx) do
-    ctx[k] = nil
-  end
+  ctx = {}
 end
 
 ---Get current node by id
@@ -90,10 +89,16 @@ local function list_length()
     return 0
   end
   local key = vim.tbl_keys(ctx)[1]
+  if vim.tbl_isempty(ctx[key]) then
+    return 0
+  end
   return ctx[key].length
 end
 
 function def:title_text(opts, link)
+  if not link then
+    return
+  end
   link = vim.split(link, libs.path_sep, { trimempty = true })
   if #link > 2 then
     link = table.concat(link, libs.path_sep, #link - 1, #link)
@@ -226,7 +231,6 @@ function def:peek_definition()
       self:title_text(opts, link)
     end
 
-    local window = require('lspsaga.window')
     _, node.winid = window.create_win_with_border(content_opts, opts)
     if config.symbol_in_winbar.enable then
       api.nvim_win_set_var(node.winid, 'disable_winbar', true)
