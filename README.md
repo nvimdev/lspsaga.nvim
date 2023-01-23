@@ -40,7 +40,7 @@ require('lazy').setup({
     config = function()
         require('lspsaga').setup({})
     end,
-    dependices = { {'nvim-tree/nvim-web-devicons'} }
+    dependencies = { {'nvim-tree/nvim-web-devicons'} }
 },opt)
 ```
 
