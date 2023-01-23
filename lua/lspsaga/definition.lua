@@ -23,11 +23,15 @@ local function find_node(winid)
   if not node then
     return
   end
+
   while true do
     if node.winid == winid then
       break
     end
-    node = node.next
+    node = node.next or nil
+    if not node then
+      break
+    end
   end
   return node
 end
@@ -274,17 +278,18 @@ end
 
 function def:event(bufnr)
   api.nvim_create_autocmd('QuitPre', {
-    buffer = bufnr,
     once = true,
-    callback = function(opt)
-      local winid = fn.bufwinid(opt.buf)
-      local node = find_node(winid)
+    callback = function()
+      local curwin = vim.api.nvim_get_current_win()
+      local node = find_node(curwin)
       if not node then
         return
       end
+      remove(node)
       pcall(api.nvim_buf_clear_namespace, bufnr, node.def_win_ns, 0, -1)
     end,
   })
+
   api.nvim_create_autocmd('WinClosed', {
     buffer = bufnr,
     callback = function(opt)
