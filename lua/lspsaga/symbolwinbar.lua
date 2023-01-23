@@ -51,8 +51,8 @@ local function bar_file_name(buf)
   end
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
   local str = ''
-  local f_icon = data and data[1] and data[1] .. ' ' or ''
-  local f_hl = data and data[2] and data[2] or ''
+  local f_icon = (data[1] or '') .. ' '
+  local f_hl = data[2] or ''
   local bar = bar_prefix()
   for i, v in pairs(res) do
     local tmp

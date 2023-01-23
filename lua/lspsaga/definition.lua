@@ -110,14 +110,12 @@ function def:title_text(opts, link)
     { theme.right, 'TitleSymbol' },
   }
   local data = libs.icon_from_devicon(vim.bo.filetype, true)
-  if #data == 2 then
-    table.insert(opts.title, 2, { data[1] .. ' ', 'TitleFileIcon' })
-    api.nvim_set_hl(0, 'TitleFileIcon', {
-      background = config.ui.colors.title_bg,
-      foreground = data[2],
-      default = true,
-    })
-  end
+  table.insert(opts.title, 2, { (data[1] or '') .. ' ', 'TitleFileIcon' })
+  api.nvim_set_hl(0, 'TitleFileIcon', {
+    background = config.ui.colors.title_bg,
+    foreground = data[2] or 'white',
+    default = true,
+  })
 end
 
 local function get_uri_data(result)

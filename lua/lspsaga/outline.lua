@@ -470,7 +470,7 @@ function ot:render_outline(buf, symbols)
   local fname = libs.get_path_info(buf, 1)
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
   ---@diagnostic disable-next-line: need-check-nil
-  insert(lines, ' ' .. data[1] .. ' ' .. fname[1])
+  insert(lines, ' ' .. (data[1] or '') .. ' ' .. fname[1])
   local prefix = get_hi_prefix()
   local hi = {}
 
