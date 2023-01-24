@@ -49,30 +49,33 @@ local function bar_file_name(buf)
   if not res or #res == 0 then
     return
   end
-  local data = libs.icon_from_devicon(vim.bo[buf].filetype)
-  local str = ''
-  local f_icon = (data[1] or '') .. ' '
-  local f_hl = data[2] or ''
+  local data = libs.icon_from_devicon(vim.bo[buf].filetype, true)
   local bar = bar_prefix()
+  local items = {}
   for i, v in pairs(res) do
-    local tmp
     if i == #res then
-      tmp = '%#' .. f_hl .. '#' .. f_icon .. '%*' .. bar.prefix .. 'File#' .. v .. '%*'
+      if #data ~= 0 then
+        table.insert(items, bar.prefix .. 'FileIcon#' .. data[1] .. ' ' .. '%*')
+        api.nvim_set_hl(0, 'LspSagaWinbarFileIcon', { fg = data[2] or nil, default = true })
+      end
+      table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
     else
-      tmp = bar.prefix
-        .. 'Folder#'
-        .. get_kind_icon(302, 2)
-        .. '%*'
-        .. bar.prefix
-        .. 'FolderName'
-        .. '#'
-        .. v
-        .. '%*'
-        .. bar.sep
+      table.insert(
+        items,
+        bar.prefix
+          .. 'Folder#'
+          .. get_kind_icon(302, 2)
+          .. '%*'
+          .. bar.prefix
+          .. 'FolderName'
+          .. '#'
+          .. v
+          .. '%*'
+          .. bar.sep
+      )
     end
-    str = str .. tmp
   end
-  return str
+  return table.concat(items, '')
 end
 
 local function get_node_range(node)
