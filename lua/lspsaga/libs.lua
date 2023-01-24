@@ -291,7 +291,7 @@ function libs.delete_scroll_map(bufnr)
 end
 
 function libs.jump_beacon(bufpos, width)
-  if width == 0 then
+  if width == 0 or not width then
     return
   end
 
