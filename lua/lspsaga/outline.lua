@@ -451,8 +451,8 @@ function ot:close_when_last()
         end
         local bufnr = api.nvim_create_buf(true, true)
         api.nvim_win_set_buf(0, bufnr)
+        clean_ctx()
       end
-      clean_ctx()
     end,
     desc = 'Outline auto close when last one',
   })
