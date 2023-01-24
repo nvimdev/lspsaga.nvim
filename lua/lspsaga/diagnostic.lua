@@ -418,7 +418,7 @@ function diag:render_diagnostic_window(entry, option)
 
   self:apply_map()
 
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
+  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(
       current_buffer,
