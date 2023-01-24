@@ -64,8 +64,7 @@ local function bar_file_name(buf)
         .. get_kind_icon(302, 2)
         .. '%*'
         .. bar.prefix
-        .. 'FolderLevel'
-        .. i
+        .. 'FolderName'
         .. '#'
         .. v
         .. '%*'
