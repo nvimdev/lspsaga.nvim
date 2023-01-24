@@ -291,6 +291,10 @@ function libs.delete_scroll_map(bufnr)
 end
 
 function libs.jump_beacon(bufpos, width)
+  if width == 0 then
+    return
+  end
+
   local opts = {
     relative = 'win',
     bufpos = bufpos,
@@ -302,10 +306,6 @@ function libs.jump_beacon(bufpos, width)
     focusable = false,
     no_size_override = true,
   }
-
-  if opts.width < 0 then
-    opts.width = 1
-  end
 
   local window = require('lspsaga.window')
   local _, winid = window.create_win_with_border({
