@@ -21,7 +21,9 @@ diag.__index = diag
 --- notice just make ctx to empty not free memory before gc
 ---@private
 local function clean_ctx()
-  ctx = {}
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
+  end
 end
 
 local function get_diagnostic_sign(type)
