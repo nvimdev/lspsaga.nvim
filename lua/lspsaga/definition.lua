@@ -201,6 +201,10 @@ function def:peek_definition()
     end
 
     local bufnr, link, start_line, start_char_pos, end_char_pos = get_uri_data(result)
+    if not bufnr then
+      return
+    end
+
     node.link = link
     local opts = {}
     if list_length() == 0 then
