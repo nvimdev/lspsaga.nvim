@@ -16,14 +16,6 @@ local function clean_ctx()
   end
 end
 
-local function ignore_cursormoved()
-  vim.opt.eventignore:append('CursorMoved')
-end
-
-local function ignore_remove()
-  vim.opt.eventignore:remove('CursorMoved')
-end
-
 function act:action_callback()
   local contents = {}
 
@@ -69,11 +61,6 @@ function act:action_callback()
   end
 
   self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
-
-  -- see https://github.com/glepnir/lspsaga.nvim/issues/700
-  -- remove CursorMoved in eventignore
-  -- because window jump will trigger CursorMoved
-  ignore_remove()
   vim.wo[self.action_winid].conceallevel = 2
   vim.wo[self.action_winid].concealcursor = 'niv'
   -- initial position in code action window
@@ -168,9 +155,7 @@ function act:send_code_action_request(main_buf, options, cb)
 
   lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)
     self.pending_request = false
-    if self.action_tuples == nil then
-      self.action_tuples = {}
-    end
+    self.action_tuples = {}
 
     for client_id, result in pairs(results) do
       for _, action in pairs(result.result or {}) do
@@ -179,12 +164,10 @@ function act:send_code_action_request(main_buf, options, cb)
     end
 
     if #self.action_tuples == 0 then
-      -- see https://github.com/glepnir/lspsaga.nvim/issues/700
-      -- remove CursorMoved in eventignore
-      ignore_remove()
       vim.notify('No code actions available', vim.log.levels.INFO)
       return
     end
+
     if cb then
       cb()
     end
@@ -204,7 +187,7 @@ function act:set_cursor()
 end
 
 function act:num_shortcut(bufnr, callback)
-  for num, _ in pairs(self.action_tuples) do
+  for num, _ in pairs(self.action_tuples or {}) do
     vim.keymap.set('n', tostring(num), function()
       if callback then
         callback()
@@ -215,16 +198,6 @@ function act:num_shortcut(bufnr, callback)
 end
 
 function act:code_action(options)
-  --@see https://github.com/glepnir/lspsaga.nvim/issues/700
-  --when have jump diagnostic window and press code action then
-  --there will have a defer function clean the action data
-  --becaue create action window will trigger the CursorMoved which
-  --create by diagnostic
-  local need_ignore = require('lspsaga.diagnostic'):close_exist_win()
-  if need_ignore then
-    ignore_cursormoved()
-  end
-
   if self.pending_request then
     vim.notify(
       '[lspsaga.nvim] there already have a code action request please wait',

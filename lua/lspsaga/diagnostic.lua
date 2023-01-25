@@ -420,27 +420,28 @@ function diag:render_diagnostic_window(entry, option)
 
   self:apply_map()
 
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
+  local close_autocmds = { 'CursorMoved', 'InsertEnter', 'TextChanged', 'BufLeave' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(
       current_buffer,
       { self.winid, self.virt_winid, self.preview_winid or nil },
       close_autocmds,
-      function()
-        act:clean_context()
+      function(event)
         if self.remove_num_map then
           self.remove_num_map()
         end
-        clean_ctx()
+        if event == 'TextChanged' or event == 'InsertEnter' then
+          act:clean_context()
+          clean_ctx()
+        end
       end
     )
   end, 0)
 end
 
 function diag:move_cursor(entry)
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    api.nvim_win_close(self.winid, true)
-  end
+  --make sure the context is clean
+  clean_ctx()
 
   self.theme = require('lspsaga').theme()
   local current_winid = api.nvim_get_current_win()
@@ -450,7 +451,7 @@ function diag:move_cursor(entry)
     vim.cmd("normal! m'")
     api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
     local width = entry.end_col - entry.col
-    if width == 0 then
+    if width <= 0 then
       width = #api.nvim_get_current_line()
     end
     libs.jump_beacon({ entry.lnum, entry.col }, width)

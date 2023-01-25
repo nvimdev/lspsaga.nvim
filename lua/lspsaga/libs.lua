@@ -150,11 +150,11 @@ function libs.close_preview_autocmd(bufnr, winids, events, cb)
     group = saga_augroup,
     buffer = bufnr,
     once = true,
-    callback = function()
+    callback = function(opt)
       local window = require('lspsaga.window')
       window.nvim_close_valid_window(winids)
       if cb then
-        cb()
+        cb(opt.event)
       end
     end,
   })
