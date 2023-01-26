@@ -335,7 +335,7 @@ function symbar:register_events(buf)
     callback = function()
       self:init_buf_symbols(buf, render_symbol_winbar)
     end,
-    desc = 'Lspsaga symbols',
+    desc = 'Lspsaga symbols render and request',
   })
 
   api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
@@ -363,19 +363,27 @@ end
 
 function symbar:symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
-    group = api.nvim_create_augroup('LspsagaSymbols', {}),
+    group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
     callback = function(opt)
       if vim.bo[opt.buf].buftype == 'nofile' then
         return
       end
 
       local winid = api.nvim_get_current_win()
+      if api.nvim_get_current_buf() ~= opt.buf then
+        return
+      end
+
       local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
       if ok and val then
         return
       end
       if config.show_file then
-        vim.wo[winid].winbar = bar_file_name(opt.buf)
+        api.nvim_set_option_value(
+          'winbar',
+          bar_file_name(opt.buf),
+          { scope = 'local', win = winid }
+        )
       end
 
       if not self[opt.buf] then

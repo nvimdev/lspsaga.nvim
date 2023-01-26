@@ -18,8 +18,8 @@ local function find_node(winid)
   if vim.tbl_isempty(ctx) then
     return nil
   end
-  local key = vim.tbl_keys(ctx)[1]
-  local node = ctx[key].node
+
+  local node = ctx.node
   if not node then
     return
   end
@@ -52,8 +52,11 @@ local function remove(node)
     prev.next = next
   end
   cur_node = nil
-  local key = vim.tbl_keys(ctx)[1]
-  ctx[key].length = ctx[key].length - 1
+  ctx.length = ctx.length - 1
+  if ctx.length == 0 then
+    ctx = {}
+  end
+  print(vim.inspect(ctx), ctx.node)
   return true
 end
 
@@ -75,28 +78,23 @@ end
 ---@private
 local function push(node)
   if vim.tbl_isempty(ctx) then
-    ctx[node.main_winid] = {
+    ctx = {
       length = 1,
       node = node,
     }
     return
   end
-  local key = vim.tbl_keys(ctx)[1]
-  local tail = last_node(ctx[key])
+  local tail = last_node(ctx)
   tail.next = node
   node.prev = tail
-  ctx[key].length = ctx[key].length + 1
+  ctx.length = ctx.length + 1
 end
 
 local function list_length()
   if vim.tbl_isempty(ctx) then
     return 0
   end
-  local key = vim.tbl_keys(ctx)[1]
-  if vim.tbl_isempty(ctx[key]) then
-    return 0
-  end
-  return ctx[key].length
+  return ctx.length
 end
 
 function def:title_text(opts, link)
@@ -147,9 +145,8 @@ local function get_uri_data(result)
 
   local start_line = range.start.line
   local start_char_pos = range.start.character
-  local end_char_pos = range['end'].character
 
-  return bufnr, link, start_line, start_char_pos, end_char_pos
+  return bufnr, link, start_line, start_char_pos
 end
 
 local in_process = 0
@@ -200,7 +197,7 @@ function def:peek_definition()
       return
     end
 
-    local bufnr, link, start_line, start_char_pos, end_char_pos = get_uri_data(result)
+    local bufnr, link, start_line, start_char_pos = get_uri_data(result)
     if not bufnr then
       return
     end
@@ -227,6 +224,7 @@ function def:peek_definition()
     local content_opts = {
       contents = {},
       enter = true,
+      setbuf = bufnr,
       highlight = {
         border = 'DefinitionBorder',
         normal = 'DefinitionNormal',
@@ -241,40 +239,13 @@ function def:peek_definition()
     if config.symbol_in_winbar.enable then
       api.nvim_win_set_var(node.winid, 'disable_winbar', true)
     end
-    vim.wo[node.winid].winbar = ''
     vim.opt_local.modifiable = true
-    api.nvim_win_set_buf(node.winid, bufnr)
     node.bufnr = bufnr
-    vim.bo[node.bufnr].bufhidden = 'wipe'
     --set the initail cursor pos
     api.nvim_win_set_cursor(node.winid, { start_line + 1, start_char_pos })
     vim.cmd('normal! zt')
 
-    if api.nvim_buf_get_name(node.bufnr) == api.nvim_buf_get_name(node.main_bufnr) then
-      node.def_win_ns = api.nvim_create_namespace('DefinitionWinNs-' .. node.bufnr)
-      api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
-      api.nvim_buf_add_highlight(
-        bufnr,
-        node.def_win_ns,
-        'DefinitionSearch',
-        start_line,
-        start_char_pos,
-        end_char_pos
-      )
-
-      api.nvim_win_set_hl_ns(node.winid, node.def_win_ns)
-      api.nvim_set_hl(node.def_win_ns, 'Normal', {
-        background = config.ui.colors.normal_bg,
-      })
-      api.nvim_set_hl(node.def_win_ns, 'SignColumn', {
-        background = config.ui.colors.normal_bg,
-      })
-      api.nvim_set_hl(node.def_win_ns, 'DefinitionBorder', {
-        background = config.ui.colors.normal_bg,
-      })
-    end
-
-    self:apply_aciton_keys(bufnr, { start_line, start_char_pos })
+    self:apply_aciton_keys({ start_line, start_char_pos })
     self:event(bufnr)
     push(node)
   end)
@@ -290,7 +261,6 @@ function def:event(bufnr)
         return
       end
       remove(node)
-      pcall(api.nvim_buf_clear_namespace, bufnr, node.def_win_ns, 0, -1)
     end,
   })
 
@@ -306,15 +276,13 @@ function def:event(bufnr)
         if not node then
           return
         end
-        pcall(api.nvim_buf_clear_namespace, node.def_win_ns)
       end
       if #wins == 1 then
         for _, map in pairs(config.definition) do
           pcall(api.nvim_buf_del_keymap, opt.buf, 'n', map)
         end
       end
-      local key = vim.tbl_keys(ctx)[1]
-      if ctx[key].length == 1 then
+      if ctx.length == 1 then
         api.nvim_del_autocmd(opt.id)
       end
     end,
@@ -332,7 +300,7 @@ local function unpack_maps()
   return res
 end
 
-function def:apply_aciton_keys(bufnr, pos)
+function def:apply_aciton_keys(pos)
   local maps = unpack_maps()
   local opt = { buffer = true, nowait = true }
 
@@ -342,12 +310,10 @@ function def:apply_aciton_keys(bufnr, pos)
     if not node then
       return
     end
-    if node.def_win_ns then
-      api.nvim_buf_clear_namespace(bufnr, node.def_win_ns, 0, -1)
-    end
     self:close_window(node.winid)
     return node
   end
+
   for action, key in pairs(maps) do
     keymap.set('n', key, function()
       local node = node_with_close()

@@ -481,6 +481,7 @@ function ch:preview()
 
   local content_opt = {
     contents = {},
+    setbuf = data[1],
     highlight = {
       border = 'ActionPreviewBorder',
       normal = 'CallHierarchyNormal',
@@ -511,32 +512,11 @@ function ch:preview()
   if config.symbol_in_winbar.enable then
     api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
   end
-  api.nvim_win_set_buf(self.preview_winid, data[1])
   self.file_buf = data[1]
   vim.bo[data[1]].filetype = vim.bo[self.main_buf].filetype
   vim.bo[data[1]].modifiable = true
   api.nvim_win_set_cursor(self.preview_winid, { data[2].start.line, data[2].start.character })
   vim.wo[self.preview_winid].signcolumn = 'no'
-  if data[1] == self.main_buf then
-    local ns = api.nvim_create_namespace('CallHierarchy-' .. data[1])
-    api.nvim_win_set_hl_ns(self.preview_winid, ns)
-    api.nvim_win_set_hl_ns(self.preview_winid, ns)
-    api.nvim_set_hl(self.preview_winid, 'Normal', {
-      background = config.ui.colors.normal_bg,
-    })
-    api.nvim_set_hl(self.preview_winid, 'CallHierarchyBorder', {
-      background = config.ui.colors.normal_bg,
-    })
-    api.nvim_create_autocmd('WinClosed', {
-      callback = function(opt)
-        local winid = api.nvim_get_current_win()
-        if winid == self.preview_winid then
-          api.nvim_buf_clear_namespace(self.preview_bufnr, ns, 0, -1)
-          api.nvim_del_autocmd(opt.id)
-        end
-      end,
-    })
-  end
 end
 
 function ch:incoming_calls()

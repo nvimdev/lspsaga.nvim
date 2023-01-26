@@ -95,9 +95,9 @@ local function open_shadow_win()
   local shadow_winhl = 'Normal:SagaShadow'
   local shadow_bufnr = api.nvim_create_buf(false, true)
   local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
-  api.nvim_win_set_option(shadow_winid, 'winhl', shadow_winhl)
-  api.nvim_win_set_option(shadow_winid, 'winblend', 70)
-  api.nvim_buf_set_option(shadow_bufnr, 'bufhidden', 'wipe')
+  api.nvim_set_option_value('winhl', shadow_winhl, { scope = 'local', win = shadow_winid })
+  api.nvim_set_option_value('winblend', 70, { scope = 'local', win = shadow_winid })
+  api.nvim_set_option_value('bufhidden', 'wipe', { buf = shadow_bufnr })
   return shadow_bufnr, shadow_winid
 end
 
@@ -144,24 +144,33 @@ function M.create_win_with_border(content_opts, opts)
   end
 
   if not content_opts.bufnr then
-    api.nvim_buf_set_option(bufnr, 'modifiable', false)
-    api.nvim_buf_set_option(bufnr, 'bufhidden', content_opts.bufhidden or 'wipe')
-    api.nvim_buf_set_option(bufnr, 'buftype', content_opts.buftype or 'nofile')
+    api.nvim_set_option_value('modifiable', false, { buf = bufnr })
+    api.nvim_set_option_value('bufhidden', content_opts.bufhidden or 'wipe', { buf = bufnr })
+    api.nvim_set_option_value('buftype', content_opts.buftype or 'nofile', { buf = bufnr })
   end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
-  vim.wo[winid].winblend = content_opts.winblend or config.ui.winblend
-  vim.wo[winid].wrap = content_opts.wrap or false
+  api.nvim_set_option_value(
+    'winblend',
+    content_opts.winblend or config.ui.winblend,
+    { scope = 'local', win = winid }
+  )
+  api.nvim_set_option_value('wrap', content_opts.wrap or false, { scope = 'local', win = winid })
+
   local normal = highlight.normal or 'LspNormal'
-  local normal_float = highlight.normal_float or 'LspNormalFloat'
   local border = highlight.border or 'LspBorder'
-  api.nvim_win_set_option(
-    winid,
+
+  if content_opts.setbuf then
+    api.nvim_win_set_buf(winid, content_opts.setbuf)
+  end
+
+  api.nvim_set_option_value(
     'winhl',
-    'Normal:' .. normal .. ',FloatBorder:' .. border .. ',NormalFloat:' .. normal_float
+    'Normal:' .. normal .. ',FloatBorder:' .. border,
+    { scope = 'local', win = winid }
   )
 
-  vim.wo[winid].winbar = ''
+  api.nvim_set_option_value('winbar', '', { scope = 'local', win = winid })
   return bufnr, winid
 end
 
