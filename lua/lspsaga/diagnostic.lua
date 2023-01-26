@@ -217,7 +217,7 @@ function diag:render_diagnostic_window(entry, option)
   }
 
   local colors = get_colors(entry.severity)
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     opts.title = {
       { ' ' .. cur_word, 'Diagnostic' .. diag_type .. 'Title' },
     }
@@ -528,7 +528,7 @@ function diag:show(entrys, arg, type)
     opt.focusable = false
   end
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local theme = require('lspsaga').theme()
     opt.title = {
       { theme.left, 'TitleSymbol' },
