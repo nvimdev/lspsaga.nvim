@@ -56,7 +56,6 @@ local function remove(node)
   if ctx.length == 0 then
     ctx = {}
   end
-  print(vim.inspect(ctx), ctx.node)
   return true
 end
 
