@@ -200,17 +200,13 @@ local render_symbol_winbar = function(buf, symbols)
   if cur_buf ~= buf then
     return
   end
+
   local all_wins = fn.win_findbuf(buf)
   local cur_win = api.nvim_get_current_win()
   if not vim.tbl_contains(all_wins, cur_win) then
     return
   end
 
-  local ok, val = pcall(api.nvim_win_get_var, cur_win, 'disable_winbar')
-  if ok and val then
-    vim.wo[cur_win].winbar = ''
-    return
-  end
   local current_line = api.nvim_win_get_cursor(cur_win)[1]
   local winbar_str = config.show_file and bar_file_name(buf) or ''
 
@@ -246,7 +242,7 @@ local render_symbol_winbar = function(buf, symbols)
   if config.enable and api.nvim_win_get_height(cur_win) - 1 > 1 then
     --TODO: some string has invalida character handle this string
     --ref: neovim/filetype/detect.lua scroll in 1588 line
-    vim.wo[cur_win].winbar = winbar_str
+    api.nvim_set_option_value('winbar', winbar_str, { scope = 'local', win = cur_win })
   end
   return winbar_str
 end
@@ -374,10 +370,11 @@ function symbar:symbol_autocmd()
         return
       end
 
-      local ok, val = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-      if ok and val then
+      local ok, _ = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
+      if ok then
         return
       end
+
       if config.show_file then
         api.nvim_set_option_value(
           'winbar',
