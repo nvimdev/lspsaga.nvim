@@ -310,7 +310,7 @@ function libs.jump_beacon(bufpos, width)
   local window = require('lspsaga.window')
   local _, winid = window.create_win_with_border({
     contents = { '' },
-    border = 'none',
+    noborder = true,
     winblend = 0,
     highlight = {
       normal = 'SagaBeacon',

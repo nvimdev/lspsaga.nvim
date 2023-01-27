@@ -262,7 +262,7 @@ function diag:render_diagnostic_window(entry, option)
 
   self.virt_bufnr, self.virt_winid = window.create_win_with_border({
     contents = libs.generate_empty_table(#content + 2),
-    border = 'none',
+    noborder = true,
     buftype = 'nofile',
     filetype = 'diagvirt',
     highlight = {

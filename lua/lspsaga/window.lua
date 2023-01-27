@@ -202,9 +202,13 @@ function M.create_win_with_border(content_opts, opts)
   local normal = highlight.normal or 'LspNormal'
   local border_hl = highlight.border or 'LspBorder'
 
-  opts.border = content_opts.border_side
-      and combine_border(config.ui.border, content_opts.border_side, border_hl)
-    or config.ui.border
+  if content_opts.noborder then
+    opts.border = 'none'
+  else
+    opts.border = content_opts.border_side
+        and combine_border(config.ui.border, content_opts.border_side, border_hl)
+      or config.ui.border
+  end
 
   -- create contents buffer
   local bufnr = content_opts.bufnr or api.nvim_create_buf(false, false)
