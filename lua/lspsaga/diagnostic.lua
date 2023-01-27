@@ -480,6 +480,7 @@ end
 
 function diag:show(entrys, arg, type)
   local cur_buf = api.nvim_get_current_buf()
+  local cur_win = api.nvim_get_current_win()
   local content = {}
   local max_width = math.floor(vim.o.columns * 0.6)
   local len = {}
@@ -573,7 +574,20 @@ function diag:show(entrys, arg, type)
     api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index + 1, 2, -1)
   end
 
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave' }
+  vim.keymap.set('n', '<CR>', function()
+    local text = api.nvim_get_current_line()
+    local data = text:match('%d+:%d+')
+    if data then
+      local lnum, col = unpack(vim.split(data, ':', { trimempty = true }))
+      if lnum and col then
+        api.nvim_win_close(self.lnum_winid, true)
+        api.nvim_set_current_win(cur_win)
+        api.nvim_win_set_cursor(cur_win, { tonumber(lnum), tonumber(col) })
+      end
+    end
+  end, { buffer = self.lnum_bufnr, nowait = true, silent = true })
+
+  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter' }
 
   vim.defer_fn(function()
     libs.close_preview_autocmd(cur_buf, self.lnum_winid, close_autocmds)
