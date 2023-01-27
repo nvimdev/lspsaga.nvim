@@ -47,6 +47,21 @@ function M.border_chars()
   }
 end
 
+function M.combine_char()
+  return {
+    ['righttop'] = {
+      ['single'] = '┬',
+      ['rounded'] = '┬',
+      ['double'] = '╦'
+    },
+    ['rightbottom'] = {
+      ['single'] = '┴',
+      ['rounded'] = '┴',
+      ['double'] = '╩'
+    },
+  }
+end
+
 local function combine_border(style, side, hi)
   local border_chars = M.border_chars()
   local order =

@@ -629,17 +629,18 @@ function finder:auto_open_preview()
     opts.col = winconfig.col[false] + winconfig.width + 2
     opts.row = winconfig.row[false]
     opts.height = winconfig.height
-    local max_width = vim.o.columns - opts.col - 6
+    local max_width = vim.o.columns - opts.col - 4
     local max_len = window.get_max_content_length(content)
     opts.width = max_width > max_len and max_len or max_width
 
+    local rtop = window.combine_char()['righttop'][config.ui.border]
+    local rbottom = window.combine_char()['rightbottom'][config.ui.border]
     local content_opts = {
       contents = content,
       buftype = 'nofile',
       border_side = {
-        ['lefttop'] = '',
-        ['left'] = '',
-        ['leftbottom'] = '',
+        ['lefttop'] = rtop,
+        ['leftbottom'] = rbottom,
       },
       highlight = {
         border = 'finderPreviewBorder',

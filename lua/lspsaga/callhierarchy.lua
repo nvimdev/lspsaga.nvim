@@ -1,6 +1,7 @@
 local api, fn, lsp, uv = vim.api, vim.fn, vim.lsp, vim.loop
 local config = require('lspsaga').config
 local libs = require('lspsaga.libs')
+local window = require('lspsaga.window')
 local call_conf, ui = config.callhierarchy, config.ui
 local insert = table.insert
 
@@ -331,11 +332,17 @@ function ch:render_win()
     insert(content, v.name)
   end
 
+  local side_char = window.border_chars()['top'][config.ui.border]
   local content_opt = {
     contents = content,
     filetype = 'lspsagacallhierarchy',
     buftype = 'nofile',
     enter = true,
+    border_side = {
+      ['right'] = ' ',
+      ['righttop'] = side_char,
+      ['rightbottom'] = side_char,
+    },
     highlight = {
       normal = 'CallHierarchyNormal',
       border = 'CallHierarchyBorder',
@@ -346,8 +353,8 @@ function ch:render_win()
     relative = 'editor',
     row = math.floor(vim.o.lines * 0.2),
     col = math.floor(vim.o.columns * 0.1),
-    height = math.floor(vim.o.lines * 0.2),
-    width = math.floor(vim.o.columns * 0.4),
+    height = math.floor(vim.o.lines * 0.4),
+    width = math.floor(vim.o.columns * 0.3),
     no_size_override = true,
   }
 
@@ -361,7 +368,8 @@ function ch:render_win()
       { theme.right, 'TitleSymbol' },
     }
   end
-  self.bufnr, self.winid = self.window.create_win_with_border(content_opt, opt)
+  self.bufnr, self.winid = window.create_win_with_border(content_opt, opt)
+  api.nvim_win_set_cursor(self.winid, { 2, 8 })
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
@@ -465,23 +473,24 @@ function ch:preview()
 
   local opt = {
     relative = 'editor',
-    width = math.floor(vim.o.columns * 0.7),
-    height = math.floor(vim.o.lines * 0.4),
     no_size_override = true,
   }
 
-  local win_conf = api.nvim_win_get_config(self.winid)
-  if vim.o.columns - (4 + win_conf.col[false] + win_conf.width) > opt.width then
-    opt.row = win_conf.row[false]
-    opt.col = win_conf.col[false] + win_conf.width + 4
-  else
-    opt.row = win_conf.row[false] + win_conf.height + 4
-    opt.col = win_conf.col[false]
-  end
+  local winconfig = api.nvim_win_get_config(self.winid)
+  opt.height = winconfig.height
+  opt.row = winconfig.row[false]
+  opt.col = winconfig.col[false] + winconfig.width + 2
+  opt.width = vim.o.columns - opt.col - 6
 
+  local rtop = window.combine_char()['righttop'][config.ui.border]
+  local rbottom = window.combine_char()['rightbottom'][config.ui.border]
   local content_opt = {
     contents = {},
     setbuf = data[1],
+    border_side = {
+      ['lefttop'] = rtop,
+      ['leftbottom'] = rbottom,
+    },
     highlight = {
       border = 'ActionPreviewBorder',
       normal = 'CallHierarchyNormal',
@@ -508,7 +517,7 @@ function ch:preview()
     end
   end
 
-  self.preview_bufnr, self.preview_winid = self.window.create_win_with_border(content_opt, opt)
+  self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opt, opt)
   if config.symbol_in_winbar.enable then
     api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
   end
@@ -522,7 +531,6 @@ end
 function ch:incoming_calls()
   self.cword = fn.expand('<cword>')
   self.method = get_method(2)
-  self.window = require('lspsaga.window')
   self.data = {}
   self:send_prepare_call()
 end
@@ -530,7 +538,6 @@ end
 function ch:outgoing_calls()
   self.cword = fn.expand('<cword>')
   self.method = get_method(3)
-  self.window = require('lspsaga.window')
   self.data = {}
   self:send_prepare_call()
 end
