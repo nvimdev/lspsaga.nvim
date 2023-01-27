@@ -28,11 +28,14 @@ local function respect_lsp_root(buf)
   if #clients == 0 then
     return
   end
-  local root_dir = clients[1].config.root_dir
+  local root_dir = clients[1].config.root_dir or vim.fn.getcwd()
   local parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
   local bufname = api.nvim_buf_get_name(buf)
   local bufname_parts = vim.split(bufname, libs.path_sep, { trimempty = true })
-  return { unpack(bufname_parts, #parts + 1) }
+  if bufname:find(root_dir) == 1 then
+    return { unpack(bufname_parts, #parts + 1) }
+  end
+  return { unpack(bufname_parts) }
 end
 
 local function bar_file_name(buf)
