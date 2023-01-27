@@ -10,7 +10,6 @@ local default_config = {
     winblend = 0,
     expand = '',
     collapse = '',
-    preview = ' ',
     code_action = '💡',
     diagnostic = '🐞',
     incoming = ' ',
