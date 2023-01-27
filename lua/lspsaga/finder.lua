@@ -361,6 +361,11 @@ function finder:render_finder_result()
     contents = self.contents,
     filetype = 'lspsagafinder',
     enter = true,
+    border_side = {
+      ['right'] = ' ',
+      ['righttop'] = '─',
+      ['rightbottom'] = '─',
+    },
     highlight = {
       border = 'finderBorder',
       normal = 'finderNormal',
@@ -668,6 +673,11 @@ function finder:auto_open_preview()
     local content_opts = {
       contents = content,
       buftype = 'nofile',
+      border_side = {
+        ['lefttop'] = '',
+        ['left'] = '',
+        ['leftbottom'] = '',
+      },
       highlight = {
         border = 'finderPreviewBorder',
         normal = 'finderNormal',
