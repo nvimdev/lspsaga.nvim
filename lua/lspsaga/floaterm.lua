@@ -23,6 +23,9 @@ function term:open_float_terminal(command)
   end
 
   local cmd = command or os.getenv('SHELL')
+  if require('lspsaga.libs').iswin then
+    cmd = 'cmd.exe'
+  end
   -- calculate our floating window size
   local win_height = math.ceil(vim.o.lines * 0.7)
   local win_width = math.ceil(vim.o.columns * 0.7)
