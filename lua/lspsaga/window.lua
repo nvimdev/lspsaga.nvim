@@ -52,12 +52,12 @@ function M.combine_char()
     ['righttop'] = {
       ['single'] = '┬',
       ['rounded'] = '┬',
-      ['double'] = '╦'
+      ['double'] = '╦',
     },
     ['rightbottom'] = {
       ['single'] = '┴',
       ['rounded'] = '┴',
-      ['double'] = '╩'
+      ['double'] = '╩',
     },
   }
 end
