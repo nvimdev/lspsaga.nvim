@@ -49,15 +49,13 @@ local function bar_file_name(buf)
   if not res or #res == 0 then
     return
   end
-  local data = libs.icon_from_devicon(vim.bo[buf].filetype, true)
+  local data = libs.icon_from_devicon(vim.bo[buf].filetype)
   local bar = bar_prefix()
   local items = {}
   for i, v in pairs(res) do
     if i == #res then
       if #data ~= 0 then
-        table.insert(items, bar.prefix .. 'FileIcon#' .. data[1] .. ' ' .. '%*')
-        local winbar_ns = require('lspsaga.highlight').winbar_ns
-        api.nvim_set_hl(winbar_ns, 'LspSagaWinbarFileIcon', { fg = data[2] or nil, default = true })
+        table.insert(items, '%#' .. data[2] .. '#' .. data[1] .. ' ' .. '%*')
       end
       table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
     else
