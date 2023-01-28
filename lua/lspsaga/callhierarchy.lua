@@ -118,7 +118,7 @@ function ch:call_hierarchy(item, parent)
     if not res or next(res) == nil then
       return
     end
-    local kind = require('lspsaga.highlight').get_kind()
+    local kind = require('lspsaga.lspkind').get_kind()
     if not parent then
       local icons = {}
       for i, v in pairs(res) do
