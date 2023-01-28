@@ -31,7 +31,7 @@ local function hi_define()
   return {
     -- general
     TitleString = { fg = colors.fg },
-    TitleIcon = { bg = colors.title_bg, fg = colors.red },
+    TitleIcon = { fg = colors.red },
     SagaBorder = { bg = bg, fg = colors.blue },
     SagaNormal = { bg = bg },
     SagaExpand = { fg = colors.red },
