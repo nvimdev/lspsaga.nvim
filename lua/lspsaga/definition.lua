@@ -104,19 +104,13 @@ function def:title_text(opts, link)
   if #link > 2 then
     link = table.concat(link, libs.path_sep, #link - 1, #link)
   end
-  local theme = require('lspsaga').theme()
   opts.title = {
-    { theme.left, 'TitleSymbol' },
     { link, 'TitleString' },
-    { theme.right, 'TitleSymbol' },
   }
-  local data = libs.icon_from_devicon(vim.bo.filetype, true)
-  table.insert(opts.title, 2, { (data[1] or '') .. ' ', 'TitleFileIcon' })
-  api.nvim_set_hl(0, 'TitleFileIcon', {
-    background = config.ui.colors.title_bg,
-    foreground = data[2] or 'white',
-    default = true,
-  })
+  local data = libs.icon_from_devicon(vim.bo.filetype)
+  if data[1] then
+    table.insert(opts.title, 1, { data[1] .. ' ', data[2] })
+  end
 end
 
 local function get_uri_data(result)
@@ -204,18 +198,21 @@ function def:peek_definition()
     node.link = link
     local opts = {}
     if list_length() == 0 then
+      local cur_winline = fn.winline()
+      local max_height = math.floor(vim.o.lines * 0.5)
+      local max_width = math.floor(vim.o.columns * 0.6)
       opts = {
         relative = 'cursor',
         style = 'minimal',
+        no_override_size = true,
+        height = max_height,
+        width = max_width,
       }
-      local max_width = math.floor(vim.o.columns * 0.6)
-      local max_height = math.floor(vim.o.lines * 0.6)
-
-      opts.width = max_width
-      opts.height = max_height
-
-      opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
-      opts.row = opts.row + 1
+      if vim.o.lines - opts.height - cur_winline < 0 then
+        vim.cmd('normal! zz')
+        local keycode = api.nvim_replace_termcodes('5<C-e>', true, false, true)
+        api.nvim_feedkeys(keycode, 'x', false)
+      end
     else
       opts = api.nvim_win_get_config(cur_winid)
     end
@@ -223,7 +220,7 @@ function def:peek_definition()
     local content_opts = {
       contents = {},
       enter = true,
-      setbuf = bufnr,
+      bufnr = bufnr,
       highlight = {
         border = 'DefinitionBorder',
         normal = 'DefinitionNormal',
