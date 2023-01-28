@@ -14,6 +14,7 @@ local default_config = {
     diagnostic = '🐞',
     incoming = ' ',
     outgoing = ' ',
+    hover = ' ',
     kind = {},
   },
   diagnostic = {

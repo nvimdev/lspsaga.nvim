@@ -73,7 +73,7 @@ function act:action_callback()
   for i = 1, #contents, 1 do
     local row = i - 1
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionNumber', row, 0, 2)
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, 2)
   end
 
   -- dsiable some move keys in codeaction

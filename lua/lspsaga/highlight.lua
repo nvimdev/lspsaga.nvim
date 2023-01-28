@@ -1,7 +1,5 @@
 local api = vim.api
 
-local resolved
-
 local function get_colors()
   return {
     red = '#e95678',
@@ -50,7 +48,7 @@ local function hi_define()
     -- finder
     FinderSelection = { fg = colors.cyan, bold = true },
     FinderFileName = { fg = colors.white },
-    FinderCount = { link = 'Title' },
+    FinderCount = { link = 'Label' },
     FinderIcon = { fg = colors.cyan },
     FinderType = { fg = colors.purple },
     --finder spinner
@@ -73,6 +71,7 @@ local function hi_define()
     RenameNormal = { fg = colors.orange, bg = bg },
     RenameMatch = { link = 'Search' },
     -- diagnostic
+    DiagnosticBorder = { link = 'SagaBorder' },
     DiagnosticSource = { fg = 'gray' },
     DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticErrorBorder = { link = 'DiagnosticError' },

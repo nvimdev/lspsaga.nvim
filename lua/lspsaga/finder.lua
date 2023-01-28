@@ -374,12 +374,9 @@ function finder:render_finder_result()
   }
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local theme = require('lspsaga').theme()
     opts.title = {
-      { theme.left, 'TitleSymbol' },
-      { ' ', 'TitleIcon' },
+      { ' ', 'TitleIcon' },
       { self.current_word, 'TitleString' },
-      { theme.right, 'TitleSymbol' },
     }
   end
 
@@ -536,19 +533,11 @@ end
 
 function finder:lsp_finder_highlight()
   local len = string.len('Definition')
-  local theme = require('lspsaga').theme()
 
   for _, v in pairs({ 0, self.ref_scope[1], self.imp_scope and self.imp_scope[1] or nil }) do
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'finderIcon', v, 0, 3)
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'finderType', v, 4, 4 + len)
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      -1,
-      'finderCount',
-      v,
-      #theme.left + len + #theme.right,
-      -1
-    )
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderIcon', v, 0, 3)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderType', v, 4, 4 + len)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderCount', v, 4 + len, -1)
   end
 end
 
@@ -649,12 +638,15 @@ function finder:auto_open_preview()
     }
 
     if fn.has('nvim-0.9') == 1 and config.ui.title then
-      local theme = require('lspsaga').theme()
+      local path =
+        vim.split(self.short_link[current_line].link, libs.path_sep, { trimempty = true })
       opts.title = {
-        { theme.left, 'TitleSymbol' },
-        { 'Preview', 'TitleString' },
-        { theme.right, 'TitleSymbol' },
+        { path[#path], 'TitleString' },
       }
+      local icon_data = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
+      if #icon_data > 0 then
+        table.insert(opts.title, 1, { icon_data[1] .. ' ', icon_data[2] })
+      end
     end
 
     self:close_auto_preview_win()
