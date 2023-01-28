@@ -109,13 +109,16 @@ local function gen_symbol_winbar_hi()
   local colors = get_colors()
   local kind = get_kind()
 
+  local winbar_ns = api.nvim_create_namespace('LspagaWinbar')
   for _, v in pairs(kind or {}) do
-    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
+    api.nvim_set_hl(winbar_ns, prefix .. v[1], { fg = v[3] })
   end
-  api.nvim_set_hl(0, winbar_sep, { fg = colors.red, default = true })
-  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, default = true })
-  api.nvim_set_hl(0, prefix .. 'Word', { fg = colors.white, default = true })
-  api.nvim_set_hl(0, prefix .. 'FolderName', { fg = colors.fg, default = true })
+  api.nvim_set_hl(winbar_ns, winbar_sep, { fg = colors.red, default = true })
+  api.nvim_set_hl(winbar_ns, prefix .. 'File', { fg = colors.fg, default = true })
+  api.nvim_set_hl(winbar_ns, prefix .. 'Word', { fg = colors.white, default = true })
+  api.nvim_set_hl(winbar_ns, prefix .. 'FolderName', { fg = colors.fg, default = true })
+
+  api.nvim_set_hl_ns_fast(winbar_ns)
 end
 
 local function gen_outline_hi()
