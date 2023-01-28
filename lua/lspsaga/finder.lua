@@ -334,28 +334,26 @@ function finder:render_finder_result()
   if next(self.contents) == nil then
     return
   end
-  -- get dimensions
-  local width = vim.o.columns
-  local height = vim.o.lines
 
-  -- calculate our floating window size
-  local win_height = math.ceil(height * 0.8)
-  local win_width = math.ceil(width * 0.8)
-
-  -- and its starting position
-  local row = math.ceil((height - win_height) * 0.7)
-  local col = math.ceil((width - win_width) * 0.5)
-  local opts = {
-    style = 'minimal',
+  local opt = {
     relative = 'editor',
-    row = row,
-    col = col,
+    width = window.get_max_content_length(self.contents),
   }
 
-  local max_height = math.ceil((height - 4) * 0.5)
+  local max_height = vim.o.lines * 0.5
   if #self.contents > max_height then
-    opts.height = max_height
+    opt.height = max_height
   end
+
+  local winline = fn.winline()
+  if vim.o.lines - winline - 6 < 0 then
+    vim.cmd('normal! zz')
+    local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
+    api.nvim_feedkeys(keycode, 'x', false)
+  end
+  winline = fn.winline()
+  opt.row = winline + 1
+  opt.col = 10
 
   local side_char = window.border_chars()['top'][config.ui.border]
   local content_opts = {
@@ -374,13 +372,13 @@ function finder:render_finder_result()
   }
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    opts.title = {
+    opt.title = {
       { ' ', 'TitleIcon' },
       { self.current_word, 'TitleString' },
     }
   end
 
-  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+  self.bufnr, self.winid = window.create_win_with_border(content_opts, opt)
   api.nvim_buf_set_option(self.bufnr, 'buflisted', false)
   api.nvim_win_set_option(self.winid, 'cursorline', false)
 
