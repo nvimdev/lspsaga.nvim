@@ -130,10 +130,6 @@ function saga.theme()
 end
 
 function saga.setup(opts)
-  vim.notify_once(
-    '[lspsaga.nvim] version 0.2.4  will merge after 4 fours, colors config removed, most of config in highlight group',
-    vim.log.levels.INFO
-  )
   opts = opts or {}
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
