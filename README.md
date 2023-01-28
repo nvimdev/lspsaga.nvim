@@ -344,6 +344,8 @@ The steps demonstrated in this showcase are:
 
 `show_line_diagnostics`, `show_buf_diagnostics`, `show_cursor_diagnostics`
 
+- you can use `<C-w>w` jump into and use `<CR>` jump to diagnostic position
+
 <details>
 <summary>show_diagnostics showcase</summary>
 <img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
@@ -493,6 +495,19 @@ A simple floating terminal.
 <img src="https://user-images.githubusercontent.com/41671631/212027060-56d1cebc-c6a8-412e-bd01-620aac3029ed.gif" height=80% width=80%/>
 </details>
 
+## :Lspsaga beacon
+
+after jump from float window there will show beacon to remind you where the cursor is.
+
+```lua
+  beacon = {
+    enable = true,
+    frequency = 7,
+  },
+```
+
+`frequency` the blink frequency.
+
 ## Customizing Lspsaga's Appearance
 
 ## :Lspsaga UI
@@ -514,29 +529,13 @@ Default UI options
     diagnostic = "🐞",
     incoming = " ",
     outgoing = " ",
-    colors = {
-      -- Normal background color for floating window
-      normal_bg = "#1d1536",
-      -- Title background color
-      title_bg = "#afd700",
-      red = "#e95678",
-      magenta = "#b33076",
-      orange = "#FF8700",
-      yellow = "#f7bb3b",
-      green = "#afd700",
-      cyan = "#36d0e0",
-      blue = "#61afef",
-      purple = "#CBA6F7",
-      white = "#d1d4cf",
-      black = "#1c1c19",
-    },
+    hover = ' ',
     kind = {},
   },
 ```
 
 # Custom Highlighting
 
-If you don't like the colors or if you want to switch your colorscheme over time, you can change the highlight group in your colorscheme or config.
 All highlight groups can be found in [highlight.lua](./lua/lspsaga/highlight.lua).
 
 # Custom Kind

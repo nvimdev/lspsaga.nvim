@@ -575,6 +575,8 @@ function diag:show(entrys, arg, type)
         api.nvim_win_close(self.lnum_winid, true)
         api.nvim_set_current_win(cur_win)
         api.nvim_win_set_cursor(cur_win, { tonumber(lnum), tonumber(col) })
+        local width = #api.nvim_get_current_line()
+        libs.jump_beacon({ tonumber(lnum) - 1, tonumber(col) }, width)
       end
     end
   end, { buffer = self.lnum_bufnr, nowait = true, silent = true })
