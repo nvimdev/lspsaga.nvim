@@ -130,6 +130,7 @@ function saga.theme()
 end
 
 function saga.setup(opts)
+  vim.notify_once('[lspsaga.nvim] please see pr #779 need a vote', vim.log.levels.INFO)
   opts = opts or {}
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
@@ -143,7 +144,7 @@ function saga.setup(opts)
   end
 end
 
----@deprecated
+---@deprecated remove in version 0.2.4
 function saga.init_lsp_saga()
   vim.notify(
     'lspsaga.nvim v0.2.3+ has breaking changes. Please read the docs and migrate your configuration to the new "setup" function!',
