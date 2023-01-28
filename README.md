@@ -303,6 +303,8 @@ Default options:
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
+    custom_fix = nil,
+    custom_msg = nil,
     keys = {
       exec_action = "o",
       quit = "q",
@@ -313,6 +315,8 @@ Default options:
 
 - Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
+- `custom_msg` string  used to  custom the diagnostic jump `Msg` section titile 
+- `custom_fix` string  used to  custom the diagnostic jump `Fix` section titile 
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.
