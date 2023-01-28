@@ -31,6 +31,13 @@ local function get_diagnostic_sign(type)
   return fn.sign_getdefined(prefix .. type)
 end
 
+local function capsule()
+  return {
+    left = '',
+    right = '',
+  }
+end
+
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 ---@private
@@ -438,7 +445,7 @@ function diag:render_diagnostic_window(entry, option)
 end
 
 function diag:move_cursor(entry)
-  self.theme = require('lspsaga').theme()
+  self.theme = capsule()
   local current_winid = api.nvim_get_current_win()
 
   api.nvim_win_call(current_winid, function()

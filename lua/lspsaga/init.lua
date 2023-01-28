@@ -4,7 +4,6 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 local default_config = {
   ui = {
-    theme = 'round',
     border = 'single',
     title = true,
     winblend = 0,
@@ -117,17 +116,6 @@ local default_config = {
   },
   server_filetype_map = {},
 }
-
-function saga.theme()
-  local theme = {
-    ['round'] = {
-      left = '',
-      right = '',
-    },
-  }
-
-  return theme[saga.config.ui.theme]
-end
 
 function saga.setup(opts)
   opts = opts or {}
