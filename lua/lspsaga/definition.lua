@@ -204,18 +204,21 @@ function def:peek_definition()
     node.link = link
     local opts = {}
     if list_length() == 0 then
+      local cur_winline = fn.winline()
+      local max_height = math.floor(vim.o.lines * 0.5)
+      local max_width = math.floor(vim.o.columns * 0.6)
       opts = {
         relative = 'cursor',
         style = 'minimal',
+        no_override_size = true,
+        height = max_height,
+        width = max_width,
       }
-      local max_width = math.floor(vim.o.columns * 0.6)
-      local max_height = math.floor(vim.o.lines * 0.6)
-
-      opts.width = max_width
-      opts.height = max_height
-
-      opts = lsp.util.make_floating_popup_options(max_width, max_height, opts)
-      opts.row = opts.row + 1
+      if vim.o.lines - opts.height - cur_winline < 0 then
+        vim.cmd('normal! zz')
+        local keycode = api.nvim_replace_termcodes('5<C-e>', true, false, true)
+        api.nvim_feedkeys(keycode, 'x', false)
+      end
     else
       opts = api.nvim_win_get_config(cur_winid)
     end

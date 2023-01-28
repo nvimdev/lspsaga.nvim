@@ -349,27 +349,34 @@ function ch:render_win()
     },
   }
 
+  local cur_winline = fn.winline()
+  local max_height = math.floor(vim.o.lines * 0.4)
+  if vim.o.lines - cur_winline - 6 < max_height then
+    vim.cmd('normal! zz')
+    local keycode = api.nvim_replace_termcodes('5<C-e>', true, false, true)
+    api.nvim_feedkeys(keycode, 'x', false)
+  end
+
   local opt = {
     relative = 'editor',
-    row = math.floor(vim.o.lines * 0.2),
-    col = math.floor(vim.o.columns * 0.1),
+    win = api.nvim_get_current_win(),
+    row = fn.winline() + 1,
+    col = 10,
     height = math.floor(vim.o.lines * 0.4),
     width = math.floor(vim.o.columns * 0.3),
     no_size_override = true,
   }
 
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local theme = require('lspsaga').theme()
+  if fn.has('nvim-0.9') == 1 then
     local icon = self.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
     opt.title = {
-      { theme.left, 'TitleSymbol' },
-      { icon, 'TitleIcon' },
-      { ' ' .. self.method:match('/(%w+)Calls$'), 'TitleString' },
-      { theme.right, 'TitleSymbol' },
+      { icon, 'ArrowIcon' },
     }
+    opt.title_pos = 'right'
+    api.nvim_set_hl(0, 'ArrowIcon', { link = 'CallHierarchyBorder' })
   end
   self.bufnr, self.winid = window.create_win_with_border(content_opt, opt)
-  api.nvim_win_set_cursor(self.winid, { 2, 8 })
+  api.nvim_win_set_cursor(self.winid, { 2, 9 })
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
@@ -471,15 +478,14 @@ function ch:preview()
     return
   end
 
+  local winconfig = api.nvim_win_get_config(self.winid)
   local opt = {
-    relative = 'editor',
+    relative = winconfig.relative,
+    row = winconfig.row[false],
+    height = winconfig.height,
+    col = winconfig.col[false] + 2 + winconfig.width,
     no_size_override = true,
   }
-
-  local winconfig = api.nvim_win_get_config(self.winid)
-  opt.height = winconfig.height
-  opt.row = winconfig.row[false]
-  opt.col = winconfig.col[false] + winconfig.width + 2
   opt.width = vim.o.columns - opt.col - 6
 
   local rtop = window.combine_char()['righttop'][config.ui.border]
