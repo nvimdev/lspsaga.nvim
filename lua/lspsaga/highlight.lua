@@ -99,54 +99,13 @@ local function hi_define()
   }
 end
 
-local function get_kind()
-  return require('lspsaga.lspkind').get_kind(get_colors())()
-end
-
-local function gen_symbol_winbar_hi()
-  local prefix = 'LspSagaWinbar'
-  local winbar_sep = 'LspSagaWinbarSep'
-  local colors = get_colors()
-  local kind = get_kind()
-
-  for _, v in pairs(kind or {}) do
-    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
-  end
-  api.nvim_set_hl(0, winbar_sep, { fg = colors.red, default = true })
-  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, default = true })
-  api.nvim_set_hl(0, prefix .. 'Word', { fg = colors.white, default = true })
-  api.nvim_set_hl(0, prefix .. 'FolderName', { fg = colors.fg, default = true })
-end
-
-local function gen_outline_hi()
-  local kind = get_kind()
-  for _, v in pairs(kind or {}) do
-    local hi_name = 'LSOutline' .. v[1]
-    local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
-    if not ok or not tbl.foreground then
-      api.nvim_set_hl(0, hi_name, { fg = v[3] })
-    end
-  end
-end
-
 local function init_highlight()
   for group, conf in pairs(hi_define()) do
     api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
   end
-
-  gen_symbol_winbar_hi()
-  gen_outline_hi()
-
-  api.nvim_create_autocmd('Colorscheme', {
-    callback = function()
-      gen_symbol_winbar_hi()
-    end,
-    desc = '[lspsaga.nvim] redraw winbar highlight',
-  })
 end
 
 return {
   init_highlight = init_highlight,
-  get_kind = get_kind,
   get_colors = get_colors,
 }

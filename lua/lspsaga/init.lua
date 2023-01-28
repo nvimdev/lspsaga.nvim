@@ -122,6 +122,7 @@ function saga.setup(opts)
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
   require('lspsaga.highlight'):init_highlight()
+  require('lspsaga.lspkind').init_or_reload(saga.config.ui.kind)
   if saga.config.lightbulb.enable then
     require('lspsaga.lightbulb').lb_autocmd()
   end

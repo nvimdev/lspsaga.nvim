@@ -89,25 +89,16 @@ function finder:request_done()
 end
 
 function finder:loading_bar()
-  -- calculate our floating window size
-  local win_height = math.ceil(vim.o.lines * 0.6)
-  local win_width = math.ceil(vim.o.columns * 0.8)
-
-  -- and its starting position
-  local row = math.ceil((vim.o.lines - win_height) / 2 - 1)
-  local col = math.ceil(vim.o.columns - win_width)
-
   local opts = {
-    relative = 'editor',
+    relative = 'cursor',
     height = 2,
     width = 20,
-    row = row,
-    col = col,
   }
 
   local content_opts = {
     contents = {},
     buftype = 'nofile',
+    border = 'solid',
     highlight = {
       normal = 'finderNormal',
       border = 'finderBorder',
@@ -341,18 +332,16 @@ function finder:render_finder_result()
   }
 
   local max_height = vim.o.lines * 0.5
-  if #self.contents > max_height then
-    opt.height = max_height
-  end
+  opt.height = #self.contents > max_height and max_height or #self.contents
 
   local winline = fn.winline()
-  if vim.o.lines - winline - 6 < 0 then
+  if vim.o.lines - 6 - opt.height - winline <= 0 then
     vim.cmd('normal! zz')
     local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
     api.nvim_feedkeys(keycode, 'x', false)
   end
   winline = fn.winline()
-  opt.row = winline + 1
+  opt.row = winline + 2
   opt.col = 10
 
   local side_char = window.border_chars()['top'][config.ui.border]

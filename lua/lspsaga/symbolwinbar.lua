@@ -18,7 +18,7 @@ local function bar_prefix()
 end
 
 local function get_kind_icon(type, index)
-  local kind = require('lspsaga.highlight').get_kind()
+  local kind = require('lspsaga.lspkind').get_kind()
   ---@diagnostic disable-next-line: need-check-nil
   return kind[type][index]
 end

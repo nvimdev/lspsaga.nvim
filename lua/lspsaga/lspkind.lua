@@ -1,11 +1,8 @@
 local ui = require('lspsaga').config.ui
+local api = vim.api
 
-local resolved = nil
-
-local function get_kind(colors)
-  if resolved then
-    return resolved
-  end
+local function get_kind(custom)
+  local colors = require('lspsaga.highlight').get_colors()
   local kind = {
     [1] = { 'File', ' ', colors.white },
     [2] = { 'Module', ' ', colors.blue },
@@ -46,7 +43,7 @@ local function get_kind(colors)
     [304] = { 'Value', ' ', colors.blue },
   }
 
-  if not vim.tbl_isempty(ui.kind) then
+  if custom and not vim.tbl_isempty(custom) then
     local function find_index_by_type(k)
       for index, opts in pairs(kind) do
         if opts[1] == k then
@@ -71,14 +68,40 @@ local function get_kind(colors)
       end
     end
   end
+  return kind
+end
 
-  resolved = function()
-    return kind
+local function gen_symbol_winbar_hi(kind)
+  local prefix = 'LspSagaWinbar'
+  local winbar_sep = 'LspSagaWinbarSep'
+  local colors = require('lspsaga.highlight').get_colors()
+
+  for _, v in pairs(kind or {}) do
+    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
   end
+  api.nvim_set_hl(0, winbar_sep, { fg = colors.red, default = true })
+  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, default = true })
+  api.nvim_set_hl(0, prefix .. 'Word', { fg = colors.white, default = true })
+  api.nvim_set_hl(0, prefix .. 'FolderName', { fg = colors.fg, default = true })
+end
 
-  return resolved
+local function gen_outline_hi(kind)
+  for _, v in pairs(kind or {}) do
+    local hi_name = 'LSOutline' .. v[1]
+    local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
+    if not ok or not tbl.foreground then
+      api.nvim_set_hl(0, hi_name, { fg = v[3] })
+    end
+  end
+end
+
+local function init_or_reload(custom)
+  local kind = get_kind(custom)
+  gen_outline_hi(kind)
+  gen_symbol_winbar_hi(kind)
 end
 
 return {
+  init_or_reload = init_or_reload,
   get_kind = get_kind,
 }
