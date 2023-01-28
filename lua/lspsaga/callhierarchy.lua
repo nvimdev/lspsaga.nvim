@@ -492,7 +492,7 @@ function ch:preview()
   local rbottom = window.combine_char()['rightbottom'][config.ui.border]
   local content_opt = {
     contents = {},
-    setbuf = data[1],
+    bufnr = data[1],
     border_side = {
       ['lefttop'] = rtop,
       ['leftbottom'] = rbottom,

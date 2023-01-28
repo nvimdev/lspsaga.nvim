@@ -255,10 +255,6 @@ function M.create_win_with_border(content_opts, opts)
   )
   api.nvim_set_option_value('wrap', content_opts.wrap or false, { scope = 'local', win = winid })
 
-  if content_opts.setbuf then
-    api.nvim_win_set_buf(winid, content_opts.setbuf)
-  end
-
   api.nvim_set_option_value(
     'winhl',
     'Normal:' .. normal .. ',FloatBorder:' .. border_hl,

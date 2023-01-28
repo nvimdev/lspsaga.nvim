@@ -220,7 +220,7 @@ function def:peek_definition()
     local content_opts = {
       contents = {},
       enter = true,
-      setbuf = bufnr,
+      bufnr = bufnr,
       highlight = {
         border = 'DefinitionBorder',
         normal = 'DefinitionNormal',
