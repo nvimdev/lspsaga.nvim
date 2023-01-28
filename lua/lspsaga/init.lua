@@ -118,10 +118,6 @@ local default_config = {
 }
 
 function saga.setup(opts)
-  vim.notify_once(
-    '[lspsaga.nvim] version 0.2.4  will merge after 4 fours, colors config removed, most of config in highlight group',
-    vim.log.levels.INFO
-  )
   opts = opts or {}
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
@@ -133,14 +129,6 @@ function saga.setup(opts)
   if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.in_custom then
     require('lspsaga.symbolwinbar'):symbol_autocmd()
   end
-end
-
----@deprecated remove in version 0.2.4
-function saga.init_lsp_saga()
-  vim.notify(
-    'lspsaga.nvim v0.2.3+ has breaking changes. Please read the docs and migrate your configuration to the new "setup" function!',
-    vim.log.levels.ERROR
-  )
 end
 
 return saga
