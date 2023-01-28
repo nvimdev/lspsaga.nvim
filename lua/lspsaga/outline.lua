@@ -68,7 +68,7 @@ local function get_hi_prefix()
 end
 
 local function get_kind()
-  return require('lspsaga.highlight').get_kind()
+  return require('lspsaga.lspkind').get_kind()
 end
 
 local function find_node(data, line)
