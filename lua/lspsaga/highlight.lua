@@ -103,13 +103,13 @@ local function get_kind()
   return require('lspsaga.lspkind').get_kind(get_colors())()
 end
 
+local winbar_ns = api.nvim_create_namespace('LspagaWinbar')
 local function gen_symbol_winbar_hi()
   local prefix = 'LspSagaWinbar'
   local winbar_sep = 'LspSagaWinbarSep'
   local colors = get_colors()
   local kind = get_kind()
 
-  local winbar_ns = api.nvim_create_namespace('LspagaWinbar')
   for _, v in pairs(kind or {}) do
     api.nvim_set_hl(winbar_ns, prefix .. v[1], { fg = v[3] })
   end
@@ -145,4 +145,5 @@ return {
   init_highlight = init_highlight,
   get_kind = get_kind,
   get_colors = get_colors,
+  winbar_ns = winbar_ns
 }

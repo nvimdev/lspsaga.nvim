@@ -56,7 +56,8 @@ local function bar_file_name(buf)
     if i == #res then
       if #data ~= 0 then
         table.insert(items, bar.prefix .. 'FileIcon#' .. data[1] .. ' ' .. '%*')
-        api.nvim_set_hl(0, 'LspSagaWinbarFileIcon', { fg = data[2] or nil, default = true })
+        local winbar_ns = require('lspsaga.highlight').winbar_ns
+        api.nvim_set_hl(winbar_ns, 'LspSagaWinbarFileIcon', { fg = data[2] or nil, default = true })
       end
       table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
     else
