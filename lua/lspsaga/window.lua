@@ -7,42 +7,50 @@ function M.border_chars()
       ['single'] = '┌',
       ['double'] = '╔',
       ['rounded'] = '╭',
+      ['solid'] = ' ',
     },
 
     top = {
       ['single'] = '─',
       ['double'] = '═',
       ['rounded'] = '─',
+      ['solid'] = ' ',
     },
     righttop = {
       ['single'] = '┐',
       ['double'] = '╗',
       ['rounded'] = '╮',
+      ['solid'] = ' ',
     },
     right = {
       ['single'] = '│',
       ['double'] = '║',
       ['rounded'] = '│',
+      ['solid'] = ' ',
     },
     rightbottom = {
       ['single'] = '┘',
       ['double'] = '╝',
       ['rounded'] = '╯',
+      ['solid'] = ' ',
     },
     bottom = {
       ['single'] = '─',
       ['double'] = '═',
       ['rounded'] = '─',
+      ['solid'] = ' ',
     },
     leftbottom = {
       ['single'] = '└',
       ['double'] = '╚',
       ['rounded'] = '╰',
+      ['solid'] = ' ',
     },
     left = {
       ['single'] = '│',
       ['double'] = '║',
       ['rounded'] = '│',
+      ['solid'] = ' ',
     },
   }
 end
@@ -53,11 +61,13 @@ function M.combine_char()
       ['single'] = '┬',
       ['rounded'] = '┬',
       ['double'] = '╦',
+      ['solid'] = ' ',
     },
     ['rightbottom'] = {
       ['single'] = '┴',
       ['rounded'] = '┴',
       ['double'] = '╩',
+      ['solid'] = ' ',
     },
   }
 end

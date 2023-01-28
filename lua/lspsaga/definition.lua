@@ -104,19 +104,13 @@ function def:title_text(opts, link)
   if #link > 2 then
     link = table.concat(link, libs.path_sep, #link - 1, #link)
   end
-  local theme = require('lspsaga').theme()
   opts.title = {
-    { theme.left, 'TitleSymbol' },
     { link, 'TitleString' },
-    { theme.right, 'TitleSymbol' },
   }
-  local data = libs.icon_from_devicon(vim.bo.filetype, true)
-  table.insert(opts.title, 2, { (data[1] or '') .. ' ', 'TitleFileIcon' })
-  api.nvim_set_hl(0, 'TitleFileIcon', {
-    background = config.ui.colors.title_bg,
-    foreground = data[2] or 'white',
-    default = true,
-  })
+  local data = libs.icon_from_devicon(vim.bo.filetype)
+  if data[1] then
+    table.insert(opts.title, 1, { data[1] .. ' ', data[2] })
+  end
 end
 
 local function get_uri_data(result)

@@ -14,18 +14,14 @@ local default_config = {
     diagnostic = '🐞',
     incoming = ' ',
     outgoing = ' ',
-    colors = {
-      --float window normal bakcground color
-      normal_bg = '#1d1536',
-      --title background color
-      title_bg = '#afd700',
-    },
     kind = {},
   },
   diagnostic = {
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
+    custom_fix = nil,
+    custom_msg = nil,
     keys = {
       exec_action = 'o',
       quit = 'q',
@@ -113,6 +109,10 @@ local default_config = {
       quit = 'q',
       expand_collapse = 'u',
     },
+  },
+  beacon = {
+    enable = true,
+    frequency = 7,
   },
   server_filetype_map = {},
 }

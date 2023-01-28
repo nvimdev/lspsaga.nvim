@@ -507,12 +507,9 @@ function ch:preview()
   if fn.has('nvim-0.9') == 1 and ui.title then
     local fname_parts = libs.get_path_info(data[1], 2)
     local tbl = libs.icon_from_devicon(vim.bo[self.main_buf].filetype, true)
-    local theme = require('lspsaga').theme()
     opt.title = {
-      { theme.left, 'TitleSymbol' },
       { (tbl[1] or '') .. ' ', 'TitleFileIcon' },
       { table.concat(fname_parts or {}, libs.path_sep), 'TitleString' },
-      { theme.right, 'TitleSymbol' },
     }
     if #tbl == 2 then
       api.nvim_set_hl(0, 'TitleFileIcon', {

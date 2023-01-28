@@ -291,6 +291,10 @@ function libs.delete_scroll_map(bufnr)
 end
 
 function libs.jump_beacon(bufpos, width)
+  if not saga_conf.beacon.enable then
+    return
+  end
+
   if width == 0 or not width then
     return
   end
@@ -325,7 +329,7 @@ function libs.jump_beacon(bufpos, width)
       if not api.nvim_win_is_valid(winid) then
         return
       end
-      local blend = vim.wo[winid].winblend + 7
+      local blend = vim.wo[winid].winblend + saga_conf.beacon.frequency
       if blend > 100 then
         blend = 100
       end

@@ -52,11 +52,8 @@ function act:action_callback()
   opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local theme = require('lspsaga').theme()
     opt.title = {
-      { theme.left, 'TitleSymbol' },
       { config.ui.code_action .. ' CodeActions', 'TitleString' },
-      { theme.right, 'TitleSymbol' },
     }
   end
 
@@ -73,17 +70,10 @@ function act:action_callback()
     end,
   })
 
-  local bgrange = { 'green', 'purple', 'red', 'orange', 'yellow', 'cyan', 'blue' }
-  local colors = require('lspsaga.highlight').get_colors()()
   for i = 1, #contents, 1 do
     local row = i - 1
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionBg' .. row, row, 0, 3)
-    local idx = i % 7 == 0 and 7 or i % 7
-    api.nvim_set_hl(0, 'CodeActionBg' .. row, {
-      background = colors[bgrange[idx]],
-      foreground = colors.black,
-    })
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionNumber', row, 0, 2)
   end
 
   -- dsiable some move keys in codeaction

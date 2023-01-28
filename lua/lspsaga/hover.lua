@@ -57,11 +57,8 @@ function hover:open_floating_preview(res, option_fn)
   }
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local theme = require('lspsaga').theme()
     float_option.title = {
-      { theme.left, 'TitleSymbol' },
       { 'Hover', 'TitleString' },
-      { theme.right, 'TitleSymbol' },
     }
   end
 

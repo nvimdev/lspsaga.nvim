@@ -35,14 +35,13 @@ local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 ---@private
 local function get_diag_type(severity)
-  local type = { 'Error', 'Warn', 'Hint', 'Info' }
+  local type = { 'Error', 'Warn', 'Info', 'Hint' }
   return type[severity]
 end
 
-local function get_colors(severity)
-  local lsa_colors = require('lspsaga.highlight').get_colors()()
-  local tbl = { lsa_colors.red, lsa_colors.yellow, lsa_colors.blue, lsa_colors.cyan }
-  return { foreground = tbl[severity], background = ui.colors.normal_bg }
+local function get_colors(hi_name)
+  local color = api.nvim_get_hl_by_name(hi_name, true)
+  return color
 end
 
 function diag:code_action_cb()
@@ -50,9 +49,12 @@ function diag:code_action_cb()
     return
   end
 
+  local fix_title = diag_conf.custom_fix
+    or self.theme.left .. ui.code_action .. 'Fix ' .. self.theme.right
+
   local contents = {
     '',
-    self.theme.left .. ui.code_action .. 'Fix ' .. self.theme.right,
+    fix_title,
   }
 
   for index, client_with_actions in pairs(act.action_tuples) do
@@ -61,8 +63,7 @@ function diag:code_action_cb()
       return
     end
     if client_with_actions[2].title then
-      local indent = index > 9 and '' or ' '
-      local action_title = indent .. index .. ' ' .. client_with_actions[2].title
+      local action_title = index .. ' ' .. client_with_actions[2].title
       table.insert(contents, action_title)
     end
   end
@@ -76,21 +77,16 @@ function diag:code_action_cb()
   api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
+  if not diag_conf.custom_fix then
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
+  end
 
-  local bgrange = { 'green', 'purple', 'red', 'orange', 'yellow', 'cyan', 'blue' }
-  local colors = require('lspsaga.highlight').get_colors()()
   for i = 2, #contents do
     local row = start_line + i - 1
     api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionBg' .. row, row, 0, 3)
-    local idx = i % 7 == 0 and 7 or i % 7
-    api.nvim_set_hl(0, 'CodeActionBg' .. row, {
-      background = colors[bgrange[idx]],
-      foreground = colors.black,
-    })
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionNumber', row, 0, 2)
   end
 
   keymap('n', diag_conf.keys.go_action, function()
@@ -155,7 +151,7 @@ end
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
   local content = {
-    self.theme.left .. '  Msg ' .. self.theme.right,
+    diag_conf.custom_msg or self.theme.left .. '  Msg ' .. self.theme.right,
   }
   self.main_buf = api.nvim_get_current_buf()
   local cur_word = fn.expand('<cword>')
@@ -193,7 +189,7 @@ function diag:render_diagnostic_window(entry, option)
     buftype = 'nofile',
     wrap = true,
     highlight = {
-      border = hi_name .. 'border',
+      border = hi_name,
       normal = 'DiagnosticNormal',
     },
   }
@@ -214,9 +210,10 @@ function diag:render_diagnostic_window(entry, option)
     width = max_width,
     height = #content + increase,
     no_size_override = true,
+    focusable = true,
   }
 
-  local colors = get_colors(entry.severity)
+  local color = get_colors(hi_name)
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opts.title = {
       { ' ' .. cur_word, 'Diagnostic' .. diag_type .. 'Title' },
@@ -224,7 +221,7 @@ function diag:render_diagnostic_window(entry, option)
     api.nvim_set_hl(
       0,
       'Diagnostic' .. diag_type .. 'Title',
-      { fg = colors.foreground, background = ui.colors.normal_bg, default = true }
+      { fg = color.foreground, default = true }
     )
   end
 
@@ -327,51 +324,52 @@ function diag:render_diagnostic_window(entry, option)
     end
   end
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 0, #self.theme.left)
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    0,
-    'DiagnosticMsgIcon',
-    0,
-    #self.theme.left,
-    #self.theme.left + 5
-  )
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    0,
-    'DiagnosticMsg',
-    0,
-    #self.theme.left + 5,
-    #self.theme.left + 9
-  )
+  if not diag_conf.custom_msg then
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 0, #self.theme.left)
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      0,
+      'DiagnosticMsgIcon',
+      0,
+      #self.theme.left,
+      #self.theme.left + 5
+    )
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      0,
+      'DiagnosticMsg',
+      0,
+      #self.theme.left + 5,
+      #self.theme.left + 9
+    )
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, #self.theme.left + 9, -1)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, #self.theme.left + 9, -1)
+    api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
+      background = color.foreground,
+      foreground = '#000000',
+    })
 
-  local lsa_colors = require('lspsaga.highlight').get_colors()()
+    api.nvim_set_hl(0, 'DiagnosticMsg', {
+      background = color.foreground,
+      foreground = '#000000',
+    })
+
+    api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
+      foreground = color.foreground,
+    })
+  end
+
   api.nvim_set_hl(0, 'DiagnosticText', {
-    foreground = colors.foreground,
+    foreground = color.foreground,
     default = true,
   })
 
-  api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
-    background = colors.foreground,
-    foreground = lsa_colors.green,
-  })
-
-  api.nvim_set_hl(0, 'DiagnosticMsg', {
-    background = colors.foreground,
-    foreground = lsa_colors.black,
-  })
-
-  api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
-    foreground = colors.foreground,
-    background = ui.colors.normal_bg,
-  })
-
-  api.nvim_set_hl(0, 'DiagnosticActionTitle', {
-    background = colors.foreground,
-    foreground = lsa_colors.black,
-  })
+  if not diag_conf.custom_fix then
+    api.nvim_set_hl(0, 'DiagnosticActionTitle', {
+      background = color.foreground,
+      foreground = '#000000',
+    })
+  end
 
   api.nvim_buf_add_highlight(
     self.bufnr,
@@ -420,7 +418,7 @@ function diag:render_diagnostic_window(entry, option)
 
   self:apply_map()
 
-  local close_autocmds = { 'CursorMoved', 'InsertEnter', 'TextChanged', 'BufLeave' }
+  local close_autocmds = { 'CursorMoved', 'InsertEnter', 'TextChanged' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(
       current_buffer,
@@ -440,9 +438,6 @@ function diag:render_diagnostic_window(entry, option)
 end
 
 function diag:move_cursor(entry)
-  --make sure the context is clean
-  clean_ctx()
-
   self.theme = require('lspsaga').theme()
   local current_winid = api.nvim_get_current_win()
 
@@ -530,12 +525,9 @@ function diag:show(entrys, arg, type)
   end
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local theme = require('lspsaga').theme()
     opt.title = {
-      { theme.left, 'TitleSymbol' },
       { config.ui.diagnostic, 'TitleIcon' },
       { type .. ' Diagnostic', 'TitleString' },
-      { theme.right, 'TitleSymbol' },
     }
   end
 
