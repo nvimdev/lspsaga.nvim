@@ -227,9 +227,9 @@ function ot:expand_collapse()
   local prefix = get_hi_prefix()
   local kind = get_kind()
 
-  local function increase_or_reduce(idx, num)
+  local function increase_or_reduce(lnum, num)
     for k, v in pairs(self.data) do
-      if k > idx then
+      if v.winline > lnum then
         self.data[k].winline = self.data[k].winline + num
         for _, item in pairs(v.data) do
           item.winline = item.winline + num
@@ -257,7 +257,7 @@ function ot:expand_collapse()
       5,
       -1
     )
-    increase_or_reduce(kind_idx, -#node.data)
+    increase_or_reduce(node.winline + #node.data, -#node.data)
     return
   end
 
