@@ -239,7 +239,10 @@ local render_symbol_winbar = function(buf, symbols)
   winbar_str = winbar_str .. str
 
   if config.enable and api.nvim_win_get_height(cur_win) - 1 > 1 then
-    --TODO: some string has invalida character handle this string
+    if #winbar_str == 0 then
+      winbar_str = bar_prefix().prefix .. ' #'
+    end
+    --TODO: some string has invalidate character handle this string
     --ref: neovim/filetype/detect.lua scroll in 1588 line
     api.nvim_set_option_value('winbar', winbar_str, { scope = 'local', win = cur_win })
   end
@@ -378,6 +381,12 @@ function symbar:symbol_autocmd()
         api.nvim_set_option_value(
           'winbar',
           bar_file_name(opt.buf),
+          { scope = 'local', win = winid }
+        )
+      else
+        api.nvim_set_option_value(
+          'winbar',
+          bar_prefix().prefix .. ' #',
           { scope = 'local', win = winid }
         )
       end
