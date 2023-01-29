@@ -60,7 +60,6 @@ function act:action_callback()
   self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
   vim.wo[self.action_winid].conceallevel = 2
   vim.wo[self.action_winid].concealcursor = 'niv'
-  vim.wo[self.winid].foldlevel = 6
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
 

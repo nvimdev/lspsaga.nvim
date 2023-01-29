@@ -238,7 +238,6 @@ function diag:render_diagnostic_window(entry, option)
   vim.wo[self.winid].showbreak = 'NONE'
   vim.wo[self.winid].breakindent = true
   vim.wo[self.winid].breakindentopt = 'shift:2'
-  vim.wo[self.winid].foldlevel = 6
 
   local win_config = api.nvim_win_get_config(self.winid)
 
