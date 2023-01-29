@@ -493,6 +493,9 @@ function diag:show(entrys, arg, type)
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
     local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1]
+    if not sign.text then
+      sign.text = ui.diagnostic
+    end
     local line = sign.text
       .. ' '
       .. code_source[1]
