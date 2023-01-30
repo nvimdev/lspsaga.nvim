@@ -11,89 +11,33 @@ local function clean_ctx()
   ctx = {}
 end
 
----Get current node by id
----@private
----@return table|nil
 local function find_node(winid)
-  if vim.tbl_isempty(ctx) then
-    return nil
-  end
-
-  local node = ctx.node
-  if not node then
-    return
-  end
-
-  while true do
+  for index, node in pairs(ctx.data or {}) do
     if node.winid == winid then
-      break
-    end
-    node = node.next or nil
-    if not node then
-      break
+      return index
     end
   end
-  return node
 end
 
----remove a node
----@private
-local function remove(node)
-  local cur_node = find_node(node.winid)
-  if not cur_node then
-    return false
+local function remove(index)
+  table.remove(ctx.data, index)
+  if #ctx.data == 0 then
+    clean_ctx()
   end
-  local prev = cur_node.prev
-  local next = cur_node.next
-  if prev then
-    if next then
-      next.prev = prev
-    end
-    prev.next = next
-  end
-  cur_node = nil
-  ctx.length = ctx.length - 1
-  if ctx.length == 0 then
-    ctx = {}
-  end
-  return true
 end
 
----find the last node
----@private
----@return table
-local function last_node(list)
-  local node = list.node
-  while true do
-    if not node.next then
-      break
-    end
-    node = node.next
-  end
-  return node
-end
-
----push a node into the ctx
----@private
 local function push(node)
-  if vim.tbl_isempty(ctx) then
-    ctx = {
-      length = 1,
-      node = node,
-    }
-    return
+  if not ctx.data then
+    ctx.data = {}
   end
-  local tail = last_node(ctx)
-  tail.next = node
-  node.prev = tail
-  ctx.length = ctx.length + 1
+  ctx.data[#ctx.data + 1] = node
 end
 
-local function list_length()
-  if vim.tbl_isempty(ctx) then
+local function stack_cap()
+  if not ctx.data then
     return 0
   end
-  return ctx.length
+  return #ctx.data
 end
 
 function def:title_text(opts, link)
@@ -153,8 +97,6 @@ function def:peek_definition()
   local current_buf = api.nvim_get_current_buf()
   -- { prev, next,main_winid,fname, winid, bufnr}
   local node = {}
-  node.main_bufnr = current_buf
-  node.main_winid = cur_winid
 
   -- push a tag stack
   local pos = api.nvim_win_get_cursor(0)
@@ -197,7 +139,7 @@ function def:peek_definition()
 
     node.link = link
     local opts = {}
-    if list_length() == 0 then
+    if stack_cap() == 0 then
       local cur_winline = fn.winline()
       local max_height = math.floor(vim.o.lines * 0.5)
       local max_width = math.floor(vim.o.columns * 0.6)
@@ -231,6 +173,7 @@ function def:peek_definition()
       self:title_text(opts, link)
     end
 
+    node.prev = api.nvim_get_current_win()
     _, node.winid = window.create_win_with_border(content_opts, opts)
     if config.symbol_in_winbar.enable then
       api.nvim_win_set_var(node.winid, 'disable_winbar', true)
@@ -262,24 +205,10 @@ function def:event(bufnr)
 
   api.nvim_create_autocmd('WinClosed', {
     buffer = bufnr,
-    callback = function(opt)
-      local wins = fn.win_findbuf(opt.buf)
-      if #wins == 0 then
-        return
-      end
-      if #wins == 1 then
-        local node = find_node(wins[1])
-        if not node then
-          return
-        end
-      end
-      if #wins == 1 then
-        for _, map in pairs(config.definition) do
-          pcall(api.nvim_buf_del_keymap, opt.buf, 'n', map)
-        end
-      end
-      if ctx.length == 1 then
-        api.nvim_del_autocmd(opt.id)
+    callback = function()
+      local cur = api.nvim_get_current_win()
+      if stack_cap() == 1 and ctx.data[1].winid == cur then
+        clean_ctx()
       end
     end,
   })
@@ -300,22 +229,15 @@ function def:apply_aciton_keys(pos)
   local maps = unpack_maps()
   local opt = { buffer = true, nowait = true }
 
-  local node_with_close = function()
-    local winid = api.nvim_get_current_win()
-    local node = find_node(winid)
-    if not node then
-      return
-    end
-    self:close_window(node.winid)
-    return node
-  end
-
   for action, key in pairs(maps) do
     keymap.set('n', key, function()
-      local node = node_with_close()
-      if not node then
+      local curwin = api.nvim_get_current_win()
+      local index = find_node(curwin)
+      if not index then
         return
       end
+
+      local node = ctx.data[index]
       vim.cmd(action .. ' ' .. node.link)
       api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
       local width = #api.nvim_get_current_line()
@@ -325,32 +247,27 @@ function def:apply_aciton_keys(pos)
   end
 
   keymap.set('n', config.definition.quit, function()
-    local node = node_with_close()
-    if not node then
+    local curwin = api.nvim_get_current_win()
+    local index = find_node(curwin)
+    if not index then
       return
     end
-    if node.prev and api.nvim_win_is_valid(node.prev.winid) then
-      api.nvim_set_current_win(node.prev.winid)
-      remove(node)
-    else
-      clean_ctx()
+
+    local node = ctx.data[index]
+    if api.nvim_win_is_valid(node.prev) then
+      api.nvim_set_current_win(node.prev)
     end
+    self:close_window(node.winid)
+    remove(index)
   end, opt)
 
   keymap.set('n', config.definition.close, function()
     if vim.tbl_isempty(ctx) then
       return
     end
-    local key = vim.tbl_keys(ctx)[1]
-    local node = ctx[key].node
-    while true do
-      if node.winid and api.nvim_win_is_valid(node.winid) then
-        api.nvim_win_close(node.winid, true)
-        remove(node)
-      end
-      node = node.next
-      if not node then
-        break
+    for _, item in pairs(ctx.data or {}) do
+      if item.winid and api.nvim_win_is_valid(item.winid) then
+        api.nvim_win_close(item.winid, true)
       end
     end
     clean_ctx()
