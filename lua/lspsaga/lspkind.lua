@@ -1,7 +1,9 @@
 local ui = require('lspsaga').config.ui
 local api = vim.api
 
-local function get_kind()
+local resolved
+
+local function init_kind()
   local colors = require('lspsaga.highlight').get_colors()
   local kind = {
     [1] = { 'File', ' ', colors.white },
@@ -67,7 +69,9 @@ local function get_kind()
     end
   end
 
-  return kind
+  resolved = function()
+    return kind
+  end
 end
 
 local function gen_symbol_winbar_hi(kind)
@@ -95,9 +99,16 @@ local function gen_outline_hi(kind)
 end
 
 local function init_kind_hl()
-  local kind = get_kind()
+  if not resolved then
+    init_kind()
+  end
+  local kind = resolved()
   gen_symbol_winbar_hi(kind)
   gen_outline_hi(kind)
+end
+
+local function get_kind()
+  return resolved()
 end
 
 return {
