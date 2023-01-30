@@ -1,4 +1,4 @@
-local lsp, api, fn = vim.lsp, vim.api, vim.fn
+local lsp, api, fn, uv = vim.lsp, vim.api, vim.fn, vim.loop
 local config = require('lspsaga').config.symbol_in_winbar
 local libs = require('lspsaga.libs')
 local symbar = {}
@@ -29,9 +29,12 @@ local function respect_lsp_root(buf)
     return
   end
   local root_dir = clients[1].config.root_dir
-  local parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
   local bufname = api.nvim_buf_get_name(buf)
   local bufname_parts = vim.split(bufname, libs.path_sep, { trimempty = true })
+  if not root_dir then
+    return { unpack(bufname_parts, config.folder_level - 1) }
+  end
+  local parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
   return { unpack(bufname_parts, #parts + 1) }
 end
 
