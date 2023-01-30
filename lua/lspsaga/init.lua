@@ -127,7 +127,7 @@ function saga.setup(opts)
     require('lspsaga.lightbulb').lb_autocmd()
   end
 
-  if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.in_custom then
+  if saga.config.symbol_in_winbar.enable then
     require('lspsaga.symbolwinbar'):symbol_autocmd()
   end
 end
