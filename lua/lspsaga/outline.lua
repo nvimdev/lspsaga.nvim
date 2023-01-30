@@ -72,9 +72,9 @@ local function get_kind()
 end
 
 local function find_node(data, line)
-  for kind, node in pairs(data or {}) do
+  for _, node in pairs(data or {}) do
     if node.winline == line then
-      return kind, node
+      return node
     end
   end
 end
@@ -176,7 +176,7 @@ function ot:apply_map()
     local curline = api.nvim_win_get_cursor(0)[1]
     local node
     for _, nodes in pairs(self.data) do
-      _, node = find_node(nodes.data, curline)
+      node = find_node(nodes.data, curline)
       if node then
         break
       end
@@ -220,7 +220,7 @@ end
 
 function ot:expand_collapse()
   local curline = api.nvim_win_get_cursor(0)[1]
-  local kind_idx, node = find_node(self.data, curline)
+  local node = find_node(self.data, curline)
   if not node then
     return
   end
@@ -335,7 +335,7 @@ function ot:auto_preview()
   local curline = api.nvim_win_get_cursor(0)[1]
   local node
   for _, nodes in pairs(self.data) do
-    _, node = find_node(nodes.data, curline)
+    node = find_node(nodes.data, curline)
     if node then
       break
     end
@@ -508,8 +508,8 @@ function ot:render_outline(buf, symbols)
   end
   self:apply_map()
   api.nvim_create_autocmd('WinClosed', {
-    callback = function()
-      if api.nvim_get_current_win() == self.winid then
+    callback = function(opt)
+      if api.nvim_get_current_win() == self.winid and opt.buf == self.bufnr then
         clean_ctx()
       end
     end,
