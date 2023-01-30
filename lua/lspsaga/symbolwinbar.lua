@@ -52,13 +52,18 @@ local function bar_file_name(buf)
   if not res or #res == 0 then
     return
   end
-  local data = libs.icon_from_devicon(vim.bo[buf].filetype)
+  local data = libs.icon_from_devicon(vim.bo[buf].filetype, true)
+
   local bar = bar_prefix()
   local items = {}
   for i, v in pairs(res) do
     if i == #res then
       if #data ~= 0 then
-        table.insert(items, '%#' .. data[2] .. '#' .. data[1] .. ' ' .. '%*')
+        table.insert(items, bar.prefix .. 'FileIcon#' .. data[1] .. ' ' .. '%*')
+        -- set correct devicon color with user set highlights
+        local hl = libs.get_hl_by_name("LspSagaWinbarFileIcon")
+        hl["fg"] = hl["fg"] or data[2]
+        api.nvim_set_hl(0, "LspSagaWinbarFileIcon", hl)
       end
       table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
     else

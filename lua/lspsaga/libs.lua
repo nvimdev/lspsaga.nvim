@@ -34,7 +34,7 @@ function libs.icon_from_devicon(ft, color)
   local icon, hl = libs.devicons.get_icon_by_filetype(ft)
   if color then
     local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
-    return { icon, rgb }
+    return { icon, rgb, hl }
   end
   return { icon, hl }
 end
@@ -341,6 +341,35 @@ function libs.jump_beacon(bufpos, width)
       end
     end)
   )
+end
+
+function libs.get_hl_by_name(name)
+  local hl = {}
+  if vim.fn.hlexists(name) == 1 then
+    hl = vim.api.nvim_get_hl_by_name("LspSagaWinbarFileIcon", true)
+  end
+
+ return {
+    fg = hl["foreground"],
+    bg = hl["background"],
+    sp = hl["special"],
+    blend = hl["blend"],
+    bold = hl["bold"],
+    standout = hl["standout"],
+    underline = hl["underline"],
+    undercurl = hl["undercurl"],
+    underdouble = hl["underdouble"],
+    underdotted = hl["underdotted"],
+    underdashed = hl["underdashed"],
+    strikethrough = hl["strikethrough"],
+    italic = hl["italic"],
+    reverse = hl["reverse"],
+    nocombine = hl["nocombine"],
+    link = hl["link"],
+    ctermfg = hl["ctermfg"],
+    ctermbg = hl["ctermbg"],
+    cterm = hl["cterm"],
+  }
 end
 
 return libs
