@@ -336,6 +336,9 @@ function finder:render_finder_result()
 
   local max_height = vim.o.lines * 0.5
   opt.height = #self.contents > max_height and max_height or #self.contents
+  if opt.height <= 0 or not opt.height then
+    opt.height = max_height
+  end
 
   local winline = fn.winline()
   if vim.o.lines - 6 - opt.height - winline <= 0 then
