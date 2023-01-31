@@ -323,6 +323,9 @@ function ot:auto_refresh()
     end,
     desc = '[Lspsaga.nvim] outline auto refresh',
   })
+  if not config.outline.focus then
+      vim.cmd("wincmd p")
+  end
 end
 
 function ot:auto_preview()
