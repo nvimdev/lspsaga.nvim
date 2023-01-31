@@ -180,6 +180,7 @@ A `finder` to show the defintion, reference and implementation (only shown when 
 Default options:
 ```lua
   finder = {
+    jump_to = 'p',
     edit = { "o", "<CR>" },
     vsplit = "s",
     split = "i",
@@ -188,11 +189,13 @@ Default options:
   },
 ```
 
+- `jump_to` finder peek window.
+
 <details>
 <summary>lsp_finder showcase</summary>
 
 <img
-src="https://user-images.githubusercontent.com/41671631/212032702-f45bba5a-3e2e-465d-85c3-3d02d1b88da4.gif" height=80% width=80%/>
+src="https://user-images.githubusercontent.com/41671631/215719819-4bfe6e86-fecc-4dc0-bac0-837c0bdeb349.gif" height=80% width=80%/>
 </details>
 
 
@@ -222,7 +225,7 @@ The steps demonstrated in this showcase are:
 - Lspsaga shows a beacon highlight after jumping to the file
 
 <img
-src="https://user-images.githubusercontent.com/41671631/212002926-60c11060-233c-4610-a86e-57decefe6927.gif" height=80% width=80%/>
+src="https://user-images.githubusercontent.com/41671631/215719806-0dea0248-4a2c-45df-a258-43a4ba207a43.gif" height=80% width=80%/>
 </details>
 
 ## :Lspsaga goto_definition
@@ -253,7 +256,7 @@ The steps demonstrated in this showcase are:
 - Pressing `j` to move within the code action preview window
 - Pressing `<Cr>` to run the action
 
-<img src="https://user-images.githubusercontent.com/41671631/212005522-bc7fa99b-6c6f-4c0e-b7fc-c95edee5c169.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719772-ccebdcba-4e4a-46f7-9af8-61ac8391f2f4.gif" height=80% width=80%/>
 </details>
 
 ## :Lspsaga Lightbulb
@@ -289,7 +292,7 @@ The steps demonstrated in this showcase are:
 - Pressing `K` again to enter the hover window
 - Pressing `q` to quit
 
-<img src="https://user-images.githubusercontent.com/41671631/212010765-55341ba1-95c2-41e9-b4bd-03827676ee94.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719832-37d2f6ab-66ed-4500-b6de-a6c289983ab2.gif" height=80% width=80%/>
 
 </details>
 
@@ -337,13 +340,12 @@ The steps demonstrated in this showcase are:
 - Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
 - Pressing the number `2` to execute the code action without needing to enter the floating window
 
-<img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719816-d4b309f3-1dec-4d26-b53d-566c38e1bc00.gif" height=80% width=80%/>
 
 - If you want to see the code action, you can use `<C-w>w` to enter the floating window.
 - Press `g` to go to the action line and see the code action preview.
 - Press `o` to execute the action.
 
-<img src="https://user-images.githubusercontent.com/41671631/212669236-dda9f06b-6840-41cd-92b4-5c2290077c37.gif" height=80% width=80%/>
 
 </details>
 
@@ -355,7 +357,8 @@ The steps demonstrated in this showcase are:
 
 <details>
 <summary>show_diagnostics showcase</summary>
-<img src="https://user-images.githubusercontent.com/41671631/212220793-a52215fd-5f60-4be6-8132-78247b921f1e.gif" height=80% width=80%/>
+
+<img src="https://user-images.githubusercontent.com/41671631/215719847-c09e84c0-c19a-4365-bd16-87800e3685cc.gif" height=80% width=80%/>
 </details>
 
 ## :Lspsaga rename
@@ -383,14 +386,14 @@ The steps demonstrated in this showcase are:
 - Pressing `gr` to run `:Lspsaga rename`
 - Typing `stesdd` and then pressing `<CR>` to execute the rename
 
-<img src="https://user-images.githubusercontent.com/41671631/212015791-5a278ace-d23a-4954-bb95-1978f51153a7.gif" height=80% width=80%/>
+<img src="" height=80% width=80%/>
 
 The steps demonstrated in this showcase are:
 - Pressing `gR` to run `:Lspsaga rename ++project`
 - Pressing `x` to mark the file
 - Pressing `<CR>` to execute rename
 
-<img src="https://user-images.githubusercontent.com/41671631/213900326-066036bf-848a-403c-bf05-ac661e424e63.gif"  height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719843-7278cc97-399f-48ee-88eb-555647eba42f.gif"  height=80% width=80%/>
 </details>
 
 ## :Lspsaga outline
@@ -422,10 +425,10 @@ The steps demonstrated in this showcase are:
 - Pressing `j` to move down
 - Pressing `o` to jump
 
-<img src="https://user-images.githubusercontent.com/41671631/212017018-6753e470-58e4-498e-8812-5ff416ff27c1.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719836-25a03774-891b-4dfd-ab2f-0b590ae1c862.gif" height=80% width=80%/>
 </details>
 
-## :Lspsaga incoming_calls
+## :Lspsaga incoming_calls / outgoing_calls
 
 Runs the LSP's callhierarchy/incoming_calls.
 
@@ -447,17 +450,9 @@ Default options:
 
 <details>
 <summary>incoming_calls showcase</summary>
-<img src="https://user-images.githubusercontent.com/41671631/212018219-26ed4a5f-00e1-488a-8a87-1a89f2c5d14b.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719762-9482e84b-921e-425e-b1a9-7bd1f569a5ce.gif" height=80% width=80%/>
 </details>
 
-## :Lspsaga outgoing_calls
-
-Runs the LSP's callhierarchy/outgoing_calls.
-
-<details>
-<summary>outgoing_calls showcase</summary>
-<img src="https://user-images.githubusercontent.com/41671631/212024418-cf26f3f7-7acb-46df-a50a-9abe3f8f68f3.gif" height=80% width=80%/>
-</details>
 
 ## :Lspsaga symbols in winbar
 

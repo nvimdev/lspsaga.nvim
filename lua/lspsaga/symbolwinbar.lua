@@ -61,14 +61,16 @@ local function bar_file_name(buf)
         table.insert(items, '%#LspSagaWinbarFileIcon#' .. data[1] .. ' ' .. '%*')
 
         local ok, conf = pcall(api.nvim_get_hl_by_name, 'LspSagaWinbarFileIcon', true)
-        local bg
-        if ok then
-          bg = conf.background
+        if not ok then
+          conf = {}
         end
-        api.nvim_set_hl(0, 'LspSagaWinbarFileIcon', {
-          foreground = data[2],
-          bg = bg,
-        })
+        api.nvim_set_hl(
+          0,
+          'LspSagaWinbarFileIcon',
+          vim.tbl_extend('force', conf, {
+            foreground = data[2],
+          })
+        )
       end
       table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
     else

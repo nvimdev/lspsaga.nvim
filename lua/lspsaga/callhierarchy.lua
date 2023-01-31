@@ -513,7 +513,6 @@ function ch:preview()
     }
     if #tbl == 2 then
       api.nvim_set_hl(0, 'TitleFileIcon', {
-        background = config.ui.colors.title_bg,
         foreground = tbl[2],
         default = true,
       })

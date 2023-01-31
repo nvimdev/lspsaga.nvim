@@ -328,7 +328,6 @@ function rename:p_preview()
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = {
-      { config.ui.preview, 'TitleIcon' },
       { 'Preview', 'TitleString' },
     }
   end

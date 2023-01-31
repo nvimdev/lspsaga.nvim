@@ -54,6 +54,7 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
+    jump_to = 'p',
     edit = { 'o', '<CR>' },
     vsplit = 's',
     split = 'i',

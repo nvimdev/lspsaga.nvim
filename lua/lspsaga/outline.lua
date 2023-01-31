@@ -288,7 +288,7 @@ function ot:expand_collapse()
     end
   end
 
-  increase_or_reduce(node.winline + #node.data, #node.data)
+  increase_or_reduce(node.winline, #node.data)
 end
 
 function ot:auto_refresh()
