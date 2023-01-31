@@ -256,6 +256,10 @@ function finder:create_finder_contents(result, method)
   if #result == 0 then
     insert(contents, { self.indent .. self.f_icon .. get_msg(method), false })
     insert(contents, { ' ', false })
+    self.short_link[#contents - 1] = {
+      content = { 'Sorry does not any Definition Found' },
+      link = api.nvim_buf_get_name(0),
+    }
     return contents
   end
 
@@ -311,6 +315,9 @@ function finder:render_finder_result()
   if next(self.contents) == nil then
     return
   end
+
+  self.request_result = nil
+  self.request_status = nil
 
   local opt = {
     relative = 'editor',
@@ -581,8 +588,8 @@ function finder:auto_open_preview()
   local rtop = window.combine_char()['righttop'][config.ui.border]
   local rbottom = window.combine_char()['rightbottom'][config.ui.border]
   local content_opts = {
-    contents = {},
-    bufnr = data.bufnr,
+    contents = data.content or {},
+    bufnr = data.bufnr or nil,
     border_side = {
       ['lefttop'] = rtop,
       ['leftbottom'] = rbottom,
@@ -610,12 +617,13 @@ function finder:auto_open_preview()
     -- opts.noautocmd = true
     self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
     vim.bo[self.preview_bufnr].filetype = vim.bo[self.main_buf].filetype
-    if data.bufnr ~= self.main_buf then
-      api.nvim_set_option_value('bufhidden', 'wipe', { buf = data.bufnr })
+    if data.bufnr and data.bufnr ~= self.main_buf then
       api.nvim_buf_set_option(data.bufnr, 'buflisted', false)
     end
 
-    api.nvim_win_set_cursor(self.preview_winid, { data.row + 1, data.col })
+    if data.row then
+      api.nvim_win_set_cursor(self.preview_winid, { data.row + 1, data.col })
+    end
 
     libs.scroll_in_preview(self.bufnr, self.preview_winid)
 
@@ -623,14 +631,16 @@ function finder:auto_open_preview()
       self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
     end
 
-    api.nvim_buf_add_highlight(
-      self.preview_bufnr,
-      self.preview_hl_ns,
-      'finderPreviewSearch',
-      data.row,
-      data.col,
-      data._end_col
-    )
+    if data.row then
+      api.nvim_buf_add_highlight(
+        self.preview_bufnr,
+        self.preview_hl_ns,
+        'finderPreviewSearch',
+        data.row,
+        data.col,
+        data._end_col
+      )
+    end
   end, 10)
 end
 
@@ -669,6 +679,11 @@ end
 
 function finder:quit_float_window()
   pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
+  for _, data in pairs(self.short_link or {}) do
+    if data.bufnr and data.bufnr ~= self.main_buf then
+      api.nvim_buf_delete(data.bufnr, { force = true })
+    end
+  end
   if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
     api.nvim_buf_delete(self.bufnr, { force = true })
     self.bufnr = nil
