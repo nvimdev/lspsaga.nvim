@@ -259,7 +259,7 @@ function finder:create_finder_contents(result, method)
     insert(contents, { self.indent .. self.f_icon .. get_msg(method), false })
     insert(contents, { ' ', false })
     self.short_link[#contents - 1] = {
-      preview = {'Sorry not result found'},
+      preview = { 'Sorry not result found' },
       link = api.nvim_buf_get_name(self.main_buf),
     }
     return contents
@@ -325,6 +325,9 @@ function finder:render_finder_result()
   if next(self.contents) == nil then
     return
   end
+
+  self.request_result = nil
+  self.request_status = nil
 
   local opt = {
     relative = 'editor',
@@ -695,7 +698,7 @@ end
 function finder:open_link(action)
   local current_line = api.nvim_win_get_cursor(0)[1]
 
-  if self.short_link[current_line] then
+  if not self.short_link[current_line] then
     vim.notify('[LspSaga] no file link in current line', vim.log.levels.WARN)
     return
   end
