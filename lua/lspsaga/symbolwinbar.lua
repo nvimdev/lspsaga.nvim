@@ -68,7 +68,6 @@ local function bar_file_name(buf)
         api.nvim_set_hl(0, 'LspSagaWinbarFileIcon', {
           foreground = data[2],
           bg = bg,
-          default = true,
         })
       end
       table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
