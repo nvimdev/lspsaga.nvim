@@ -258,6 +258,10 @@ function finder:create_finder_contents(result, method)
   if #result == 0 then
     insert(contents, { self.indent .. self.f_icon .. get_msg(method), false })
     insert(contents, { ' ', false })
+    self.short_link[#contents - 1] = {
+      preview = {'Sorry not result found'},
+      link = api.nvim_buf_get_name(self.main_buf),
+    }
     return contents
   end
 
@@ -654,6 +658,11 @@ function finder:auto_open_preview()
           break
         end
       end
+
+      if not start_pos then
+        return
+      end
+
       if 0 + config.preview.lines_above - trimLines >= 0 then
         api.nvim_buf_add_highlight(
           self.preview_bufnr,
@@ -686,7 +695,7 @@ end
 function finder:open_link(action)
   local current_line = api.nvim_win_get_cursor(0)[1]
 
-  if self.short_link[current_line] == nil then
+  if self.short_link[current_line] then
     vim.notify('[LspSaga] no file link in current line', vim.log.levels.WARN)
     return
   end
