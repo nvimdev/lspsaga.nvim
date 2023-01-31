@@ -49,6 +49,7 @@ function finder:lsp_finder()
   local pos = api.nvim_win_get_cursor(0)
   self.current_word = fn.expand('<cword>')
   self.main_buf = api.nvim_get_current_buf()
+  self.main_win = api.nvim_get_current_win()
   local from = { self.main_buf, pos[1], pos[2], 0 }
   local items = { { tagname = self.current_word, from = from } }
   fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
@@ -330,7 +331,7 @@ function finder:render_finder_result()
   self.request_status = nil
 
   local opt = {
-    relative = 'editor',
+    relative = 'win',
     width = window.get_max_content_length(self.contents),
   }
 
@@ -606,7 +607,8 @@ function finder:auto_open_preview()
 
   if next(content) ~= nil then
     local opts = {
-      relative = 'editor',
+      relative = 'win',
+      win = self.main_win,
       -- We'll make sure the preview window is the correct size
       no_size_override = true,
     }
