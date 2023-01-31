@@ -199,7 +199,7 @@ function rename:get_lsp_result()
     local client = vim.lsp.get_client_by_id(ctx.client_id)
     lsp.util.apply_workspace_edit(result, client.offset_encoding)
 
-    if self.arg and self.arg ~= '++project' then
+    if not self.arg or (self.arg and self.arg ~= '++project') then
       return
     end
 
@@ -253,7 +253,7 @@ function rename:do_rename()
   self.pos = nil
   api.nvim_win_set_cursor(current_win, { lnum, col + 1 })
 
-  if self.arg and self.arg ~= '++project' then
+  if not self.arg or (self.arg and self.arg ~= '++project') then
     clean_context()
     return
   end
