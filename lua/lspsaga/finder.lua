@@ -334,7 +334,7 @@ function finder:render_finder_result()
     width = window.get_max_content_length(self.contents),
   }
 
-  local max_height = math.floor(vim.o.lines * 0.5)
+  local max_height = math.floor(vim.o.lines * config.finder.max_height)
   opt.height = #self.contents > max_height and max_height or #self.contents
   if opt.height <= 0 or not opt.height then
     opt.height = max_height
@@ -504,7 +504,7 @@ function finder:apply_map()
     nowait = true,
   }
 
-  for action, map in pairs(config.finder) do
+  for action, map in pairs(config.finder.keys) do
     if type(map) == 'string' then
       map = { map }
     end
@@ -517,7 +517,7 @@ function finder:apply_map()
     end
   end
 
-  for _, key in pairs(config.finder.quit) do
+  for _, key in pairs(config.finder.keys.quit) do
     vim.keymap.set('n', key, function()
       window.nvim_close_valid_window({ self.winid, self.preview_winid })
     end, opts)

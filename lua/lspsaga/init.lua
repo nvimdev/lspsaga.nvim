@@ -55,12 +55,15 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
+    max_height = 0.5,
+    keys = {
     jump_to = 'p',
     edit = { 'o', '<CR>' },
     vsplit = 's',
     split = 'i',
     tabe = 't',
     quit = { 'q', '<ESC>' },
+    }
   },
   definition = {
     edit = '<C-c>o',
@@ -95,6 +98,7 @@ local default_config = {
     auto_refresh = true,
     auto_close = true,
     custom_sort = nil,
+    focus = true,
     keys = {
       jump = 'o',
       expand_collapse = 'u',
