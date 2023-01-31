@@ -64,6 +64,7 @@ local function bar_file_name(buf)
           foreground = data[2],
           default = true,
         })
+      end
       table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
     else
       table.insert(

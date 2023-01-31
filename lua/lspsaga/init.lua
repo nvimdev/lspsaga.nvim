@@ -20,6 +20,7 @@ local default_config = {
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
+    max_width = 0.7,
     custom_fix = nil,
     custom_msg = nil,
     keys = {
