@@ -578,6 +578,10 @@ function finder:set_cursor()
 end
 
 function finder:auto_open_preview()
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
+  end
+
   local current_line = fn.line('.')
   if not self.short_link[current_line] then
     return
