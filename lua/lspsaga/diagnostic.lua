@@ -368,7 +368,7 @@ function diag:render_diagnostic_window(entry, option)
 
   api.nvim_set_hl(0, 'DiagnosticText', {
     foreground = color.foreground,
-    default = true,
+    default = diag_conf.text_hl_follow,
   })
 
   if not diag_conf.custom_fix then

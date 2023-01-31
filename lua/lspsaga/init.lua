@@ -23,6 +23,7 @@ local default_config = {
     max_width = 0.7,
     custom_fix = nil,
     custom_msg = nil,
+    text_hl_follow = false,
     keys = {
       exec_action = 'o',
       quit = 'q',

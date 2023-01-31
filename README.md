@@ -310,6 +310,7 @@ Default options:
     max_width = 0.7,
     custom_fix = nil,
     custom_msg = nil,
+    text_hl_follow = false,
     keys = {
       exec_action = "o",
       quit = "q",
@@ -323,6 +324,8 @@ Default options:
 - `custom_msg` string  used to  custom the diagnostic jump `Msg` section titile 
 - `custom_fix` string  used to  custom the diagnostic jump `Fix` section titile 
 - `max_width` is the max width for diagnostic jump window. percentage
+- `text_hl_follow` is false default true that you can define `DiagnostcText` to custom the diagnotic
+  text color
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.
@@ -340,7 +343,7 @@ The steps demonstrated in this showcase are:
 - Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
 - Pressing the number `2` to execute the code action without needing to enter the floating window
 
-<img src="https://user-images.githubusercontent.com/41671631/215719816-d4b309f3-1dec-4d26-b53d-566c38e1bc00.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215725463-36065017-91b6-401a-b48b-764179eaeb5e.gif" height=80% width=80%/>
 
 - If you want to see the code action, you can use `<C-w>w` to enter the floating window.
 - Press `g` to go to the action line and see the code action preview.
