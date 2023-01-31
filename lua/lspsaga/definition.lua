@@ -202,16 +202,6 @@ function def:event(bufnr)
       remove(node)
     end,
   })
-
-  api.nvim_create_autocmd('WinClosed', {
-    buffer = bufnr,
-    callback = function()
-      local cur = api.nvim_get_current_win()
-      if stack_cap() == 1 and ctx.data[1].winid == cur then
-        clean_ctx()
-      end
-    end,
-  })
 end
 
 local function unpack_maps()
@@ -237,6 +227,7 @@ function def:apply_aciton_keys(pos)
         return
       end
 
+      api.nvim_win_close(curwin, true)
       local node = ctx.data[index]
       vim.cmd(action .. ' ' .. node.link)
       api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })

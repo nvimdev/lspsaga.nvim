@@ -63,7 +63,7 @@ local default_config = {
     quit = { 'q', '<ESC>' },
   },
   definition = {
-    edit = '<C-c>o',
+    edit = '<CR>',
     vsplit = '<C-c>v',
     split = '<C-c>i',
     tabe = '<C-c>t',
