@@ -55,15 +55,19 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
-    jump_to = 'p',
-    edit = { 'o', '<CR>' },
-    vsplit = 's',
-    split = 'i',
-    tabe = 't',
-    quit = { 'q', '<ESC>' },
+    --percentage
+    max_height = 0.5,
+    keys = {
+      jump_to = 'p',
+      edit = { 'o', '<CR>' },
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      quit = { 'q', '<ESC>' },
+    },
   },
   definition = {
-    edit = '<CR>',
+    edit = '<C-c>o',
     vsplit = '<C-c>v',
     split = '<C-c>i',
     tabe = '<C-c>t',

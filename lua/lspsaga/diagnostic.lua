@@ -218,7 +218,6 @@ function diag:render_diagnostic_window(entry, option)
     height = #content + increase,
     no_size_override = true,
     focusable = true,
-    noautocmd = true,
   }
 
   local color = get_colors(hi_name)
@@ -529,7 +528,6 @@ function diag:show(entrys, arg, type)
     width = max_len + 10 < max_width and max_len + 5 or max_width,
     height = #content * 2 + increase,
     no_size_override = true,
-    noautocmd = true,
   }
 
   if arg and arg == '++unfocus' then
