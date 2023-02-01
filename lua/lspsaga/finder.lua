@@ -32,16 +32,14 @@ local function methods(index)
 end
 
 local function supports_implement(buf)
-  local support = {}
+  local support = false
   for _, client in pairs(lsp.get_active_clients({ bufnr = buf })) do
-    if not client.supports_method(methods(2)) then
-      table.insert(support, false)
+    if client.supports_method('textDocument/implementation') then
+      support = true
+      break
     end
   end
-  if vim.tbl_contains(support, false) then
-    return false
-  end
-  return true
+  return support
 end
 
 function finder:lsp_finder()
