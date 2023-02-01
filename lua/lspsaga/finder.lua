@@ -479,7 +479,7 @@ end
 
 local function unpack_map()
   local map = {}
-  for k, v in pairs(config.finder) do
+  for k, v in pairs(config.finder.keys) do
     if k ~= 'jump_to' then
       map[k] = v
     end
@@ -508,14 +508,14 @@ function finder:apply_map()
     end
   end
 
-  for _, key in pairs(config.finder.quit) do
+  for _, key in pairs(config.finder.keys.quit) do
     vim.keymap.set('n', key, function()
       pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
       window.nvim_close_valid_window({ self.winid, self.preview_winid })
     end, opts)
   end
 
-  vim.keymap.set('n', config.finder.jump_to, function()
+  vim.keymap.set('n', config.finder.keys.jump_to, function()
     if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
       api.nvim_set_current_win(self.preview_winid)
     end
@@ -661,7 +661,6 @@ function finder:close_auto_preview_win()
     pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
   end
 
-  print(self.preview_winid)
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
     self.preview_winid = nil
