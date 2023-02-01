@@ -47,6 +47,7 @@ function finder:lsp_finder()
   local pos = api.nvim_win_get_cursor(0)
   self.current_word = fn.expand('<cword>')
   self.main_buf = api.nvim_get_current_buf()
+  self.main_win = api.nvim_get_current_win()
   local from = { self.main_buf, pos[1], pos[2], 0 }
   local items = { { tagname = self.current_word, from = from } }
   fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
@@ -320,12 +321,15 @@ function finder:render_finder_result()
   self.request_status = nil
 
   local opt = {
-    relative = 'editor',
+    relative = 'win',
     width = window.get_max_content_length(self.contents),
   }
 
-  local max_height = vim.o.lines * 0.5
+  local max_height = math.floor(vim.o.lines * 0.5)
   opt.height = #self.contents > max_height and max_height or #self.contents
+  if opt.height <= 0 or not opt.height then
+    opt.height = max_height
+  end
 
   local winline = fn.winline()
   if vim.o.lines - 6 - opt.height - winline <= 0 then
@@ -578,7 +582,12 @@ function finder:set_cursor()
 end
 
 function finder:auto_open_preview()
-  local current_line = api.nvim_win_get_cursor(0)[1]
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    api.nvim_win_close(self.preview_winid, true)
+  end
+
+  local current_line = fn.line('.')
+
   if not self.short_link[current_line] then
     return
   end

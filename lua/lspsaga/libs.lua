@@ -309,6 +309,7 @@ function libs.jump_beacon(bufpos, width)
     anchor = 'NW',
     focusable = false,
     no_size_override = true,
+    noautocmd = true,
   }
 
   local window = require('lspsaga.window')

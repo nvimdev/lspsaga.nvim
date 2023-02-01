@@ -108,14 +108,13 @@ local function make_floating_popup_options(width, height, opts)
     new_option.focusable = opts.focusable
   end
 
-  if opts.noautocmd ~= nil then
-    new_option.noautocmd = opts.noautocmd
-  end
+  new_option.noautocmd = opts.noautocmd or true
 
   new_option.relative = opts.relative and opts.relative or 'cursor'
   new_option.anchor = opts.anchor or nil
   if new_option.relative == 'win' then
     new_option.bufpos = opts.bufpos or nil
+    new_option.win = opts.win or nil
   end
 
   if opts.title then
@@ -247,6 +246,7 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_set_option_value('buftype', content_opts.buftype or 'nofile', { buf = bufnr })
   end
 
+  -- vim.notify(vim.inspect(opts))
   local winid = api.nvim_open_win(bufnr, enter, opts)
   api.nvim_set_option_value(
     'winblend',
