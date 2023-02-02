@@ -57,6 +57,7 @@ local default_config = {
   finder = {
     --percentage
     max_height = 0.5,
+    position = "below",
     keys = {
       jump_to = 'p',
       edit = { 'o', '<CR>' },

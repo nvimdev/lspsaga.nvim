@@ -318,6 +318,40 @@ function finder:create_finder_contents(result, method)
   return contents
 end
 
+local function get_position(height)
+  local winline = fn.winline()
+  if config.finder.position == 'relative' then
+    local row = winline + 1
+    if vim.o.lines - 6 - height - winline <= 0 then
+      row = winline - height - 4
+    end
+    return { row = row, col = 10 }
+  elseif config.finder.position == 'above' then
+    local row = winline - height - 4
+    if -vim.o.lines + 6 + height + winline <= 0 then
+      row = winline + 1
+    end
+    return { row = row, col = 10 }
+  elseif config.finder.position == 'top' then
+    local row = 3
+    local col = 10
+    if -vim.o.lines + 6 + height + winline <= 0 then
+      row = winline + 1
+    end
+    if fn.winwidth(0) > 120 then
+      col = math.floor(fn.winwidth(0) * 0.2)
+    end
+    return { row = row, col = col }
+  end
+  -- prevent config typo
+  local row = winline + 1
+  if vim.o.lines - 6 - height - winline <= 0 then
+    vim.cmd('normal! zz')
+    row = math.floor(0.5 * vim.o.lines)
+  end
+  return { row = row, col = 10 }
+end
+
 function finder:render_finder_result()
   --clean data
   self.request_result = nil
@@ -340,15 +374,9 @@ function finder:render_finder_result()
     opt.height = max_height
   end
 
-  local winline = fn.winline()
-  if vim.o.lines - 6 - opt.height - winline <= 0 then
-    vim.cmd('normal! zz')
-    local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
-    api.nvim_feedkeys(keycode, 'x', false)
-  end
-  winline = fn.winline()
-  opt.row = winline + 1
-  opt.col = 10
+  local _position = get_position(opt.height)
+  opt.row = _position.row
+  opt.col = _position.col
 
   local side_char = window.border_chars()['top'][config.ui.border]
   local content_opts = {
