@@ -167,8 +167,10 @@ function finder:do_request(params, method)
   lsp.buf_request_all(self.current_buf, method, params, function(results)
     local result = {}
     for _, res in pairs(results or {}) do
-      if res.result then
+      if res.result and not (res.result.uri or res.result.targetUri) then
         libs.merge_table(result, res.result)
+      elseif res.result and (res.result.uri or res.result.targetUri) then
+        table.insert(result, res.result)
       end
     end
 
