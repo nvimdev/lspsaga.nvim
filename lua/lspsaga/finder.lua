@@ -374,6 +374,15 @@ function finder:render_finder_result()
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opt)
   api.nvim_win_set_option(self.winid, 'cursorline', false)
 
+  -- make sure close preview window by using wincmd
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = self.bufnr,
+    once = true,
+    callback = function()
+      self:close_auto_preview_win()
+    end,
+  })
+
   self:set_cursor()
 
   api.nvim_create_autocmd('CursorMoved', {
