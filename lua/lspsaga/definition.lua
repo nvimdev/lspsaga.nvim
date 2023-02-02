@@ -278,6 +278,7 @@ function def:goto_definition()
       return
     end
     local _, link, start_line, start_char_pos, _ = get_uri_data(result)
+    vim.cmd('write')
     api.nvim_command('edit ' .. link)
     api.nvim_win_set_cursor(0, { start_line + 1, start_char_pos })
     local width = #api.nvim_get_current_line()
