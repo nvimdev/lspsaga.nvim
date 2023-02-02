@@ -529,8 +529,9 @@ function finder:apply_map()
 
   for _, key in pairs(config.finder.keys.quit) do
     vim.keymap.set('n', key, function()
-      pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
-      self:quit_with_clear()
+      self:quit_float_window()
+      self:clean_data()
+      self:clean_ctx()
     end, opts)
   end
 
@@ -743,11 +744,6 @@ function finder:clean_ctx()
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
-end
-
-function finder:quit_with_clear()
-  self:quit_float_window()
-  self:clear_ctx()
 end
 
 return setmetatable(ctx, finder)
