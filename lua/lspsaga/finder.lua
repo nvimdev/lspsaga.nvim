@@ -634,7 +634,10 @@ function finder:auto_open_preview()
   vim.defer_fn(function()
     -- opts.noautocmd = true
     self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
-    vim.bo[self.preview_bufnr].filetype = vim.bo[self.main_buf].filetype
+    if not data.content then
+      vim.bo[self.preview_bufnr].filetype = vim.bo[self.main_buf].filetype
+    end
+
     self.wipe_buffers = {}
 
     if #fn.win_findbuf(data.bufnr) == 1 then
