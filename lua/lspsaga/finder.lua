@@ -633,43 +633,37 @@ function finder:auto_open_preview()
     end
   end
 
-  vim.defer_fn(function()
-    -- opts.noautocmd = true
-    self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
-    if not data.content then
-      vim.bo[self.preview_bufnr].filetype = vim.bo[self.main_buf].filetype
-    end
+  self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
 
-    self.wipe_buffers = {}
+  self.wipe_buffers = {}
 
-    if #fn.win_findbuf(data.bufnr) == 1 then
-      api.nvim_buf_call(data.bufnr, function()
-        pcall(vim.cmd, 'TSBufEnable highlight')
-      end)
-      table.insert(self.wipe_buffers, data.bufnr)
-    end
+  if #fn.win_findbuf(data.bufnr) == 1 then
+    api.nvim_buf_call(data.bufnr, function()
+      pcall(vim.cmd, 'TSBufEnable highlight')
+    end)
+    table.insert(self.wipe_buffers, data.bufnr)
+  end
 
-    if data.row then
-      api.nvim_win_set_cursor(self.preview_winid, { data.row + 1, data.col })
-    end
+  if data.row then
+    api.nvim_win_set_cursor(self.preview_winid, { data.row + 1, data.col })
+  end
 
-    libs.scroll_in_preview(self.bufnr, self.preview_winid)
+  libs.scroll_in_preview(self.bufnr, self.preview_winid)
 
-    if not self.preview_hl_ns then
-      self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
-    end
+  if not self.preview_hl_ns then
+    self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
+  end
 
-    if data.row then
-      api.nvim_buf_add_highlight(
-        self.preview_bufnr,
-        self.preview_hl_ns,
-        'finderPreviewSearch',
-        data.row,
-        data.col,
-        data._end_col
-      )
-    end
-  end, 10)
+  if data.row then
+    api.nvim_buf_add_highlight(
+      self.preview_bufnr,
+      self.preview_hl_ns,
+      'finderPreviewSearch',
+      data.row,
+      data.col,
+      data._end_col
+    )
+  end
 end
 
 function finder:close_auto_preview_win()
