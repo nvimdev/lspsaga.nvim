@@ -342,7 +342,7 @@ function finder:render_finder_result()
     api.nvim_feedkeys(keycode, 'x', false)
   end
   winline = fn.winline()
-  opt.row = winline + 2
+  opt.row = winline + 1
   opt.col = 10
 
   local side_char = window.border_chars()['top'][config.ui.border]
