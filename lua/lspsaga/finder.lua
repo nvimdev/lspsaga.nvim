@@ -328,7 +328,7 @@ local function get_position(height)
     return { row = row, col = 10 }
   elseif config.finder.position == 'above' then
     local row = winline - height - 4
-    if -vim.o.lines + 6 + height + winline <= 0 then
+    if row <= 0 then
       row = winline + 1
     end
     return { row = row, col = 10 }
