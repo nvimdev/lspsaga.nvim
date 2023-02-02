@@ -285,7 +285,7 @@ function finder:create_finder_contents(result, method)
     local path_sep = libs.path_sep
     -- reduce filename length by root_dir or home dir
     if root_dir and link:find(root_dir, 1, true) then
-      short_name = link:sub(root_dir:len() + 2)
+      short_name = link:sub(root_dir:len() + #libs.path_sep)
     else
       local _split = vim.split(link, path_sep)
       if #_split >= 4 then
