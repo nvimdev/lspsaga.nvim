@@ -227,6 +227,11 @@ function def:apply_aciton_keys(pos)
         return
       end
 
+      local curbuf = api.nvim_get_current_buf()
+      if #fn.win_findbuf(curbuf) == 1 then
+        api.nvim_set_option_value('bufhidden', 'wipe', { buf = curbuf })
+      end
+
       api.nvim_win_close(curwin, true)
       local node = ctx.data[index]
       vim.cmd(action .. ' ' .. node.link)
