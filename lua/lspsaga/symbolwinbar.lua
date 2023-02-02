@@ -32,7 +32,7 @@ local function respect_lsp_root(buf)
   local bufname = api.nvim_buf_get_name(buf)
   local bufname_parts = vim.split(bufname, libs.path_sep, { trimempty = true })
   if not root_dir then
-    return { unpack(bufname_parts, config.folder_level - 1) }
+    return { #bufname_parts }
   end
   local parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
   return { unpack(bufname_parts, #parts + 1) }
@@ -154,6 +154,11 @@ function symbar.node_is_keyword(buf, node)
   return false
 end
 
+local function stl_escape(str)
+  local parts = vim.split(str, '%%')
+  return table.concat(parts, '%%')
+end
+
 local function insert_elements(buf, node, elements)
   if config.hide_keyword and symbar.node_is_keyword(buf, node) then
     return
@@ -161,6 +166,10 @@ local function insert_elements(buf, node, elements)
   local type = get_kind_icon(node.kind, 1)
   local icon = get_kind_icon(node.kind, 2)
   local bar = bar_prefix()
+  if node.name:find('%%') then
+    node.name = stl_escape(node.name)
+  end
+
   if config.color_mode then
     local node_context = bar.prefix .. type .. '#' .. icon .. node.name
     table.insert(elements, node_context)
