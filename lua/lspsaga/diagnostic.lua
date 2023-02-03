@@ -196,7 +196,7 @@ function diag:render_diagnostic_window(entry, option)
     buftype = 'nofile',
     wrap = true,
     highlight = {
-      border = hi_name,
+      border = 'Diagnostic' .. diag_type .. 'Border',
       normal = 'DiagnosticNormal',
     },
   }
