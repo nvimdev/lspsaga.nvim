@@ -24,6 +24,7 @@ local default_config = {
     custom_fix = nil,
     custom_msg = nil,
     text_hl_follow = false,
+    border_follow = true,
     keys = {
       exec_action = 'o',
       quit = 'q',
@@ -55,12 +56,16 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
-    jump_to = 'p',
-    edit = { 'o', '<CR>' },
-    vsplit = 's',
-    split = 'i',
-    tabe = 't',
-    quit = { 'q', '<ESC>' },
+    --percentage
+    max_height = 0.5,
+    keys = {
+      jump_to = 'p',
+      edit = { 'o', '<CR>' },
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      quit = { 'q', '<ESC>' },
+    },
   },
   definition = {
     edit = '<C-c>o',

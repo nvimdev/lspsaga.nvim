@@ -224,9 +224,10 @@ local render_symbol_winbar = function(buf, symbols)
     return
   end
 
-  local all_wins = fn.win_findbuf(buf)
+  -- don't show in float window.
   local cur_win = api.nvim_get_current_win()
-  if not vim.tbl_contains(all_wins, cur_win) then
+  local winconf = api.nvim_win_get_config(cur_win)
+  if winconf.relative then
     return
   end
 

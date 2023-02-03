@@ -74,10 +74,6 @@ local function hi_define()
     DiagnosticBorder = { link = 'SagaBorder' },
     DiagnosticSource = { fg = 'gray' },
     DiagnosticNormal = { link = 'SagaNormal' },
-    DiagnosticErrorBorder = { link = 'DiagnosticError' },
-    DiagnosticWarnBorder = { link = 'DiagnosticWarn' },
-    DiagnosticHintBorder = { link = 'DiagnosticHint' },
-    DiagnosticInfoBorder = { link = 'DiagnosticInfo' },
     DiagnosticPos = { fg = colors.gray },
     DiagnosticWord = { fg = colors.fg },
     -- Call Hierachry

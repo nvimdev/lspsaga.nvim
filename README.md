@@ -180,16 +180,21 @@ A `finder` to show the defintion, reference and implementation (only shown when 
 Default options:
 ```lua
   finder = {
-    jump_to = 'p',
-    edit = { "o", "<CR>" },
-    vsplit = "s",
-    split = "i",
-    tabe = "t",
-    quit = { "q", "<ESC>" },
+    --percentage
+    max_height = 0.5,
+    keys = {
+      jump_to = 'p',
+      edit = { 'o', '<CR>' },
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      quit = { 'q', '<ESC>' },
+    },
   },
 ```
 
-- `jump_to` finder peek window.
+- `max_height` of the finder window.
+- `keys.jump_to` finder peek window.
 
 <details>
 <summary>lsp_finder showcase</summary>
@@ -311,6 +316,7 @@ Default options:
     custom_fix = nil,
     custom_msg = nil,
     text_hl_follow = false,
+    border_follow = true,
     keys = {
       exec_action = "o",
       quit = "q",
@@ -326,6 +332,8 @@ Default options:
 - `max_width` is the max width for diagnostic jump window. percentage
 - `text_hl_follow` is false default true that you can define `DiagnostcText` to custom the diagnotic
   text color
+- `border_follow` the border highlight will follow the diagnostic type. if false it will use the
+  highlight `DiagnosticBorder`.
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.

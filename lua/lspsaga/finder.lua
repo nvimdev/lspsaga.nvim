@@ -31,6 +31,14 @@ local function methods(index)
   return index and t[index] or t
 end
 
+local function get_file_icon(bufnr)
+  local res = libs.icon_from_devicon(vim.bo[bufnr].filetype)
+  if #res == 0 then
+    res = { '' }
+  end
+  return res
+end
+
 local function supports_implement(buf)
   local support = false
   for _, client in pairs(lsp.get_active_clients({ bufnr = buf })) do
@@ -78,6 +86,7 @@ function finder:request_done()
   for _, method in pairs(methods()) do
     if not self.request_status[method] then
       done = false
+      break
     end
   end
   return done
@@ -166,24 +175,16 @@ function finder:do_request(params, method)
   lsp.buf_request_all(self.current_buf, method, params, function(results)
     local result = {}
     for _, res in pairs(results or {}) do
-      if res.result then
+      if res.result and not (res.result.uri or res.result.targetUri) then
         libs.merge_table(result, res.result)
+      elseif res.result and (res.result.uri or res.result.targetUri) then
+        table.insert(result, res.result)
       end
     end
 
     self.request_result[method] = result
     self.request_status[method] = true
   end)
-end
-
-function finder:get_file_icon()
-  local res = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
-  if #res == 0 then
-    self.f_icon = ''
-  else
-    self.f_icon = res[1] .. ' '
-    self.f_hl = res[2]
-  end
 end
 
 function finder:get_uri_scope(method, start_lnum, end_lnum)
@@ -201,7 +202,6 @@ function finder:get_uri_scope(method, start_lnum, end_lnum)
 end
 
 function finder:render_finder()
-  self.root_dir = libs.get_lsp_root_dir()
   self.short_link = {}
   self.contents = {}
 
@@ -246,37 +246,39 @@ local function get_msg(method)
 end
 
 function finder:create_finder_contents(result, method)
-  self:get_file_icon()
-
   local contents = {}
   local title = get_titles(libs.tbl_index(methods(), method))
   insert(contents, { title .. '  ' .. #result, false })
   insert(contents, { ' ', false })
-  self.indent = '    '
 
+  local icon_data = get_file_icon(self.main_buf)
   if #result == 0 then
-    insert(contents, { self.indent .. self.f_icon .. get_msg(method), false })
+    insert(contents, { '    ' .. icon_data[1] .. get_msg(method), false })
     insert(contents, { ' ', false })
     self.short_link[#contents - 1] = {
-      preview = { 'Sorry not result found' },
-      link = api.nvim_buf_get_name(self.main_buf),
+      content = { 'Sorry does not any Definition Found' },
+      link = api.nvim_buf_get_name(0),
     }
     return contents
   end
 
+  local root_dir = libs.get_lsp_root_dir()
+  self.wipe_buffers = {}
   for _, res in ipairs(result) do
     local uri = res.targetUri or res.uri
-    if uri == nil then
+    if not uri then
       vim.notify('miss uri in server response')
       return
     end
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     if not api.nvim_buf_is_loaded(bufnr) then
-      --TODO: find a better way to avoid trigger autocmd
-      vim.opt.eventignore:append({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
+      --ignore the FileType event avoid trigger the lsp
+      vim.opt.eventignore:append({ 'FileType' })
       fn.bufload(bufnr)
-      vim.opt.eventignore:remove({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
+      --restore eventignore
+      vim.opt.eventignore:remove({ 'FileType' })
+      table.insert(self.wipe_buffers, bufnr)
     end
 
     if libs.iswin then
@@ -285,8 +287,10 @@ function finder:create_finder_contents(result, method)
     local short_name
     local path_sep = libs.path_sep
     -- reduce filename length by root_dir or home dir
-    if self.root_dir and link:find(self.root_dir, 1, true) then
-      short_name = link:sub(self.root_dir:len() + #libs.path_sep)
+    if root_dir and link:find(root_dir, 1, true) then
+      local root_parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
+      local link_parts = vim.split(link, libs.path_sep, { trimempty = true })
+      short_name = table.concat({ unpack(link_parts, #root_parts + 1) }, libs.path_sep)
     else
       local _split = vim.split(link, path_sep)
       if #_split >= 4 then
@@ -294,46 +298,41 @@ function finder:create_finder_contents(result, method)
       end
     end
 
-    local target_line = self.indent .. self.f_icon .. short_name
+    local target_line = '    ' .. icon_data[1] .. short_name
 
     local range = res.targetRange or res.range
-    local lines = api.nvim_buf_get_lines(
-      bufnr,
-      range.start.line - config.preview.lines_above,
-      range['end'].line + 1 + config.preview.lines_below,
-      false
-    )
 
     local link_with_preview = {
+      bufnr = bufnr,
       link = link,
-      preview = lines,
-      row = range.start.line + 1,
-      col = range.start.character + 1,
+      row = range.start.line,
+      col = range.start.character,
       _end_col = range['end'].character,
     }
+
     insert(contents, { target_line, link_with_preview })
-    if bufnr ~= self.main_buf then
-      api.nvim_buf_delete(bufnr, { force = true })
-    end
   end
   insert(contents, { ' ', false })
   return contents
 end
 
 function finder:render_finder_result()
-  if next(self.contents) == nil then
+  --clean data
+  self.request_result = nil
+  self.request_status = nil
+
+  if vim.tbl_isempty(self.contents) then
     return
   end
 
-  self.request_result = nil
-  self.request_status = nil
+  self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
 
   local opt = {
     relative = 'win',
     width = window.get_max_content_length(self.contents),
   }
 
-  local max_height = math.floor(vim.o.lines * 0.5)
+  local max_height = math.floor(vim.o.lines * config.finder.max_height)
   opt.height = #self.contents > max_height and max_height or #self.contents
   if opt.height <= 0 or not opt.height then
     opt.height = max_height
@@ -341,18 +340,21 @@ function finder:render_finder_result()
 
   local winline = fn.winline()
   if vim.o.lines - 6 - opt.height - winline <= 0 then
-    vim.cmd('normal! zz')
-    local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
-    api.nvim_feedkeys(keycode, 'x', false)
+    api.nvim_win_call(self.main_win, function()
+      vim.cmd('normal! zz')
+      local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
+      api.nvim_feedkeys(keycode, 'x', false)
+    end)
   end
   winline = fn.winline()
-  opt.row = winline + 2
+  opt.row = winline + 1
   opt.col = 10
 
   local side_char = window.border_chars()['top'][config.ui.border]
   local content_opts = {
     contents = self.contents,
     filetype = 'lspsagafinder',
+    bufhidden = 'wipe',
     enter = true,
     border_side = {
       ['right'] = ' ',
@@ -364,6 +366,8 @@ function finder:render_finder_result()
       normal = 'finderNormal',
     },
   }
+  --clean contents
+  self.contents = nil
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = {
@@ -371,40 +375,31 @@ function finder:render_finder_result()
       { self.current_word, 'TitleString' },
     }
   end
+  --clean
+  self.current_word = nil
 
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opt)
-  api.nvim_buf_set_option(self.bufnr, 'buflisted', false)
   api.nvim_win_set_option(self.winid, 'cursorline', false)
+
+  -- make sure close preview window by using wincmd
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = self.bufnr,
+    once = true,
+    callback = function()
+      self:close_auto_preview_win()
+      api.nvim_del_augroup_by_id(self.group)
+      self:clean_data()
+      self:clean_ctx()
+    end,
+  })
 
   self:set_cursor()
 
-  local finder_group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
   api.nvim_create_autocmd('CursorMoved', {
-    group = finder_group,
     buffer = self.bufnr,
     callback = function()
       self:set_cursor()
       self:auto_open_preview()
-    end,
-  })
-
-  local events = { 'WinClosed', 'WinLeave' }
-
-  api.nvim_create_autocmd(events, {
-    group = finder_group,
-    buffer = self.bufnr,
-    callback = function()
-      self:quit_with_clear()
-      if finder_group then
-        pcall(api.nvim_del_augroup_by_id, finder_group)
-      end
-      -- make sure close all finder preview window
-      for _, win in pairs(api.nvim_list_wins()) do
-        local ok, id = pcall(api.nvim_win_get_var, win, 'finder_preview')
-        if ok then
-          pcall(api.nvim_win_close, id, true)
-        end
-      end
     end,
   })
 
@@ -416,11 +411,12 @@ function finder:render_finder_result()
     virt_text_pos = 'overlay',
   })
 
+  local icon, icon_hl = unpack(get_file_icon(self.main_buf))
   for i = self.def_scope[1] + 2, self.def_scope[2] - 1, 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'finderFileName', 1 + i, 0, -1)
-    if self.f_hl then
-      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
+    if icon_hl then
+      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
     end
 
     if i == self.def_scope[2] - 1 then
@@ -446,8 +442,8 @@ function finder:render_finder_result()
     for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
       local virt_texts = {}
       api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-      if self.f_hl then
-        api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
+      if icon_hl then
+        api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
       end
 
       if i == self.imp_scope[2] - 1 then
@@ -473,8 +469,8 @@ function finder:render_finder_result()
   for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i, 0, -1)
-    if self.f_hl then
-      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, #self.indent + #self.f_icon)
+    if icon_hl then
+      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
     end
 
     if i == self.ref_scope[2] - 1 then
@@ -490,6 +486,7 @@ function finder:render_finder_result()
       virt_text_pos = 'overlay',
     })
   end
+
   -- disable some move keys in finder window
   libs.disable_move_keys(self.bufnr)
   -- load float window map
@@ -497,13 +494,25 @@ function finder:render_finder_result()
   self:lsp_finder_highlight()
 end
 
+local function unpack_map()
+  local map = {}
+  for k, v in pairs(config.finder.keys) do
+    if k ~= 'jump_to' then
+      map[k] = v
+    end
+  end
+  return map
+end
+
 function finder:apply_map()
   local opts = {
-    buffer = true,
+    buffer = self.bufnr,
     nowait = true,
+    silent = true,
   }
+  local unpacked = unpack_map()
 
-  for action, map in pairs(config.finder) do
+  for action, map in pairs(unpacked) do
     if type(map) == 'string' then
       map = { map }
     end
@@ -516,11 +525,19 @@ function finder:apply_map()
     end
   end
 
-  for _, key in pairs(config.finder.quit) do
+  for _, key in pairs(config.finder.keys.quit) do
     vim.keymap.set('n', key, function()
-      window.nvim_close_valid_window({ self.winid, self.preview_winid })
+      self:quit_float_window()
+      self:clean_data()
+      self:clean_ctx()
     end, opts)
   end
+
+  vim.keymap.set('n', config.finder.keys.jump_to, function()
+    if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+      api.nvim_set_current_win(self.preview_winid)
+    end
+  end, opts)
 end
 
 function finder:lsp_finder_highlight()
@@ -537,7 +554,8 @@ local finder_ns = api.nvim_create_namespace('finder_select')
 
 function finder:set_cursor()
   local current_line = api.nvim_win_get_cursor(0)[1]
-  local column = #self.indent + #self.f_icon + 1
+  local icon = get_file_icon(self.main_buf)[1]
+  local column = 5 + #icon
 
   local first_def_uri_lnum = self.def_scope[1] + 3
   local last_def_uri_lnum = self.def_scope[2]
@@ -565,135 +583,112 @@ function finder:set_cursor()
 
   local actual_line = api.nvim_win_get_cursor(0)[1]
   if actual_line == first_def_uri_lnum then
-    api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', 2, #self.indent + #self.f_icon, -1)
+    api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', 2, 4 + #icon, -1)
   end
 
   api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
-  api.nvim_buf_add_highlight(
-    0,
-    finder_ns,
-    'finderSelection',
-    actual_line - 1,
-    #self.indent + #self.f_icon,
-    -1
-  )
+  api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', actual_line - 1, 4 + #icon, -1)
 end
 
 function finder:auto_open_preview()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    api.nvim_win_close(self.preview_winid, true)
-  end
-
-  local current_line = fn.line('.')
+  self:close_auto_preview_win()
+  local current_line = api.nvim_win_get_cursor(0)[1]
   if not self.short_link[current_line] then
     return
   end
 
-  local content
-  local table_length = vim.tbl_count(self.short_link[current_line].preview)
+  local data = self.short_link[current_line]
 
-  if
-    table_length == 0 or (self.short_link[current_line].preview[1] == '' and table_length == 1)
-  then
-    content = { 'the file is empty' }
-  else
-    content = self.short_link[current_line].preview
-  end
+  local opts = {
+    relative = 'win',
+    win = self.main_win,
+    no_size_override = true,
+  }
 
-  local start_pos = self.short_link[current_line].col
-  local _end_col = self.short_link[current_line]._end_col
+  local winconfig = api.nvim_win_get_config(self.winid)
+  opts.col = winconfig.col[false] + winconfig.width + 2
+  opts.row = winconfig.row[false]
+  opts.height = winconfig.height
+  local max_width = api.nvim_win_get_width(self.main_win) - opts.col - 4
+  local textwidth = vim.bo[self.main_buf].textwidth == 0 and 80 or vim.bo[self.main_buf].textwidth
+  opts.width = max_width > textwidth and textwidth or max_width
 
-  if next(content) ~= nil then
-    local opts = {
-      relative = 'win',
-      win = self.main_win,
-      -- We'll make sure the preview window is the correct size
-      no_size_override = true,
+  local rtop = window.combine_char()['righttop'][config.ui.border]
+  local rbottom = window.combine_char()['rightbottom'][config.ui.border]
+  local content_opts = {
+    contents = data.content or {},
+    bufnr = data.bufnr or nil,
+    border_side = {
+      ['lefttop'] = rtop,
+      ['leftbottom'] = rbottom,
+    },
+    highlight = {
+      border = 'finderPreviewBorder',
+      normal = 'finderNormal',
+    },
+  }
+
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
+    local path = vim.split(data.link, libs.path_sep, { trimempty = true })
+    opts.title = {
+      { path[#path], 'TitleString' },
     }
-
-    local winconfig = api.nvim_win_get_config(self.winid)
-    opts.col = winconfig.col[false] + winconfig.width + 2
-    opts.row = winconfig.row[false]
-    opts.height = winconfig.height
-    local max_width = vim.o.columns - opts.col - 4
-    local max_len = window.get_max_content_length(content)
-    opts.width = max_width > max_len and max_len or max_width
-
-    local rtop = window.combine_char()['righttop'][config.ui.border]
-    local rbottom = window.combine_char()['rightbottom'][config.ui.border]
-    local content_opts = {
-      contents = content,
-      buftype = 'nofile',
-      border_side = {
-        ['lefttop'] = rtop,
-        ['leftbottom'] = rbottom,
-      },
-      highlight = {
-        border = 'finderPreviewBorder',
-        normal = 'finderNormal',
-      },
-    }
-
-    if fn.has('nvim-0.9') == 1 and config.ui.title then
-      local path =
-        vim.split(self.short_link[current_line].link, libs.path_sep, { trimempty = true })
-      opts.title = {
-        { path[#path], 'TitleString' },
-      }
-      local icon_data = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
-      if #icon_data > 0 then
-        table.insert(opts.title, 1, { icon_data[1] .. ' ', icon_data[2] })
-      end
+    local icon_data = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
+    if #icon_data > 0 then
+      table.insert(opts.title, 1, { icon_data[1] .. ' ', icon_data[2] })
     end
-
-    self:close_auto_preview_win()
-
-    vim.defer_fn(function()
-      opts.noautocmd = true
-      self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
-      vim.bo[self.preview_bufnr].filetype = vim.bo[self.main_buf].filetype
-      api.nvim_buf_set_option(self.preview_bufnr, 'buflisted', false)
-      api.nvim_win_set_var(self.preview_winid, 'finder_preview', self.preview_winid)
-
-      libs.scroll_in_preview(self.bufnr, self.preview_winid)
-
-      if not self.preview_hl_ns then
-        self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
-      end
-      local trimLines = 0
-      for _, v in pairs(content) do
-        if v == '' then
-          trimLines = trimLines + 1
-        else
-          break
-        end
-      end
-
-      if not start_pos then
-        return
-      end
-
-      if 0 + config.preview.lines_above - trimLines >= 0 then
-        api.nvim_buf_add_highlight(
-          self.preview_bufnr,
-          self.preview_hl_ns,
-          'finderPreviewSearch',
-          0 + config.preview.lines_above - trimLines,
-          start_pos - 1,
-          _end_col
-        )
-      end
-    end, 10)
   end
+
+  self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
+
+  if data.row then
+    api.nvim_win_set_cursor(self.preview_winid, { data.row + 1, data.col })
+  end
+
+  local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
+  if fn.has('nvim-0.9') then
+    vim.treesitter.start(data.bufnr, lang)
+  else
+    vim.bo[data.bufnr].syntax = 'on'
+    pcall(
+      vim.cmd,
+      string.format('syntax include %s syntax/%s.vim', '@' .. lang, vim.bo[self.main_buf].filetype)
+    )
+  end
+
+  libs.scroll_in_preview(self.bufnr, self.preview_winid)
+
+  if not self.preview_hl_ns then
+    self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
+  end
+
+  if data.row then
+    api.nvim_buf_add_highlight(
+      self.preview_bufnr,
+      self.preview_hl_ns,
+      'finderPreviewSearch',
+      data.row,
+      data.col,
+      data._end_col
+    )
+  end
+
+  api.nvim_create_autocmd('WinClosed', {
+    group = self.group,
+    buffer = data.bufnr,
+    callback = function()
+      local curwin = api.nvim_get_current_win()
+      if curwin == self.preview_winid and self.winid and api.nvim_win_is_valid(self.winid) then
+        api.nvim_set_current_win(self.winid)
+        self:auto_open_preview()
+      end
+    end,
+  })
 end
 
 function finder:close_auto_preview_win()
   if self.preview_hl_ns then
     pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
-  end
-  if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
-    api.nvim_buf_delete(self.preview_bufnr, { force = true })
-    self.preview_bufnr = nil
   end
 
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
@@ -712,24 +707,31 @@ function finder:open_link(action)
 
   local short_link = self.short_link
   self:quit_float_window()
+  self:clean_data()
 
   -- if buffer not saved save it before jump
   if vim.bo.modified then
     vim.cmd('write')
   end
   vim.cmd(action .. ' ' .. uv.fs_realpath(short_link[current_line].link))
-  api.nvim_win_set_cursor(0, { short_link[current_line].row, short_link[current_line].col - 1 })
+  api.nvim_win_set_cursor(0, { short_link[current_line].row + 1, short_link[current_line].col })
   local width = #api.nvim_get_current_line()
-  libs.jump_beacon({ short_link[current_line].row - 1, 0 }, width)
-  self:clear_tmp_data()
+  libs.jump_beacon({ short_link[current_line].row, 0 }, width)
+  self:clean_ctx()
+end
+
+function finder:clean_data()
+  pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
+  for _, buf in pairs(self.wipe_buffers or {}) do
+    api.nvim_buf_delete(buf, { force = true })
+  end
+
+  if self.group then
+    pcall(api.nvim_del_augroup_by_id, self.group)
+  end
 end
 
 function finder:quit_float_window()
-  if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
-    api.nvim_buf_delete(self.bufnr, { force = true })
-    self.bufnr = nil
-  end
-
   self:close_auto_preview_win()
   if self.winid and self.winid > 0 then
     window.nvim_close_valid_window(self.winid)
@@ -737,15 +739,10 @@ function finder:quit_float_window()
   end
 end
 
-function finder:clear_tmp_data()
+function finder:clean_ctx()
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
-end
-
-function finder:quit_with_clear()
-  self:quit_float_window()
-  self:clear_tmp_data()
 end
 
 return setmetatable(ctx, finder)
