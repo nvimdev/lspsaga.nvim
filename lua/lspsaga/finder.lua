@@ -31,6 +31,14 @@ local function methods(index)
   return index and t[index] or t
 end
 
+local function get_file_icon(bufnr)
+  local res = libs.icon_from_devicon(vim.bo[bufnr].filetype)
+  if #res == 0 then
+    res = { '' }
+  end
+  return res
+end
+
 local function supports_implement(buf)
   local support = false
   for _, client in pairs(lsp.get_active_clients({ bufnr = buf })) do
@@ -179,16 +187,6 @@ function finder:do_request(params, method)
   end)
 end
 
-function finder:get_file_icon()
-  local res = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
-  if #res == 0 then
-    self.f_icon = ''
-  else
-    self.f_icon = res[1] .. ' '
-    self.f_hl = res[2]
-  end
-end
-
 function finder:get_uri_scope(method, start_lnum, end_lnum)
   if method == methods(1) then
     self.def_scope = { start_lnum, end_lnum }
@@ -225,7 +223,6 @@ function finder:render_finder()
     self:get_uri_scope(method, start_lnum, lnum - 1)
   end
 
-  self:get_file_icon()
   ---@diagnostic disable-next-line: param-type-mismatch
   for i, method in pairs(methods()) do
     if i == 2 and #self.request_result[method] == 0 then
@@ -254,8 +251,9 @@ function finder:create_finder_contents(result, method)
   insert(contents, { title .. '  ' .. #result, false })
   insert(contents, { ' ', false })
 
+  local icon_data = get_file_icon(self.main_buf)
   if #result == 0 then
-    insert(contents, { '    ' .. self.f_icon .. get_msg(method), false })
+    insert(contents, { '    ' .. icon_data[1] .. get_msg(method), false })
     insert(contents, { ' ', false })
     self.short_link[#contents - 1] = {
       content = { 'Sorry does not any Definition Found' },
@@ -300,7 +298,7 @@ function finder:create_finder_contents(result, method)
       end
     end
 
-    local target_line = '    ' .. self.f_icon .. short_name
+    local target_line = '    ' .. icon_data[1] .. short_name
 
     local range = res.targetRange or res.range
 
@@ -413,11 +411,12 @@ function finder:render_finder_result()
     virt_text_pos = 'overlay',
   })
 
+  local icon, icon_hl = unpack(get_file_icon(self.main_buf))
   for i = self.def_scope[1] + 2, self.def_scope[2] - 1, 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'finderFileName', 1 + i, 0, -1)
-    if self.f_hl then
-      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, 4 + #self.f_icon)
+    if icon_hl then
+      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
     end
 
     if i == self.def_scope[2] - 1 then
@@ -443,8 +442,8 @@ function finder:render_finder_result()
     for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
       local virt_texts = {}
       api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
-      if self.f_hl then
-        api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, 4 + #self.f_icon)
+      if icon_hl then
+        api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
       end
 
       if i == self.imp_scope[2] - 1 then
@@ -470,8 +469,8 @@ function finder:render_finder_result()
   for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
     local virt_texts = {}
     api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i, 0, -1)
-    if self.f_hl then
-      api.nvim_buf_add_highlight(self.bufnr, -1, self.f_hl, i, 0, 4 + #self.f_icon)
+    if icon_hl then
+      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
     end
 
     if i == self.ref_scope[2] - 1 then
@@ -487,9 +486,6 @@ function finder:render_finder_result()
       virt_text_pos = 'overlay',
     })
   end
-
-  --clean
-  self.f_hl = nil
 
   -- disable some move keys in finder window
   libs.disable_move_keys(self.bufnr)
@@ -558,7 +554,8 @@ local finder_ns = api.nvim_create_namespace('finder_select')
 
 function finder:set_cursor()
   local current_line = api.nvim_win_get_cursor(0)[1]
-  local column = 5 + #self.f_icon
+  local icon = get_file_icon(self.main_buf)[1]
+  local column = 5 + #icon
 
   local first_def_uri_lnum = self.def_scope[1] + 3
   local last_def_uri_lnum = self.def_scope[2]
@@ -586,11 +583,11 @@ function finder:set_cursor()
 
   local actual_line = api.nvim_win_get_cursor(0)[1]
   if actual_line == first_def_uri_lnum then
-    api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', 2, 4 + #self.f_icon, -1)
+    api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', 2, 4 + #icon, -1)
   end
 
   api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
-  api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', actual_line - 1, 4 + #self.f_icon, -1)
+  api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', actual_line - 1, 4 + #icon, -1)
 end
 
 function finder:auto_open_preview()
@@ -632,7 +629,7 @@ function finder:auto_open_preview()
   }
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local path = vim.split(self.short_link[current_line].link, libs.path_sep, { trimempty = true })
+    local path = vim.split(data.link, libs.path_sep, { trimempty = true })
     opts.title = {
       { path[#path], 'TitleString' },
     }
