@@ -189,7 +189,7 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   local diag_type = get_diag_type(entry.severity)
-  local hi_name = 'Diagnostic' .. diag_type
+  local hi_name = 'Diagnostic' .. diag_type .. "Border"
   local content_opts = {
     contents = content,
     filetype = 'markdown',
