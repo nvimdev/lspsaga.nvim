@@ -58,32 +58,29 @@ function def:title_text(opts, link)
 end
 
 local function get_uri_data(result)
-  local uri, range
+  local res = {}
 
   if type(result[1]) == 'table' then
-    uri = result[1].uri or result[1].targetUri
-    range = result[1].range or result[1].targetSelectionRange
+    res.uri = result[1].uri or result[1].targetUri
+    res.range = result[1].range or result[1].targetSelectionRange
   else
-    uri = result.uri or result.targetUri
-    range = result.range or result.targetSelectionRange
+    res.uri = result.uri or result.targetUri
+    res.range = result.range or result.targetSelectionRange
   end
 
-  if not uri then
+  if not res.uri then
     vim.notify('[Lspsaga] Does not find target uri', vim.log.levels.WARN)
     return
   end
 
-  local bufnr = vim.uri_to_bufnr(uri)
-  local link = vim.uri_to_fname(uri)
+  res.bufnr = vim.uri_to_bufnr(res.uri)
 
-  if not api.nvim_buf_is_loaded(bufnr) then
-    fn.bufload(bufnr)
+  if not api.nvim_buf_is_loaded(res.bufnr) then
+    fn.bufload(res.bufnr)
+    res.wipe = true
   end
 
-  local start_line = range.start.line
-  local start_char_pos = range.start.character
-
-  return bufnr, link, start_line, start_char_pos
+  return res
 end
 
 local in_process = 0
@@ -132,12 +129,12 @@ function def:peek_definition()
       return
     end
 
-    local bufnr, link, start_line, start_char_pos = get_uri_data(result)
-    if not bufnr then
+    local res = get_uri_data(result)
+    if not res or not res.bufnr then
       return
     end
 
-    node.link = link
+    node.link = vim.uri_to_fname(res.uri)
     local opts = {}
     if stack_cap() == 0 then
       local cur_winline = fn.winline()
@@ -162,7 +159,7 @@ function def:peek_definition()
     local content_opts = {
       contents = {},
       enter = true,
-      bufnr = bufnr,
+      bufnr = res.bufnr,
       highlight = {
         border = 'DefinitionBorder',
         normal = 'DefinitionNormal',
@@ -170,7 +167,7 @@ function def:peek_definition()
     }
     --@deprecated when 0.9 release
     if fn.has('nvim-0.9') == 1 and config.ui.title then
-      self:title_text(opts, link)
+      self:title_text(opts, node.link)
     end
 
     node.prev = api.nvim_get_current_win()
@@ -179,29 +176,27 @@ function def:peek_definition()
       api.nvim_win_set_var(node.winid, 'disable_winbar', true)
     end
     vim.opt_local.modifiable = true
-    node.bufnr = bufnr
+    node.bufnr = res.bufnr
+    node.wipe = res.wipe
     --set the initail cursor pos
-    api.nvim_win_set_cursor(node.winid, { start_line + 1, start_char_pos })
+    api.nvim_win_set_cursor(node.winid, { res.range.start.line + 1, res.range.start.character })
     vim.cmd('normal! zt')
 
-    self:apply_aciton_keys({ start_line, start_char_pos })
-    self:event(bufnr)
+    self:apply_aciton_keys({ res.range.start.line, res.range.start.character })
+    api.nvim_create_autocmd('WinClosed', {
+      buffer = node.bufnr,
+      once = true,
+      callback = function(opt)
+        local curwin = api.nvim_get_current_win()
+        if opt.buf == node.bufnr and curwin == node.winid then
+          local index = find_node(node.winid)
+          remove(index)
+          clean_ctx()
+        end
+      end,
+    })
     push(node)
   end)
-end
-
-function def:event(bufnr)
-  api.nvim_create_autocmd('QuitPre', {
-    once = true,
-    callback = function()
-      local curwin = vim.api.nvim_get_current_win()
-      local node = find_node(curwin)
-      if not node then
-        return
-      end
-      remove(node)
-    end,
-  })
 end
 
 local function unpack_maps()
