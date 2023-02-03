@@ -24,6 +24,7 @@ local default_config = {
     custom_fix = nil,
     custom_msg = nil,
     text_hl_follow = false,
+    border_follow = true,
     keys = {
       exec_action = 'o',
       quit = 'q',
