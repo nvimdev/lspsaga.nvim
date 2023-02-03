@@ -342,9 +342,11 @@ function finder:render_finder_result()
 
   local winline = fn.winline()
   if vim.o.lines - 6 - opt.height - winline <= 0 then
-    vim.cmd('normal! zz')
-    local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
-    api.nvim_feedkeys(keycode, 'x', false)
+    api.nvim_win_call(self.main_win, function()
+      vim.cmd('normal! zz')
+      local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
+      api.nvim_feedkeys(keycode, 'x', false)
+    end)
   end
   winline = fn.winline()
   opt.row = winline + 1
