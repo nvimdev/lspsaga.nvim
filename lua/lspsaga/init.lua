@@ -65,6 +65,7 @@ local default_config = {
       split = 'i',
       tabe = 't',
       quit = { 'q', '<ESC>' },
+      close_in_preview = '<ESC>',
     },
   },
   definition = {

@@ -35,6 +35,8 @@ local function get_file_icon(bufnr)
   local res = libs.icon_from_devicon(vim.bo[bufnr].filetype)
   if #res == 0 then
     res = { '' }
+  else
+    res[1] = res[1] .. ' '
   end
   return res
 end
@@ -497,7 +499,7 @@ end
 local function unpack_map()
   local map = {}
   for k, v in pairs(config.finder.keys) do
-    if k ~= 'jump_to' then
+    if k ~= 'jump_to' and k ~= 'close_in_preview' then
       map[k] = v
     end
   end
@@ -673,6 +675,17 @@ function finder:auto_open_preview()
     )
   end
 
+  vim.keymap.set('n', config.finder.keys.close_in_preview, function()
+    if self.winid and api.nvim_win_is_valid(self.winid) then
+      api.nvim_win_close(self.winid, true)
+    end
+    if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+      api.nvim_win_close(self.preview_winid, true)
+    end
+    self:clean_data()
+    self:clean_ctx()
+  end, { buffer = data.bufnr, nowait = true, silent = true })
+
   api.nvim_create_autocmd('WinClosed', {
     group = self.group,
     buffer = data.bufnr,
@@ -724,6 +737,7 @@ function finder:clean_data()
   pcall(api.nvim_buf_clear_namespace, self.preview_bufnr, self.preview_hl_ns, 0, -1)
   for _, buf in pairs(self.wipe_buffers or {}) do
     api.nvim_buf_delete(buf, { force = true })
+    pcall(vim.keymap.del, 'n', config.finder.keys.close_in_preview, { buffer = buf })
   end
 
   if self.group then

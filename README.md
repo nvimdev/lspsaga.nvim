@@ -189,12 +189,14 @@ Default options:
       split = 'i',
       tabe = 't',
       quit = { 'q', '<ESC>' },
+      close_in_preview = '<ESC>'
     },
   },
 ```
 
 - `max_height` of the finder window.
 - `keys.jump_to` finder peek window.
+- `close_in_preview` will close all finder window in when you in preview window.
 
 <details>
 <summary>lsp_finder showcase</summary>
