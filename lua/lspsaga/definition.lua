@@ -277,12 +277,15 @@ function def:goto_definition()
     if not result or vim.tbl_isempty(result) then
       return
     end
-    local _, link, start_line, start_char_pos, _ = get_uri_data(result)
+    local res = get_uri_data(result)
+    if not res then
+      return
+    end
     vim.cmd('write')
-    api.nvim_command('edit ' .. link)
-    api.nvim_win_set_cursor(0, { start_line + 1, start_char_pos })
+    api.nvim_command('edit ' .. vim.uri_to_fname(res.uri))
+    api.nvim_win_set_cursor(0, { res.uri.range.start.line + 1, res.uri.range.start.character })
     local width = #api.nvim_get_current_line()
-    libs.jump_beacon({ start_line, start_char_pos }, width)
+    libs.jump_beacon({ res.uri.range.start.line, res.uri.range.start.character  }, width)
   end
   lsp.buf.definition()
 end
