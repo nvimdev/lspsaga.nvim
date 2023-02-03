@@ -224,10 +224,10 @@ local render_symbol_winbar = function(buf, symbols)
     return
   end
 
-  --only render in first win
+  -- don't show in float window.
   local cur_win = api.nvim_get_current_win()
-  local first_win = fn.bufwinid(buf)
-  if cur_win ~= first_win then
+  local winconf = api.nvim_win_get_config(cur_win)
+  if winconf.relative then
     return
   end
 
