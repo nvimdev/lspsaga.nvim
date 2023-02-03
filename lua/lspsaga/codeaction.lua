@@ -56,7 +56,7 @@ function act:action_callback()
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = {
-      { config.ui.code_action .. 'A CodeActions', 'TitleString' },
+      { config.ui.code_action .. ' CodeActions', 'TitleString' },
     }
   end
 
