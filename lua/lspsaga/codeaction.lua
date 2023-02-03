@@ -22,13 +22,16 @@ function act:action_callback()
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
     local indent = index > 9 and '' or ' '
-    if #client_with_actions ~= 2 then
+    if #client_with_actions ~= 3 then
       vim.notify('There has something wrong in aciton_tuples')
       return
     end
     if client_with_actions[2].title then
       action_title = indent .. index .. '  ' .. client_with_actions[2].title
     end
+		if (config.code_action.show_server_name == true) then
+			action_title = action_title .. '  ' .. client_with_actions[3]
+		end
     table.insert(contents, action_title)
   end
 
@@ -53,7 +56,7 @@ function act:action_callback()
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = {
-      { config.ui.code_action .. ' CodeActions', 'TitleString' },
+      { config.ui.code_action .. 'A CodeActions', 'TitleString' },
     }
   end
 
@@ -148,8 +151,9 @@ function act:send_code_action_request(main_buf, options, cb)
     self.action_tuples = {}
 
     for client_id, result in pairs(results) do
+			local name = vim.lsp.get_client_by_id(client_id).name
       for _, action in pairs(result.result or {}) do
-        table.insert(self.action_tuples, { client_id, action })
+        table.insert(self.action_tuples, { client_id, action, name })
       end
     end
 
