@@ -215,9 +215,10 @@ local render_symbol_winbar = function(buf, symbols)
     return
   end
 
-  local all_wins = fn.win_findbuf(buf)
+  --only render in first win
   local cur_win = api.nvim_get_current_win()
-  if not vim.tbl_contains(all_wins, cur_win) then
+  local first_win = fn.bufwinid(buf)
+  if cur_win ~= first_win then
     return
   end
 
