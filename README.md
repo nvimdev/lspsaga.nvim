@@ -246,6 +246,7 @@ Default options:
 ```lua
   code_action = {
     num_shortcut = true,
+    show_server_name = false,
     keys = {
       -- string | table type
       quit = "q",
