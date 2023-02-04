@@ -246,7 +246,6 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_set_option_value('buftype', content_opts.buftype or 'nofile', { buf = bufnr })
   end
 
-  -- vim.notify(vim.inspect(opts))
   local winid = api.nvim_open_win(bufnr, enter, opts)
   api.nvim_set_option_value(
     'winblend',
