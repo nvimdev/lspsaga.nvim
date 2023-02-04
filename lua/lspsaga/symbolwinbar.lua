@@ -155,8 +155,7 @@ function symbar.node_is_keyword(buf, node)
 end
 
 local function stl_escape(str)
-  local parts = vim.split(str, '%%')
-  return table.concat(parts, '%%')
+  return str:gsub('%%', '')
 end
 
 local function insert_elements(buf, node, elements)
