@@ -206,6 +206,7 @@ end
 function finder:render_finder()
   self.short_link = {}
   self.contents = {}
+  self.wipe_buffers = {}
 
   local lnum, start_lnum = 0, 0
 
@@ -265,7 +266,6 @@ function finder:create_finder_contents(result, method)
   end
 
   local root_dir = libs.get_lsp_root_dir()
-  self.wipe_buffers = {}
   for _, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
@@ -280,7 +280,9 @@ function finder:create_finder_contents(result, method)
       fn.bufload(bufnr)
       --restore eventignore
       vim.opt.eventignore:remove({ 'FileType' })
-      table.insert(self.wipe_buffers, bufnr)
+      if not vim.tbl_contains(self.wipe_buffers, bufnr) then
+        table.insert(self.wipe_buffers, bufnr)
+      end
     end
 
     if libs.iswin then
@@ -763,6 +765,9 @@ function finder:open_link(action)
   end
 
   local short_link = self.short_link
+
+  local pbuf = api.nvim_win_get_buf(self.preview_winid)
+  clear_preview_ns(self.preview_hl_ns, pbuf)
   self:quit_float_window()
   self:clean_data()
 
