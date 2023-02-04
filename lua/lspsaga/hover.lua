@@ -1,5 +1,7 @@
 local api, fn, lsp, util = vim.api, vim.fn, vim.lsp, vim.lsp.util
 local config = require('lspsaga').config
+local window = require('lspsaga.window')
+local libs = require('lspsaga.libs')
 local hover = {}
 
 local function has_arg(args, arg)
@@ -46,8 +48,6 @@ function hover:open_floating_preview(res, option_fn)
   end
   content = new
 
-  local window = require('lspsaga.window')
-  local libs = require('lspsaga.libs')
   local max_float_width = math.floor(vim.o.columns * 0.6)
   local max_content_len = window.get_max_content_length(content)
   local increase = window.win_height_increase(content)
@@ -149,6 +149,7 @@ function hover:do_request(args)
       end
       local values = {}
       for _, ms in ipairs(result.contents) do
+        ---@diagnostic disable-next-line: undefined-field
         table.insert(values, type(ms) == 'string' and ms or ms.value)
       end
       value = table.concat(values, '\n')

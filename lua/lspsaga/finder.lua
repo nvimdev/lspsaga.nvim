@@ -388,6 +388,10 @@ function finder:render_finder_result()
     buffer = self.bufnr,
     once = true,
     callback = function()
+      local ok, buf = pcall(api.nvim_win_get_buf, self.preview_winid)
+      if ok then
+        pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
+      end
       self:close_auto_preview_win()
       api.nvim_del_augroup_by_id(self.group)
       self:clean_data()
@@ -661,6 +665,17 @@ function finder:open_preview()
 
   if data.bufnr then
     api.nvim_win_set_buf(self.preview_winid, data.bufnr)
+    local path = vim.split(data.link, libs.path_sep, { trimempty = true })
+    local icon = get_file_icon(self.main_buf)
+    api.nvim_win_set_config(self.preview_winid, {
+      border = config.ui.border,
+      title = {
+        { icon[1], icon[2] or 'TitleString' },
+        { path[#path], 'TitleString' },
+      },
+      title_pos = 'center',
+    })
+    api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.preview_winid })
   end
 
   api.nvim_set_option_value(
