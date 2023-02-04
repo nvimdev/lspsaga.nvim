@@ -283,9 +283,9 @@ function def:goto_definition()
     end
     vim.cmd('write')
     api.nvim_command('edit ' .. vim.uri_to_fname(res.uri))
-    api.nvim_win_set_cursor(0, { res.uri.range.start.line + 1, res.uri.range.start.character })
+    api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local width = #api.nvim_get_current_line()
-    libs.jump_beacon({ res.uri.range.start.line, res.uri.range.start.character  }, width)
+    libs.jump_beacon({ res.range.start.line, res.range.start.character  }, width)
   end
   lsp.buf.definition()
 end
