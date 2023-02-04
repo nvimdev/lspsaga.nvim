@@ -227,7 +227,7 @@ local render_symbol_winbar = function(buf, symbols)
   -- don't show in float window.
   local cur_win = api.nvim_get_current_win()
   local winconf = api.nvim_win_get_config(cur_win)
-  if winconf.relative then
+  if #winconf.relative > 0 then
     return
   end
 
