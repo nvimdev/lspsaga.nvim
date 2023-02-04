@@ -235,7 +235,7 @@ function act:do_code_action(num)
     number = tonumber(num)
   else
     local cur_text = api.nvim_get_current_line()
-    number = cur_text:match('(%d+)%s+%w')
+    number = cur_text:match('(%d+)%s+%S')
     number = tonumber(number)
   end
 
@@ -327,7 +327,7 @@ function act:action_preview(main_winid, main_buf)
     self.preview_winid = nil
   end
   local line = api.nvim_get_current_line()
-  local num = line:match('(%d+)%s+%w')
+  local num = line:match('(%d+)%s+%S')
   if not num then
     return
   end

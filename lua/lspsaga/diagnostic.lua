@@ -133,7 +133,7 @@ end
 
 function diag:do_code_action()
   local line = api.nvim_get_current_line()
-  local num = line:match('(%d+)%s%w')
+  local num = line:match('(%d+)%s%S')
   if not num then
     return
   end
