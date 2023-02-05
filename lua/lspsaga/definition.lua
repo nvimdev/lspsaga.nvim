@@ -71,7 +71,7 @@ local function get_uri_data(result)
   end
 
   if not res.uri then
-    vim.notify('[Lspsaga] Does not find target uri', vim.log.levels.WARN)
+    vim.notify('[Lspsaga] Did not find target uri', vim.log.levels.WARN)
     return
   end
 

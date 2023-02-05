@@ -23,7 +23,7 @@ function act:action_callback()
     local action_title = ''
     local indent = index > 9 and '' or ' '
     if #client_with_actions ~= 2 then
-      vim.notify('There has something wrong in aciton_tuples')
+      vim.notify('There is something wrong in aciton_tuples')
       return
     end
     if client_with_actions[2].title then
@@ -119,7 +119,7 @@ function act:send_code_action_request(main_buf, options, cb)
   if options.range then
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
-    local end_ = assert(options.range['end'], 'range must have a `end` property')
+    local end_ = assert(options.range['end'], 'range must have an `end` property')
     params = util.make_given_range_params(start, end_)
   elseif mode == 'v' or mode == 'V' then
     -- [bufnum, lnum, col, off]; both row and column 1-indexed
@@ -194,7 +194,7 @@ end
 function act:code_action(options)
   if self.pending_request then
     vim.notify(
-      '[lspsaga.nvim] there already have a code action request please wait',
+      '[lspsaga.nvim] there is already a code action request please wait',
       vim.log.levels.WARN
     )
     return
