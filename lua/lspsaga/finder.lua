@@ -667,16 +667,18 @@ function finder:open_preview()
 
   if data.bufnr then
     api.nvim_win_set_buf(self.preview_winid, data.bufnr)
-    local path = vim.split(data.link, libs.path_sep, { trimempty = true })
-    local icon = get_file_icon(self.main_buf)
-    api.nvim_win_set_config(self.preview_winid, {
-      border = config.ui.border,
-      title = {
-        { icon[1], icon[2] or 'TitleString' },
-        { path[#path], 'TitleString' },
-      },
-      title_pos = 'center',
-    })
+    if config.ui.title and fn.has('nvim-0.9') == 1 then
+      local path = vim.split(data.link, libs.path_sep, { trimempty = true })
+      local icon = get_file_icon(self.main_buf)
+      api.nvim_win_set_config(self.preview_winid, {
+        border = config.ui.border,
+        title = {
+          { icon[1], icon[2] or 'TitleString' },
+          { path[#path], 'TitleString' },
+        },
+        title_pos = 'center',
+      })
+    end
     api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.preview_winid })
   end
 
