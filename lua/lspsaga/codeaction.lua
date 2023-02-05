@@ -375,7 +375,7 @@ function act:action_preview(main_winid, main_buf)
   opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    opt.title = { { 'Action Preivew', 'ActionPreviewTitle' } }
+    opt.title = { { 'Action Preview', 'ActionPreviewTitle' } }
   end
 
   local content_opts = {
