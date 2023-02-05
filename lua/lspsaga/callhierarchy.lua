@@ -64,10 +64,6 @@ function ch:call_hierarchy(item, parent)
         local text = api.nvim_get_current_line()
         local replace_icon = text:find(ui.expand) and ui.expand or ui.collapse
         if self.pending_request then
-          if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-            api.nvim_win_close(self.preview_winid, true)
-            self.preview_winid = nil
-          end
           self.pending_request = true
           local next = frame + 1 == 9 and 1 or frame + 1
           if text:find(replace_icon) then
@@ -115,9 +111,10 @@ function ch:call_hierarchy(item, parent)
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
     self.pending_request = false
-    if not res or next(res) == nil then
+    if not res or vim.tbl_isempty(res) then
       return
     end
+
     local kind = require('lspsaga.lspkind').get_kind()
     if not parent then
       local icons = {}
@@ -190,6 +187,10 @@ function ch:call_hierarchy(item, parent)
 end
 
 function ch:send_prepare_call()
+  if self.pending_request then
+    vim.notify('there already have a request please wait.')
+    return
+  end
   self.main_buf = api.nvim_get_current_buf()
 
   local params = lsp.util.make_position_params()
@@ -303,9 +304,6 @@ function ch:apply_map()
       if not node then
         return
       end
-      if api.nvim_buf_is_loaded(self.file_buf) then
-        api.nvim_buf_delete(self.file_buf, { force = true })
-      end
       if api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
       end
@@ -358,7 +356,7 @@ function ch:render_win()
   end
 
   local opt = {
-    relative = 'editor',
+    relative = 'win',
     win = api.nvim_get_current_win(),
     row = fn.winline() + 1,
     col = 10,
@@ -367,22 +365,21 @@ function ch:render_win()
     no_size_override = true,
   }
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local icon = self.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
     opt.title = {
       { icon, 'ArrowIcon' },
     }
-    opt.title_pos = 'right'
+    opt.title_pos = 'center'
     api.nvim_set_hl(0, 'ArrowIcon', { link = 'CallHierarchyBorder' })
   end
+
   self.bufnr, self.winid = window.create_win_with_border(content_opt, opt)
   api.nvim_win_set_cursor(self.winid, { 2, 9 })
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
-      if not self.pending_request then
-        self:preview()
-      end
+      self:preview()
     end,
   })
 
@@ -448,8 +445,7 @@ function ch:get_node_at_cursor()
   return node
 end
 
-function ch:get_preview_data()
-  local node = self:get_node_at_cursor()
+local function get_preview_data(node)
   if not node or vim.tbl_count(node) == 0 then
     return
   end
@@ -459,31 +455,20 @@ function ch:get_preview_data()
   local bufnr = vim.uri_to_bufnr(uri)
 
   if not api.nvim_buf_is_loaded(bufnr) then
-    --TODO: find a better way to avoid trigger autocmd
-    vim.opt.eventignore:append({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
     fn.bufload(bufnr)
-    vim.opt.eventignore:remove({ 'BufRead', 'BufReadPost', 'BufEnter', 'FileType' })
   end
 
-  return { bufnr, range }
+  return { bufnr = bufnr, range = range }
 end
 
-function ch:preview()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    api.nvim_win_close(self.preview_winid, true)
-  end
-
-  local data = self:get_preview_data()
-  if not data then
-    return
-  end
-
-  local winconfig = api.nvim_win_get_config(self.winid)
+local function create_preview_window(winid)
+  local winconfig = api.nvim_win_get_config(winid)
   local opt = {
     relative = winconfig.relative,
+    win = winconfig.win,
     row = winconfig.row[false],
     height = winconfig.height,
-    col = winconfig.col[false] + 2 + winconfig.width,
+    col = winconfig.col[false] + winconfig.width + 2,
     no_size_override = true,
   }
   opt.width = vim.o.columns - opt.col - 6
@@ -492,54 +477,62 @@ function ch:preview()
   local rbottom = window.combine_char()['rightbottom'][config.ui.border]
   local content_opt = {
     contents = {},
-    bufnr = data[1],
     border_side = {
       ['lefttop'] = rtop,
       ['leftbottom'] = rbottom,
     },
-    highlight = {
-      border = 'ActionPreviewBorder',
-      normal = 'CallHierarchyNormal',
-    },
     enter = false,
   }
 
-  if fn.has('nvim-0.9') == 1 and ui.title then
-    local fname_parts = libs.get_path_info(data[1], 2)
-    local tbl = libs.icon_from_devicon(vim.bo[self.main_buf].filetype, true)
-    opt.title = {
-      { (tbl[1] or '') .. ' ', 'TitleFileIcon' },
-      { table.concat(fname_parts or {}, libs.path_sep), 'TitleString' },
-    }
-    if #tbl == 2 then
-      api.nvim_set_hl(0, 'TitleFileIcon', {
-        foreground = tbl[2],
-        default = true,
-      })
-    end
-  end
-
-  self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opt, opt)
-  if config.symbol_in_winbar.enable then
-    api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
-  end
-  self.file_buf = data[1]
-  vim.bo[data[1]].filetype = vim.bo[self.main_buf].filetype
-  vim.bo[data[1]].modifiable = true
-  api.nvim_win_set_cursor(self.preview_winid, { data[2].start.line, data[2].start.character })
-  vim.wo[self.preview_winid].signcolumn = 'no'
+  return window.create_win_with_border(content_opt, opt)
 end
 
-function ch:incoming_calls()
-  self.cword = fn.expand('<cword>')
-  self.method = get_method(2)
-  self.data = {}
-  self:send_prepare_call()
+function ch:preview()
+  local node = self:get_node_at_cursor()
+  if not node then
+    return
+  end
+
+  local data = get_preview_data(node)
+  if not data or not data.bufnr then
+    return
+  end
+
+  if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
+    self.preview_bufnr, self.preview_winid = create_preview_window(self.winid)
+  end
+
+  api.nvim_win_set_buf(self.preview_winid, data.bufnr)
+  if config.ui.title and fn.has('nvim-0.9') == 1 then
+    local path = vim.split(api.nvim_buf_get_name(data.bufnr), libs.path_sep, { trimempty = true })
+    local icon = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
+    api.nvim_win_set_config(self.preview_winid, {
+      border = config.ui.border,
+      title = {
+        { icon[1] and icon[1] .. ' ' or '', icon[2] or 'TitleString' },
+        { path[#path], 'TitleString' },
+      },
+      title_pos = 'center',
+    })
+  end
+
+  api.nvim_set_option_value(
+    'winhl',
+    'Normal:finderNormal,FloatBorder:finderPreviewBorder',
+    { scope = 'local', win = self.preview_winid }
+  )
+
+  api.nvim_win_set_cursor(
+    self.preview_winid,
+    { data.range.start.line + 1, data.range.start.character }
+  )
+  vim.bo[data.bufnr].filetype = vim.bo[self.main_buf].filetype
+  api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.preview_winid })
 end
 
-function ch:outgoing_calls()
+function ch:send_method(type)
   self.cword = fn.expand('<cword>')
-  self.method = get_method(3)
+  self.method = get_method(type)
   self.data = {}
   self:send_prepare_call()
 end
