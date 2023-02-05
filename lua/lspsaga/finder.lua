@@ -242,7 +242,7 @@ local function get_msg(method)
   local idx = libs.tbl_index(methods(), method)
   local t = {
     'No Definition Found',
-    'No Implement  Found',
+    'No Implementation  Found',
     'No Reference  Found',
   }
   return t[idx]
@@ -259,7 +259,7 @@ function finder:create_finder_contents(result, method)
     insert(contents, { '    ' .. icon_data[1] .. get_msg(method), false })
     insert(contents, { ' ', false })
     self.short_link[#contents - 1] = {
-      content = { 'Sorry does not any Definition Found' },
+      content = { 'Sorry did not find any Definition' },
       link = api.nvim_buf_get_name(0),
     }
     return contents

@@ -552,7 +552,7 @@ function ot:outline(no_close)
     return
   end
   if self.pending_request then
-    vim.notify('[lspsaga.nvim] there already have a request for outline please wait')
+    vim.notify('[lspsaga.nvim] there is already a request for outline please wait')
     return
   end
 

@@ -66,7 +66,7 @@ function diag:code_action_cb()
 
   for index, client_with_actions in pairs(act.action_tuples) do
     if #client_with_actions ~= 2 then
-      vim.notify('There has something wrong in aciton_tuples')
+      vim.notify('There is something wrong in aciton_tuples')
       return
     end
     if client_with_actions[2].title then

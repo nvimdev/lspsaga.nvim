@@ -188,7 +188,7 @@ end
 
 function ch:send_prepare_call()
   if self.pending_request then
-    vim.notify('there already have a request please wait.')
+    vim.notify('there is already a request please wait.')
     return
   end
   self.main_buf = api.nvim_get_current_buf()
