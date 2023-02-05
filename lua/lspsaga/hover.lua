@@ -57,6 +57,7 @@ function hover:open_floating_preview(res, option_fn)
     width = max_content_len + 10 < max_float_width and max_content_len + 5 or max_float_width,
     height = #content + increase > max_height and max_height or #content + increase,
     no_size_override = true,
+    zindex = 80,
   }
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then

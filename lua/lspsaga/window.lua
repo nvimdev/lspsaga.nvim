@@ -122,6 +122,8 @@ local function make_floating_popup_options(width, height, opts)
     new_option.title_pos = opts.title_pos or 'center'
   end
 
+  new_option.zindex = opts.zindex or nil
+
   if opts.row == nil and opts.col == nil then
     local lines_above = vim.fn.winline() - 1
     local lines_below = vim.fn.winheight(0) - lines_above
