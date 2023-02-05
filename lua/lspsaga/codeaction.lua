@@ -292,11 +292,13 @@ function act:get_action_diff(num, main_buf)
   local all_changes = {}
   if action.edit.documentChanges then
     for _, item in pairs(action.edit.documentChanges) do
-      if not all_changes[item.textDocument.uri] then
-        all_changes[item.textDocument.uri] = {}
-      end
-      for _, edit in pairs(item.edits) do
-        table.insert(all_changes[item.textDocument.uri], edit)
+      if item.textDocument then
+        if not all_changes[item.textDocument.uri] then
+          all_changes[item.textDocument.uri] = {}
+        end
+        for _, edit in pairs(item.edits) do
+          table.insert(all_changes[item.textDocument.uri], edit)
+        end
       end
     end
   elseif action.edit.changes then
