@@ -476,10 +476,6 @@ local function create_preview_window(winid)
       ['lefttop'] = rtop,
       ['leftbottom'] = rbottom,
     },
-    highlight = {
-      border = 'ActionPreviewBorder',
-      normal = 'CallHierarchyNormal',
-    },
     enter = false,
   }
 
@@ -497,48 +493,41 @@ function ch:preview()
     return
   end
 
-  if not self.preview_winid then
+  if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
     self.preview_bufnr, self.preview_winid = create_preview_window(self.winid)
   end
 
   api.nvim_win_set_buf(self.preview_winid, data.bufnr)
-  api.nvim_win_set_cursor(self.preview_winid, { data.range.start.line, data.range.start.character })
+  if config.ui.title and fn.has('nvim-0.9') == 1 then
+    local path = vim.split(api.nvim_buf_get_name(data.bufnr), libs.path_sep, { trimempty = true })
+    local icon = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
+    api.nvim_win_set_config(self.preview_winid, {
+      border = config.ui.border,
+      title = {
+        { icon[1] and icon[1] .. ' ' or '', icon[2] or 'TitleString' },
+        { path[#path], 'TitleString' },
+      },
+      title_pos = 'center',
+    })
+  end
+
   api.nvim_set_option_value(
     'winhl',
-    'Normal:CallHierarchyNormal,Border:CallHierarchyBorder',
+    'Normal:finderNormal,FloatBorder:finderPreviewBorder',
     { scope = 'local', win = self.preview_winid }
   )
 
-  if fn.has('nvim-0.9') == 1 and ui.title then
-    local tail = fn.fnamemodify(api.nvim_buf_get_name(data.bufnr), ':t')
-    local title = {
-      { tail, 'TitleString' },
-    }
-    local tbl = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
-    if tbl[2] then
-      table.insert(title, 1, { tbl[1] .. ' ', tbl[2] })
-    end
-    api.nvim_win_set_config(
-      self.preview_winid,
-      { border = ui.border, title = title, title_pos = 'center' }
-    )
-  end
-
-  -- vim.bo[data.bufnr].filetype = vim.bo[self.main_buf].filetype
-  vim.bo[data.bufnr].modifiable = true
-  vim.wo[self.preview_winid].signcolumn = 'no'
+  api.nvim_win_set_cursor(
+    self.preview_winid,
+    { data.range.start.line + 1, data.range.start.character }
+  )
+  vim.bo[data.bufnr].filetype = vim.bo[self.main_buf].filetype
+  api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.preview_winid })
 end
 
-function ch:incoming_calls()
+function ch:send_method(type)
   self.cword = fn.expand('<cword>')
-  self.method = get_method(2)
-  self.data = {}
-  self:send_prepare_call()
-end
-
-function ch:outgoing_calls()
-  self.cword = fn.expand('<cword>')
-  self.method = get_method(3)
+  self.method = get_method(type)
   self.data = {}
   self:send_prepare_call()
 end
