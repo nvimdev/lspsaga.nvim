@@ -111,9 +111,10 @@ function ch:call_hierarchy(item, parent)
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
     self.pending_request = false
-    if not res or next(res) == nil then
+    if not res or vim.tbl_isempty(res) then
       return
     end
+
     local kind = require('lspsaga.lspkind').get_kind()
     if not parent then
       local icons = {}
@@ -186,6 +187,10 @@ function ch:call_hierarchy(item, parent)
 end
 
 function ch:send_prepare_call()
+  if self.pending_request then
+    vim.notify('there already have a request please wait.')
+    return
+  end
   self.main_buf = api.nvim_get_current_buf()
 
   local params = lsp.util.make_position_params()
