@@ -661,6 +661,11 @@ function finder:open_preview()
   end
 
   if data.content then
+    if not data.bufnr then
+      data.bufnr = self.preview_bufnr
+    end
+    api.nvim_win_set_buf(self.preview_winid, data.bufnr)
+    api.nvim_set_option_value('bufhidden', '', { buf = self.preview_bufnr })
     vim.bo[self.preview_bufnr].modifiable = true
     api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, data.content)
     vim.bo[self.preview_bufnr].modifiable = false
@@ -780,7 +785,9 @@ function finder:open_link(action)
     vim.cmd('write')
   end
   vim.cmd(action .. ' ' .. uv.fs_realpath(short_link[current_line].link))
-  api.nvim_win_set_cursor(0, { short_link[current_line].row + 1, short_link[current_line].col })
+  if short_link[current_line].row then
+    api.nvim_win_set_cursor(0, { short_link[current_line].row + 1, short_link[current_line].col })
+  end
   local width = #api.nvim_get_current_line()
   libs.jump_beacon({ short_link[current_line].row, 0 }, width)
   self:clean_ctx()
