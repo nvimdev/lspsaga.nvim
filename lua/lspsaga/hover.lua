@@ -101,7 +101,7 @@ function hover:open_floating_preview(res, option_fn)
   end, { buffer = self.preview_bufnr })
 
   if not option_fn then
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete' }, {
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'BufLeave' }, {
       buffer = bufnr,
       once = true,
       callback = function()

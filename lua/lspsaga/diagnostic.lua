@@ -585,7 +585,7 @@ function diag:show(entrys, arg, type)
     end
   end, { buffer = self.lnum_bufnr, nowait = true, silent = true })
 
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete' }
+  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete','BufLeave' }
 
   vim.defer_fn(function()
     libs.close_preview_autocmd(cur_buf, self.lnum_winid, close_autocmds)
