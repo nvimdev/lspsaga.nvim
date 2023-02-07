@@ -57,7 +57,7 @@ function diag:code_action_cb()
   end
 
   local fix_title = diag_conf.custom_fix
-      or self.theme.left .. ui.code_action .. 'Fix ' .. self.theme.right
+    or self.theme.left .. ui.code_action .. 'Fix ' .. self.theme.right
 
   local contents = {
     '',
@@ -407,10 +407,11 @@ function diag:render_diagnostic_window(entry, option)
     callback = function()
       vim.defer_fn(function()
         local cur = api.nvim_get_current_buf()
-        if cur ~= current_buffer
-            and cur ~= self.bufnr
-            and self.bufnr
-            and api.nvim_buf_is_loaded(self.bufnr)
+        if
+          cur ~= current_buffer
+          and cur ~= self.bufnr
+          and self.bufnr
+          and api.nvim_buf_is_loaded(self.bufnr)
         then
           api.nvim_win_close(self.winid, true)
           if self.virt_winid and api.nvim_win_is_valid(self.virt_winid) then
@@ -488,23 +489,23 @@ function diag:show(entrys, arg, type)
   for _, entry in pairs(entrys) do
     local start_col = entry.end_col > entry.col and entry.col or entry.end_col
     local end_col = entry.end_col > entry.col and entry.end_col or entry.col
-    local code_source = api.nvim_buf_get_text(
-      entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
+    local code_source =
+      api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
     local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1] or {}
     if not sign.text then
       sign.text = ui.diagnostic
     end
     local line = sign.text
-        .. ' '
-        .. code_source[1]
-        .. '  '
-        .. entry.lnum + 1
-        .. ':'
-        .. entry.col
-        .. '\n'
-        .. '  '
-        .. entry.message
+      .. ' '
+      .. code_source[1]
+      .. '  '
+      .. entry.lnum + 1
+      .. ':'
+      .. entry.col
+      .. '\n'
+      .. '  '
+      .. entry.message
     if entry.source then
       line = line .. '(' .. entry.source .. ')'
     end
