@@ -283,6 +283,10 @@ function finder:create_finder_contents(result, method)
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         table.insert(self.wipe_buffers, bufnr)
       end
+    elseif fn.bufwinnr(bufnr) == -1 then
+      if not vim.tbl_contains(self.wipe_buffers, bufnr) then
+        table.insert(self.wipe_buffers, bufnr)
+      end
     end
 
     if libs.iswin then
