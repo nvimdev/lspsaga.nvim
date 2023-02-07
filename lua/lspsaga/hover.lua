@@ -24,6 +24,9 @@ function hover:open_floating_preview(res, option_fn)
 
   local new = {}
   for _, line in pairs(content) do
+    if line:find('\\') then
+      line = line:gsub('\\', '')
+    end
     if line:find('\r') then
       line = line:gsub('\r\n?', ' ')
     end
@@ -101,7 +104,7 @@ function hover:open_floating_preview(res, option_fn)
   end, { buffer = self.preview_bufnr })
 
   if not option_fn then
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'BufLeave' }, {
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete' }, {
       buffer = bufnr,
       once = true,
       callback = function()
@@ -116,6 +119,22 @@ function hover:open_floating_preview(res, option_fn)
         end
       end,
       desc = '[Lspsaga] Auto close hover window',
+    })
+
+    self.enter_leave_id = api.nvim_create_autocmd('BufEnter', {
+      callback = function(opt)
+        if
+          opt.buf ~= self.preview_bufnr
+          and self.preview_winid
+          and api.nvim_win_is_valid(self.preview_winid)
+        then
+          api.nvim_win_close(self.preview_winid, true)
+          if self.enter_leave_id then
+            pcall(api.nvim_del_autocmd, self.enter_leave_id)
+          end
+          self:remove_data()
+        end
+      end,
     })
   end
   libs.scroll_in_preview(bufnr, self.preview_winid)
