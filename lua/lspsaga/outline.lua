@@ -446,7 +446,7 @@ function ot:close_when_last()
       end
 
       if #wins == 1 or (#wins == 2 and vim.tbl_contains(wins, self.preview_winid)) then
-        if api.nvim_win_is_valid(self.preview_winid) then
+        if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
           api.nvim_win_close(self.preview_winid, true)
         end
         local bufnr = api.nvim_create_buf(true, true)
