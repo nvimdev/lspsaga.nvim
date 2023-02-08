@@ -449,8 +449,28 @@ function ot:close_when_last()
         if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
           api.nvim_win_close(self.preview_winid, true)
         end
-        local bufnr = api.nvim_create_buf(true, true)
-        api.nvim_win_set_buf(0, bufnr)
+        local buffers = api.nvim_list_bufs()
+        local scratch = true
+        local setbuf
+        for _, buf in pairs(buffers) do
+          if
+            api.nvim_buf_is_loaded(buf)
+            and fn.bufwinid(buf) == -1
+            and #api.nvim_buf_get_name(buf) > 0
+          then
+            scratch = false
+            setbuf = buf
+            break
+          end
+        end
+        if scratch then
+          local bufnr = api.nvim_create_buf(true, true)
+          api.nvim_win_set_buf(0, bufnr)
+        else
+          if setbuf then
+            api.nvim_win_set_buf(0, setbuf)
+          end
+        end
         clean_ctx()
       end
     end,
