@@ -492,7 +492,7 @@ function diag:show(entrys, arg, type)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1]
+    local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1] or {}
     if not sign.text then
       sign.text = ui.diagnostic
     end
@@ -555,7 +555,7 @@ function diag:show(entrys, arg, type)
     end
     local diag_type = get_diag_type(entrys[k].severity)
     local hi = 'Diagnostic' .. diag_type
-    local sign = get_diagnostic_sign(diag_type)[1]
+    local sign = get_diagnostic_sign(diag_type)[1] or {}
     local col_end = sign.text and #sign.text + 1 or 1
     api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index, 0, col_end)
     api.nvim_buf_add_highlight(
