@@ -4,6 +4,23 @@ local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local hover = {}
 
+local function query_bracket()
+  local query = [[
+    (shortcut_link
+      (
+        "[" @conceall (#set! conceall "")
+        (link_text) @text (#not-eq? text " ")
+        "]" @concealr (#set! concealr "")
+      )
+    )
+  ]]
+  vim.treesitter.query.set_query('markdown_inline', 'highlights', query)
+end
+
+do
+  query_bracket()
+end
+
 local function has_arg(args, arg)
   local tbl = vim.split(args, '%s')
   if vim.tbl_contains(tbl, arg) then
@@ -26,6 +43,7 @@ function hover:open_floating_preview(res, option_fn)
   for _, line in pairs(content) do
     if line:find('\\') then
       line = line:gsub('\\', '')
+      print(line)
     end
     if line:find('\r') then
       line = line:gsub('\r\n?', ' ')
