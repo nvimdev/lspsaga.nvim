@@ -43,7 +43,6 @@ function hover:open_floating_preview(res, option_fn)
   for _, line in pairs(content) do
     if line:find('\\') then
       line = line:gsub('\\', '')
-      print(line)
     end
     if line:find('\r') then
       line = line:gsub('\r\n?', ' ')
