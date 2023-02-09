@@ -295,7 +295,8 @@ function ot:auto_refresh()
   api.nvim_create_autocmd('BufEnter', {
     group = self.group,
     callback = function(opt)
-      if not libs.check_lsp_active() then
+      local clients = lsp.get_active_clients({ bufnr = opt.buf })
+      if next(clients) == nil then
         return
       end
 
