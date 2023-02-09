@@ -292,9 +292,16 @@ function ot:expand_collapse()
 end
 
 function ot:auto_refresh()
-  api.nvim_create_autocmd('LspAttach', {
+  api.nvim_create_autocmd('BufEnter', {
     group = self.group,
-    callback = function()
+    callback = function(opt)
+      if not libs.check_lsp_active() then
+        return
+      end
+
+      if api.nvim_get_current_buf() ~= opt.buf or not self.bufnr then
+        return
+      end
       vim.bo[self.bufnr].modifiable = true
       api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
       self:outline(true)
