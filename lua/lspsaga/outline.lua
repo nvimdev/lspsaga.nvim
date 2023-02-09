@@ -296,13 +296,10 @@ function ot:auto_refresh()
     group = self.group,
     callback = function(opt)
       local clients = lsp.get_active_clients({ bufnr = opt.buf })
-      if next(clients) == nil then
+      if next(clients) == nil or opt.buf == self.render_buf then
         return
       end
 
-      if api.nvim_get_current_buf() ~= opt.buf or not self.bufnr then
-        return
-      end
       vim.bo[self.bufnr].modifiable = true
       api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
       self:outline(opt.buf, true)
