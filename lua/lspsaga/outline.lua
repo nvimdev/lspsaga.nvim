@@ -292,34 +292,12 @@ function ot:expand_collapse()
 end
 
 function ot:auto_refresh()
-  api.nvim_create_autocmd('BufEnter', {
+  api.nvim_create_autocmd('LspAttach', {
     group = self.group,
-    callback = function(opt)
-      if not api.nvim_buf_is_valid(opt.buf) then
-        return
-      end
-      local ignore = { 'lspsagaoutline', 'terminal', 'help', 'prompt', 'nofile' }
-      if vim.tbl_contains(ignore, vim.bo[opt.buf].filetype) or opt.buf == self.render_buf then
-        return
-      end
-
-      if vim.tbl_contains(ignore, vim.bo[opt.buf].buftype) then
-        return
-      end
-
-      if #api.nvim_buf_get_name(opt.buf) == 0 then
-        return
-      end
-
-      --set a delay in there if change buffer quickly only render last one
-      vim.defer_fn(function()
-        if api.nvim_get_current_buf() ~= opt.buf or not self.bufnr then
-          return
-        end
-        vim.bo[self.bufnr].modifiable = true
-        api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
-        self:outline(true)
-      end, 10)
+    callback = function()
+      vim.bo[self.bufnr].modifiable = true
+      api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
+      self:outline(true)
     end,
     desc = '[Lspsaga.nvim] outline auto refresh',
   })
