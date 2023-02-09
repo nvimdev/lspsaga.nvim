@@ -252,4 +252,11 @@ function hover:render_hover_doc(args)
   self:do_request(args)
 end
 
+function hover:has_hover()
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    return true
+  end
+  return false
+end
+
 return hover
