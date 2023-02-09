@@ -1,4 +1,4 @@
-local lsp, api, fn = vim.lsp, vim.api, vim.fn
+local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config.symbol_in_winbar
 local libs = require('lspsaga.libs')
 local symbar = {}
