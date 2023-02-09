@@ -305,7 +305,7 @@ function ot:auto_refresh()
       end
       vim.bo[self.bufnr].modifiable = true
       api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {})
-      self:outline(true)
+      self:outline(opt.buf, true)
     end,
     desc = '[Lspsaga.nvim] outline auto refresh',
   })
@@ -544,16 +544,16 @@ function ot:register_events()
   self.registerd = true
 end
 
-function ot:outline(no_close)
-  no_close = no_close or false
-  if self.winid and api.nvim_win_is_valid(self.winid) and not no_close then
+function ot:outline(buf, non_close)
+  non_close = non_close or false
+  if self.winid and api.nvim_win_is_valid(self.winid) and not non_close then
     api.nvim_win_close(self.winid, true)
     clean_ctx()
     return
   end
 
-  local current_buf = api.nvim_get_current_buf()
-  if #lsp.get_active_clients({ bufnr = current_buf }) == 0 then
+  buf = buf or api.nvim_get_current_buf()
+  if #lsp.get_active_clients({ bufnr = buf }) == 0 then
     vim.notify('[Lspsaga.nvim] there is no server attatched this buffer')
     return
   end
@@ -562,14 +562,14 @@ function ot:outline(no_close)
     return
   end
 
-  local symbols = get_cache_symbols(current_buf)
+  local symbols = get_cache_symbols(buf)
   self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
-  self.render_buf = current_buf
+  self.render_buf = buf
   if not symbols then
     self.pending_request = true
-    self:request_and_render(current_buf)
+    self:request_and_render(buf)
   else
-    self:render_outline(current_buf, symbols)
+    self:render_outline(buf, symbols)
     if not self.registerd then
       self:register_events()
     end
