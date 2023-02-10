@@ -64,6 +64,12 @@ local function bar_file_name(buf)
         if not ok then
           conf = {}
         end
+        for k, _ in pairs(conf) do
+          if k == true or k == false then
+            conf[k] = nil
+          end
+        end
+
         api.nvim_set_hl(
           0,
           'LspSagaWinbarFileIcon',
