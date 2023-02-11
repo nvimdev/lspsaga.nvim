@@ -12,8 +12,6 @@ Table of Contents                             *lspsaga.nvim-table-of-contents*
   - :Lspsaga lsp_finder                     |lspsaga.nvim-:lspsaga-lsp_finder|
   - :Lspsaga peek_definition           |lspsaga.nvim-:lspsaga-peek_definition|
   - :Lspsaga goto_definition           |lspsaga.nvim-:lspsaga-goto_definition|
-  - :Lspsaga peek_type_definition |lspsaga.nvim-:lspsaga-peek_type_definition|
-  - :Lspsaga goto_type_definition |lspsaga.nvim-:lspsaga-goto_type_definition|
   - :Lspsaga code_action                   |lspsaga.nvim-:lspsaga-code_action|
   - :Lspsaga Lightbulb                       |lspsaga.nvim-:lspsaga-lightbulb|
   - :Lspasga hover_doc                       |lspsaga.nvim-:lspasga-hover_doc|
@@ -153,7 +151,7 @@ PACKER <HTTPS://GITHUB.COM/WBTHOMASON/PACKER.NVIM>*lspsaga.nvim-packer-<https://
     -- Use <C-t> to jump back
     keymap("n", "gt", "<cmd>Lspsaga peek_type_definition<CR>")
     
-    -- Go to definition
+    -- Go to type definition
     keymap("n","gt", "<cmd>Lspsaga goto_type_definition<CR>")
     
     
@@ -306,32 +304,6 @@ src="https://user-images.githubusercontent.com/41671631/215719806-0dea0248-4a2c-
 :LSPSAGA GOTO_DEFINITION               *lspsaga.nvim-:lspsaga-goto_definition*
 
 Jumps to the definition of the hovered word and shows a beacon highlight.
-
-:LSPSAGA PEEK_TYPE_DEFINITION     *lspsaga.nvim-:lspsaga-peek_type_definition*
-
-There are two commands, `:Lspsaga peek_type_definition` and `:Lspsaga
-goto_type_definition`. The `peek_type_definition` command works by identifying
-the type of the hovered word and showing the file where the type is defined in
-an editable floating window.
-
-Default options:
-
->
-      type_definition = {
-        edit = "<C-c>o",
-        vsplit = "<C-c>v",
-        split = "<C-c>i",
-        tabe = "<C-c>t",
-        quit = "q",
-        close = "<Esc>",
-      }
-<
-
-
-:LSPSAGA GOTO_TYPE_DEFINITION     *lspsaga.nvim-:lspsaga-goto_type_definition*
-
-Jumps to the definition of the type of the hovered word and shows a beacon
-highlight.
 
 :LSPSAGA CODE_ACTION                       *lspsaga.nvim-:lspsaga-code_action*
 
