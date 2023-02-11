@@ -287,8 +287,21 @@ function def:goto_definition()
     if not res then
       return
     end
-    vim.cmd('write')
-    api.nvim_command('edit ' .. vim.uri_to_fname(res.uri))
+
+    local jump_destination = vim.uri_to_fname(res.uri)
+    local current_buffer = vim.api.nvim_buf_get_name(0)
+    local is_current_buffer_modified = vim.bo.modified
+
+    -- if the current buffer is the jump destination and it has been modified
+    -- then write the changes first.
+    -- this is needed because if the definition is in the current buffer the
+    -- jump may not go to the right place.
+    if is_current_buffer_modified and current_buffer == jump_destination then
+      vim.cmd('write')
+    end
+
+    api.nvim_command('edit ' .. jump_destination)
+
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local width = #api.nvim_get_current_line()
     libs.jump_beacon({ res.range.start.line, res.range.start.character }, width)
