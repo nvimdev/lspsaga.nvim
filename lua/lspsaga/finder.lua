@@ -682,7 +682,6 @@ function finder:open_preview()
       local path = vim.split(data.link, libs.path_sep, { trimempty = true })
       local icon = get_file_icon(self.main_buf)
       api.nvim_win_set_config(self.preview_winid, {
-        border = config.ui.border,
         title = {
           { icon[1], icon[2] or 'TitleString' },
           { path[#path], 'TitleString' },
