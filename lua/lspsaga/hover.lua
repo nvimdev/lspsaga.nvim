@@ -38,6 +38,10 @@ function hover:open_floating_preview(res, option_fn)
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
   local content = vim.split(res.value, '\n', { trimempty = true })
+  if #content == 0 then
+    vim.notify('No information available')
+    return
+  end
 
   local new = {}
   for _, line in pairs(content) do
