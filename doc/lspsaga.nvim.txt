@@ -87,6 +87,7 @@ LAZY <HTTPS://GITHUB.COM/FOLKE/LAZY.NVIM>*lspsaga.nvim-lazy-<https://github.com/
         end,
         dependencies = {
           {"nvim-tree/nvim-web-devicons"}
+          --Please make sure you install markdown and markdown_inline parser
           {"nvim-treesitter/nvim-treesitter"}
         }
     }, opt)
@@ -104,6 +105,7 @@ PACKER <HTTPS://GITHUB.COM/WBTHOMASON/PACKER.NVIM>*lspsaga.nvim-packer-<https://
         end,
         requires = {
             {"nvim-tree/nvim-web-devicons"}
+            --Please make sure you install markdown and markdown_inline parser
             {"nvim-treesitter/nvim-treesitter"}
         }
     })
