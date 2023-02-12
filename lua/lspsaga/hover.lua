@@ -226,11 +226,22 @@ function hover:remove_data()
   end
 end
 
+local function check_parser()
+  local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
+  local has_parser = true
+  for _, p in pairs(parsers) do
+    if #api.nvim_get_runtime_file(p, true) == 0 then
+      has_parser = false
+      break
+    end
+  end
+  return has_parser
+end
+
 function hover:render_hover_doc(args)
-  local has_parser = api.nvim_get_runtime_file('parser/markdown.so', true)
-  if #has_parser == 0 then
+  if not check_parser() then
     vim.notify(
-      '[Lpsaga.nvim] Please install markdown parser in nvim-treesitter',
+      '[Lpsaga.nvim] Please install markdown and markdown_inline parser in nvim-treesitter',
       vim.log.levels.WARN
     )
     return
