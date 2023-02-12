@@ -319,7 +319,7 @@ function act:get_action_diff(num, main_buf)
   end
   local data = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
   api.nvim_buf_delete(tmp_buf, { force = true })
-  local diff = vim.diff(table.concat(lines, '\n'), table.concat(data, '\n'))
+  local diff = vim.diff(table.concat(lines, '\n') .. '\n', table.concat(data, '\n') .. '\n')
   return diff
 end
 
@@ -361,7 +361,7 @@ function act:action_preview(main_winid, main_buf)
     end
   else
     if win_conf.row[false] - win_conf.height - opt.height - 4 > 0 then
-      opt.row = win_conf.row[false] - win_conf.height - 4
+      opt.row = win_conf.row[false] - win_conf.height - 2
       opt.anchor = win_conf.anchor
     else
       opt.row = win_conf.row[false]
@@ -371,9 +371,11 @@ function act:action_preview(main_winid, main_buf)
   opt.col = win_conf.col[false]
 
   local max_width = math.floor(vim.o.columns * 0.6)
-  local max_len = window.get_max_content_length(tbl)
+  if max_width < win_conf.width then
+    max_width = win_conf.width
+  end
 
-  opt.width = max_len < max_width and max_len or max_width
+  opt.width = max_width
   opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
