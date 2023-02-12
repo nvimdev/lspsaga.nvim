@@ -96,6 +96,17 @@ keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>")
 -- Go to definition
 keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
 
+-- Peek type definition
+-- You can edit the file containing the type definition in the floating window
+-- It also supports open/vsplit/etc operations, do refer to "definition_action_keys"
+-- It also supports tagstack
+-- Use <C-t> to jump back
+keymap("n", "gt", "<cmd>Lspsaga peek_type_definition<CR>")
+
+-- Go to type definition
+keymap("n","gt", "<cmd>Lspsaga goto_type_definition<CR>")
+
+
 -- Show line diagnostics
 -- You can pass argument ++unfocus to
 -- unfocus the show_line_diagnostics floating window
@@ -330,8 +341,8 @@ Default options:
 
 - Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
-- `custom_msg` string  used to  custom the diagnostic jump `Msg` section titile 
-- `custom_fix` string  used to  custom the diagnostic jump `Fix` section titile 
+- `custom_msg` string used to custom the diagnostic jump `Msg` section titile
+- `custom_fix` string used to custom the diagnostic jump `Fix` section titile
 - `max_width` is the max width for diagnostic jump window. percentage
 - `text_hl_follow` is false default true that you can define `DiagnostcText` to custom the diagnotic
   text color
@@ -487,7 +498,7 @@ Default options:
 - `hide_keyword` - The default value is `true`. Lspsaga will hide some keywords and temporary variables to make the symbols look cleaner.
 - `folder_level` only works when `show_file` is `true`.
 - `respect_root` will respect the LSP's root. If this is `true`, Lspsaga will ignore the `folder_level` option. If no LSP client is being used, Lspsaga will fall back to using folder level.
-- `color_mode` - The default value is `true`. When it is set  to `false`, only icons will have color.
+- `color_mode` - The default value is `true`. When it is set to `false`, only icons will have color.
 
 <details>
 <summary>Symbols in winbar</summary>
