@@ -65,7 +65,7 @@ local function bar_file_name(buf)
           conf = {}
         end
         for k, _ in pairs(conf) do
-          if k == true or k == false then
+          if type(k) ~= 'string' then
             conf[k] = nil
           end
         end
