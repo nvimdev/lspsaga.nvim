@@ -157,10 +157,12 @@ function act:send_code_action_request(main_buf, options, cb)
       end
     end
 
-    local res = self:extend_gitsing(params)
-    if res then
-      for _, action in pairs(res) do
-        table.insert(self.action_tuples, { 'gitsigns', action })
+    if config.code_action.extend_gitsing then
+      local res = self:extend_gitsing(params)
+      if res then
+        for _, action in pairs(res) do
+          table.insert(self.action_tuples, { 'gitsigns', action })
+        end
       end
     end
 
