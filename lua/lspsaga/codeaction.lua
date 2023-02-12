@@ -239,6 +239,7 @@ function act:do_code_action(num)
     number = cur_text:match('(%d+)%s+%S')
     number = tonumber(number)
   end
+  self:close_action_window()
 
   if not number then
     vim.notify('[Lspsaga] no action number choice', vim.log.levels.WARN)
@@ -263,7 +264,6 @@ function act:do_code_action(num)
   else
     self:apply_action(action, client)
   end
-  self:close_action_window()
 end
 
 function act:get_action_diff(num, main_buf)
