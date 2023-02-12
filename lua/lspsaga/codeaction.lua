@@ -157,6 +157,13 @@ function act:send_code_action_request(main_buf, options, cb)
       end
     end
 
+    local res = self:extend_gitsing(params)
+    if res then
+      for _, action in pairs(res) do
+        table.insert(self.action_tuples, { 'gitsigns', action })
+      end
+    end
+
     if #self.action_tuples == 0 then
       vim.notify('No code actions available', vim.log.levels.INFO)
       return
@@ -261,6 +268,8 @@ function act:do_code_action(num)
       end
       self:apply_action(resolved_action, client)
     end)
+  elseif action.action and type(action.action) == 'function' then
+    action.action()
   else
     self:apply_action(action, client)
   end
@@ -409,6 +418,39 @@ end
 
 function act:clean_context()
   clean_ctx()
+end
+
+function act:extend_gitsing(params)
+  local ok, gitsigns_actions = pcall(require('gitsigns').get_actions)
+  if not ok or not gitsigns_actions then
+    return
+  end
+
+  local name_to_title = function(name)
+    return name:sub(1, 1):upper() .. name:gsub('_', ' '):sub(2)
+  end
+
+  local actions = {}
+  local range_actions = { ['reset_hunk'] = true, ['stage_hunk'] = true }
+  local mode = vim.api.nvim_get_mode().mode
+  for name, action in pairs(gitsigns_actions) do
+    local title = name_to_title(name)
+    local cb = action
+    if (mode == 'v' or mode == 'V') and range_actions[name] then
+      title = title:gsub('hunk', 'selection')
+      cb = function()
+        action({ params.range.start.line, params.range['end'].line })
+      end
+    end
+    table.insert(actions, {
+      title = title,
+      action = function()
+        local bufnr = vim.uri_to_bufnr(params.textDocument.uri)
+        vim.api.nvim_buf_call(bufnr, cb)
+      end,
+    })
+  end
+  return actions
 end
 
 return setmetatable(ctx, act)

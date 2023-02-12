@@ -34,6 +34,7 @@ local default_config = {
   code_action = {
     num_shortcut = true,
     show_server_name = false,
+    extend_gitsigns = true,
     keys = {
       quit = 'q',
       exec = '<CR>',

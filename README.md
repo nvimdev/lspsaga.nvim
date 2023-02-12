@@ -266,6 +266,7 @@ Default options:
   code_action = {
     num_shortcut = true,
     show_server_name = false,
+    extend_gitsigns = true
     keys = {
       -- string | table type
       quit = "q",
@@ -274,6 +275,7 @@ Default options:
   },
 ```
 - `num_shortcut` - It is `true` by default so you can quickly run a code action by pressing its corresponding number.
+- `extend_gitsigns` show gitsings in code action.
 
 <details>
 <summary>code_action showcase</summary>
