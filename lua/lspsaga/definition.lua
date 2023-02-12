@@ -150,8 +150,13 @@ local function apply_aciton_keys(pos)
   end, opt)
 end
 
+local function get_method(index)
+  local tbl = { 'textDocument/definition', 'textDocument/typeDefinition' }
+  return tbl[index]
+end
+
 local in_process = 0
-function def:peek_definition()
+function def:peek_definition(method)
   local cur_winid = api.nvim_get_current_win()
   if in_process == cur_winid then
     vim.notify('[Lspsaga] Already have a peek_definition request please wait', vim.log.levels.WARN)
@@ -170,12 +175,13 @@ function def:peek_definition()
   fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
   local params = lsp.util.make_position_params()
+  local method_name = get_method(method)
 
-  lsp.buf_request_all(current_buf, 'textDocument/definition', params, function(results)
+  lsp.buf_request_all(current_buf, method_name, params, function(results)
     in_process = 0
     if not results or next(results) == nil then
       vim.notify(
-        '[Lspsaga] response of request method textDocument/definition is nil',
+        '[Lspsaga] response of request method ' .. method_name .. ' is nil',
         vim.log.levels.WARN
       )
       return
@@ -190,7 +196,7 @@ function def:peek_definition()
 
     if not result then
       vim.notify(
-        '[Lspsaga] response of request method textDocument/definition is nil',
+        '[Lspsaga] response of request method ' .. method_name .. ' is nil',
         vim.log.levels.WARN
       )
       return
@@ -278,8 +284,8 @@ function def:peek_definition()
 end
 
 -- override the default the defintion handler
-function def:goto_definition()
-  lsp.handlers['textDocument/definition'] = function(_, result, _, _)
+function def:goto_definition(method)
+  lsp.handlers[get_method(method)] = function(_, result, _, _)
     if not result or vim.tbl_isempty(result) then
       return
     end
@@ -306,7 +312,11 @@ function def:goto_definition()
     local width = #api.nvim_get_current_line()
     libs.jump_beacon({ res.range.start.line, res.range.start.character }, width)
   end
-  lsp.buf.definition()
+  if method == 1 then
+    lsp.buf.definition()
+  elseif method == 2 then
+    lsp.buf.type_definition()
+  end
 end
 
 def = setmetatable(def, {

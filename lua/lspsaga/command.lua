@@ -5,10 +5,16 @@ local subcommands = {
     require('lspsaga.finder'):lsp_finder()
   end,
   peek_definition = function()
-    require('lspsaga.definition'):peek_definition()
+    require('lspsaga.definition'):peek_definition(1)
   end,
   goto_definition = function()
-    require('lspsaga.definition'):goto_definition()
+    require('lspsaga.definition'):goto_definition(1)
+  end,
+  peek_type_definition = function()
+    require('lspsaga.definition'):peek_definition(2)
+  end,
+  goto_type_definition = function()
+    require('lspsaga.definition'):goto_definition(2)
   end,
   rename = function(arg)
     require('lspsaga.rename'):lsp_rename(arg)

@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2023 February 11
+*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2023 February 12
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -143,6 +143,17 @@ PACKER <HTTPS://GITHUB.COM/WBTHOMASON/PACKER.NVIM>*lspsaga.nvim-packer-<https://
     
     -- Go to definition
     keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
+    
+    -- Peek type definition
+    -- You can edit the file containing the type definition in the floating window
+    -- It also supports open/vsplit/etc operations, do refer to "definition_action_keys"
+    -- It also supports tagstack
+    -- Use <C-t> to jump back
+    keymap("n", "gt", "<cmd>Lspsaga peek_type_definition<CR>")
+    
+    -- Go to type definition
+    keymap("n","gt", "<cmd>Lspsaga goto_type_definition<CR>")
+    
     
     -- Show line diagnostics
     -- You can pass argument ++unfocus to
