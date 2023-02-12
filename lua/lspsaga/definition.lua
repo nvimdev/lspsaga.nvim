@@ -109,11 +109,6 @@ local function apply_aciton_keys(pos)
       end
 
       local link = ctx.data[index].link
-      local curbuf = api.nvim_get_current_buf()
-      if #fn.win_findbuf(curbuf) == 1 then
-        api.nvim_set_option_value('bufhidden', 'wipe', { buf = curbuf })
-      end
-
       api.nvim_win_close(curwin, true)
       vim.cmd(action .. ' ' .. link)
       api.nvim_win_set_cursor(0, { pos[1] + 1, pos[2] })
@@ -245,6 +240,11 @@ function def:peek_definition(method)
 
     node.prev = api.nvim_get_current_win()
     _, node.winid = window.create_win_with_border(content_opts, opts)
+
+    if res.wipe then
+      api.nvim_set_option_value('bufhidden', 'wipe', { buf = node.bufnr })
+    end
+
     if config.symbol_in_winbar.enable then
       api.nvim_win_set_var(node.winid, 'disable_winbar', true)
     end
