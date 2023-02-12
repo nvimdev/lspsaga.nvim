@@ -227,6 +227,7 @@ function act:apply_action(action, client)
       client.request('workspace/executeCommand', params, nil, self.enriched_ctx.bufnr)
     end
   end
+  clean_ctx()
 end
 
 function act:do_code_action(num)
@@ -263,7 +264,6 @@ function act:do_code_action(num)
     self:apply_action(action, client)
   end
   self:close_action_window()
-  clean_ctx()
 end
 
 function act:get_action_diff(num, main_buf)
