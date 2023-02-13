@@ -157,7 +157,7 @@ function act:send_code_action_request(main_buf, options, cb)
       end
     end
 
-    if config.code_action.extend_gitsign then
+    if config.code_action.extend_gitsigns then
       local res = self:extend_gitsing(params)
       if res then
         for _, action in pairs(res) do
