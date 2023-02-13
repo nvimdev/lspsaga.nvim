@@ -12,8 +12,8 @@ end
 
 local function bar_prefix()
   return {
-    prefix = '%#LspSagaWinbar',
-    sep = '%#LspSagaWinbarSep#' .. config.separator .. '%*',
+    prefix = '%#SagaWinbar',
+    sep = '%#SagaWinbarSep#' .. config.separator .. '%*',
   }
 end
 
@@ -58,9 +58,9 @@ local function bar_file_name(buf)
   for i, v in pairs(res) do
     if i == #res then
       if #data > 0 then
-        table.insert(items, '%#LspSagaWinbarFileIcon#' .. data[1] .. ' ' .. '%*')
+        table.insert(items, '%#SagaWinbarFileIcon#' .. data[1] .. ' ' .. '%*')
 
-        local ok, conf = pcall(api.nvim_get_hl_by_name, 'LspSagaWinbarFileIcon', true)
+        local ok, conf = pcall(api.nvim_get_hl_by_name, 'SagaWinbarFileIcon', true)
         if not ok then
           conf = {}
         end
@@ -72,13 +72,13 @@ local function bar_file_name(buf)
 
         api.nvim_set_hl(
           0,
-          'LspSagaWinbarFileIcon',
+          'SagaWinbarFileIcon',
           vim.tbl_extend('force', conf, {
             foreground = data[2],
           })
         )
       end
-      table.insert(items, bar.prefix .. 'File#' .. v .. '%*')
+      table.insert(items, bar.prefix .. 'FileName#' .. v .. '%*')
     else
       table.insert(
         items,

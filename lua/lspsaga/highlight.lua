@@ -1,22 +1,5 @@
 local api = vim.api
 
-local function get_colors()
-  return {
-    red = '#e95678',
-    magenta = '#b33076',
-    orange = '#FF8700',
-    yellow = '#f7bb3b',
-    green = '#afd700',
-    cyan = '#36d0e0',
-    blue = '#61afef',
-    purple = '#CBA6F7',
-    white = '#d1d4cf',
-    black = '#1c1c19',
-    gray = '#6e6b6b',
-    fg = '#f2f2bf',
-  }
-end
-
 local function theme_normal()
   local conf = api.nvim_get_hl_by_name('Normal', true)
   if conf.background then
@@ -26,36 +9,35 @@ local function theme_normal()
 end
 
 local function hi_define()
-  local colors = get_colors()
   local bg = theme_normal()
   return {
     -- general
-    TitleString = { fg = colors.fg },
-    TitleIcon = { fg = colors.red },
-    SagaBorder = { bg = bg, fg = colors.blue },
+    TitleString = { link = 'Title' },
+    TitleIcon = { link = 'Repeat' },
+    SagaBorder = { link = 'FloatBorder' },
     SagaNormal = { bg = bg },
-    SagaExpand = { fg = colors.red },
-    SagaCollapse = { fg = colors.red },
-    SagaBeacon = { bg = colors.magenta },
+    SagaExpand = { fg = '#475164' },
+    SagaCollapse = { fg = '#475164' },
+    SagaBeacon = { link = 'DiagnosticHint' },
     -- code action
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
-    ActionPreviewTitle = { fg = colors.purple, bg = bg },
+    ActionPreviewTitle = { link = 'Title' },
     CodeActionNormal = { link = 'SagaNormal' },
     CodeActionBorder = { link = 'SagaBorder' },
-    CodeActionText = { fg = colors.orange },
-    CodeActionNumber = { fg = colors.green },
+    CodeActionText = { link = 'Type' },
+    CodeActionNumber = { link = 'DiffAdd' },
     -- finder
-    FinderSelection = { fg = colors.cyan, bold = true },
-    FinderFileName = { fg = colors.white },
-    FinderCount = { link = 'Label' },
-    FinderIcon = { fg = colors.cyan },
-    FinderType = { fg = colors.purple },
+    FinderSelection = { link = '@variable' },
+    FinderFileName = { link = 'Comment' },
+    FinderCount = { link = 'Constant' },
+    FinderIcon = { link = 'Type' },
+    FinderType = { link = 'Type' },
     --finder spinner
-    FinderSpinnerTitle = { fg = colors.magenta, bold = true },
-    FinderSpinner = { fg = colors.magenta, bold = true },
+    FinderSpinnerTitle = { link = 'Statement' },
+    FinderSpinner = { link = 'Statement' },
     FinderPreviewSearch = { link = 'Search' },
-    FinderVirtText = { fg = colors.red },
+    FinderVirtText = { link = 'Number' },
     FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },
@@ -68,25 +50,25 @@ local function hi_define()
     HoverBorder = { link = 'SagaBorder' },
     -- rename
     RenameBorder = { link = 'SagaBorder' },
-    RenameNormal = { fg = colors.orange, bg = bg },
+    RenameNormal = { link = 'Statement' },
     RenameMatch = { link = 'Search' },
     -- diagnostic
     DiagnosticBorder = { link = 'SagaBorder' },
-    DiagnosticSource = { fg = 'gray' },
+    DiagnosticSource = { link = 'Comment' },
     DiagnosticNormal = { link = 'SagaNormal' },
-    DiagnosticPos = { fg = colors.gray },
-    DiagnosticWord = { fg = colors.fg },
+    DiagnosticPos = { link = 'Comment' },
+    DiagnosticWord = { link = '' },
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaNormal' },
     CallHierarchyBorder = { link = 'SagaBorder' },
-    CallHierarchyIcon = { fg = colors.purple },
-    CallHierarchyTitle = { fg = colors.red },
+    CallHierarchyIcon = { link = 'TitleIcon' },
+    CallHierarchyTitle = { link = 'Title' },
     -- lightbulb
     LspSagaLightBulb = { link = 'DiagnosticSignHint' },
     -- shadow
-    SagaShadow = { bg = colors.black },
+    SagaShadow = { link = 'FloatShadow' },
     -- Outline
-    OutlineIndent = { fg = colors.magenta },
+    OutlineIndent = { fg = '#806d9e' },
     OutlinePreviewBorder = { link = 'SagaNormal' },
     OutlinePreviewNormal = { link = 'SagaBorder' },
     -- Float term
@@ -103,5 +85,4 @@ end
 
 return {
   init_highlight = init_highlight,
-  get_colors = get_colors,
 }

@@ -64,7 +64,7 @@ local function set_local()
 end
 
 local function get_hi_prefix()
-  return 'LSOutline'
+  return 'SagaWinbar'
 end
 
 local function get_kind()

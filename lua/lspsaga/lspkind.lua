@@ -4,45 +4,44 @@ local api = vim.api
 local resolved
 
 local function init_kind()
-  local colors = require('lspsaga.highlight').get_colors()
   local kind = {
-    [1] = { 'File', ' ', colors.white },
-    [2] = { 'Module', ' ', colors.blue },
-    [3] = { 'Namespace', ' ', colors.orange },
-    [4] = { 'Package', ' ', colors.purple },
-    [5] = { 'Class', ' ', colors.purple },
-    [6] = { 'Method', ' ', colors.purple },
-    [7] = { 'Property', ' ', colors.cyan },
-    [8] = { 'Field', ' ', colors.yellow },
-    [9] = { 'Constructor', ' ', colors.blue },
-    [10] = { 'Enum', '了', colors.green },
-    [11] = { 'Interface', ' ', colors.orange },
-    [12] = { 'Function', ' ', colors.purple },
-    [13] = { 'Variable', ' ', colors.blue },
-    [14] = { 'Constant', ' ', colors.cyan },
-    [15] = { 'String', ' ', colors.green },
-    [16] = { 'Number', ' ', colors.green },
-    [17] = { 'Boolean', ' ', colors.orange },
-    [18] = { 'Array', ' ', colors.blue },
-    [19] = { 'Object', ' ', colors.orange },
-    [20] = { 'Key', ' ', colors.red },
-    [21] = { 'Null', ' ', colors.red },
-    [22] = { 'EnumMember', ' ', colors.green },
-    [23] = { 'Struct', ' ', colors.purple },
-    [24] = { 'Event', ' ', colors.purple },
-    [25] = { 'Operator', ' ', colors.green },
-    [26] = { 'TypeParameter', ' ', colors.green },
+    [1] = { 'File', ' ', 'Tag' },
+    [2] = { 'Module', ' ', 'Exception' },
+    [3] = { 'Namespace', ' ', 'Include' },
+    [4] = { 'Package', ' ', 'Label' },
+    [5] = { 'Class', ' ', 'Include' },
+    [6] = { 'Method', ' ', 'Function' },
+    [7] = { 'Property', ' ', '@property' },
+    [8] = { 'Field', ' ', '@field' },
+    [9] = { 'Constructor', ' ', '@constructor' },
+    [10] = { 'Enum', '了', '@number' },
+    [11] = { 'Interface', ' ', 'Type' },
+    [12] = { 'Function', ' ', 'Function' },
+    [13] = { 'Variable', ' ', '@variable' },
+    [14] = { 'Constant', ' ', 'Constant' },
+    [15] = { 'String', ' ', 'String' },
+    [16] = { 'Number', ' ', 'Number' },
+    [17] = { 'Boolean', ' ', 'Boolean' },
+    [18] = { 'Array', ' ', 'Type' },
+    [19] = { 'Object', ' ', 'Type' },
+    [20] = { 'Key', ' ', '' },
+    [21] = { 'Null', ' ', 'Constant' },
+    [22] = { 'EnumMember', ' ', 'Number' },
+    [23] = { 'Struct', ' ', 'Type' },
+    [24] = { 'Event', ' ', 'Constant' },
+    [25] = { 'Operator', ' ', 'Operator' },
+    [26] = { 'TypeParameter', ' ', 'Type' },
     -- ccls
-    [252] = { 'TypeAlias', ' ', colors.green },
-    [253] = { 'Parameter', ' ', colors.blue },
-    [254] = { 'StaticMethod', 'ﴂ ', colors.orange },
-    [255] = { 'Macro', ' ', colors.red },
+    [252] = { 'TypeAlias', ' ', 'Type' },
+    [253] = { 'Parameter', ' ', '@parameter' },
+    [254] = { 'StaticMethod', 'ﴂ ', 'Function' },
+    [255] = { 'Macro', ' ', 'Macro' },
     -- for completion sb microsoft!!!
-    [300] = { 'Text', ' ', colors.green },
-    [301] = { 'Snippet', ' ', colors.blue },
-    [302] = { 'Folder', ' ', colors.yellow },
-    [303] = { 'Unit', ' ', colors.cyan },
-    [304] = { 'Value', ' ', colors.blue },
+    [300] = { 'Text', ' ', 'String' },
+    [301] = { 'Snippet', ' ', '@variable' },
+    [302] = { 'Folder', ' ', '@parameter' },
+    [303] = { 'Unit', ' ', 'Number' },
+    [304] = { 'Value', ' ', '@variable' },
   }
 
   local function find_index_by_type(k)
@@ -75,27 +74,16 @@ local function init_kind()
 end
 
 local function gen_symbol_winbar_hi(kind)
-  local prefix = 'LspSagaWinbar'
-  local winbar_sep = 'LspSagaWinbarSep'
-  local colors = require('lspsaga.highlight').get_colors()
+  local prefix = 'SagaWinbar'
+  local winbar_sep = 'SagaWinbarSep'
 
   for _, v in pairs(kind) do
-    api.nvim_set_hl(0, prefix .. v[1], { fg = v[3] })
+    api.nvim_set_hl(0, prefix .. v[1], { link = v[3] })
   end
-  api.nvim_set_hl(0, winbar_sep, { fg = colors.red, default = true })
-  api.nvim_set_hl(0, prefix .. 'File', { fg = colors.fg, default = true })
-  api.nvim_set_hl(0, prefix .. 'Word', { fg = colors.white, default = true })
-  api.nvim_set_hl(0, prefix .. 'FolderName', { fg = colors.fg, default = true })
-end
-
-local function gen_outline_hi(kind)
-  for _, v in pairs(kind) do
-    local hi_name = 'LSOutline' .. v[1]
-    local ok, tbl = pcall(api.nvim_get_hl_by_name, hi_name, true)
-    if not ok or not tbl.foreground then
-      api.nvim_set_hl(0, hi_name, { fg = v[3] })
-    end
-  end
+  api.nvim_set_hl(0, winbar_sep, { fg = '#ee4866', default = true })
+  api.nvim_set_hl(0, prefix .. 'FileName', { link = 'Operator', default = true })
+  api.nvim_set_hl(0, prefix .. 'Word', { link = 'Operator', default = true })
+  api.nvim_set_hl(0, prefix .. 'FolderName', { link = 'Operator', default = true })
 end
 
 local function init_kind_hl()
@@ -104,7 +92,6 @@ local function init_kind_hl()
   end
   local kind = resolved()
   gen_symbol_winbar_hi(kind)
-  gen_outline_hi(kind)
 end
 
 local function get_kind()
