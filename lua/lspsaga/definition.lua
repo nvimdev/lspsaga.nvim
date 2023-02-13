@@ -77,7 +77,7 @@ local function get_uri_data(result)
 
   res.bufnr = vim.uri_to_bufnr(res.uri)
 
-  if not api.nvim_buf_is_valid(res.bufnr) then
+  if not api.nvim_buf_is_loaded(res.bufnr) then
     fn.bufload(res.bufnr)
     res.wipe = true
   end
@@ -228,6 +228,7 @@ function def:peek_definition(method)
       contents = {},
       enter = true,
       bufnr = res.bufnr,
+      filetype = vim.bo[current_buf].filetype,
       highlight = {
         border = 'DefinitionBorder',
         normal = 'DefinitionNormal',
