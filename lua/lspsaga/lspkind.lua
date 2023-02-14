@@ -81,9 +81,9 @@ local function gen_symbol_winbar_hi(kind)
     api.nvim_set_hl(0, prefix .. v[1], { link = v[3] })
   end
   api.nvim_set_hl(0, winbar_sep, { fg = '#ee4866', default = true })
-  api.nvim_set_hl(0, prefix .. 'FileName', { link = 'Comment', default = true })
-  api.nvim_set_hl(0, prefix .. 'Word', { link = 'Operator', default = true })
-  api.nvim_set_hl(0, prefix .. 'FolderName', { link = 'Operator', default = true })
+  api.nvim_set_hl(0, prefix .. 'FileName', { fg = '#bdbfb8', default = true })
+  api.nvim_set_hl(0, prefix .. 'Word', { fg = '#bdbfb8', default = true })
+  api.nvim_set_hl(0, prefix .. 'FolderName', { fg = '#bdbfb8', default = true })
 end
 
 local function init_kind_hl()
