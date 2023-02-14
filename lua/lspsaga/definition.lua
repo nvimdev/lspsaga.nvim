@@ -290,20 +290,28 @@ function def:goto_definition(method)
     if not result or vim.tbl_isempty(result) then
       return
     end
-    local res = get_uri_data(result)
-    if not res then
+    local res = {}
+
+    if type(result[1]) == 'table' then
+      res.uri = result[1].uri or result[1].targetUri
+      res.range = result[1].range or result[1].targetSelectionRange
+    else
+      res.uri = result.uri or result.targetUri
+      res.range = result.range or result.targetSelectionRange
+    end
+
+    if vim.tbl_isempty(res) then
       return
     end
 
     local jump_destination = vim.uri_to_fname(res.uri)
-    local current_buffer = vim.api.nvim_buf_get_name(0)
-    local is_current_buffer_modified = vim.bo.modified
+    local current_buffer = api.nvim_buf_get_name(0)
 
     -- if the current buffer is the jump destination and it has been modified
     -- then write the changes first.
     -- this is needed because if the definition is in the current buffer the
     -- jump may not go to the right place.
-    if is_current_buffer_modified and current_buffer == jump_destination then
+    if vim.bo.modified and current_buffer == jump_destination then
       vim.cmd('write')
     end
 
