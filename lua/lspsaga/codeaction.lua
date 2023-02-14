@@ -423,8 +423,13 @@ function act:clean_context()
 end
 
 function act:extend_gitsing(params)
-  local ok, gitsigns_actions = pcall(require('gitsigns').get_actions)
-  if not ok or not gitsigns_actions then
+  local ok, gitsigns = pcall(require, 'gitsigns')
+  if not ok then
+    return
+  end
+
+  local gitsigns_actions = gitsigns.get_actions()
+  if not gitsigns_actions or vim.tbl_isempty(gitsigns_actions) then
     return
   end
 
