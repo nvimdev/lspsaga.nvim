@@ -66,6 +66,7 @@ local default_config = {
       vsplit = 's',
       split = 'i',
       tabe = 't',
+      tabnew = 'r',
       quit = { 'q', '<ESC>' },
       close_in_preview = '<ESC>',
     },
