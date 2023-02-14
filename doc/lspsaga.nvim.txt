@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2023 February 13
+*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2023 February 14
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -104,7 +104,7 @@ PACKER <HTTPS://GITHUB.COM/WBTHOMASON/PACKER.NVIM>*lspsaga.nvim-packer-<https://
             require("lspsaga").setup({})
         end,
         requires = {
-            {"nvim-tree/nvim-web-devicons"}
+            {"nvim-tree/nvim-web-devicons"},
             --Please make sure you install markdown and markdown_inline parser
             {"nvim-treesitter/nvim-treesitter"}
         }
