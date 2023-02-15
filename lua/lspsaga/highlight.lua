@@ -18,6 +18,7 @@ local function hi_define()
     SagaNormal = { bg = bg },
     SagaExpand = { fg = '#475164' },
     SagaCollapse = { fg = '#475164' },
+    SagaCount = { link = 'Comment' },
     SagaBeacon = { link = 'DiagnosticHint' },
     -- code action
     ActionPreviewNormal = { link = 'SagaNormal' },
@@ -64,7 +65,7 @@ local function hi_define()
     CallHierarchyIcon = { link = 'TitleIcon' },
     CallHierarchyTitle = { link = 'Title' },
     -- lightbulb
-    LspSagaLightBulb = { link = 'DiagnosticSignHint' },
+    SagaLightBulb = { link = 'DiagnosticSignHint' },
     -- shadow
     SagaShadow = { link = 'FloatShadow' },
     -- Outline

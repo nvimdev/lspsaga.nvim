@@ -382,7 +382,7 @@ function act:action_preview(main_winid, main_buf)
   opt.col = win_conf.col[false]
 
   local max_width = math.floor(vim.o.columns * 0.6)
-  if max_width < win_conf.width then
+  if max_width < win_conf.width or win_conf.width > 50 then
     max_width = win_conf.width
   end
 

@@ -201,14 +201,13 @@ function diag:render_diagnostic_window(entry, option)
     },
   }
 
-  local increase = window.win_height_increase(content, 0.7)
-
   local max_width = math.floor(vim.o.columns * diag_conf.max_width)
   local max_len = window.get_max_content_length(content)
-
-  if max_width - max_len > 10 then
-    max_width = max_len + 5
+  if max_width - max_len > 15 then
+    max_width = max_len + 10
   end
+
+  local increase = window.win_height_increase(content, diag_conf.max_width)
 
   local opts = {
     relative = 'cursor',
