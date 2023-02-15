@@ -37,7 +37,7 @@ local function hi_define()
     FinderSpinnerTitle = { link = 'Statement' },
     FinderSpinner = { link = 'Statement' },
     FinderPreviewSearch = { link = 'Search' },
-    FinderVirtText = { link = 'Number' },
+    FinderVirtText = { link = 'Operator' },
     FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },
