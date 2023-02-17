@@ -620,12 +620,12 @@ function diag:on_insert()
     local col = api.nvim_win_get_cursor(0)[2]
     local val = max_start_col - col
     if val < 0 then
-      res.col = max_start_col
       res.row = fn.winline() + 1
     else
-      res.col = col + 25
       res.row = fn.winline()
     end
+    res.col = col + 25
+
     return res
   end
 
