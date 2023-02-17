@@ -624,7 +624,7 @@ function diag:show_diagnostics(arg, type)
   self:show(entrys, arg, type)
 end
 
-function diag:show_buf_diagnsotic(arg, type)
+function diag:show_buf_diagnostic(arg, type)
   local entrys = vim.diagnostic.get(0)
   if vim.tbl_isempty(entrys) then
     return
