@@ -615,7 +615,7 @@ function diag:on_insert()
   local col
 
   local function create_window(content)
-    local width = math.floor(vim.o.columns * 0.4)
+    local width = window.get_max_content_length(content)
     local float_opt = {
       relative = 'editor',
       width = width,
