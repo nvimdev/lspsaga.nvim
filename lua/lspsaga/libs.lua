@@ -252,7 +252,7 @@ function libs.get_client_by_cap(caps)
     end,
   }
 
-  local clients = vim.lsp.buf_get_clients()
+  local clients = lsp.get_active_clients({ bufnr = 0 })
   local client
   for _, instance in pairs(clients) do
     client = client_caps[type(caps)](instance)

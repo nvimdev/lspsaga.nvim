@@ -21,13 +21,12 @@ function act:action_callback()
 
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
-    local indent = index > 9 and '' or ' '
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
       return
     end
     if client_with_actions[2].title then
-      action_title = indent .. index .. '  ' .. client_with_actions[2].title
+      action_title = '[' .. index .. '] ' .. client_with_actions[2].title
     end
     if config.code_action.show_server_name == true then
       local name = vim.lsp.get_client_by_id(client_with_actions[1]).name
@@ -76,8 +75,9 @@ function act:action_callback()
 
   for i = 1, #contents, 1 do
     local row = i - 1
+    local col = contents[i]:find('%]')
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, 2)
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
   end
 
   -- dsiable some move keys in codeaction
@@ -178,7 +178,7 @@ function act:send_code_action_request(main_buf, options, cb)
 end
 
 function act:set_cursor()
-  local col = 4
+  local col = 1
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
   if current_line == #self.action_tuples + 1 then
@@ -340,7 +340,7 @@ function act:action_preview(main_winid, main_buf)
     self.preview_winid = nil
   end
   local line = api.nvim_get_current_line()
-  local num = line:match('(%d+)%s+%S')
+  local num = line:match('%[(%d+)%]')
   if not num then
     return
   end

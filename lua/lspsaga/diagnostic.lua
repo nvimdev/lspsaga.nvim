@@ -31,19 +31,12 @@ local function get_diagnostic_sign(type)
   return fn.sign_getdefined(prefix .. type)
 end
 
-local function capsule()
-  return {
-    left = '',
-    right = '',
-  }
-end
-
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
 ---@private
 local function get_diag_type(severity)
   local type = { 'Error', 'Warn', 'Info', 'Hint' }
-  return type[severity]
+  return severity and type[severity] or type
 end
 
 local function get_colors(hi_name)
@@ -51,18 +44,24 @@ local function get_colors(hi_name)
   return color
 end
 
+local function gen_truncate_line(width)
+  local char = '─'
+  return char:rep(math.floor(width / api.nvim_strwidth(char)))
+end
+
+local function clean_msg(msg)
+  if msg:find('%(.+%)%S$') then
+    return msg:gsub('%(.+%)%S$', '')
+  end
+  return msg
+end
+
 function diag:code_action_cb()
   if not self.bufnr or not api.nvim_buf_is_loaded(self.bufnr) then
     return
   end
 
-  local fix_title = diag_conf.custom_fix
-    or self.theme.left .. ui.code_action .. 'Fix ' .. self.theme.right
-
-  local contents = {
-    '',
-    fix_title,
-  }
+  local contents = {}
 
   for index, client_with_actions in pairs(act.action_tuples) do
     if #client_with_actions ~= 2 then
@@ -70,13 +69,15 @@ function diag:code_action_cb()
       return
     end
     if client_with_actions[2].title then
-      local action_title = index .. ' ' .. client_with_actions[2].title
+      local title = clean_msg(client_with_actions[2].title)
+      local action_title = '[[' .. index .. ']] ' .. title
       table.insert(contents, action_title)
     end
   end
 
   local win_conf = api.nvim_win_get_config(self.winid)
   local increase = window.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
+  table.insert(contents, 1, gen_truncate_line(win_conf.width))
   local start_line = api.nvim_buf_line_count(self.bufnr) + 1
   api.nvim_win_set_config(self.winid, { height = win_conf.height + increase + #contents })
 
@@ -84,16 +85,9 @@ function diag:code_action_cb()
   api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
-  if not diag_conf.custom_fix then
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticActionTitle', start_line, 4, 11)
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 0, 4)
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', start_line, 11, -1)
-  end
-
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', start_line - 1, 0, -1)
   for i = 2, #contents do
-    local row = start_line + i - 1
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionNumber', row, 0, 2)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', start_line + i - 2, 0, -1)
   end
 
   keymap('n', diag_conf.keys.go_action, function()
@@ -133,7 +127,7 @@ end
 
 function diag:do_code_action()
   local line = api.nvim_get_current_line()
-  local num = line:match('(%d+)%s%S')
+  local num = line:match('%[(%d+)%]')
   if not num then
     return
   end
@@ -157,11 +151,9 @@ end
 
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
-  local content = {
-    diag_conf.custom_msg or self.theme.left .. '  Msg ' .. self.theme.right,
-  }
   self.main_buf = api.nvim_get_current_buf()
-  local cur_word = fn.expand('<cword>')
+  local diag_type = get_diag_type(entry.severity)
+  local content = {}
 
   local source = ' '
 
@@ -187,8 +179,17 @@ function diag:render_diagnostic_window(entry, option)
       self:code_action_cb()
     end)
   end
+  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
+  local max_len = window.get_max_content_length(content)
 
-  local diag_type = get_diag_type(entry.severity)
+  if max_len < max_width then
+    max_width = max_len
+  elseif max_width - max_len > 15 then
+    max_width = max_len + 10
+  end
+
+  local increase = window.win_height_increase(content, diag_conf.max_width)
+
   local hi_name = 'Diagnostic' .. diag_type
   local content_opts = {
     contents = content,
@@ -201,14 +202,6 @@ function diag:render_diagnostic_window(entry, option)
     },
   }
 
-  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
-  local max_len = window.get_max_content_length(content)
-  if max_width - max_len > 15 then
-    max_width = max_len + 10
-  end
-
-  local increase = window.win_height_increase(content, diag_conf.max_width)
-
   local opts = {
     relative = 'cursor',
     style = 'minimal',
@@ -219,24 +212,12 @@ function diag:render_diagnostic_window(entry, option)
     focusable = true,
   }
 
-  local color = get_colors(hi_name)
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
-    opts.title = {
-      { ' ' .. cur_word, 'Diagnostic' .. diag_type .. 'Title' },
-    }
-    api.nvim_set_hl(
-      0,
-      'Diagnostic' .. diag_type .. 'Title',
-      { fg = color.foreground, default = true }
-    )
-  end
-
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
   vim.wo[self.winid].conceallevel = 2
   vim.wo[self.winid].concealcursor = 'niv'
   vim.wo[self.winid].showbreak = 'NONE'
   vim.wo[self.winid].breakindent = true
-  vim.wo[self.winid].breakindentopt = 'shift:2'
+  vim.wo[self.winid].breakindentopt = 'shift:0'
 
   local win_config = api.nvim_win_get_config(self.winid)
 
@@ -253,9 +234,6 @@ function diag:render_diagnostic_window(entry, option)
   end
 
   opts.focusable = false
-  if fn.has('nvim-0.9') == 1 then
-    opts.title = nil
-  end
 
   opts.height = opts.height + 1
   opts.width = 4
@@ -296,8 +274,8 @@ function diag:render_diagnostic_window(entry, option)
 
   for i = 1, #content + 2 do
     local virt_tbl = {}
-    if i > 2 then
-      api.nvim_buf_add_highlight(self.bufnr, -1, hi_name, i - 1, 0, -1)
+    if i == 1 then
+      api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticText', i - 1, 0, -1)
     end
 
     if not above then
@@ -324,58 +302,13 @@ function diag:render_diagnostic_window(entry, option)
       virt_text_pos = pos_char[1],
       virt_lines_above = false,
     })
-
-    if i ~= #content + 1 and i > 1 then
-      api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticText', i - 1, 0, -1)
-    end
   end
-
-  if not diag_conf.custom_msg then
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, 0, #self.theme.left)
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      0,
-      'DiagnosticMsgIcon',
-      0,
-      #self.theme.left,
-      #self.theme.left + 5
-    )
-    api.nvim_buf_add_highlight(
-      self.bufnr,
-      0,
-      'DiagnosticMsg',
-      0,
-      #self.theme.left + 5,
-      #self.theme.left + 9
-    )
-
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticTitleSymbol', 0, #self.theme.left + 9, -1)
-    api.nvim_set_hl(0, 'DiagnosticMsgIcon', {
-      background = color.foreground,
-      foreground = '#000000',
-    })
-
-    api.nvim_set_hl(0, 'DiagnosticMsg', {
-      background = color.foreground,
-      foreground = '#000000',
-    })
-
-    api.nvim_set_hl(0, 'DiagnosticTitleSymbol', {
-      foreground = color.foreground,
-    })
-  end
+  local color = get_colors(hi_name)
 
   api.nvim_set_hl(0, 'DiagnosticText', {
     foreground = color.foreground,
     default = diag_conf.text_hl_follow,
   })
-
-  if not diag_conf.custom_fix then
-    api.nvim_set_hl(0, 'DiagnosticActionTitle', {
-      background = color.foreground,
-      foreground = '#000000',
-    })
-  end
 
   api.nvim_buf_add_highlight(
     self.bufnr,
@@ -444,7 +377,6 @@ function diag:render_diagnostic_window(entry, option)
 end
 
 function diag:move_cursor(entry)
-  self.theme = capsule()
   local current_winid = api.nvim_get_current_win()
 
   api.nvim_win_call(current_winid, function()
@@ -479,13 +411,27 @@ function diag:goto_prev(opts)
   self:move_cursor(prev)
 end
 
-function diag:show(entrys, arg, type)
+local function tbl_append(t1, t2)
+  for i, v in ipairs(t2) do
+    table.insert(t1, i, v)
+  end
+end
+
+function diag:show(entrys, arg)
   local cur_buf = api.nvim_get_current_buf()
   local cur_win = api.nvim_get_current_win()
   local content = {}
   local max_width = math.floor(vim.o.columns * 0.6)
   local len = {}
+  local counts = {
+    Error = 0,
+    Warn = 0,
+    Info = 0,
+    Hint = 0,
+  }
   for _, entry in pairs(entrys) do
+    local type = get_diag_type(entry.severity)
+    counts[type] = counts[type] + 1
     local start_col = entry.end_col > entry.col and entry.col or entry.end_col
     local end_col = entry.end_col > entry.col and entry.end_col or entry.col
     local code_source =
@@ -511,6 +457,31 @@ function diag:show(entrys, arg, type)
     table.insert(content, line)
   end
 
+  local increase = window.win_height_increase(content)
+  local max_len = window.get_max_content_length(content)
+  local opt = {
+    width = max_len + 10 < max_width and max_len + 5 or max_width,
+    height = #content * 2 + increase + 2,
+    no_size_override = true,
+  }
+
+  local title_count = ''
+  local title_hi_scope = {}
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for _, i in ipairs(get_diag_type()) do
+    if counts[i] ~= 0 then
+      local start = #title_count
+      title_count = title_count .. ' ' .. i .. ': ' .. counts[i]
+      table.insert(title_hi_scope, { 'Diagnostic' .. i, start + 1, #title_count })
+    end
+  end
+
+  local title = {
+    title_count,
+    gen_truncate_line(opt.width),
+  }
+  tbl_append(content, title)
+
   local content_opt = {
     contents = content,
     filetype = 'markdown',
@@ -521,23 +492,10 @@ function diag:show(entrys, arg, type)
     },
   }
 
-  local increase = window.win_height_increase(content)
-  local max_len = window.get_max_content_length(content)
-  local opt = {
-    width = max_len + 10 < max_width and max_len + 5 or max_width,
-    height = #content * 2 + increase,
-    no_size_override = true,
-  }
-
   if arg and arg == '++unfocus' then
     opt.focusable = false
-  end
-
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
-    opt.title = {
-      { config.ui.diagnostic, 'TitleIcon' },
-      { type .. ' Diagnostic', 'TitleString' },
-    }
+  else
+    opt.focusable = true
   end
 
   self.lnum_bufnr, self.lnum_winid = window.create_win_with_border(content_opt, opt)
@@ -547,12 +505,14 @@ function diag:show(entrys, arg, type)
   vim.wo[self.lnum_winid].breakindent = true
   vim.wo[self.lnum_winid].breakindentopt = ''
 
-  local index = 0
-  for k, _ in pairs(content) do
-    if k > 1 then
-      index = index + 2
-    end
-    local diag_type = get_diag_type(entrys[k].severity)
+  for _, item in pairs(title_hi_scope) do
+    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, item[1], 0, item[2], item[3])
+  end
+  api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'Comment', 1, 0, -1)
+
+  local index = 2
+  for k, item in pairs(entrys) do
+    local diag_type = get_diag_type(item.severity)
     local hi = 'Diagnostic' .. diag_type
     local sign = get_diagnostic_sign(diag_type)[1] or {}
     local col_end = sign.text and #sign.text + 1 or 1
@@ -567,6 +527,7 @@ function diag:show(entrys, arg, type)
     )
     api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticPos', index, col_end + len[k] + 1, -1)
     api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index + 1, 2, -1)
+    index = index + 2
   end
 
   vim.keymap.set('n', '<CR>', function()
@@ -620,16 +581,16 @@ function diag:show_diagnostics(arg, type)
     return
   end
   sort_by_severity(entrys)
-  self:show(entrys, arg, type)
+  self:show(entrys, arg)
 end
 
-function diag:show_buf_diagnsotic(arg, type)
+function diag:show_buf_diagnsotic(arg)
   local entrys = vim.diagnostic.get(0)
   if vim.tbl_isempty(entrys) then
     return
   end
   sort_by_severity(entrys)
-  self:show(entrys, arg, type)
+  self:show(entrys, arg)
 end
 
 function diag:close_exist_win()

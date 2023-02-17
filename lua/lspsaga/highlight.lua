@@ -26,7 +26,7 @@ local function hi_define()
     ActionPreviewTitle = { link = 'Title' },
     CodeActionNormal = { link = 'SagaNormal' },
     CodeActionBorder = { link = 'SagaBorder' },
-    CodeActionText = { link = 'Type' },
+    CodeActionText = {},
     CodeActionNumber = { link = 'DiffAdd' },
     -- finder
     FinderSelection = { link = '@variable' },
@@ -59,6 +59,7 @@ local function hi_define()
     DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticPos = { link = 'Comment' },
     DiagnosticWord = { link = '' },
+    DiagnosticTitle = { bg = '#e38f4b', fg = '#141926' },
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaNormal' },
     CallHierarchyBorder = { link = 'SagaBorder' },
