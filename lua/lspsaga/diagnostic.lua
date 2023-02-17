@@ -610,4 +610,95 @@ function diag:close_exist_win()
   return has
 end
 
+function diag:on_insert()
+  local winid, bufnr
+  local col
+
+  local function create_window(content)
+    local width = math.floor(vim.o.columns * 0.4)
+    local float_opt = {
+      relative = 'editor',
+      width = width,
+      height = #content,
+      row = fn.winline(),
+      col = vim.o.columns - width,
+      focusable = false,
+    }
+    col = float_opt.col
+    return window.create_win_with_border({
+      contents = content,
+      winblend = 100,
+      noborder = true,
+    }, float_opt)
+  end
+
+  local function set_lines(content)
+    if bufnr and api.nvim_buf_is_loaded(bufnr) then
+      api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
+    end
+  end
+
+  local group = api.nvim_create_augroup('Lspsaga Diagnostic on insert', { clear = true })
+  api.nvim_create_autocmd('DiagnosticChanged', {
+    group = group,
+    callback = function(opt)
+      if api.nvim_get_mode().mode ~= 'i' then
+        set_lines({})
+        return
+      end
+
+      local content = {}
+      local hi = {}
+      local diagnostics = opt.data.diagnostics
+      local lnum = api.nvim_win_get_cursor(0)[1] - 1
+      for _, item in pairs(diagnostics) do
+        if item.lnum == lnum then
+          table.insert(hi, 'Diagnostic' .. get_diag_type(item.severity))
+          table.insert(content, item.message)
+        end
+      end
+
+      if #content == 0 then
+        set_lines({})
+        return
+      end
+
+      if not winid or not api.nvim_win_is_valid(winid) then
+        bufnr, winid = create_window(content)
+        vim.bo[bufnr].modifiable = true
+      else
+        set_lines(content)
+        api.nvim_win_set_config(
+          winid,
+          { relative = 'editor', height = #content, row = fn.winline(), col = col }
+        )
+      end
+
+      if bufnr and api.nvim_buf_is_loaded(bufnr) then
+        for i = 1, #hi do
+          api.nvim_buf_add_highlight(bufnr, 0, hi[i], i - 1, 0, -1)
+        end
+      end
+    end,
+  })
+
+  api.nvim_create_autocmd('ModeChanged', {
+    group = group,
+    callback = function()
+      if winid and api.nvim_win_is_valid(winid) and api.nvim_buf_line_count(bufnr) > 1 then
+        set_lines({})
+      end
+    end,
+  })
+
+  api.nvim_create_user_command('DiagnosticInsertDisable', function()
+    if winid and api.nvim_win_is_valid(winid) then
+      api.nvim_win_close(winid, true)
+      winid = nil
+      bufnr = nil
+    end
+    api.nvim_del_augroup_by_id(group)
+  end, {})
+end
+
 return setmetatable(ctx, diag)

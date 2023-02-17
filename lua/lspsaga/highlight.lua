@@ -58,8 +58,7 @@ local function hi_define()
     DiagnosticSource = { link = 'Comment' },
     DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticPos = { link = 'Comment' },
-    DiagnosticWord = { link = '' },
-    DiagnosticTitle = { bg = '#e38f4b', fg = '#141926' },
+    DiagnosticWord = {},
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaNormal' },
     CallHierarchyBorder = { link = 'SagaBorder' },

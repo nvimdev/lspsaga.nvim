@@ -16,6 +16,7 @@ local default_config = {
     kind = {},
   },
   diagnostic = {
+    on_insert = true,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
@@ -136,6 +137,10 @@ function saga.setup(opts)
 
   if saga.config.symbol_in_winbar.enable then
     require('lspsaga.symbolwinbar'):symbol_autocmd()
+  end
+
+  if saga.config.diagnostic.on_insert then
+    require('lspsaga.diagnostic'):on_insert()
   end
 end
 
