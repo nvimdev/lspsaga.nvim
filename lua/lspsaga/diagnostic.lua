@@ -612,19 +612,35 @@ end
 
 function diag:on_insert()
   local winid, bufnr
-  local col
+
+  local function get_row_col(content)
+    local res = {}
+    local curwin = api.nvim_get_current_win()
+    local max_start_col = api.nvim_win_get_width(curwin) - window.get_max_content_length(content)
+    local col = api.nvim_win_get_cursor(0)[2]
+    local val = max_start_col - col
+    if val < 0 then
+      res.col = max_start_col
+      res.row = fn.winline() + 1
+    else
+      res.col = col + 25
+      res.row = fn.winline()
+    end
+    return res
+  end
 
   local function create_window(content)
     local width = window.get_max_content_length(content)
+    local res = get_row_col(content)
     local float_opt = {
-      relative = 'editor',
+      relative = 'win',
+      win = api.nvim_get_current_win(),
       width = width,
       height = #content,
-      row = fn.winline(),
-      col = vim.o.columns - width,
+      row = res.row,
+      col = res.col,
       focusable = false,
     }
-    col = float_opt.col
     return window.create_win_with_border({
       contents = content,
       winblend = 100,
@@ -668,10 +684,15 @@ function diag:on_insert()
         vim.bo[bufnr].modifiable = true
       else
         set_lines(content)
-        api.nvim_win_set_config(
-          winid,
-          { relative = 'editor', height = #content, row = fn.winline(), col = col }
-        )
+        local curwin = api.nvim_get_current_win()
+        local res = get_row_col(content)
+        api.nvim_win_set_config(winid, {
+          relative = 'win',
+          win = curwin,
+          height = #content,
+          row = res.row,
+          col = res.col,
+        })
       end
 
       if bufnr and api.nvim_buf_is_loaded(bufnr) then
