@@ -30,8 +30,11 @@ function act:action_callback()
       action_title = indent .. index .. '  ' .. client_with_actions[2].title
     end
     if config.code_action.show_server_name == true then
-      local name = vim.lsp.get_client_by_id(client_with_actions[1]).name
-      action_title = action_title .. '  ' .. name
+      if type(client_with_actions[1]) == "string" then
+        action_title = action_title .. "  (" .. client_with_actions[1] .. ")"
+      else
+        action_title = action_title .. "  (" .. vim.lsp.get_client_by_id(client_with_actions[1]).name .. ")"
+      end
     end
     table.insert(contents, action_title)
   end
