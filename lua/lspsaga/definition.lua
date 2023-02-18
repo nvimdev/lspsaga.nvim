@@ -157,6 +157,9 @@ function def:peek_definition(method)
     vim.notify('[Lspsaga] Already have a peek_definition request please wait', vim.log.levels.WARN)
     return
   end
+  if stack_cap() > 0 then
+    clean_ctx()
+  end
   in_process = cur_winid
   local current_buf = api.nvim_get_current_buf()
   -- { prev, next,main_winid,fname, winid, bufnr}
