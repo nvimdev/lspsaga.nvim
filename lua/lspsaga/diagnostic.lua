@@ -616,15 +616,15 @@ function diag:on_insert()
   local function get_row_col(content)
     local res = {}
     local curwin = api.nvim_get_current_win()
-    local max_start_col = api.nvim_win_get_width(curwin) - window.get_max_content_length(content)
-    local col = api.nvim_win_get_cursor(0)[2]
-    local val = max_start_col - col
-    if val < 0 then
+    local max_len = window.get_max_content_length(content)
+    local tail = #api.nvim_get_current_line() + 20
+    local col = api.nvim_win_get_cursor(curwin)[2]
+    if tail + max_len >= api.nvim_win_get_width(curwin) then
       res.row = fn.winline()
     else
       res.row = fn.winline() - 1
     end
-    res.col = col + 25
+    res.col = col + 20
 
     return res
   end
@@ -643,7 +643,7 @@ function diag:on_insert()
     }
     return window.create_win_with_border({
       contents = content,
-      winblend = 80,
+      winblend = 100,
       noborder = true,
     }, float_opt)
   end
