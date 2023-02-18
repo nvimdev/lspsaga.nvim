@@ -331,10 +331,11 @@ Jumps to next diagnostic position and show a beacon highlight. Lspsaga will then
 Default options:
 ```lua
   diagnostic = {
+    on_insert = false,
+    on_insert_follow = false,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
-    on_insert = false,
      --1 is max
     max_width = 0.7,
     custom_fix = nil,
@@ -359,6 +360,7 @@ Default options:
 - `border_follow` the border highlight will follow the diagnostic type. if false it will use the
   highlight `DiagnosticBorder`.
 - `on_insert` default is false it works like the emacs helix show diagnostic in right but in line.
+- `on_insert_follow` true will follow current line. false will on top right
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.

@@ -635,6 +635,18 @@ end
 function diag:on_insert()
   local winid, bufnr
 
+  local function on_top_right(content)
+    local width = window.get_max_content_length(content)
+    local opt = {
+      relative = 'editor',
+      row = 1,
+      col = vim.o.columns - width,
+      height = #content,
+      focusable = false,
+    }
+    return opt
+  end
+
   local function get_row_col(content)
     local res = {}
     local curwin = api.nvim_get_current_win()
@@ -653,16 +665,22 @@ function diag:on_insert()
 
   local function create_window(content)
     local width = window.get_max_content_length(content)
-    local res = get_row_col(content)
-    local float_opt = {
-      relative = 'win',
-      win = api.nvim_get_current_win(),
-      width = width,
-      height = #content,
-      row = res.row,
-      col = res.col,
-      focusable = false,
-    }
+    local max_width = math.floor(vim.o.columns * 0.4)
+    local float_opt
+    if not config.diagnostic.on_insert_follow then
+      float_opt = on_top_right(content)
+    else
+      local res = get_row_col(content)
+      float_opt = {
+        relative = 'win',
+        win = api.nvim_get_current_win(),
+        height = #content,
+        row = res.row,
+        col = res.col,
+        focusable = false,
+      }
+    end
+    float_opt.width = max_width > width and width or max_width
     return window.create_win_with_border({
       contents = content,
       winblend = 100,
@@ -707,24 +725,28 @@ function diag:on_insert()
       if not winid or not api.nvim_win_is_valid(winid) then
         bufnr, winid = create_window(content)
         vim.bo[bufnr].modifiable = true
-      else
-        set_lines(content)
-        local curwin = api.nvim_get_current_win()
-        local res = get_row_col(content)
-        api.nvim_win_set_config(winid, {
-          relative = 'win',
-          win = curwin,
-          height = #content,
-          row = res.row,
-          col = res.col,
-        })
       end
-
+      set_lines(content)
       if bufnr and api.nvim_buf_is_loaded(bufnr) then
         for i = 1, #hi do
           api.nvim_buf_add_highlight(bufnr, 0, hi[i], i - 1, 0, -1)
         end
       end
+
+      if not diag_conf.on_insert_follow then
+        api.nvim_win_set_config(winid, on_top_right(content))
+        return
+      end
+
+      local curwin = api.nvim_get_current_win()
+      local res = get_row_col(content)
+      api.nvim_win_set_config(winid, {
+        relative = 'win',
+        win = curwin,
+        height = #content,
+        row = res.row,
+        col = res.col,
+      })
     end,
   })
 

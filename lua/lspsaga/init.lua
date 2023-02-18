@@ -17,6 +17,7 @@ local default_config = {
   },
   diagnostic = {
     on_insert = false,
+    on_insert_follow = false,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
