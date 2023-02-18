@@ -665,7 +665,8 @@ the `icon`. If table is passed, it will be passed as `{ icon, color }`.
 
 Thanks for everything!
 
-Mölle Lukas <https://github.com/lmllrjr> HendrikPetertj
+Scott Ming <https://github.com/scottming> Mölle Lukas
+<https://github.com/lmllrjr> HendrikPetertj
 <https://github.com/HendrikPetertje> Boja Wilytsch
 <https://github.com/bwilytsch> zhourr <https://github.com/zhourrr> Burges
 Darrion <https://github.com/ca-mantis-shrimp>
