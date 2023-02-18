@@ -463,7 +463,7 @@ function diag:show(entrys, arg)
   local actual_height = #content * 2 + increase + 2
   local opt = {
     width = max_len + 10 < max_width and max_len + 5 or max_width,
-    height = actual_height > max_height and max_height and actual_height,
+    height = actual_height > max_height and max_height or actual_height,
     no_size_override = true,
   }
 
