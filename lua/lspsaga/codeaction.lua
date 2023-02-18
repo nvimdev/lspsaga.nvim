@@ -389,7 +389,7 @@ function act:action_preview(main_winid, main_buf)
       opt.row = win_conf.row[false] - win_conf.height - 2
       opt.anchor = win_conf.anchor
     else
-      opt.row = win_conf.row[false]
+      opt.row = win_conf.row[false] + 2
       opt.anchor = win_conf.anchor:gsub('S', 'N')
     end
   end
