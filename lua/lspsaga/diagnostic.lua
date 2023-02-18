@@ -421,7 +421,6 @@ function diag:show(entrys, arg)
   local cur_buf = api.nvim_get_current_buf()
   local cur_win = api.nvim_get_current_win()
   local content = {}
-  local max_width = math.floor(vim.o.columns * 0.6)
   local len = {}
   local counts = {
     Error = 0,
@@ -461,8 +460,9 @@ function diag:show(entrys, arg)
   local max_len = window.get_max_content_length(content)
   local max_height = math.floor(vim.o.lines * 0.5)
   local actual_height = #content * 2 + increase + 2
+  local max_width = math.floor(vim.o.columns * 0.5)
   local opt = {
-    width = max_len + 10 < max_width and max_len + 5 or max_width,
+    width = max_len + 8 < max_width and max_len + 5 or max_width,
     height = actual_height > max_height and max_height or actual_height,
     no_size_override = true,
   }

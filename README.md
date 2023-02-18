@@ -191,7 +191,6 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
   request_timeout = 2000,
 ```
 
-
 ## :Lspsaga lsp_finder
 
 A `finder` to show the defintion, reference and implementation (only shown when current hovered word is a function, a type, a class, or an interface).
@@ -220,14 +219,14 @@ Default options:
 <details>
 <summary>lsp_finder showcase</summary>
 
-<img
-src="https://user-images.githubusercontent.com/41671631/215719819-4bfe6e86-fecc-4dc0-bac0-837c0bdeb349.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719819-4bfe6e86-fecc-4dc0-bac0-837c0bdeb349.gif" height=80% width=80%/>
 </details>
 
 
 ## :Lspsaga peek_definition
 
-There are two commands, `:Lspsaga peek_definition` and `:Lspsaga goto_definition`. The `peek_definition` command works like the VSCode command of the same name, which shows the target file in an editable floating window.
+There are two commands, `:Lspsaga peek_definition` and `:Lspsaga goto_definition`. The `peek_definition`
+command works like the VSCode command of the same name, which shows the target file in an editable floating window.
 
 Default options:
 ```lua
@@ -250,8 +249,7 @@ The steps demonstrated in this showcase are:
 - Pressing `<C-c>o` to jump to the file in the floating window
 - Lspsaga shows a beacon highlight after jumping to the file
 
-<img
-src="https://user-images.githubusercontent.com/41671631/215719806-0dea0248-4a2c-45df-a258-43a4ba207a43.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/215719806-0dea0248-4a2c-45df-a258-43a4ba207a43.gif" height=80% width=80%/>
 </details>
 
 ## :Lspsaga goto_definition
@@ -310,7 +308,8 @@ Default options:
 
 ## :Lspasga hover_doc
 
-You should install the [treesitter](https://github.com/nvim-treesitter/nvim-treesitter) markdown parser so Lspsaga can use it to render the hover window.
+You should install the [treesitter](https://github.com/nvim-treesitter/nvim-treesitter) markdown and markdown_line parser.
+Lspsaga can use it to render the hover window.
 You can press the keyboard shortcut for `:Lspsaga hover_doc` twice to enter the hover window.
 
 <details>
@@ -335,6 +334,7 @@ Default options:
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
+    on_insert = false,
      --1 is max
     max_width = 0.7,
     custom_fix = nil,
@@ -358,6 +358,7 @@ Default options:
   text color
 - `border_follow` the border highlight will follow the diagnostic type. if false it will use the
   highlight `DiagnosticBorder`.
+- `on_insert` default is false it works like the emacs helix show diagnostic in right but in line.
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.
@@ -369,19 +370,21 @@ require("lspsaga.diagnostic"):goto_prev({ severity = vim.diagnostic.severity.ERR
 ```
 
 <details>
-<summary>diagnostic_jump_next showcase</summary>
+<summary> showcase</summary>
 
 The steps demonstrated in this showcase are:
 - Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
 - Pressing the number `2` to execute the code action without needing to enter the floating window
 
-<img src="https://user-images.githubusercontent.com/41671631/215725463-36065017-91b6-401a-b48b-764179eaeb5e.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/219829469-ea0e6367-a8ad-4e07-b890-0115848bbc9f.gif" height=80% width=80%/>
 
 - If you want to see the code action, you can use `<C-w>w` to enter the floating window.
 - Press `g` to go to the action line and see the code action preview.
 - Press `o` to execute the action.
 
+`on_insert` is true
 
+<img src="https://user-images.githubusercontent.com/41671631/219686416-e2f31d23-1427-4f05-8032-92a14aa103cd.gif" height=80% width=80%/>
 </details>
 
 ## :Lspsaga show_diagnostics
@@ -393,7 +396,7 @@ The steps demonstrated in this showcase are:
 <details>
 <summary>show_diagnostics showcase</summary>
 
-<img src="https://user-images.githubusercontent.com/41671631/215719847-c09e84c0-c19a-4365-bd16-87800e3685cc.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/219829470-9b49a6c2-5ded-4b3f-ab38-96cce32d0435.gif" height=80% width=80%/>
 </details>
 
 ## :Lspsaga rename
@@ -552,18 +555,14 @@ after jump from float window there will show beacon to remind you where the curs
 Default UI options
 ```lua
   ui = {
-    -- Currently, only the round theme exists
-    theme = "round",
     -- This option only works in Neovim 0.9
     title = true,
     -- Border type can be single, double, rounded, solid, shadow.
-    border = "solid",
+    border = "single",
     winblend = 0,
     expand = "",
     collapse = "",
-    preview = " ",
     code_action = "💡",
-    diagnostic = "🐞",
     incoming = " ",
     outgoing = " ",
     hover = ' ',
@@ -575,12 +574,18 @@ Default UI options
 
 All highlight groups can be found in [highlight.lua](./lua/lspsaga/highlight.lua).
 
+`require('lspsaga.kind').get_kind_group` it will return all the SagaWinbar + kind name group . also 
+include `SagaWinbarFileName SagaWinbarFileIcon SagaWinbarFolderName SagaWinbarSep`.these groups is 
+special. so if you want use this api to custom the highlight. you need dealwith these 4 groups the
+last item is `SagaWinbarSep`.
+
+
 # Custom Kind
 
 Modify `ui.kind` to change the icons of the kinds.
 
 All kinds used in Lspsaga are defined in [lspkind.lua](./lua/lspsaga/lspkind.lua).
-The key in `ui.kind` is the kind name, and the value can either be a string or a table. If a string is passed, it is setting the `icon`. If table is passed, it will be passed as `{ icon, color }`.
+The key in `ui.kind` is the kind name, and the value can either be a string or a table. If a string is passed, it is setting the `icon`. If table is passed, it will be passed as `{ icon, highlight group }`.
 
 # Backers
 Thanks for everything!

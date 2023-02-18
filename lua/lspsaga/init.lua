@@ -16,7 +16,7 @@ local default_config = {
     kind = {},
   },
   diagnostic = {
-    on_insert = true,
+    on_insert = false,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
