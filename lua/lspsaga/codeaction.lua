@@ -16,6 +16,13 @@ local function clean_ctx()
   end
 end
 
+local function clean_msg(msg)
+  if msg:find('%(.+%)%S$') then
+    return msg:gsub('%(.+%)%S$', '')
+  end
+  return msg
+end
+
 function act:action_callback()
   local contents = {}
 
@@ -26,11 +33,17 @@ function act:action_callback()
       return
     end
     if client_with_actions[2].title then
-      action_title = '[' .. index .. '] ' .. client_with_actions[2].title
+      action_title = '[' .. index .. '] ' .. clean_msg(client_with_actions[2].title)
     end
     if config.code_action.show_server_name == true then
-      local name = vim.lsp.get_client_by_id(client_with_actions[1]).name
-      action_title = action_title .. '  ' .. name
+      if type(client_with_actions[1]) == 'string' then
+        action_title = action_title .. '  (' .. client_with_actions[1] .. ')'
+      else
+        action_title = action_title
+          .. '  ('
+          .. vim.lsp.get_client_by_id(client_with_actions[1]).name
+          .. ')'
+      end
     end
     table.insert(contents, action_title)
   end
@@ -290,6 +303,7 @@ function act:get_action_diff(num, main_buf)
     and vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
   then
     local results = lsp.buf_request_sync(main_buf, 'codeAction/resolve', action, 1000)
+    ---@diagnostic disable-next-line: need-check-nil
     action = results[client.id].result
     if not action then
       return

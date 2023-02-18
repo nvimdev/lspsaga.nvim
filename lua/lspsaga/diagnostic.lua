@@ -620,9 +620,9 @@ function diag:on_insert()
     local col = api.nvim_win_get_cursor(0)[2]
     local val = max_start_col - col
     if val < 0 then
-      res.row = fn.winline() + 1
-    else
       res.row = fn.winline()
+    else
+      res.row = fn.winline() - 1
     end
     res.col = col + 25
 
@@ -643,7 +643,7 @@ function diag:on_insert()
     }
     return window.create_win_with_border({
       contents = content,
-      winblend = 100,
+      winblend = 80,
       noborder = true,
     }, float_opt)
   end
@@ -669,8 +669,11 @@ function diag:on_insert()
       local lnum = api.nvim_win_get_cursor(0)[1] - 1
       for _, item in pairs(diagnostics) do
         if item.lnum == lnum then
-          table.insert(hi, 'Diagnostic' .. get_diag_type(item.severity))
-          table.insert(content, item.message)
+          hi[#hi + 1] = 'Diagnostic' .. get_diag_type(item.severity)
+          if item.message:find('\n') then
+            item.message = item.message:gusb('\n', '')
+          end
+          content[#content + 1] = item.message
         end
       end
 
@@ -706,7 +709,7 @@ function diag:on_insert()
   api.nvim_create_autocmd('ModeChanged', {
     group = group,
     callback = function()
-      if winid and api.nvim_win_is_valid(winid) and api.nvim_buf_line_count(bufnr) > 1 then
+      if winid and api.nvim_win_is_valid(winid) then
         set_lines({})
       end
     end,
