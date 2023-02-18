@@ -1,4 +1,4 @@
-```
+g``
                                  __
                                 / /________  _________ _____ _____ _
                                / / ___/ __ \/ ___/ __ `/ __ `/ __ `/
@@ -267,7 +267,7 @@ Default options:
   code_action = {
     num_shortcut = true,
     show_server_name = false,
-    extend_gitsigns = true
+    extend_gitsigns = true,
     keys = {
       -- string | table type
       quit = "q",
