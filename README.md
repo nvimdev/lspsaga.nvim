@@ -586,6 +586,7 @@ The key in `ui.kind` is the kind name, and the value can either be a string or a
 # Backers
 Thanks for everything!
 
+[Scott Ming](https://github.com/scottming)
 [@Möller Lukas](https://github.com/lmllrjr)
 [@HendrikPetertje](https://github.com/HendrikPetertje)
 [@Bojan Wilytsch](https://github.com/bwilytsch)
