@@ -642,6 +642,7 @@ function diag:on_insert()
       row = 1,
       col = vim.o.columns - width,
       height = #content,
+      width = width,
       focusable = false,
     }
     return opt
@@ -665,7 +666,6 @@ function diag:on_insert()
 
   local function create_window(content)
     local width = window.get_max_content_length(content)
-    local max_width = math.floor(vim.o.columns * 0.4)
     local float_opt
     if not config.diagnostic.on_insert_follow then
       float_opt = on_top_right(content)
@@ -674,13 +674,13 @@ function diag:on_insert()
       float_opt = {
         relative = 'win',
         win = api.nvim_get_current_win(),
+        width = width,
         height = #content,
         row = res.row,
         col = res.col,
         focusable = false,
       }
     end
-    float_opt.width = max_width > width and width or max_width
     return window.create_win_with_border({
       contents = content,
       winblend = 100,
@@ -710,6 +710,7 @@ function diag:on_insert()
       for _, item in pairs(diagnostics) do
         if item.lnum == lnum then
           hi[#hi + 1] = 'Diagnostic' .. get_diag_type(item.severity)
+          -- print(item.message)
           if item.message:find('\n') then
             item.message = item.message:gsub('\n', '')
           end
