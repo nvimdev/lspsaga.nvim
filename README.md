@@ -384,9 +384,14 @@ The steps demonstrated in this showcase are:
 - Press `g` to go to the action line and see the code action preview.
 - Press `o` to execute the action.
 
-`on_insert` is true
+`on_insert` is true, `on_insert_follow` is true
 
 <img src="https://user-images.githubusercontent.com/41671631/219686416-e2f31d23-1427-4f05-8032-92a14aa103cd.gif" height=80% width=80%/>
+
+`on_insert_follow` is false
+
+<img src="https://user-images.githubusercontent.com/41671631/219831848-ee61b642-97ce-4ae3-be47-713f89b839bd.gif" height=80% width=80%/>
+
 </details>
 
 ## :Lspsaga show_diagnostics
