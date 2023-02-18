@@ -459,9 +459,11 @@ function diag:show(entrys, arg)
 
   local increase = window.win_height_increase(content)
   local max_len = window.get_max_content_length(content)
+  local max_height = math.floor(vim.o.lines * 0.5)
+  local actual_height = #content * 2 + increase + 2
   local opt = {
     width = max_len + 10 < max_width and max_len + 5 or max_width,
-    height = #content * 2 + increase + 2,
+    height = actual_height > max_height and max_height and actual_height,
     no_size_override = true,
   }
 
@@ -492,10 +494,30 @@ function diag:show(entrys, arg)
     },
   }
 
+  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete' }
   if arg and arg == '++unfocus' then
     opt.focusable = false
+    close_autocmds[#close_autocmds] = 'BufLeave'
   else
     opt.focusable = true
+    api.nvim_create_autocmd('BufEnter', {
+      callback = function(args)
+        if not self.lnum_winid or not api.nvim_win_is_valid(self.lnum_winid) then
+          pcall(api.nvim_del_autocmd, args.id)
+        end
+        local curbuf = api.nvim_get_current_buf()
+        if
+          curbuf ~= self.lnum_bufnr
+          and self.lnum_winid
+          and api.nvim_win_is_valid(self.lnum_winid)
+        then
+          api.nvim_win_close(self.lnum_winid, true)
+          self.lnum_winid = nil
+          self.lnum_bufnr = nil
+          pcall(api.nvim_del_autocmd, args.id)
+        end
+      end,
+    })
   end
 
   self.lnum_bufnr, self.lnum_winid = window.create_win_with_border(content_opt, opt)
@@ -537,6 +559,8 @@ function diag:show(entrys, arg)
       local lnum, col = unpack(vim.split(data, ':', { trimempty = true }))
       if lnum and col then
         api.nvim_win_close(self.lnum_winid, true)
+        self.lnum_winid = nil
+        self.lnum_bufnr = nil
         api.nvim_set_current_win(cur_win)
         api.nvim_win_set_cursor(cur_win, { tonumber(lnum), tonumber(col) })
         local width = #api.nvim_get_current_line()
@@ -544,8 +568,6 @@ function diag:show(entrys, arg)
       end
     end
   end, { buffer = self.lnum_bufnr, nowait = true, silent = true })
-
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'BufLeave' }
 
   vim.defer_fn(function()
     libs.close_preview_autocmd(cur_buf, self.lnum_winid, close_autocmds)
@@ -584,7 +606,7 @@ function diag:show_diagnostics(arg, type)
   self:show(entrys, arg)
 end
 
-function diag:show_buf_diagnsotic(arg)
+function diag:show_buf_diagnostic(arg)
   local entrys = vim.diagnostic.get(0)
   if vim.tbl_isempty(entrys) then
     return
