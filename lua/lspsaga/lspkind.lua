@@ -69,21 +69,51 @@ local function get_kind()
   return kind
 end
 
-local function init_kind_hl()
+local function other_groups()
   local prefix = 'SagaWinbar'
-  local winbar_sep = 'SagaWinbarSep'
+  return { prefix .. 'Filename', prefix .. 'FolderName' }
+end
 
+local function get_kind_group()
+  local prefix = 'SagaWinbar'
+  local res = {}
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for _, item in pairs(get_kind()) do
+    res[#res + 1] = prefix .. item[1]
+  end
+  res = vim.list_extend(res, other_groups())
+  res[#res + 1] = 'SagaWinbarFileIcon'
+  res[#res + 1] = 'SagaWinbarSep'
+  return res
+end
+
+local function find_kind_group(name)
   ---@diagnostic disable-next-line: param-type-mismatch
   for _, v in pairs(get_kind()) do
-    api.nvim_set_hl(0, prefix .. v[1], { link = v[3] })
+    if name:find(v[1]) then
+      return v[3]
+    end
   end
-  api.nvim_set_hl(0, winbar_sep, { fg = '#ee4866', default = true })
-  api.nvim_set_hl(0, prefix .. 'FileName', { fg = '#bdbfb8', default = true })
-  api.nvim_set_hl(0, prefix .. 'Word', { fg = '#bdbfb8', default = true })
-  api.nvim_set_hl(0, prefix .. 'FolderName', { fg = '#bdbfb8', default = true })
+end
+
+local function init_kind_hl()
+  local others = other_groups()
+  local tbl = get_kind_group()
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for i, v in pairs(tbl) do
+    if vim.tbl_contains(others, v) then
+      api.nvim_set_hl(0, v, { fg = '#bdbfb8', default = true })
+    elseif i == #tbl then
+      api.nvim_set_hl(0, v, { fg = '#ee4866', default = true })
+    else
+      local group = find_kind_group(v)
+      api.nvim_set_hl(0, v, { link = group, default = true })
+    end
+  end
 end
 
 return {
   init_kind_hl = init_kind_hl,
   get_kind = get_kind,
+  get_kind_group = get_kind_group,
 }

@@ -671,7 +671,7 @@ function diag:on_insert()
         if item.lnum == lnum then
           hi[#hi + 1] = 'Diagnostic' .. get_diag_type(item.severity)
           if item.message:find('\n') then
-            item.message = item.message:gusb('\n', '')
+            item.message = item.message:gsub('\n', '')
           end
           content[#content + 1] = item.message
         end
