@@ -606,7 +606,7 @@ function finder:set_cursor()
   api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', actual_line - 1, 4 + #icon, -1)
 end
 
-local function create_preview_window(finder_winid, main_win, main_buf)
+local function create_preview_window(finder_winid, main_win)
   if not finder_winid or not api.nvim_win_is_valid(finder_winid) then
     return
   end
@@ -621,9 +621,11 @@ local function create_preview_window(finder_winid, main_win, main_buf)
   opts.col = winconfig.col[false] + winconfig.width + 2
   opts.row = winconfig.row[false]
   opts.height = winconfig.height
-  local max_width = api.nvim_win_get_width(main_win) - opts.col - 4
-  local textwidth = vim.bo[main_buf].textwidth == 0 and 80 or vim.bo[main_buf].textwidth
-  opts.width = max_width > textwidth and textwidth or max_width
+  local max_width = api.nvim_win_get_width(main_win) - opts.col
+  opts.width = max_width - 10 > 0 and max_width - 10 or max_width
+  if opts.width <= 0 then
+    return
+  end
 
   local rtop = window.combine_char()['righttop'][config.ui.border]
   local rbottom = window.combine_char()['rightbottom'][config.ui.border]
@@ -660,8 +662,11 @@ function finder:open_preview()
   local data = self.short_link[current_line]
 
   if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
-    self.preview_bufnr, self.preview_winid =
-      create_preview_window(self.winid, self.main_win, self.main_buf)
+    self.preview_bufnr, self.preview_winid = create_preview_window(self.winid, self.main_win)
+  end
+
+  if not self.preview_winid then
+    return
   end
 
   if data.content then
