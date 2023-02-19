@@ -649,12 +649,6 @@ function diag:on_insert()
 
   local function on_top_right(content)
     local width = window.get_max_content_length(content)
-    print(
-      width,
-      vim.o.columns,
-      math.floor(vim.o.columns * 0.8),
-      width >= math.floor(vim.o.columns * 0.8)
-    )
     if width >= math.floor(vim.o.columns * 0.75) then
       width = math.floor(vim.o.columns * 0.5)
     end
@@ -750,7 +744,6 @@ function diag:on_insert()
       for _, item in pairs(diagnostics) do
         if item.lnum == lnum then
           hi[#hi + 1] = 'Diagnostic' .. get_diag_type(item.severity)
-          -- print(item.message)
           if item.message:find('\n') then
             item.message = item.message:gsub('\n', '')
           end
