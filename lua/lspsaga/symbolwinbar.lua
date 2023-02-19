@@ -366,7 +366,7 @@ function symbar:register_events(buf)
     desc = 'Lspsaga symbols render and request',
   })
 
-  api.nvim_create_autocmd({ 'TextChanged', 'InsertLeave' }, {
+  api.nvim_create_autocmd('InsertLeave', {
     group = augroup,
     buffer = buf,
     callback = function()
