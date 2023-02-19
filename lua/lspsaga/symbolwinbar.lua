@@ -389,6 +389,16 @@ function symbar:register_events(buf)
   })
 end
 
+local function match_ignore(buf)
+  local fname = api.nvim_buf_get_name(buf)
+  for _, pattern in pairs(config.ignore_patterns) do
+    if fname:find(pattern) then
+      return true
+    end
+  end
+  return false
+end
+
 function symbar:symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
@@ -419,6 +429,11 @@ function symbar:symbol_autocmd()
           bar_prefix().prefix .. ' #',
           { scope = 'local', win = winid }
         )
+      end
+
+      --ignored after folder file prefix set
+      if match_ignore(opt.buf) then
+        return
       end
 
       if not self[opt.buf] then

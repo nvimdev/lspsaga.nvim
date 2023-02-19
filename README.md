@@ -510,6 +510,7 @@ Default options:
   symbol_in_winbar = {
     enable = true,
     separator = " ",
+    ignore_patterns={},
     hide_keyword = true,
     show_file = true,
     folder_level = 2,
@@ -521,6 +522,8 @@ Default options:
 - `folder_level` only works when `show_file` is `true`.
 - `respect_root` will respect the LSP's root. If this is `true`, Lspsaga will ignore the `folder_level` option. If no LSP client is being used, Lspsaga will fall back to using folder level.
 - `color_mode` - The default value is `true`. When it is set to `false`, only icons will have color.
+- `ignore_patterns` table type when fileanme matched the pattern will ignore render symbols. if
+  show_file is true. the file name will still set.
 
 <details>
 <summary>Symbols in winbar</summary>

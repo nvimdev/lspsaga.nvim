@@ -87,6 +87,7 @@ local default_config = {
   },
   symbol_in_winbar = {
     enable = true,
+    ignore_patterns = {},
     separator = ' ',
     hide_keyword = true,
     show_file = true,
