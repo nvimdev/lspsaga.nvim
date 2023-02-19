@@ -10,19 +10,19 @@ local default_config = {
     expand = '',
     collapse = '',
     code_action = '💡',
-    diagnostic = '🐞',
     incoming = ' ',
     outgoing = ' ',
     hover = ' ',
     kind = {},
   },
   diagnostic = {
+    on_insert = true,
+    on_insert_follow = false,
+    insert_winblend = 0,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
     max_width = 0.7,
-    custom_fix = nil,
-    custom_msg = nil,
     text_hl_follow = false,
     border_follow = true,
     keys = {
@@ -34,7 +34,7 @@ local default_config = {
   code_action = {
     num_shortcut = true,
     show_server_name = false,
-    extend_gitsigns = true,
+    extend_gitsigns = false,
     keys = {
       quit = 'q',
       exec = '<CR>',
@@ -88,6 +88,7 @@ local default_config = {
   },
   symbol_in_winbar = {
     enable = true,
+    ignore_patterns = {},
     separator = ' ',
     hide_keyword = true,
     show_file = true,
@@ -140,6 +141,10 @@ function saga.setup(opts)
 
   if saga.config.symbol_in_winbar.enable then
     require('lspsaga.symbolwinbar'):symbol_autocmd()
+  end
+
+  if saga.config.diagnostic.on_insert then
+    require('lspsaga.diagnostic'):on_insert()
   end
 end
 

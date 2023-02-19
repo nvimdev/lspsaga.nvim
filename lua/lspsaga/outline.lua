@@ -64,7 +64,7 @@ local function set_local()
 end
 
 local function get_hi_prefix()
-  return 'LSOutline'
+  return 'SagaWinbar'
 end
 
 local function get_kind()
@@ -252,6 +252,7 @@ function ot:expand_collapse()
     api.nvim_buf_add_highlight(
       self.bufnr,
       0,
+      ---@diagnostic disable-next-line: need-check-nil
       prefix .. kind[node.data[1].kind][1],
       curline - 1,
       5,
@@ -277,6 +278,7 @@ function ot:expand_collapse()
   api.nvim_buf_add_highlight(
     self.bufnr,
     0,
+    ---@diagnostic disable-next-line: need-check-nil
     prefix .. kind[node.data[1].kind][1],
     curline - 1,
     5,
@@ -469,7 +471,7 @@ function ot:render_outline(buf, symbols)
   local res = parse_symbols(buf, symbols)
   self.data = res
   local lines = {}
-  local kind = get_kind()
+  local kind = get_kind() or {}
   local fname = libs.get_path_info(buf, 1)
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
   ---@diagnostic disable-next-line: need-check-nil
@@ -480,7 +482,8 @@ function ot:render_outline(buf, symbols)
   for k, v in pairs(res) do
     local scope = {}
     local indent_with_icon = '  ' .. config.ui.collapse
-    insert(lines, indent_with_icon .. ' ' .. kind[k][1])
+    insert(lines, indent_with_icon .. ' ' .. kind[k][1] .. ':' .. #v.data)
+    scope['SagaCount'] = { #indent_with_icon + #kind[k][1] + 1, -1 }
     scope['SagaCollapse'] = { 0, #indent_with_icon }
     scope[prefix .. kind[k][1]] = { #indent_with_icon, -1 }
     insert(hi, scope)

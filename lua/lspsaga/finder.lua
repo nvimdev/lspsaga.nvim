@@ -367,7 +367,7 @@ function finder:render_finder_result()
   end
   winline = fn.winline()
   opt.row = winline + 1
-  opt.col = 10
+  opt.col = 8
 
   local side_char = window.border_chars()['top'][config.ui.border]
   local content_opts = {

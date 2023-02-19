@@ -2,7 +2,7 @@ if vim.g.lspsaga_version then
   return
 end
 
-vim.g.lspsaga_version = '0.2.6'
+vim.g.lspsaga_version = '0.2.7'
 
 vim.api.nvim_create_user_command('Lspsaga', function(args)
   require('lspsaga.command').load_command(unpack(args.fargs))
@@ -16,3 +16,7 @@ end, {
     end, list)
   end,
 })
+
+vim.api.nvim_create_user_command('DiagnsoticInsertEnable', function()
+  require('lspsaga.diagnostic'):on_insert()
+end, {})

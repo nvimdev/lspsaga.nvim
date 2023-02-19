@@ -29,7 +29,7 @@ local subcommands = {
     require('lspsaga.diagnostic'):show_diagnostics(arg, 'line')
   end,
   show_buf_diagnostics = function()
-    require('lspsaga.diagnostic'):show_buf_diagnostic(arg, 'buffer')
+    require('lspsaga.diagnostic'):show_buf_diagnostic(arg)
   end,
   diagnostic_jump_next = function()
     require('lspsaga.diagnostic'):goto_next()

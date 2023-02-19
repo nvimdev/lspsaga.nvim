@@ -16,22 +16,34 @@ local function clean_ctx()
   end
 end
 
+local function clean_msg(msg)
+  if msg:find('%(.+%)%S$') then
+    return msg:gsub('%(.+%)%S$', '')
+  end
+  return msg
+end
+
 function act:action_callback()
   local contents = {}
 
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
-    local indent = index > 9 and '' or ' '
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
       return
     end
     if client_with_actions[2].title then
-      action_title = indent .. index .. '  ' .. client_with_actions[2].title
+      action_title = '[' .. index .. '] ' .. clean_msg(client_with_actions[2].title)
     end
     if config.code_action.show_server_name == true then
-      local name = vim.lsp.get_client_by_id(client_with_actions[1]).name
-      action_title = action_title .. '  ' .. name
+      if type(client_with_actions[1]) == 'string' then
+        action_title = action_title .. '  (' .. client_with_actions[1] .. ')'
+      else
+        action_title = action_title
+          .. '  ('
+          .. vim.lsp.get_client_by_id(client_with_actions[1]).name
+          .. ')'
+      end
     end
     table.insert(contents, action_title)
   end
@@ -76,8 +88,9 @@ function act:action_callback()
 
   for i = 1, #contents, 1 do
     local row = i - 1
+    local col = contents[i]:find('%]')
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, 2)
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
   end
 
   -- dsiable some move keys in codeaction
@@ -178,7 +191,7 @@ function act:send_code_action_request(main_buf, options, cb)
 end
 
 function act:set_cursor()
-  local col = 4
+  local col = 1
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
   if current_line == #self.action_tuples + 1 then
@@ -290,6 +303,7 @@ function act:get_action_diff(num, main_buf)
     and vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
   then
     local results = lsp.buf_request_sync(main_buf, 'codeAction/resolve', action, 1000)
+    ---@diagnostic disable-next-line: need-check-nil
     action = results[client.id].result
     if not action then
       return
@@ -340,7 +354,7 @@ function act:action_preview(main_winid, main_buf)
     self.preview_winid = nil
   end
   local line = api.nvim_get_current_line()
-  local num = line:match('(%d+)%s+%S')
+  local num = line:match('%[(%d+)%]')
   if not num then
     return
   end
@@ -375,14 +389,14 @@ function act:action_preview(main_winid, main_buf)
       opt.row = win_conf.row[false] - win_conf.height - 2
       opt.anchor = win_conf.anchor
     else
-      opt.row = win_conf.row[false]
+      opt.row = win_conf.row[false] + 2
       opt.anchor = win_conf.anchor:gsub('S', 'N')
     end
   end
   opt.col = win_conf.col[false]
 
   local max_width = math.floor(vim.o.columns * 0.6)
-  if max_width < win_conf.width then
+  if max_width < win_conf.width or win_conf.width > 50 then
     max_width = win_conf.width
   end
 

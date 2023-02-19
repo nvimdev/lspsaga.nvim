@@ -283,7 +283,7 @@ function M.get_max_content_length(contents)
   })
   local cells = {}
   for _, v in pairs(contents) do
-    table.insert(cells, api.nvim_strwidth(v))
+    table.insert(cells, #v)
   end
   table.sort(cells)
   return cells[#cells]
