@@ -417,7 +417,7 @@ local function tbl_append(t1, t2)
   end
 end
 
-function diag:show(entrys, arg)
+function diag:show(entrys, dtype, arg)
   local cur_buf = api.nvim_get_current_buf()
   local cur_win = api.nvim_get_current_win()
   local content = {}
@@ -467,8 +467,20 @@ function diag:show(entrys, arg)
     no_size_override = true,
   }
 
-  local title_count = ''
+  local function dtype_title()
+    local pos = api.nvim_win_get_cursor(cur_win)
+    if dtype == 'cursor' then
+      return 'Ln: ' .. pos[1] .. ' Col: ' .. pos[2]
+    elseif dtype == 'line' then
+      return 'Ln: ' .. pos[1]
+    else
+      return 'Buffer: ' .. cur_buf
+    end
+  end
+
+  local title_count = dtype_title()
   local title_hi_scope = {}
+  title_hi_scope[#title_hi_scope + 1] = { 'DiagnosticHead', 0, #title_count }
   ---@diagnostic disable-next-line: param-type-mismatch
   for _, i in ipairs(get_diag_type()) do
     if counts[i] ~= 0 then
@@ -603,7 +615,7 @@ function diag:show_diagnostics(arg, type)
     return
   end
   sort_by_severity(entrys)
-  self:show(entrys, arg)
+  self:show(entrys, type, arg)
 end
 
 function diag:show_buf_diagnostic(arg)
@@ -612,7 +624,7 @@ function diag:show_buf_diagnostic(arg)
     return
   end
   sort_by_severity(entrys)
-  self:show(entrys, arg)
+  self:show(entrys, type, arg)
 end
 
 function diag:close_exist_win()
@@ -643,7 +655,7 @@ function diag:on_insert()
       col = vim.o.columns - width,
       height = #content,
       width = width,
-      focusable = false,
+      -- focusable = false,
     }
     return opt
   end
@@ -681,9 +693,11 @@ function diag:on_insert()
         focusable = false,
       }
     end
+    --make sure this window highlight same as normal
+    --may break other floatwindow highlight? not sure
+    api.nvim_set_hl(0, 'NormalFloat', { link = 'Normal' })
     return window.create_win_with_border({
       contents = content,
-      winblend = 100,
       noborder = true,
     }, float_opt)
   end
