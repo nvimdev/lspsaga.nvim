@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2023 February 13
+*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2023 February 18
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -86,7 +86,7 @@ LAZY <HTTPS://GITHUB.COM/FOLKE/LAZY.NVIM>*lspsaga.nvim-lazy-<https://github.com/
             require("lspsaga").setup({})
         end,
         dependencies = {
-          {"nvim-tree/nvim-web-devicons"}
+          {"nvim-tree/nvim-web-devicons"},
           --Please make sure you install markdown and markdown_inline parser
           {"nvim-treesitter/nvim-treesitter"}
         }
@@ -104,7 +104,7 @@ PACKER <HTTPS://GITHUB.COM/WBTHOMASON/PACKER.NVIM>*lspsaga.nvim-packer-<https://
             require("lspsaga").setup({})
         end,
         requires = {
-            {"nvim-tree/nvim-web-devicons"}
+            {"nvim-tree/nvim-web-devicons"},
             --Please make sure you install markdown and markdown_inline parser
             {"nvim-treesitter/nvim-treesitter"}
         }
@@ -261,6 +261,7 @@ Default options:
           vsplit = 's',
           split = 'i',
           tabe = 't',
+          tabnew = 'r',
           quit = { 'q', '<ESC>' },
           close_in_preview = '<ESC>'
         },
@@ -321,7 +322,7 @@ Default options:
       code_action = {
         num_shortcut = true,
         show_server_name = false,
-        extend_gitsigns = true
+        extend_gitsigns = true,
         keys = {
           -- string | table type
           quit = "q",
@@ -664,7 +665,8 @@ the `icon`. If table is passed, it will be passed as `{ icon, color }`.
 
 Thanks for everything!
 
-Mölle Lukas <https://github.com/lmllrjr> HendrikPetertj
+Scott Ming <https://github.com/scottming> Mölle Lukas
+<https://github.com/lmllrjr> HendrikPetertj
 <https://github.com/HendrikPetertje> Boja Wilytsch
 <https://github.com/bwilytsch> zhourr <https://github.com/zhourrr> Burges
 Darrion <https://github.com/ca-mantis-shrimp>

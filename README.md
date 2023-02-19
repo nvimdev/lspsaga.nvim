@@ -41,7 +41,7 @@ require("lazy").setup({
         require("lspsaga").setup({})
     end,
     dependencies = {
-      {"nvim-tree/nvim-web-devicons"}
+      {"nvim-tree/nvim-web-devicons"},
       --Please make sure you install markdown and markdown_inline parser
       {"nvim-treesitter/nvim-treesitter"}
     }
@@ -58,7 +58,7 @@ use({
         require("lspsaga").setup({})
     end,
     requires = {
-        {"nvim-tree/nvim-web-devicons"}
+        {"nvim-tree/nvim-web-devicons"},
         --Please make sure you install markdown and markdown_inline parser
         {"nvim-treesitter/nvim-treesitter"}
     }
@@ -206,6 +206,7 @@ Default options:
       vsplit = 's',
       split = 'i',
       tabe = 't',
+      tabnew = 'r',
       quit = { 'q', '<ESC>' },
       close_in_preview = '<ESC>'
     },
@@ -264,7 +265,7 @@ Default options:
   code_action = {
     num_shortcut = true,
     show_server_name = false,
-    extend_gitsigns = true
+    extend_gitsigns = true,
     keys = {
       -- string | table type
       quit = "q",
@@ -598,6 +599,7 @@ The key in `ui.kind` is the kind name, and the value can either be a string or a
 # Backers
 Thanks for everything!
 
+[Scott Ming](https://github.com/scottming)
 [@Möller Lukas](https://github.com/lmllrjr)
 [@HendrikPetertje](https://github.com/HendrikPetertje)
 [@Bojan Wilytsch](https://github.com/bwilytsch)
