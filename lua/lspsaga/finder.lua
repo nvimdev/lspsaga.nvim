@@ -248,6 +248,17 @@ local function get_msg(method)
   return t[idx]
 end
 
+local function buf_is_opened(bufnr)
+  local loaded_buffers = api.nvim_list_bufs()
+  loaded_buffers = vim.tbl_filter(function(k)
+    return api.nvim_buf_is_loaded(k)
+  end, loaded_buffers)
+  if vim.tbl_contains(loaded_buffers, bufnr) then
+    return true
+  end
+  return false
+end
+
 function finder:create_finder_contents(result, method)
   local contents = {}
   local title = get_titles(libs.tbl_index(methods(), method))
@@ -283,7 +294,7 @@ function finder:create_finder_contents(result, method)
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         table.insert(self.wipe_buffers, bufnr)
       end
-    elseif fn.bufwinnr(bufnr) == -1 then
+    elseif not buf_is_opened(bufnr) then
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         table.insert(self.wipe_buffers, bufnr)
       end
@@ -773,6 +784,17 @@ function finder:close_auto_preview_win()
   end
 end
 
+local function find_buf_by_name(name)
+  local bufnr
+  for _, buf in pairs(api.nvim_list_bufs() or {}) do
+    if api.nvim_buf_get_name(buf) == name then
+      bufnr = buf
+      break
+    end
+  end
+  return bufnr
+end
+
 function finder:open_link(action)
   local current_line = api.nvim_win_get_cursor(0)[1]
 
@@ -792,7 +814,18 @@ function finder:open_link(action)
   if vim.bo.modified then
     vim.cmd('write')
   end
-  vim.cmd(action .. ' ' .. uv.fs_realpath(short_link[current_line].link))
+
+  local buf = find_buf_by_name(short_link[current_line].link)
+  local special = { 'edit', 'tab', 'tabnew' }
+  if vim.tbl_contains(special, action) and buf and api.nvim_buf_is_loaded(buf) then
+    local wins = fn.win_findbuf(buf)
+    local winid = wins[#wins] or api.nvim_get_current_win()
+    api.nvim_set_current_win(winid)
+    api.nvim_win_set_buf(winid, buf)
+  else
+    vim.cmd(action .. ' ' .. uv.fs_realpath(short_link[current_line].link))
+  end
+
   if short_link[current_line].row then
     api.nvim_win_set_cursor(0, { short_link[current_line].row + 1, short_link[current_line].col })
   end
