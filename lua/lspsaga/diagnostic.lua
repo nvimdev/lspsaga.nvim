@@ -708,6 +708,20 @@ function diag:on_insert()
     end
   end
 
+  local function reduce_width()
+    if not winid or not api.nvim_win_is_valid(winid) then
+      return
+    end
+    local win_conf = api.nvim_win_get_config(winid)
+    api.nvim_win_set_config(winid, {
+      relative = win_conf.relative,
+      width = 1,
+      win = win_conf.win,
+      row = win_conf.row[false],
+      col = win_conf.col[false],
+    })
+  end
+
   local group = api.nvim_create_augroup('Lspsaga Diagnostic on insert', { clear = true })
   api.nvim_create_autocmd('DiagnosticChanged', {
     group = group,
@@ -734,6 +748,7 @@ function diag:on_insert()
 
       if #content == 0 then
         set_lines({})
+        reduce_width()
         return
       end
 
@@ -770,6 +785,7 @@ function diag:on_insert()
     callback = function()
       if winid and api.nvim_win_is_valid(winid) then
         set_lines({})
+        reduce_width()
       end
     end,
   })
