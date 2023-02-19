@@ -334,6 +334,7 @@ Default options:
   diagnostic = {
     on_insert = true,
     on_insert_follow = false,
+    insert_winblend = 0,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
@@ -362,6 +363,8 @@ Default options:
   highlight `DiagnosticBorder`.
 - `on_insert` default is true it works like the emacs helix show diagnostic in right but in line.
 - `on_insert_follow` true will follow current line. false will on top right
+- `insert_winblend` default is 0, when it's to 100 will completely transparent. the color will
+  changed a little light. 0 will use the `NormalFloat` group. it will link to `Normal` by Lspsaga.
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.

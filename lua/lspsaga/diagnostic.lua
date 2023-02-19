@@ -704,6 +704,7 @@ function diag:on_insert()
     api.nvim_set_hl(0, 'NormalFloat', { link = 'Normal' })
     return window.create_win_with_border({
       contents = content,
+      winblend = config.diagnostic.insert_winblend,
       noborder = true,
     }, float_opt)
   end

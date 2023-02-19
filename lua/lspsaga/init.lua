@@ -18,6 +18,7 @@ local default_config = {
   diagnostic = {
     on_insert = true,
     on_insert_follow = false,
+    insert_winblend = 0,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
