@@ -387,7 +387,7 @@ The steps demonstrated in this showcase are:
 
 `on_insert` is true, `on_insert_follow` is false
 
-<img src="https://user-images.githubusercontent.com/41671631/219909442-d93c5662-0c7c-4f9a-9cb3-0b865429868f.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/219940539-da554175-dd91-4bca-aaf8-ab39d0ba2a2c.gif" height=80% width=80%/>
 
 `on_insert_follow` is true
 
