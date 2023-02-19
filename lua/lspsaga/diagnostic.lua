@@ -649,13 +649,22 @@ function diag:on_insert()
 
   local function on_top_right(content)
     local width = window.get_max_content_length(content)
+    print(
+      width,
+      vim.o.columns,
+      math.floor(vim.o.columns * 0.8),
+      width >= math.floor(vim.o.columns * 0.8)
+    )
+    if width >= math.floor(vim.o.columns * 0.75) then
+      width = math.floor(vim.o.columns * 0.5)
+    end
     local opt = {
       relative = 'editor',
       row = 1,
       col = vim.o.columns - width,
       height = #content,
       width = width,
-      -- focusable = false,
+      focusable = false,
     }
     return opt
   end
@@ -677,11 +686,14 @@ function diag:on_insert()
   end
 
   local function create_window(content)
-    local width = window.get_max_content_length(content)
     local float_opt
     if not config.diagnostic.on_insert_follow then
       float_opt = on_top_right(content)
     else
+      local width = window.get_max_content_length(content)
+      if width == vim.o.columns then
+        width = vim.o.columns * 0.6
+      end
       local res = get_row_col(content)
       float_opt = {
         relative = 'win',
@@ -755,6 +767,8 @@ function diag:on_insert()
       if not winid or not api.nvim_win_is_valid(winid) then
         bufnr, winid = create_window(content)
         vim.bo[bufnr].modifiable = true
+        vim.wo[winid].wrap = true
+        api.nvim_set_option_value('fillchars', 'lastline: ', { scope = 'local', win = winid })
       end
       set_lines(content)
       if bufnr and api.nvim_buf_is_loaded(bufnr) then
