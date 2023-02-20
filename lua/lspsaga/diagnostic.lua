@@ -696,7 +696,7 @@ function diag:on_insert()
         height = #content,
         row = res.row,
         col = res.col,
-        focusable = false,
+        -- focusable = false,
       }
     end
     --make sure this window highlight same as normal
@@ -725,7 +725,7 @@ function diag:on_insert()
       width = 1,
       win = win_conf.win,
       row = win_conf.row[false],
-      col = win_conf.col[false],
+      col = vim.o.columns,
     })
   end
 
@@ -762,7 +762,9 @@ function diag:on_insert()
         bufnr, winid = create_window(content)
         vim.bo[bufnr].modifiable = true
         vim.wo[winid].wrap = true
-        api.nvim_set_option_value('fillchars', 'lastline: ', { scope = 'local', win = winid })
+        if fn.has('nvim-0.9') == 1 then
+          api.nvim_set_option_value('fillchars', 'lastline: ', { scope = 'local', win = winid })
+        end
       end
       set_lines(content)
       if bufnr and api.nvim_buf_is_loaded(bufnr) then
