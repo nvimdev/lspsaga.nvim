@@ -613,6 +613,7 @@ Thanks for everything!
 [@Bojan Wilytsch](https://github.com/bwilytsch)
 [@zhourrr](https://github.com/zhourrr)
 [@Burgess Darrion](https://github.com/ca-mantis-shrimp)
+[@Ceserani Alessandro](https://github.com/al-ce)
 
 # Donate
 
