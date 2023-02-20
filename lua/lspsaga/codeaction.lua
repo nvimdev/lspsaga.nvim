@@ -258,7 +258,7 @@ function act:do_code_action(num)
     number = tonumber(num)
   else
     local cur_text = api.nvim_get_current_line()
-    number = cur_text:match('(%d+)%s+%S')
+    number = cur_text:match('%[(%d+)%]%s+%S')
     number = tonumber(number)
   end
   self:close_action_window()
