@@ -519,9 +519,14 @@ Default options:
 ## :Lspsaga symbols in a custom winbar/statusline
 
 Lspsaga provides an API that you can use in your custom winbar or statusline.
+When using this method, you may also have to append `'%#EndOfBuffer#'` or
+another highlight group to fix the highliting.
 
 ```lua
 vim.wo.winbar / vim.wo.stl = require('lspsaga.symbolwinbar'):get_winbar()
+
+-- To fix highlighting, try something like this
+vim.wo.winbar / vim.wo.stl = require('lspsaga.symbolwinbar'):get_winbar() .. '%#EndOfBuffer#'
 ```
 
 ## :Lspsaga term_toggle
