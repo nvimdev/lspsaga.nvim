@@ -238,6 +238,8 @@ Default options:
     tabe = "<C-c>t",
     quit = "q",
     close = "<Esc>",
+    back = '<C-c>b',
+    next = '<C-c>n',
   }
 ```
 

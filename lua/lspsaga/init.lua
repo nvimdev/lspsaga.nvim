@@ -78,6 +78,8 @@ local default_config = {
     tabe = '<C-c>t',
     quit = 'q',
     close = '<Esc>',
+    back = '<C-c>b',
+    next = '<C-c>n',
   },
   rename = {
     quit = '<C-c>',

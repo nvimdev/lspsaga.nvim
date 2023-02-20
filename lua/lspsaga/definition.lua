@@ -88,8 +88,9 @@ end
 local function unpack_maps()
   local maps = config.definition
   local res = {}
+  local invalid = { 'quit', 'close', 'back', 'next' }
   for key, val in pairs(maps) do
-    if key ~= 'quit' or 'close' then
+    if not vim.tbl_contains(invalid, key) then
       res[key] = val
     end
   end
@@ -126,9 +127,16 @@ local function apply_aciton_keys(pos)
     end
 
     local node = ctx.data[index]
+    local next = (index + 1 <= stack_cap() and api.nvim_win_is_valid(ctx.data[index + 1].winid))
+        and ctx.data[index + 1].winid
+      or nil
     api.nvim_win_close(curwin, true)
     if api.nvim_win_is_valid(node.prev) then
       api.nvim_set_current_win(node.prev)
+    end
+
+    if next then
+      api.nvim_win_close(next, true)
     end
   end, opt)
 
@@ -143,6 +151,36 @@ local function apply_aciton_keys(pos)
     end
     clean_ctx()
   end, opt)
+
+  keymap.set('n', config.definition.next, function()
+    if vim.tbl_isempty(ctx) then
+      return
+    end
+    local curwin = api.nvim_get_current_win()
+    local index = find_node(curwin)
+    if not index or index == stack_cap() then
+      return
+    end
+    local next = ctx.data[index + 1].winid
+    if next and api.nvim_win_is_valid(next) then
+      api.nvim_set_current_win(next)
+    end
+  end)
+
+  keymap.set('n', config.definition.back, function()
+    if vim.tbl_isempty(ctx) then
+      return
+    end
+    local curwin = api.nvim_get_current_win()
+    local index = find_node(curwin)
+    if not index or index == 1 then
+      return
+    end
+    local prev = ctx.data[index].prev
+    if prev and api.nvim_win_is_valid(prev) then
+      api.nvim_set_current_win(prev)
+    end
+  end)
 end
 
 local function get_method(index)
@@ -275,7 +313,7 @@ function def:peek_definition(method)
 
           if #wins == 1 and wins[1] == curwinid then
             for _, map in pairs(config.definition) do
-              api.nvim_buf_del_keymap(opt.buf, 'n', map)
+              pcall(api.nvim_buf_del_keymap, opt.buf, 'n', map)
             end
           end
 
