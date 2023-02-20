@@ -27,11 +27,11 @@ function hover:open_floating_preview(res, option_fn)
   end
 
   local new = {}
-  for _, line in pairs(content) do
+  for i, line in pairs(content) do
     if line:find('\\') then
       line = line:gsub('\\', '')
     end
-    if line:find('%[%w+%][^%(]') then
+    if line:find('%[%w+%][^%(]') and not content[i - 1]:find('```') then
       line = line:gsub('%[', '%[%[')
       line = line:gsub('%]', '%]%]')
     end
