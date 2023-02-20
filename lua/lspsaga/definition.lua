@@ -209,9 +209,6 @@ function def:peek_definition(method)
       local cur_winline = fn.winline()
       local max_height = math.floor(vim.o.lines * 0.5)
       local max_width = math.floor(vim.o.columns * 0.6)
-      if vim.bo.textwidth then
-        max_width = vim.bo.textwidth
-      end
 
       opts = {
         relative = 'cursor',
