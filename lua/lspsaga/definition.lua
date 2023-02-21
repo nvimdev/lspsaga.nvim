@@ -59,7 +59,6 @@ local function get_uri_data(result)
 
   res.pos = { range.start.line, range.start.character }
   res.bufnr = vim.uri_to_bufnr(res.uri)
-  res.fname = vim.uri_to_fname(res.uri)
 
   if not api.nvim_buf_is_loaded(res.bufnr) then
     fn.bufload(res.bufnr)
@@ -97,7 +96,7 @@ function def:apply_aciton_keys(buf)
 
         local node = ctx[index]
         api.nvim_win_close(self.winid, true)
-        vim.cmd(action .. ' ' .. node.fname)
+        vim.cmd(action .. ' ' .. vim.urit_to_fname(node.uri))
         api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
         local width = #api.nvim_get_current_line()
         libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
@@ -106,13 +105,35 @@ function def:apply_aciton_keys(buf)
     end
   end
 
-  keymap.set('n', config.definition.quit, function()
+  keymap.set('n', '<C-o>', function()
     local index = find_node_index()
-    if not index then
+    if not index or not self:has_peek_win() then
       return
     end
+    local prev = ctx[index - 1]
+    if not prev then
+      return
+    end
+    if not api.nvim_buf_is_valid(prev.bufnr) then
+      prev.bufnr = vim.uri_to_bufnr(prev.uri)
+      fn.bufload(prev.bufnr)
+      self:apply_aciton_keys(prev.bufnr)
+    end
 
-    if not self:has_peek_win() then
+    api.nvim_win_set_buf(self.winid, prev.bufnr)
+    api.nvim_set_option_value(
+      'winhl',
+      'Normal:DefinitionNormal',
+      { scope = 'local', win = self.winid }
+    )
+    api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.winid })
+    api.nvim_win_set_cursor(self.winid, { prev.pos[1] + 1, prev.pos[2] })
+    vim.cmd('normal! zz')
+  end, opt)
+
+  keymap.set('n', config.definition.quit, function()
+    local index = find_node_index()
+    if not index or not self:has_peek_win() then
       return
     end
 
@@ -162,7 +183,7 @@ local function create_window(node)
   }
   --@deprecated when 0.9 release
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    opt.title = title_text(node.fname)
+    opt.title = title_text(vim.uri_to_fname(node.uri))
   end
 
   return window.create_win_with_border(content_opts, opt)
