@@ -592,7 +592,7 @@ Default UI options
 All highlight groups can be found in [highlight.lua](./lua/lspsaga/highlight.lua).
 
 `require('lspsaga.kind').get_kind_group` it will return all the SagaWinbar + kind name group . also 
-include `SagaWinbarFileName SagaWinbarFileIcon SagaWinbarFolderName SagaWinbarSep`.these groups is 
+include `SagaWinbarFileName SagaWinbarFileIcon SagaWinbarFolderName SagaWinbarSep`. These groups are 
 special. so if you want use this api to custom the highlight. you need dealwith these 4 groups the
 last item is `SagaWinbarSep`.
 
