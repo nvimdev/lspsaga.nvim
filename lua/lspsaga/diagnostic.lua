@@ -678,6 +678,13 @@ function diag:on_insert()
 
     return res
   end
+  local function theme_bg()
+    local conf = api.nvim_get_hl_by_name('Normal', true)
+    if conf.background then
+      return conf.background
+    end
+    return 'NONE'
+  end
 
   local function create_window(content)
     local float_opt
@@ -696,15 +703,16 @@ function diag:on_insert()
         height = #content,
         row = res.row,
         col = res.col,
-        -- focusable = false,
+        focusable = false,
       }
     end
-    --make sure this window highlight same as normal
-    --may break other floatwindow highlight? not sure
-    api.nvim_set_hl(0, 'NormalFloat', { link = 'Normal' })
+
     return window.create_win_with_border({
       contents = content,
       winblend = config.diagnostic.insert_winblend,
+      highlight = {
+        normal = 'DiagnosticInsertNormal',
+      },
       noborder = true,
     }, float_opt)
   end
@@ -772,6 +780,11 @@ function diag:on_insert()
           api.nvim_buf_add_highlight(bufnr, 0, hi[i], i - 1, 0, -1)
         end
       end
+
+      api.nvim_set_hl(0, 'DiagnosticInsertNormal', {
+        background = theme_bg(),
+        default = true,
+      })
 
       if not diag_conf.on_insert_follow then
         api.nvim_win_set_config(winid, on_top_right(content))
