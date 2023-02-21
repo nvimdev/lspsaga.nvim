@@ -252,6 +252,8 @@ The steps demonstrated in this showcase are:
 - Pressing `<C-c>o` to jump to the file in the floating window
 - Lspsaga shows a beacon highlight after jumping to the file
 
+When you find that the definition window can't be closed by `q`, maybe you used `ctrl-o` or some wincmd to break the stack, you need to clear the ctx manually, you can use `lua require('lspsaga.definition').clean_ctx()` to do that.
+
 <img src="https://user-images.githubusercontent.com/41671631/215719806-0dea0248-4a2c-45df-a258-43a4ba207a43.gif" height=80% width=80%/>
 </details>
 

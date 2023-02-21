@@ -368,6 +368,10 @@ function def:goto_definition(method)
   end
 end
 
+function def:clean_ctx()
+  clean_ctx()
+end
+
 def = setmetatable(def, {
   __newindex = function(_, k, v)
     ctx[k] = v
