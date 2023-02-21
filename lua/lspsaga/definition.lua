@@ -247,7 +247,7 @@ function def:peek_definition(method)
     api.nvim_win_set_buf(self.winid, node.bufnr)
     api.nvim_set_option_value(
       'winhl',
-      'Normal:DefinitionNormal',
+      'Normal:DefinitionNormal,FloatBorder:DefinitionBorder',
       { scope = 'local', win = self.winid }
     )
     api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.winid })
