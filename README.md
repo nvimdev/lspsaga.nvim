@@ -602,7 +602,7 @@ last item is `SagaWinbarSep`.
 Modify `ui.kind` to change the icons of the kinds.
 
 All kinds used in Lspsaga are defined in [lspkind.lua](./lua/lspsaga/lspkind.lua).
-The key in `ui.kind` is the kind name, and the value can either be a string or a table. If a string is passed, it is setting the `icon`. If table is passed, it will be passed as `{ icon, highlight group }`.
+The key in `ui.kind` is the kind name, and the value can either be a string or a table. If a string is passed, it is setting the `icon`. If table is passed, it will be passed as `{ icon, highlight group }`, for example, to change the a folder's icon color, you could do this: `ui = { kind = { ["Folder"] = { " ", "@comment" }, }, },`.
 
 # Backers
 Thanks for everything!
