@@ -77,9 +77,6 @@ local default_config = {
     split = '<C-c>i',
     tabe = '<C-c>t',
     quit = 'q',
-    close = '<Esc>',
-    back = '<C-c>b',
-    next = '<C-c>n',
   },
   rename = {
     quit = '<C-c>',
