@@ -106,8 +106,8 @@ function finder:loading_bar()
     buftype = 'nofile',
     border = 'solid',
     highlight = {
-      normal = 'finderNormal',
-      border = 'finderBorder',
+      normal = 'FinderNormal',
+      border = 'FinderBorder',
     },
     enter = false,
   }
@@ -142,8 +142,8 @@ function finder:loading_bar()
       local msg = ' LOADING' .. string.rep('.', spin_frame > 3 and 3 or spin_frame)
       local spinner = ' ' .. spin_config.spinner[spin_frame]
       pcall(api.nvim_buf_set_lines, spin_buf, 0, -1, false, { msg, spinner })
-      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'finderSpinnerTitle', 0, 0, -1)
-      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'finderSpinner', 1, 0, -1)
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinnerTitle', 0, 0, -1)
+      pcall(api.nvim_buf_add_highlight, spin_buf, 0, 'FinderSpinner', 1, 0, -1)
       spin_frame = spin_frame + 1
 
       if uv.now() - start_request >= spin_config.timeout and not spin_timer:is_closing() then
@@ -647,8 +647,8 @@ local function create_preview_window(finder_winid, main_win)
       ['leftbottom'] = rbottom,
     },
     highlight = {
-      border = 'finderPreviewBorder',
-      normal = 'finderNormal',
+      border = 'FinderPreviewBorder',
+      normal = 'FinderNormal',
     },
   }
 
