@@ -100,7 +100,7 @@ local function make_floating_popup_options(width, height, opts)
   })
   local new_option = {}
 
-  new_option.style = 'minimal'
+  new_option.style = opts.style or 'minimal'
   new_option.width = width
   new_option.height = height
 

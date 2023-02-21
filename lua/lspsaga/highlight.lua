@@ -19,7 +19,7 @@ local function hi_define()
     SagaExpand = { fg = '#475164' },
     SagaCollapse = { fg = '#475164' },
     SagaCount = { link = 'Comment' },
-    SagaBeacon = { link = 'DiagnosticHint' },
+    SagaBeacon = { bg = '#c43963' },
     -- code action
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
