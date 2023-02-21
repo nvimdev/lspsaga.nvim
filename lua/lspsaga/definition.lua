@@ -96,7 +96,7 @@ function def:apply_aciton_keys(buf)
 
         local node = ctx[index]
         api.nvim_win_close(self.winid, true)
-        vim.cmd(action .. ' ' .. vim.urit_to_fname(node.uri))
+        vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
         api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
         local width = #api.nvim_get_current_line()
         libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
