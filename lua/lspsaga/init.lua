@@ -15,6 +15,9 @@ local default_config = {
     hover = ' ',
     kind = {},
   },
+  hover = {
+    max_width = 0.6,
+  },
   diagnostic = {
     on_insert = true,
     on_insert_follow = false,
