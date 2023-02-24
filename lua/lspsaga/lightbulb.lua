@@ -3,7 +3,7 @@ local config = require('lspsaga').config
 local lb = {}
 
 local function get_hl_group()
-  return 'LspSagaLightBulb'
+  return 'SagaLightBulb'
 end
 
 function lb:init_sign()
