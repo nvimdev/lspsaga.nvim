@@ -98,8 +98,8 @@ function diag:code_action_cb()
 
   if diag_conf.jump_num_shortcut then
     self.remove_num_map = function()
-      for i = 3, #contents do
-        pcall(vim.keymap.del, 'n', tostring(i - 2), { buffer = self.main_buf })
+      for i = 1, #(act.action_tuples or {}) do
+        pcall(vim.keymap.del, 'n', tostring(i), { buffer = self.main_buf })
       end
     end
 
