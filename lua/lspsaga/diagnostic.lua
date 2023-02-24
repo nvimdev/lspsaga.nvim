@@ -438,7 +438,7 @@ function diag:show(entrys, dtype, arg)
     insert(len, #code_source[1])
     local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1] or {}
     if not sign.text then
-      sign.text = ui.diagnostic
+      sign.text = ''
     end
     local line = sign.text
       .. ' '
