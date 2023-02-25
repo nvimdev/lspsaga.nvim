@@ -634,8 +634,20 @@ local function create_preview_window(finder_winid, main_win)
   opts.height = winconfig.height
   local max_width = api.nvim_win_get_width(main_win) - opts.col
   opts.width = max_width - 10 > 0 and max_width - 10 or max_width
-  if opts.width <= 0 then
+  local available_screen_width = vim.o.columns - winconfig.width - winconfig.col[false] - 6
+  if opts.width <= 0 and available_screen_width < 6 then
+    if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+      api.nvim_win_set_config(
+        ctx.winid,
+        { border = window.combine_border(config.ui.border, {}, 'FinderBorder') }
+      )
+    end
     return
+  else
+    opts.row = opts.row + 1
+    opts.relative = 'editor'
+    opts.win = nil
+    opts.width = available_screen_width
   end
 
   local rtop = window.combine_char()['righttop'][config.ui.border]
@@ -805,8 +817,11 @@ function finder:open_link(action)
 
   local short_link = self.short_link
 
-  local pbuf = api.nvim_win_get_buf(self.preview_winid)
-  clear_preview_ns(self.preview_hl_ns, pbuf)
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    local pbuf = api.nvim_win_get_buf(self.preview_winid)
+    clear_preview_ns(self.preview_hl_ns, pbuf)
+  end
+
   self:quit_float_window()
   self:clean_data()
 
