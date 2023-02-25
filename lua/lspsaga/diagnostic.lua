@@ -2,7 +2,7 @@ local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local diag_conf, ui = config.diagnostic, config.ui
+local diag_conf = config.diagnostic
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local insert = table.insert
@@ -506,7 +506,7 @@ function diag:show(entrys, dtype, arg)
     },
   }
 
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete' }
+  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScolled' }
   if arg and arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
