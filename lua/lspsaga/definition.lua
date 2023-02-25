@@ -223,7 +223,7 @@ function def:peek_definition(method)
 
     local result
     for _, res in pairs(results) do
-      if res and res.result then
+      if res and res.result and not vim.tbl_isempty(res.result) then
         result = res.result
       end
     end
