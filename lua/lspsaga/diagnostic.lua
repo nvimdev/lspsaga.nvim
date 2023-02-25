@@ -507,7 +507,7 @@ function diag:show(entrys, dtype, arg)
   }
 
   local close_autocmds =
-    { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScrolled' }
+    { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'BufLeave', 'WinScrolled' }
   if arg and arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
