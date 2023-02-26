@@ -601,8 +601,15 @@ Modify `ui.kind` to change the icons of the kinds.
 All kinds used in Lspsaga are defined in [lspkind.lua](./lua/lspsaga/lspkind.lua).
 The key in `ui.kind` is the kind name, and the value can either be a string or a table. If a string is passed, it is setting the `icon`. If table is passed, it will be passed as `{ icon, highlight group }`, for example, to change the a folder's icon color, you could do this: `ui = { kind = { ["Folder"] = { " ", "@comment" }, }, },`.
 
+# Donate
+
+Currently, I am in need of some donations. If you'd like to support my work financially, please donate through Github Sponsor button or 
+[PayPal](https://paypal.me/bobbyhub). Thanks!
+[![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
+
+
 # Backers
-Thanks for everything!
+Thanks for everyone!
 
 [Scott Ming](https://github.com/scottming)
 [@Möller Lukas](https://github.com/lmllrjr)
@@ -612,12 +619,6 @@ Thanks for everything!
 [@Burgess Darrion](https://github.com/ca-mantis-shrimp)
 [@Ceserani Alessandro](https://github.com/al-ce)
 
-# Donate
-
-[![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
-
-Currently, I am in need of some donations. If you'd like to support my work financially, please donate through [PayPal](https://paypal.me/bobbyhub).
-Thanks!
 
 # License
 
