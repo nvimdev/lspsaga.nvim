@@ -200,6 +200,7 @@ Default options:
   finder = {
     --percentage
     max_height = 0.5,
+    force_max_height = false
     keys = {
       jump_to = 'p',
       edit = { 'o', '<CR>' },
@@ -214,6 +215,7 @@ Default options:
 ```
 
 - `max_height` of the finder window.
+- `force_max_height` force window height to max_height
 - `keys.jump_to` finder peek window.
 - `close_in_preview` will close all finder window in when you in preview window.
 

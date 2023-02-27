@@ -353,7 +353,7 @@ function finder:render_finder_result()
 
   local max_height = math.floor(vim.o.lines * config.finder.max_height)
   opt.height = #self.contents > max_height and max_height or #self.contents
-  if opt.height <= 0 or not opt.height then
+  if opt.height <= 0 or not opt.height or config.finder.force_max_height then
     opt.height = max_height
   end
 
