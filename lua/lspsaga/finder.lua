@@ -250,9 +250,6 @@ end
 
 local function buf_is_opened(bufnr)
   local loaded_buffers = api.nvim_list_bufs()
-  loaded_buffers = vim.tbl_filter(function(k)
-    return api.nvim_buf_is_loaded(k)
-  end, loaded_buffers)
   if vim.tbl_contains(loaded_buffers, bufnr) then
     return true
   end
@@ -295,6 +292,10 @@ function finder:create_finder_contents(result, method)
         table.insert(self.wipe_buffers, bufnr)
       end
     elseif not buf_is_opened(bufnr) then
+      if not vim.tbl_contains(self.wipe_buffers, bufnr) then
+        table.insert(self.wipe_buffers, bufnr)
+      end
+    elseif #fn.win_findbuf(bufnr) == 0 then
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         table.insert(self.wipe_buffers, bufnr)
       end
