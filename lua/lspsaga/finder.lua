@@ -633,7 +633,10 @@ local function create_preview_window(finder_winid, main_win)
   opts.row = winconfig.row[false]
   opts.height = winconfig.height
   local max_width = api.nvim_win_get_width(main_win) - opts.col
-  opts.width = max_width - 10 > 0 and max_width - 10 or max_width
+  if max_width > 80 then
+    max_width = 80
+  end
+  opts.width = max_width
   local available_screen_width = vim.o.columns - winconfig.width - winconfig.col[false] - 6
   if opts.width <= 0 and available_screen_width < 6 then
     if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
@@ -643,7 +646,7 @@ local function create_preview_window(finder_winid, main_win)
       )
     end
     return
-  else
+  elseif opts.width <= 0 and available_screen_width > 6 then
     opts.row = opts.row + 1
     opts.relative = 'editor'
     opts.win = nil
