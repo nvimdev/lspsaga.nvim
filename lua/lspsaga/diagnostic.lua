@@ -645,46 +645,55 @@ function diag:close_exist_win()
   return has
 end
 
+local function on_top_right(content)
+  local width = window.get_max_content_length(content)
+  if width >= math.floor(vim.o.columns * 0.75) then
+    width = math.floor(vim.o.columns * 0.5)
+  end
+  local opt = {
+    relative = 'editor',
+    row = 1,
+    col = vim.o.columns - width,
+    height = #content,
+    width = width,
+    focusable = false,
+  }
+  return opt
+end
+
+local function get_row_col(content)
+  local res = {}
+  local curwin = api.nvim_get_current_win()
+  local max_len = window.get_max_content_length(content)
+  local tail = #api.nvim_get_current_line() + 20
+  local col = api.nvim_win_get_cursor(curwin)[2]
+  if tail + max_len >= api.nvim_win_get_width(curwin) then
+    res.row = fn.winline()
+  else
+    res.row = fn.winline() - 1
+  end
+  res.col = col + 20
+
+  return res
+end
+
+local function theme_bg()
+  local conf = api.nvim_get_hl_by_name('Normal', true)
+  if conf.background then
+    return conf.background
+  end
+  return 'NONE'
+end
+
 function diag:on_insert()
   local winid, bufnr
 
-  local function on_top_right(content)
+  local function max_width(content)
     local width = window.get_max_content_length(content)
-    if width >= math.floor(vim.o.columns * 0.75) then
-      width = math.floor(vim.o.columns * 0.5)
+    if width == vim.o.columns - 10 then
+      width = vim.o.columns * 0.6
     end
-    local opt = {
-      relative = 'editor',
-      row = 1,
-      col = vim.o.columns - width,
-      height = #content,
-      width = width,
-      focusable = false,
-    }
-    return opt
-  end
-
-  local function get_row_col(content)
-    local res = {}
-    local curwin = api.nvim_get_current_win()
-    local max_len = window.get_max_content_length(content)
-    local tail = #api.nvim_get_current_line() + 20
-    local col = api.nvim_win_get_cursor(curwin)[2]
-    if tail + max_len >= api.nvim_win_get_width(curwin) then
-      res.row = fn.winline()
-    else
-      res.row = fn.winline() - 1
-    end
-    res.col = col + 20
-
-    return res
-  end
-  local function theme_bg()
-    local conf = api.nvim_get_hl_by_name('Normal', true)
-    if conf.background then
-      return conf.background
-    end
-    return 'NONE'
+    return width
   end
 
   local function create_window(content)
@@ -692,15 +701,11 @@ function diag:on_insert()
     if not config.diagnostic.on_insert_follow then
       float_opt = on_top_right(content)
     else
-      local width = window.get_max_content_length(content)
-      if width == vim.o.columns then
-        width = vim.o.columns * 0.6
-      end
       local res = get_row_col(content)
       float_opt = {
         relative = 'win',
         win = api.nvim_get_current_win(),
-        width = width,
+        width = max_width(content),
         height = #content,
         row = res.row,
         col = res.col,
@@ -798,6 +803,7 @@ function diag:on_insert()
         relative = 'win',
         win = curwin,
         height = #content,
+        width = max_width(content),
         row = res.row,
         col = res.col,
       })
