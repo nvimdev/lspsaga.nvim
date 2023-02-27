@@ -632,7 +632,7 @@ local function create_preview_window(finder_winid, main_win)
   opts.col = winconfig.col[false] + winconfig.width + 2
   opts.row = winconfig.row[false]
   opts.height = winconfig.height
-  local max_width = api.nvim_win_get_width(main_win) - opts.col
+  local max_width = api.nvim_win_get_width(main_win) - opts.col - 6
   if max_width > 80 then
     max_width = 80
   end
