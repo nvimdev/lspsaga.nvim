@@ -75,7 +75,7 @@ function def:has_peek_win()
   return false
 end
 
-function def:apply_aciton_keys(buf)
+function def:apply_aciton_keys(buf, main_buf)
   local opt = { buffer = buf, nowait = true }
   local function find_node_index()
     local curbuf = api.nvim_get_current_buf()
@@ -96,6 +96,10 @@ function def:apply_aciton_keys(buf)
 
         local node = ctx[index]
         api.nvim_win_close(self.winid, true)
+        -- if buffer same as normal buffer write it first
+        if node.bufnr == main_buf and vim.bo[node.bufnr].modified then
+          vim.cmd('write!')
+        end
         vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
         api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
         local width = #api.nvim_get_current_line()
@@ -223,7 +227,7 @@ function def:peek_definition(method)
 
     local result
     for _, res in pairs(results) do
-      if res and res.result then
+      if res and res.result and not vim.tbl_isempty(res.result) then
         result = res.result
       end
     end
@@ -262,7 +266,7 @@ function def:peek_definition(method)
     vim.cmd('normal! zt')
     push(node)
 
-    self:apply_aciton_keys(node.bufnr)
+    self:apply_aciton_keys(node.bufnr, current_buf)
   end)
 end
 
@@ -294,7 +298,7 @@ function def:goto_definition(method)
     -- this is needed because if the definition is in the current buffer the
     -- jump may not go to the right place.
     if vim.bo.modified and current_buffer == jump_destination then
-      vim.cmd('write')
+      vim.cmd('write!')
     end
 
     api.nvim_command('edit ' .. jump_destination)

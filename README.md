@@ -200,6 +200,7 @@ Default options:
   finder = {
     --percentage
     max_height = 0.5,
+    force_max_height = false
     keys = {
       jump_to = 'p',
       edit = { 'o', '<CR>' },
@@ -214,6 +215,7 @@ Default options:
 ```
 
 - `max_height` of the finder window.
+- `force_max_height` force window height to max_height
 - `keys.jump_to` finder peek window.
 - `close_in_preview` will close all finder window in when you in preview window.
 
@@ -334,6 +336,7 @@ Default options:
     on_insert = true,
     on_insert_follow = false,
     insert_winblend = 0,
+    show_virt_line = true,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
@@ -351,6 +354,7 @@ Default options:
   },
 ```
 
+- `show_virt_line` default is true, show a line when using diagnostic jump. false disable it.
 - Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
 - `custom_msg` string used to custom the diagnostic jump `Msg` section titile
@@ -588,7 +592,7 @@ Default UI options
 
 All highlight groups can be found in [highlight.lua](./lua/lspsaga/highlight.lua).
 
-`require('lspsaga.kind').get_kind_group` it will return all the SagaWinbar + kind name group . also 
+`require('lspsaga.lspkind').get_kind_group()` will return all the SagaWinbar + kind name group . also 
 include `SagaWinbarFileName SagaWinbarFileIcon SagaWinbarFolderName SagaWinbarSep`. These groups are 
 special. so if you want use this api to custom the highlight. you need dealwith these 4 groups the
 last item is `SagaWinbarSep`.
@@ -601,8 +605,15 @@ Modify `ui.kind` to change the icons of the kinds.
 All kinds used in Lspsaga are defined in [lspkind.lua](./lua/lspsaga/lspkind.lua).
 The key in `ui.kind` is the kind name, and the value can either be a string or a table. If a string is passed, it is setting the `icon`. If table is passed, it will be passed as `{ icon, highlight group }`, for example, to change the a folder's icon color, you could do this: `ui = { kind = { ["Folder"] = { " ", "@comment" }, }, },`.
 
+# Donate
+
+Currently, I am in need of some donations. If you'd like to support my work financially, please donate through Github Sponsor button or 
+[PayPal](https://paypal.me/bobbyhub). Thanks!
+[![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
+
+
 # Backers
-Thanks for everything!
+Thanks for everyone!
 
 [Scott Ming](https://github.com/scottming)
 [@Möller Lukas](https://github.com/lmllrjr)
@@ -612,12 +623,6 @@ Thanks for everything!
 [@Burgess Darrion](https://github.com/ca-mantis-shrimp)
 [@Ceserani Alessandro](https://github.com/al-ce)
 
-# Donate
-
-[![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
-
-Currently, I am in need of some donations. If you'd like to support my work financially, please donate through [PayPal](https://paypal.me/bobbyhub).
-Thanks!
 
 # License
 

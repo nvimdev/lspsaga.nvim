@@ -17,6 +17,6 @@ end, {
   end,
 })
 
-vim.api.nvim_create_user_command('DiagnsoticInsertEnable', function()
+vim.api.nvim_create_user_command('DiagnosticInsertEnable', function()
   require('lspsaga.diagnostic'):on_insert()
 end, {})

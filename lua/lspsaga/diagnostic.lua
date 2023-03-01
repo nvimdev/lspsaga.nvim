@@ -2,7 +2,7 @@ local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local diag_conf, ui = config.diagnostic, config.ui
+local diag_conf = config.diagnostic
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local insert = table.insert
@@ -98,8 +98,8 @@ function diag:code_action_cb()
 
   if diag_conf.jump_num_shortcut then
     self.remove_num_map = function()
-      for i = 3, #contents do
-        pcall(vim.keymap.del, 'n', tostring(i - 2), { buffer = self.main_buf })
+      for i = 1, #(act.action_tuples or {}) do
+        pcall(vim.keymap.del, 'n', tostring(i), { buffer = self.main_buf })
       end
     end
 
@@ -149,76 +149,7 @@ function diag:apply_map()
   end, { buffer = self.bufnr, nowait = true })
 end
 
-function diag:render_diagnostic_window(entry, option)
-  option = option or {}
-  self.main_buf = api.nvim_get_current_buf()
-  local diag_type = get_diag_type(entry.severity)
-  local content = {}
-
-  local source = ' '
-
-  if entry.source then
-    source = source .. entry.source
-  end
-
-  if entry.code then
-    source = source .. '(' .. entry.code .. ')'
-  end
-
-  local convert = vim.split(entry.message, '\n', { trimempty = true })
-  vim.list_extend(content, convert)
-  content[#content] = content[#content] .. source
-
-  if diag_conf.show_code_action then
-    act:send_code_action_request(self.main_buf, {
-      range = {
-        start = { entry.lnum + 1, entry.col },
-        ['end'] = { entry.lnum + 1, entry.col },
-      },
-    }, function()
-      self:code_action_cb()
-    end)
-  end
-  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
-  local max_len = window.get_max_content_length(content)
-
-  if max_len < max_width then
-    max_width = max_len
-  elseif max_width - max_len > 15 then
-    max_width = max_len + 10
-  end
-
-  local increase = window.win_height_increase(content, diag_conf.max_width)
-
-  local hi_name = 'Diagnostic' .. diag_type
-  local content_opts = {
-    contents = content,
-    filetype = 'markdown',
-    buftype = 'nofile',
-    wrap = true,
-    highlight = {
-      border = diag_conf.border_follow and hi_name or 'DiagnosticBorder',
-      normal = 'DiagnosticNormal',
-    },
-  }
-
-  local opts = {
-    relative = 'cursor',
-    style = 'minimal',
-    move_col = 3,
-    width = max_width,
-    height = #content + increase,
-    no_size_override = true,
-    focusable = true,
-  }
-
-  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
-  vim.wo[self.winid].conceallevel = 2
-  vim.wo[self.winid].concealcursor = 'niv'
-  vim.wo[self.winid].showbreak = 'NONE'
-  vim.wo[self.winid].breakindent = true
-  vim.wo[self.winid].breakindentopt = 'shift:0'
-
+function diag:render_virt_line(content, opts, hi_name)
   local win_config = api.nvim_win_get_config(self.winid)
 
   local above = win_config['row'][false] < fn.winline()
@@ -232,9 +163,7 @@ function diag:render_diagnostic_window(entry, option)
   elseif win_config['anchor'] == 'SW' then
     opts.move_col = nil
   end
-
   opts.focusable = false
-
   opts.height = opts.height + 1
   opts.width = 4
 
@@ -303,7 +232,83 @@ function diag:render_diagnostic_window(entry, option)
       virt_lines_above = false,
     })
   end
+end
+
+function diag:render_diagnostic_window(entry, option)
+  option = option or {}
+  self.main_buf = api.nvim_get_current_buf()
+  local diag_type = get_diag_type(entry.severity)
+  local content = {}
+
+  local source = ' '
+
+  if entry.source then
+    source = source .. entry.source
+  end
+
+  if entry.code then
+    source = source .. '(' .. entry.code .. ')'
+  end
+
+  local convert = vim.split(entry.message, '\n', { trimempty = true })
+  vim.list_extend(content, convert)
+  content[#content] = content[#content] .. source
+
+  if diag_conf.show_code_action and libs.get_client_by_cap('codeActionProvider') then
+    act:send_code_action_request(self.main_buf, {
+      range = {
+        start = { entry.lnum + 1, entry.col },
+        ['end'] = { entry.lnum + 1, entry.col },
+      },
+    }, function()
+      self:code_action_cb()
+    end)
+  end
+  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
+  local max_len = window.get_max_content_length(content)
+
+  if max_len < max_width then
+    max_width = max_len
+  elseif max_width - max_len > 15 then
+    max_width = max_len + 10
+  end
+
+  local increase = window.win_height_increase(content, diag_conf.max_width)
+
+  local hi_name = 'Diagnostic' .. diag_type
+  local content_opts = {
+    contents = content,
+    filetype = 'markdown',
+    buftype = 'nofile',
+    wrap = true,
+    highlight = {
+      border = diag_conf.border_follow and hi_name or 'DiagnosticBorder',
+      normal = 'DiagnosticNormal',
+    },
+  }
+
+  local opts = {
+    relative = 'cursor',
+    style = 'minimal',
+    move_col = diag_conf.show_virt_line and 3 or 0,
+    width = max_width,
+    height = #content + increase,
+    no_size_override = true,
+    focusable = true,
+  }
+
+  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+  vim.wo[self.winid].conceallevel = 2
+  vim.wo[self.winid].concealcursor = 'niv'
+  vim.wo[self.winid].showbreak = 'NONE'
+  vim.wo[self.winid].breakindent = true
+  vim.wo[self.winid].breakindentopt = 'shift:0'
+
   local color = get_colors(hi_name)
+
+  if diag_conf.show_virt_line then
+    self:render_virt_line(content, opts, hi_name)
+  end
 
   api.nvim_set_hl(0, 'DiagnosticText', {
     foreground = color.foreground,
@@ -519,7 +524,8 @@ function diag:show(entrys, dtype, arg)
     },
   }
 
-  local close_autocmds = { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete' }
+  local close_autocmds =
+    { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScrolled' }
   if arg and arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
@@ -664,46 +670,55 @@ function diag:close_exist_win()
   return has
 end
 
+local function on_top_right(content)
+  local width = window.get_max_content_length(content)
+  if width >= math.floor(vim.o.columns * 0.75) then
+    width = math.floor(vim.o.columns * 0.5)
+  end
+  local opt = {
+    relative = 'editor',
+    row = 1,
+    col = vim.o.columns - width,
+    height = #content,
+    width = width,
+    focusable = false,
+  }
+  return opt
+end
+
+local function get_row_col(content)
+  local res = {}
+  local curwin = api.nvim_get_current_win()
+  local max_len = window.get_max_content_length(content)
+  local tail = #api.nvim_get_current_line() + 20
+  local col = api.nvim_win_get_cursor(curwin)[2]
+  if tail + max_len >= api.nvim_win_get_width(curwin) then
+    res.row = fn.winline()
+  else
+    res.row = fn.winline() - 1
+  end
+  res.col = col + 20
+
+  return res
+end
+
+local function theme_bg()
+  local conf = api.nvim_get_hl_by_name('Normal', true)
+  if conf.background then
+    return conf.background
+  end
+  return 'NONE'
+end
+
 function diag:on_insert()
   local winid, bufnr
 
-  local function on_top_right(content)
+  local function max_width(content)
     local width = window.get_max_content_length(content)
-    if width >= math.floor(vim.o.columns * 0.75) then
-      width = math.floor(vim.o.columns * 0.5)
+    if width == vim.o.columns - 10 then
+      width = vim.o.columns * 0.6
     end
-    local opt = {
-      relative = 'editor',
-      row = 1,
-      col = vim.o.columns - width,
-      height = #content,
-      width = width,
-      focusable = false,
-    }
-    return opt
-  end
-
-  local function get_row_col(content)
-    local res = {}
-    local curwin = api.nvim_get_current_win()
-    local max_len = window.get_max_content_length(content)
-    local tail = #api.nvim_get_current_line() + 20
-    local col = api.nvim_win_get_cursor(curwin)[2]
-    if tail + max_len >= api.nvim_win_get_width(curwin) then
-      res.row = fn.winline()
-    else
-      res.row = fn.winline() - 1
-    end
-    res.col = col + 20
-
-    return res
-  end
-  local function theme_bg()
-    local conf = api.nvim_get_hl_by_name('Normal', true)
-    if conf.background then
-      return conf.background
-    end
-    return 'NONE'
+    return width
   end
 
   local function create_window(content)
@@ -711,15 +726,11 @@ function diag:on_insert()
     if not config.diagnostic.on_insert_follow then
       float_opt = on_top_right(content)
     else
-      local width = window.get_max_content_length(content)
-      if width == vim.o.columns then
-        width = vim.o.columns * 0.6
-      end
       local res = get_row_col(content)
       float_opt = {
         relative = 'win',
         win = api.nvim_get_current_win(),
-        width = width,
+        width = max_width(content),
         height = #content,
         row = res.row,
         col = res.col,
@@ -817,6 +828,7 @@ function diag:on_insert()
         relative = 'win',
         win = curwin,
         height = #content,
+        width = max_width(content),
         row = res.row,
         col = res.col,
       })

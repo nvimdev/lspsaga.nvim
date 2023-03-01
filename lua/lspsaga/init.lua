@@ -22,6 +22,7 @@ local default_config = {
     on_insert = true,
     on_insert_follow = false,
     insert_winblend = 0,
+    show_virt_line = true,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
@@ -63,6 +64,7 @@ local default_config = {
   finder = {
     --percentage
     max_height = 0.5,
+    force_max_height = false,
     keys = {
       jump_to = 'p',
       edit = { 'o', '<CR>' },

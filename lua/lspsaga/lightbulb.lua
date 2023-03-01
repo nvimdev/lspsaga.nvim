@@ -3,7 +3,7 @@ local config = require('lspsaga').config
 local lb = {}
 
 local function get_hl_group()
-  return 'LspSagaLightBulb'
+  return 'SagaLightBulb'
 end
 
 function lb:init_sign()
@@ -45,7 +45,7 @@ local function _update_virtual_text(bufnr, line)
   if line then
     local icon_with_indent = '  ' .. config.ui.code_action
     pcall(api.nvim_buf_set_extmark, bufnr, namespace, line, -1, {
-      virt_text = { { icon_with_indent, 'LspSagaLightBulb' } },
+      virt_text = { { icon_with_indent, 'SagaLightBulb' } },
       virt_text_pos = 'overlay',
       hl_mode = 'combine',
     })

@@ -72,7 +72,7 @@ function M.combine_char()
   }
 end
 
-local function combine_border(style, side, hi)
+function M.combine_border(style, side, hi)
   local border_chars = M.border_chars()
   local order =
     { 'lefttop', 'top', 'righttop', 'right', 'rightbottom', 'bottom', 'leftbottom', 'left' }
@@ -80,7 +80,7 @@ local function combine_border(style, side, hi)
   local res = {}
 
   for _, pos in ipairs(order) do
-    if vim.tbl_contains(vim.tbl_keys(side), pos) then
+    if not vim.tbl_isempty(side) and vim.tbl_contains(vim.tbl_keys(side), pos) then
       table.insert(res, { side[pos], hi })
     else
       table.insert(res, { border_chars[pos][style], hi })
@@ -217,7 +217,7 @@ function M.create_win_with_border(content_opts, opts)
     opts.border = 'none'
   else
     opts.border = content_opts.border_side
-        and combine_border(config.ui.border, content_opts.border_side, border_hl)
+        and M.combine_border(config.ui.border, content_opts.border_side, border_hl)
       or config.ui.border
   end
 
