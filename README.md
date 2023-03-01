@@ -336,6 +336,7 @@ Default options:
     on_insert = true,
     on_insert_follow = false,
     insert_winblend = 0,
+    show_virt_line = true,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
@@ -353,6 +354,7 @@ Default options:
   },
 ```
 
+- `show_virt_line` default is true, show a line when using diagnostic jump. false disable it.
 - Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
 - `custom_msg` string used to custom the diagnostic jump `Msg` section titile

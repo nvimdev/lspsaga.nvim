@@ -149,76 +149,7 @@ function diag:apply_map()
   end, { buffer = self.bufnr, nowait = true })
 end
 
-function diag:render_diagnostic_window(entry, option)
-  option = option or {}
-  self.main_buf = api.nvim_get_current_buf()
-  local diag_type = get_diag_type(entry.severity)
-  local content = {}
-
-  local source = ' '
-
-  if entry.source then
-    source = source .. entry.source
-  end
-
-  if entry.code then
-    source = source .. '(' .. entry.code .. ')'
-  end
-
-  local convert = vim.split(entry.message, '\n', { trimempty = true })
-  vim.list_extend(content, convert)
-  content[#content] = content[#content] .. source
-
-  if diag_conf.show_code_action and libs.get_client_by_cap('codeActionProvider') then
-    act:send_code_action_request(self.main_buf, {
-      range = {
-        start = { entry.lnum + 1, entry.col },
-        ['end'] = { entry.lnum + 1, entry.col },
-      },
-    }, function()
-      self:code_action_cb()
-    end)
-  end
-  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
-  local max_len = window.get_max_content_length(content)
-
-  if max_len < max_width then
-    max_width = max_len
-  elseif max_width - max_len > 15 then
-    max_width = max_len + 10
-  end
-
-  local increase = window.win_height_increase(content, diag_conf.max_width)
-
-  local hi_name = 'Diagnostic' .. diag_type
-  local content_opts = {
-    contents = content,
-    filetype = 'markdown',
-    buftype = 'nofile',
-    wrap = true,
-    highlight = {
-      border = diag_conf.border_follow and hi_name or 'DiagnosticBorder',
-      normal = 'DiagnosticNormal',
-    },
-  }
-
-  local opts = {
-    relative = 'cursor',
-    style = 'minimal',
-    move_col = 3,
-    width = max_width,
-    height = #content + increase,
-    no_size_override = true,
-    focusable = true,
-  }
-
-  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
-  vim.wo[self.winid].conceallevel = 2
-  vim.wo[self.winid].concealcursor = 'niv'
-  vim.wo[self.winid].showbreak = 'NONE'
-  vim.wo[self.winid].breakindent = true
-  vim.wo[self.winid].breakindentopt = 'shift:0'
-
+function diag:render_virt_line(content, opts, hi_name)
   local win_config = api.nvim_win_get_config(self.winid)
 
   local above = win_config['row'][false] < fn.winline()
@@ -232,9 +163,7 @@ function diag:render_diagnostic_window(entry, option)
   elseif win_config['anchor'] == 'SW' then
     opts.move_col = nil
   end
-
   opts.focusable = false
-
   opts.height = opts.height + 1
   opts.width = 4
 
@@ -303,7 +232,83 @@ function diag:render_diagnostic_window(entry, option)
       virt_lines_above = false,
     })
   end
+end
+
+function diag:render_diagnostic_window(entry, option)
+  option = option or {}
+  self.main_buf = api.nvim_get_current_buf()
+  local diag_type = get_diag_type(entry.severity)
+  local content = {}
+
+  local source = ' '
+
+  if entry.source then
+    source = source .. entry.source
+  end
+
+  if entry.code then
+    source = source .. '(' .. entry.code .. ')'
+  end
+
+  local convert = vim.split(entry.message, '\n', { trimempty = true })
+  vim.list_extend(content, convert)
+  content[#content] = content[#content] .. source
+
+  if diag_conf.show_code_action and libs.get_client_by_cap('codeActionProvider') then
+    act:send_code_action_request(self.main_buf, {
+      range = {
+        start = { entry.lnum + 1, entry.col },
+        ['end'] = { entry.lnum + 1, entry.col },
+      },
+    }, function()
+      self:code_action_cb()
+    end)
+  end
+  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
+  local max_len = window.get_max_content_length(content)
+
+  if max_len < max_width then
+    max_width = max_len
+  elseif max_width - max_len > 15 then
+    max_width = max_len + 10
+  end
+
+  local increase = window.win_height_increase(content, diag_conf.max_width)
+
+  local hi_name = 'Diagnostic' .. diag_type
+  local content_opts = {
+    contents = content,
+    filetype = 'markdown',
+    buftype = 'nofile',
+    wrap = true,
+    highlight = {
+      border = diag_conf.border_follow and hi_name or 'DiagnosticBorder',
+      normal = 'DiagnosticNormal',
+    },
+  }
+
+  local opts = {
+    relative = 'cursor',
+    style = 'minimal',
+    move_col = diag_conf.show_virt_line and 3 or 0,
+    width = max_width,
+    height = #content + increase,
+    no_size_override = true,
+    focusable = true,
+  }
+
+  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
+  vim.wo[self.winid].conceallevel = 2
+  vim.wo[self.winid].concealcursor = 'niv'
+  vim.wo[self.winid].showbreak = 'NONE'
+  vim.wo[self.winid].breakindent = true
+  vim.wo[self.winid].breakindentopt = 'shift:0'
+
   local color = get_colors(hi_name)
+
+  if diag_conf.show_virt_line then
+    self:render_virt_line(content, opts, hi_name)
+  end
 
   api.nvim_set_hl(0, 'DiagnosticText', {
     foreground = color.foreground,
