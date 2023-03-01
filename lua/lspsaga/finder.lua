@@ -638,18 +638,22 @@ local function create_preview_window(finder_winid, main_win)
     max_width = 80
   end
   opts.width = max_width
-  local available_screen_width = vim.o.columns - winconfig.width - winconfig.col[false] - 6
-  if opts.width <= 0 and available_screen_width < 6 then
-    if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
-      api.nvim_win_set_config(
-        ctx.winid,
-        { border = window.combine_border(config.ui.border, {}, 'FinderBorder') }
-      )
+  local screenpos = fn.win_screenpos(finder_winid)
+  local main_screenpos = fn.win_screenpos(main_win)
+  local available_screen_width = vim.o.columns - screenpos[2] - 4
+  if opts.width <= 15 then
+    if available_screen_width < 6 then
+      if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
+        api.nvim_win_set_config(
+          ctx.winid,
+          { border = window.combine_border(config.ui.border, {}, 'FinderBorder') }
+        )
+      end
+      return
     end
-    return
-  elseif opts.width <= 0 and available_screen_width > 6 then
-    opts.row = opts.row + 1
     opts.relative = 'editor'
+    opts.row = opts.row + 1
+    opts.col = (screenpos[2] - main_screenpos[2]) + winconfig.width + 2
     opts.win = nil
     opts.width = available_screen_width
   end
