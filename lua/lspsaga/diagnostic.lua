@@ -2,7 +2,7 @@ local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local diag_conf = config.diagnostic
+local diag_conf, ui = config.diagnostic, config.ui
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local insert = table.insert
@@ -26,10 +26,10 @@ local function clean_ctx()
   end
 end
 
-local function get_diagnostic_sign(type)
-  local prefix = 'DiagnosticSign'
-  return fn.sign_getdefined(prefix .. type)
-end
+-- local function get_diagnostic_sign(type)
+--   local prefix = 'DiagnosticSign'
+--   return fn.sign_getdefined(prefix .. type)
+-- end
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
@@ -423,7 +423,8 @@ local function tbl_append(t1, t2)
 end
 
 local function generate_title(counts, content, width)
-  local title_count = 'Buffer: ' .. api.nvim_get_current_buf()
+  local fname = fn.fnamemodify(api.nvim_buf_get_name(0), ':t')
+  local title_count = ' ' .. fname
   local title_hi_scope = {}
   title_hi_scope[#title_hi_scope + 1] = { 'DiagnosticHead', 0, #title_count }
   ---@diagnostic disable-next-line: param-type-mismatch
@@ -479,8 +480,7 @@ function diag:show(entrys, dtype, arg)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local diag_type = get_diag_type(entry.severity)
-    local line = (#diag_type < 5 and ' ' ..diag_type or diag_type)
+    local line = ui.diagnostic
       .. ' '
       .. code_source[1]
       .. ' |'
@@ -500,7 +500,7 @@ function diag:show(entrys, dtype, arg)
 
   local increase = window.win_height_increase(content)
   local max_len = window.get_max_content_length(content)
-  local max_height = math.floor(vim.o.lines * 0.5)
+  local max_height = math.floor(vim.o.lines * 0.6)
   local actual_height = get_actual_height(content) + increase
   local max_width = math.floor(vim.o.columns * 0.6)
   local opt = {
@@ -565,7 +565,7 @@ function diag:show(entrys, dtype, arg)
   api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'Comment', 1, 0, -1)
 
   local function get_color(hi_name)
-    local color = api.nvim_get_hl_by_name(hi_name,true)
+    local color = api.nvim_get_hl_by_name(hi_name, true)
     return color.foreground
   end
 
@@ -574,9 +574,9 @@ function diag:show(entrys, dtype, arg)
     local diag_type = get_diag_type(item.severity)
     local hi = 'Diagnostic' .. diag_type
     local fg = get_color(hi)
-    local col_end = 5
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticType'..k, index, 0, col_end)
-    api.nvim_set_hl(0, 'DiagnosticType'..k, { bg= fg, fg = 'black'})
+    local col_end = 4
+    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticType' .. k, index, 0, col_end)
+    api.nvim_set_hl(0, 'DiagnosticType' .. k, { fg = fg })
     api.nvim_buf_add_highlight(
       self.lnum_bufnr,
       0,

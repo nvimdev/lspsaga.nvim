@@ -284,10 +284,10 @@ function M.get_max_content_length(contents)
   local cells = {}
   for _, v in pairs(contents) do
     if v:find('\n.') then
-      local tbl = vim.split(v,'\n')
+      local tbl = vim.split(v, '\n')
       vim.tbl_map(function(s)
         table.insert(cells, #s)
-      end,tbl)
+      end, tbl)
     else
       table.insert(cells, #v)
     end
@@ -346,9 +346,9 @@ function M.win_height_increase(content, percent)
   local new = {}
   for _, v in pairs(content) do
     if v:find('\n.') then
-      vim.list_extend(new,vim.split(v, '\n'))
+      vim.list_extend(new, vim.split(v, '\n'))
     else
-      new[#new+1] = v
+      new[#new + 1] = v
     end
   end
   if max_len > max_width then
