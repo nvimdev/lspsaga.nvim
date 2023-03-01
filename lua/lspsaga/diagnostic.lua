@@ -2,7 +2,7 @@ local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local diag_conf = config.diagnostic
+local diag_conf, ui = config.diagnostic, config.ui
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local insert = table.insert
@@ -26,10 +26,10 @@ local function clean_ctx()
   end
 end
 
-local function get_diagnostic_sign(type)
-  local prefix = 'DiagnosticSign'
-  return fn.sign_getdefined(prefix .. type)
-end
+-- local function get_diagnostic_sign(type)
+--   local prefix = 'DiagnosticSign'
+--   return fn.sign_getdefined(prefix .. type)
+-- end
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
@@ -422,6 +422,45 @@ local function tbl_append(t1, t2)
   end
 end
 
+local function generate_title(counts, content, width)
+  local fname = fn.fnamemodify(api.nvim_buf_get_name(0), ':t')
+  local title_count = ' ' .. fname
+  local title_hi_scope = {}
+  title_hi_scope[#title_hi_scope + 1] = { 'DiagnosticHead', 0, #title_count }
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for _, i in ipairs(get_diag_type()) do
+    if counts[i] ~= 0 then
+      local start = #title_count
+      title_count = title_count .. ' ' .. i .. ': ' .. counts[i]
+      table.insert(title_hi_scope, { 'Diagnostic' .. i, start + 1, #title_count })
+    end
+  end
+  local title = {
+    title_count,
+    gen_truncate_line(width),
+  }
+
+  tbl_append(content, title)
+
+  return function(bufnr)
+    for _, item in pairs(title_hi_scope) do
+      api.nvim_buf_add_highlight(bufnr, 0, item[1], 0, item[2], item[3])
+    end
+  end
+end
+
+local function get_actual_height(content)
+  local height = 0
+  for _, v in pairs(content) do
+    if v:find('\n.') then
+      height = height + #vim.split(v, '\n')
+    else
+      height = height + 1
+    end
+  end
+  return height
+end
+
 function diag:show(entrys, dtype, arg)
   local cur_buf = api.nvim_get_current_buf()
   local cur_win = api.nvim_get_current_win()
@@ -441,65 +480,39 @@ function diag:show(entrys, dtype, arg)
     local code_source =
       api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
     insert(len, #code_source[1])
-    local sign = get_diagnostic_sign(get_diag_type(entry.severity))[1] or {}
-    if not sign.text then
-      sign.text = ''
-    end
-    local line = sign.text
+    local line = ui.diagnostic
       .. ' '
       .. code_source[1]
-      .. '  '
-      .. entry.lnum + 1
+      .. ' |'
+      .. (dtype == 'buf' and entry.lnum + 1 or 'Col')
       .. ':'
       .. entry.col
+      .. '|'
       .. '\n'
-      .. '  '
-      .. entry.message
+    if entry.message then
+      line = line .. '  ' .. entry.message
+    end
     if entry.source then
       line = line .. '(' .. entry.source .. ')'
     end
-    table.insert(content, line)
+    content[#content + 1] = line
   end
 
   local increase = window.win_height_increase(content)
   local max_len = window.get_max_content_length(content)
-  local max_height = math.floor(vim.o.lines * 0.5)
-  local actual_height = #content * 2 + increase + 2
-  local max_width = math.floor(vim.o.columns * 0.5)
+  local max_height = math.floor(vim.o.lines * 0.6)
+  local actual_height = get_actual_height(content) + increase
+  local max_width = math.floor(vim.o.columns * 0.6)
   local opt = {
-    width = max_len + 8 < max_width and max_len + 5 or max_width,
+    width = max_len < max_width and max_len or max_width,
     height = actual_height > max_height and max_height or actual_height,
     no_size_override = true,
   }
 
-  local function dtype_title()
-    local pos = api.nvim_win_get_cursor(cur_win)
-    if dtype == 'cursor' then
-      return 'Ln: ' .. pos[1] .. ' Col: ' .. pos[2]
-    elseif dtype == 'line' then
-      return 'Ln: ' .. pos[1]
-    else
-      return 'Buffer: ' .. cur_buf
-    end
+  local func
+  if dtype == 'buf' then
+    func = generate_title(counts, content, opt.width)
   end
-
-  local title_count = dtype_title()
-  local title_hi_scope = {}
-  title_hi_scope[#title_hi_scope + 1] = { 'DiagnosticHead', 0, #title_count }
-  ---@diagnostic disable-next-line: param-type-mismatch
-  for _, i in ipairs(get_diag_type()) do
-    if counts[i] ~= 0 then
-      local start = #title_count
-      title_count = title_count .. ' ' .. i .. ': ' .. counts[i]
-      table.insert(title_hi_scope, { 'Diagnostic' .. i, start + 1, #title_count })
-    end
-  end
-
-  local title = {
-    title_count,
-    gen_truncate_line(opt.width),
-  }
-  tbl_append(content, title)
 
   local content_opt = {
     contents = content,
@@ -545,18 +558,25 @@ function diag:show(entrys, dtype, arg)
   vim.wo[self.lnum_winid].breakindent = true
   vim.wo[self.lnum_winid].breakindentopt = ''
 
-  for _, item in pairs(title_hi_scope) do
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, item[1], 0, item[2], item[3])
+  if func then
+    func(self.lnum_bufnr)
   end
+
   api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'Comment', 1, 0, -1)
 
-  local index = 2
+  local function get_color(hi_name)
+    local color = api.nvim_get_hl_by_name(hi_name, true)
+    return color.foreground
+  end
+
+  local index = func and 2 or 0
   for k, item in pairs(entrys) do
     local diag_type = get_diag_type(item.severity)
     local hi = 'Diagnostic' .. diag_type
-    local sign = get_diagnostic_sign(diag_type)[1] or {}
-    local col_end = sign.text and #sign.text + 1 or 1
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index, 0, col_end)
+    local fg = get_color(hi)
+    local col_end = 4
+    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticType' .. k, index, 0, col_end)
+    api.nvim_set_hl(0, 'DiagnosticType' .. k, { fg = fg })
     api.nvim_buf_add_highlight(
       self.lnum_bufnr,
       0,
@@ -630,7 +650,7 @@ function diag:show_buf_diagnostic(arg)
     return
   end
   sort_by_severity(entrys)
-  self:show(entrys, type, arg)
+  self:show(entrys, 'buf', arg)
 end
 
 function diag:close_exist_win()
