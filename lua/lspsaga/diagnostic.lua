@@ -169,10 +169,7 @@ function diag:render_diagnostic_window(entry, option)
   vim.list_extend(content, convert)
   content[#content] = content[#content] .. source
 
-  if
-    diag_conf.show_code_action
-    and libs.get_client_by_cap({ 'codeActionProvider', 'resolveProvider' })
-  then
+  if diag_conf.show_code_action and libs.get_client_by_cap('codeActionProvider') then
     act:send_code_action_request(self.main_buf, {
       range = {
         start = { entry.lnum + 1, entry.col },
