@@ -371,15 +371,16 @@ function finder:render_finder_result()
   opt.col = 8
 
   local side_char = window.border_chars()['top'][config.ui.border]
+  local normal_right_side = ' '
   local content_opts = {
     contents = self.contents,
     filetype = 'lspsagafinder',
     bufhidden = 'wipe',
     enter = true,
     border_side = {
-      ['right'] = ' ',
-      ['righttop'] = side_char,
-      ['rightbottom'] = side_char,
+      ['right'] = config.ui.border == 'shadow' and '' or normal_right_side,
+      ['righttop'] = config.ui.border == 'shadow' and '' or side_char,
+      ['rightbottom'] = config.ui.border == 'shadow' and '' or side_char,
     },
     highlight = {
       border = 'finderBorder',
@@ -630,7 +631,7 @@ local function create_preview_window(finder_winid, main_win)
   }
 
   local winconfig = api.nvim_win_get_config(finder_winid)
-  opts.col = winconfig.col[false] + winconfig.width + 2
+  opts.col = winconfig.col[false] + winconfig.width + 2 + (config.ui.border == 'shadow' and -2 or 0)
   opts.row = winconfig.row[false]
   opts.height = winconfig.height
   local max_width = api.nvim_win_get_width(main_win) - opts.col - 6
@@ -653,7 +654,10 @@ local function create_preview_window(finder_winid, main_win)
     end
     opts.relative = 'editor'
     opts.row = opts.row + 1
-    opts.col = (screenpos[2] - main_screenpos[2]) + winconfig.width + 2
+    opts.col = (screenpos[2] - main_screenpos[2])
+      + winconfig.width
+      + 2
+      + (config.ui.border == 'shadow' and -2 or 0)
     opts.win = nil
     opts.width = available_screen_width
   end
