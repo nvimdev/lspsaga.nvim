@@ -243,6 +243,7 @@ function hover:render_hover_doc(args)
       api.nvim_set_current_win(self.preview_winid)
       return
     elseif args and has_arg(args, '++keep') then
+      libs.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.preview_winid, true)
       self.preview_winid = nil
       self.preview_bufnr = nil
