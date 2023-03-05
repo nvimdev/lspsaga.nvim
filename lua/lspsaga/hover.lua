@@ -18,6 +18,7 @@ function hover:open_floating_preview(res, option_fn)
   })
 
   local bufnr = api.nvim_get_current_buf()
+  local cur_winline = vim.fn.winline() - 1
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
   local content = vim.split(res.value, '\n', { trimempty = true })
@@ -116,10 +117,10 @@ function hover:open_floating_preview(res, option_fn)
   end, { buffer = self.preview_bufnr })
 
   if not option_fn then
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete' }, {
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'WinScrolled' }, {
       buffer = bufnr,
       once = true,
-      callback = function()
+      callback = function(opt)
         if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
           libs.delete_scroll_map(bufnr)
           api.nvim_buf_delete(self.preview_bufnr, { force = true })
@@ -128,6 +129,10 @@ function hover:open_floating_preview(res, option_fn)
         if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
           api.nvim_win_close(self.preview_winid, true)
           self:remove_data()
+        end
+
+        if opt.event == 'WinScrolled' then
+          vim.cmd('Lspsaga hover_doc')
         end
       end,
       desc = '[Lspsaga] Auto close hover window',
@@ -245,6 +250,7 @@ function hover:render_hover_doc(args)
     elseif args and has_arg(args, '++keep') then
       libs.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.preview_winid, true)
+      window.exec_winclosed_event()
       self.preview_winid = nil
       self.preview_bufnr = nil
       return

@@ -33,6 +33,23 @@ end
 
 local virt_ns = api.nvim_create_namespace('LspsagaDiagnostic')
 
+local function get_diagnostic(type)
+  local cur_buf = api.nvim_get_current_buf()
+  local line, col = unpack(api.nvim_win_get_cursor(0))
+  local entrys = diagnostic.get(cur_buf, { lnum = line - 1 })
+  if type ~= 'cursor' then
+    return entrys
+  end
+
+  local res = {}
+  for _, v in pairs(entrys) do
+    if v.col <= col and v.end_col >= col then
+      table.insert(res, v)
+    end
+  end
+  return res
+end
+
 ---@private
 local function get_diag_type(severity)
   local type = { 'Error', 'Warn', 'Info', 'Hint' }
@@ -362,7 +379,7 @@ function diag:render_diagnostic_window(entry, option)
 
   self:apply_map()
 
-  local close_autocmds = { 'CursorMoved', 'InsertEnter', 'TextChanged' }
+  local close_autocmds = { 'CursorMoved', 'InsertEnter', 'WinScrolled' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(
       current_buffer,
@@ -372,7 +389,7 @@ function diag:render_diagnostic_window(entry, option)
         if self.remove_num_map then
           self.remove_num_map()
         end
-        if event == 'TextChanged' or event == 'InsertEnter' then
+        if event == 'InsertEnter' or event == 'WinScrolled' then
           act:clean_context()
           clean_ctx()
         end
@@ -381,21 +398,24 @@ function diag:render_diagnostic_window(entry, option)
   end, 0)
 end
 
-function diag:move_cursor(entry)
+function diag:move_cursor(entry, jump)
+  jump = jump or true
   local current_winid = api.nvim_get_current_win()
 
-  api.nvim_win_call(current_winid, function()
-    -- Save position in the window's jumplist
-    vim.cmd("normal! m'")
-    api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
-    local width = entry.end_col - entry.col
-    if width <= 0 then
-      width = #api.nvim_get_current_line()
-    end
-    libs.jump_beacon({ entry.lnum, entry.col }, width)
-    -- Open folds under the cursor
-    vim.cmd('normal! zv')
-  end)
+  if jump then
+    api.nvim_win_call(current_winid, function()
+      -- Save position in the window's jumplist
+      vim.cmd("normal! m'")
+      api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
+      local width = entry.end_col - entry.col
+      if width <= 0 then
+        width = #api.nvim_get_current_line()
+      end
+      libs.jump_beacon({ entry.lnum, entry.col }, width)
+      -- Open folds under the cursor
+      vim.cmd('normal! zv')
+    end)
+  end
 
   self:render_diagnostic_window(entry)
 end
@@ -616,23 +636,6 @@ local function sort_by_severity(entrys)
   table.sort(entrys, function(k1, k2)
     return k1.severity < k2.severity
   end)
-end
-
-local function get_diagnostic(type)
-  local cur_buf = api.nvim_get_current_buf()
-  local line, col = unpack(api.nvim_win_get_cursor(0))
-  local entrys = diagnostic.get(cur_buf, { lnum = line - 1 })
-  if type ~= 'cursor' then
-    return entrys
-  end
-
-  local res = {}
-  for _, v in pairs(entrys) do
-    if v.col <= col and v.end_col >= col then
-      table.insert(res, v)
-    end
-  end
-  return res
 end
 
 function diag:show_diagnostics(arg, type)
