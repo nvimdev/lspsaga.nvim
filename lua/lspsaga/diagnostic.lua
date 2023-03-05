@@ -379,7 +379,7 @@ function diag:render_diagnostic_window(entry, option)
 
   self:apply_map()
 
-  local close_autocmds = { 'CursorMoved', 'InsertEnter', 'WinScrolled' }
+  local close_autocmds = { 'CursorMoved', 'InsertEnter' }
   vim.defer_fn(function()
     libs.close_preview_autocmd(
       current_buffer,
@@ -389,7 +389,7 @@ function diag:render_diagnostic_window(entry, option)
         if self.remove_num_map then
           self.remove_num_map()
         end
-        if event == 'InsertEnter' or event == 'WinScrolled' then
+        if event == 'InsertEnter' then
           act:clean_context()
           clean_ctx()
         end
@@ -398,24 +398,21 @@ function diag:render_diagnostic_window(entry, option)
   end, 0)
 end
 
-function diag:move_cursor(entry, jump)
-  jump = jump or true
+function diag:move_cursor(entry)
   local current_winid = api.nvim_get_current_win()
 
-  if jump then
-    api.nvim_win_call(current_winid, function()
-      -- Save position in the window's jumplist
-      vim.cmd("normal! m'")
-      api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
-      local width = entry.end_col - entry.col
-      if width <= 0 then
-        width = #api.nvim_get_current_line()
-      end
-      libs.jump_beacon({ entry.lnum, entry.col }, width)
-      -- Open folds under the cursor
-      vim.cmd('normal! zv')
-    end)
-  end
+  api.nvim_win_call(current_winid, function()
+    -- Save position in the window's jumplist
+    vim.cmd("normal! m'")
+    api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
+    local width = entry.end_col - entry.col
+    if width <= 0 then
+      width = #api.nvim_get_current_line()
+    end
+    libs.jump_beacon({ entry.lnum, entry.col }, width)
+    -- Open folds under the cursor
+    vim.cmd('normal! zv')
+  end)
 
   self:render_diagnostic_window(entry)
 end
