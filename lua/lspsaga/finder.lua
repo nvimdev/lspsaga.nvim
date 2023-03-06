@@ -844,8 +844,8 @@ function finder:open_link(action)
   if not width or width <= 0 then
     width = 10
   end
-  if short_link[current_line].row then
-    libs.jump_beacon({ short_link[current_line].row, 0 }, width)
+  if data.row then
+    libs.jump_beacon({ data.row, 0 }, width)
   end
   self:clean_ctx()
 end
