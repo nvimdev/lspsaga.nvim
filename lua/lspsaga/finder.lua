@@ -246,17 +246,20 @@ end
 function finder:create_finder_contents(result, method)
   local contents = {}
   local title = get_titles(libs.tbl_index(methods(), method))
-  insert(contents, { title .. '  ' .. #result, false })
-  insert(contents, { ' ', false })
+  insert(contents, { title .. '  ' .. #result })
+  insert(contents, { ' ' })
 
   local icon_data = get_file_icon(self.main_buf)
   if #result == 0 then
-    contents[#contents + 1] = { '    ' .. icon_data[1] .. get_msg(method), false }
-    contents[#contents + 1] = { ' ', false }
-    self.short_link[#contents - 1] = {
-      content = { 'Sorry did not find any Definition' },
-      link = api.nvim_buf_get_name(0),
+    contents[#contents + 1] = {
+      '    ' .. icon_data[1] .. get_msg(method),
+      {
+        content = { 'No Content Found' },
+        link = api.nvim_buf_get_name(0),
+      },
+
     }
+    contents[#contents + 1] = { ' ' }
     return contents
   end
 
@@ -312,9 +315,9 @@ function finder:create_finder_contents(result, method)
       _end_col = range['end'].character,
     }
 
-    insert(contents, { target_line, link_with_preview })
+    contents[#contents + 1] = { target_line, link_with_preview }
   end
-  insert(contents, { ' ', false })
+  contents[#contents + 1] = { ' ' }
   return contents
 end
 
@@ -653,6 +656,7 @@ local function create_preview_window(finder_winid, main_win)
       ['lefttop'] = rtop,
       ['leftbottom'] = rbottom,
     },
+    bufhidden = '',
     highlight = {
       border = 'FinderPreviewBorder',
       normal = 'FinderNormal',
@@ -841,7 +845,9 @@ function finder:open_link(action)
   if not width or width <= 0 then
     width = 10
   end
-  libs.jump_beacon({ data.row, 0 }, width)
+  if short_link[current_line].row then
+    libs.jump_beacon({ short_link[current_line].row, 0 }, width)
+  end
   self:clean_ctx()
 end
 
@@ -849,6 +855,10 @@ function finder:clean_data()
   for _, buf in pairs(self.wipe_buffers or {}) do
     api.nvim_buf_delete(buf, { force = true })
     pcall(vim.keymap.del, 'n', config.finder.keys.close_in_preview, { buffer = buf })
+  end
+
+  if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
+    api.nvim_buf_delete(self.preview_bufnr, { force = true })
   end
 
   if self.group then
