@@ -257,7 +257,6 @@ function finder:create_finder_contents(result, method)
         content = { 'No Content Found' },
         link = api.nvim_buf_get_name(0),
       },
-
     }
     contents[#contents + 1] = { ' ' }
     return contents
