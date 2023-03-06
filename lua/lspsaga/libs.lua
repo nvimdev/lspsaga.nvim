@@ -8,10 +8,7 @@ libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
 libs.path_sep = libs.iswin and '\\' or '/'
 
 function libs.get_path_info(buf, level)
-  if level == 0 then
-    vim.notify('[Lspsaga] Level must bigger than 0', vim.log.levels.ERROR)
-    return
-  end
+  level = level or 1
   local fname = api.nvim_buf_get_name(buf)
   local tbl = vim.split(fname, libs.path_sep, { trimempty = true })
   if level == 1 then
@@ -28,16 +25,16 @@ function libs.icon_from_devicon(ft, color)
     local ok, devicons = pcall(require, 'nvim-web-devicons')
     if not ok then
       vim.notify('[Lspsaga.nvim] does not found nvim-web-devicons.')
-      return {}
+      return { '' }
     end
     libs.devicons = devicons
   end
   local icon, hl = libs.devicons.get_icon_by_filetype(ft)
   if color then
     local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
-    return { icon, rgb }
+    return { icon .. ' ', rgb }
   end
-  return { icon, hl }
+  return { icon .. ' ', hl }
 end
 
 function libs.get_home_dir()

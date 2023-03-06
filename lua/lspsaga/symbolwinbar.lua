@@ -19,7 +19,6 @@ end
 
 local function get_kind_icon(type, index)
   local kind = require('lspsaga.lspkind').get_kind()
-  ---@diagnostic disable-next-line: need-check-nil
   return kind[type][index]
 end
 
@@ -58,7 +57,7 @@ local function bar_file_name(buf)
   for i, v in pairs(res) do
     if i == #res then
       if #data > 0 then
-        table.insert(items, '%#SagaWinbarFileIcon#' .. data[1] .. ' ' .. '%*')
+        table.insert(items, '%#SagaWinbarFileIcon#' .. data[1] .. '%*')
 
         local ok, conf = pcall(api.nvim_get_hl_by_name, 'SagaWinbarFileIcon', true)
         if not ok then

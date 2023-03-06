@@ -33,11 +33,6 @@ end
 
 local function get_file_icon(bufnr)
   local res = libs.icon_from_devicon(vim.bo[bufnr].filetype)
-  if #res == 0 then
-    res = { '' }
-  else
-    res[1] = res[1] .. ' '
-  end
   return res
 end
 
@@ -248,14 +243,6 @@ local function get_msg(method)
   return t[idx]
 end
 
-local function buf_is_opened(bufnr)
-  local loaded_buffers = api.nvim_list_bufs()
-  if vim.tbl_contains(loaded_buffers, bufnr) then
-    return true
-  end
-  return false
-end
-
 function finder:create_finder_contents(result, method)
   local contents = {}
   local title = get_titles(libs.tbl_index(methods(), method))
@@ -264,8 +251,8 @@ function finder:create_finder_contents(result, method)
 
   local icon_data = get_file_icon(self.main_buf)
   if #result == 0 then
-    insert(contents, { '    ' .. icon_data[1] .. get_msg(method), false })
-    insert(contents, { ' ', false })
+    contents[#contents + 1] = { '    ' .. icon_data[1] .. get_msg(method), false }
+    contents[#contents + 1] = { ' ', false }
     self.short_link[#contents - 1] = {
       content = { 'Sorry did not find any Definition' },
       link = api.nvim_buf_get_name(0),
@@ -274,6 +261,7 @@ function finder:create_finder_contents(result, method)
   end
 
   local root_dir = libs.get_lsp_root_dir()
+  local wipe = false
   for _, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
@@ -283,19 +271,12 @@ function finder:create_finder_contents(result, method)
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     if not api.nvim_buf_is_loaded(bufnr) then
+      wipe = true
       --ignore the FileType event avoid trigger the lsp
       vim.opt.eventignore:append({ 'FileType' })
       fn.bufload(bufnr)
       --restore eventignore
       vim.opt.eventignore:remove({ 'FileType' })
-      if not vim.tbl_contains(self.wipe_buffers, bufnr) then
-        table.insert(self.wipe_buffers, bufnr)
-      end
-    elseif not buf_is_opened(bufnr) then
-      if not vim.tbl_contains(self.wipe_buffers, bufnr) then
-        table.insert(self.wipe_buffers, bufnr)
-      end
-    elseif #fn.win_findbuf(bufnr) == 0 then
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         table.insert(self.wipe_buffers, bufnr)
       end
@@ -325,6 +306,7 @@ function finder:create_finder_contents(result, method)
     local link_with_preview = {
       bufnr = bufnr,
       link = link,
+      wipe = wipe,
       row = range.start.line,
       col = range.start.character,
       _end_col = range['end'].character,
@@ -399,6 +381,7 @@ function finder:render_finder_result()
   --clean
   self.current_word = nil
 
+  self.restore_opts = window.restore_option()
   self.bufnr, self.winid = window.create_win_with_border(content_opts, opt)
   api.nvim_win_set_option(self.winid, 'cursorline', false)
 
@@ -809,17 +792,6 @@ function finder:close_auto_preview_win()
   end
 end
 
-local function find_buf_by_name(name)
-  local bufnr
-  for _, buf in pairs(api.nvim_list_bufs() or {}) do
-    if api.nvim_buf_get_name(buf) == name then
-      bufnr = buf
-      break
-    end
-  end
-  return bufnr
-end
-
 function finder:open_link(action)
   local current_line = api.nvim_win_get_cursor(0)[1]
 
@@ -828,11 +800,16 @@ function finder:open_link(action)
     return
   end
 
-  local short_link = self.short_link
+  local data = self.short_link[current_line]
 
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     local pbuf = api.nvim_win_get_buf(self.preview_winid)
     clear_preview_ns(self.preview_hl_ns, pbuf)
+  end
+  local restore_opts
+
+  if not data.wipe then
+    restore_opts = self.restore_opts
   end
 
   self:quit_float_window()
@@ -843,25 +820,28 @@ function finder:open_link(action)
     vim.cmd('write')
   end
 
-  local buf = find_buf_by_name(short_link[current_line].link)
   local special = { 'edit', 'tab', 'tabnew' }
-  if vim.tbl_contains(special, action) and buf and api.nvim_buf_is_loaded(buf) then
-    local wins = fn.win_findbuf(buf)
+  if vim.tbl_contains(special, action) and not data.wipe then
+    local wins = fn.win_findbuf(data.bufnr)
     local winid = wins[#wins] or api.nvim_get_current_win()
     api.nvim_set_current_win(winid)
-    api.nvim_win_set_buf(winid, buf)
+    api.nvim_win_set_buf(winid, data.bufnr)
   else
-    vim.cmd(action .. ' ' .. uv.fs_realpath(short_link[current_line].link))
+    vim.cmd(action .. ' ' .. uv.fs_realpath(data.link))
   end
 
-  if short_link[current_line].row then
-    api.nvim_win_set_cursor(0, { short_link[current_line].row + 1, short_link[current_line].col })
+  if restore_opts then
+    restore_opts.restore()
+  end
+
+  if data.row then
+    api.nvim_win_set_cursor(0, { data.row + 1, data.col })
   end
   local width = #api.nvim_get_current_line()
   if not width or width <= 0 then
     width = 10
   end
-  libs.jump_beacon({ short_link[current_line].row, 0 }, width)
+  libs.jump_beacon({ data.row, 0 }, width)
   self:clean_ctx()
 end
 

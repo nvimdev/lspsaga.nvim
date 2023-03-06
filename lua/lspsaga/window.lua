@@ -370,4 +370,30 @@ function M.win_height_increase(content, percent)
   return increase
 end
 
+function M.restore_option()
+  local minimal_opts = {
+    ['number'] = vim.opt.number,
+    ['relativenumber'] = vim.opt.relativenumber,
+    ['cursorline'] = vim.opt.cursorline,
+    ['cursorcolumn'] = vim.opt.cursorcolumn,
+    ['foldcolumn'] = vim.opt.foldcolumn,
+    ['spell'] = vim.opt.spell,
+    ['list'] = vim.opt.list,
+    ['signcolumn'] = vim.opt.signcolumn,
+    ['colorcolumn'] = vim.opt.colorcolumn,
+    ['statuscolumn'] = vim.opt.statuscolumn,
+    ['fillchars'] = vim.opt.fillchars,
+  }
+
+  function minimal_opts.restore()
+    for opt, val in pairs(minimal_opts) do
+      if type(val) ~= 'function' then
+        vim.opt[opt] = val
+      end
+    end
+  end
+
+  return minimal_opts
+end
+
 return M

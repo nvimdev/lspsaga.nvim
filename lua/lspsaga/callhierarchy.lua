@@ -508,7 +508,7 @@ function ch:preview()
     local icon = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
     api.nvim_win_set_config(self.preview_winid, {
       title = {
-        { icon[1] and icon[1] .. ' ' or '', icon[2] or 'TitleString' },
+        { icon[1], icon[2] or 'TitleString' },
         { path[#path], 'TitleString' },
       },
       title_pos = 'center',

@@ -252,7 +252,6 @@ function ot:expand_collapse()
     api.nvim_buf_add_highlight(
       self.bufnr,
       0,
-      ---@diagnostic disable-next-line: need-check-nil
       prefix .. kind[node.data[1].kind][1],
       curline - 1,
       5,
@@ -278,7 +277,6 @@ function ot:expand_collapse()
   api.nvim_buf_add_highlight(
     self.bufnr,
     0,
-    ---@diagnostic disable-next-line: need-check-nil
     prefix .. kind[node.data[1].kind][1],
     curline - 1,
     5,
@@ -474,8 +472,7 @@ function ot:render_outline(buf, symbols)
   local kind = get_kind() or {}
   local fname = libs.get_path_info(buf, 1)
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
-  ---@diagnostic disable-next-line: need-check-nil
-  insert(lines, ' ' .. (data[1] or '') .. ' ' .. fname[1])
+  lines[#lines + 1] = ' ' .. data[1] .. fname[1]
   local prefix = get_hi_prefix()
   local hi = {}
 
