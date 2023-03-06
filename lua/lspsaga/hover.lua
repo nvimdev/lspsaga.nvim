@@ -18,7 +18,6 @@ function hover:open_floating_preview(res, option_fn)
   })
 
   local bufnr = api.nvim_get_current_buf()
-  local cur_winline = vim.fn.winline() - 1
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
   local content = vim.split(res.value, '\n', { trimempty = true })
@@ -249,7 +248,7 @@ function hover:render_hover_doc(args)
       return
     elseif args and has_arg(args, '++keep') then
       libs.delete_scroll_map(api.nvim_get_current_buf())
-      window.nvim_close_valid_window(self.preview_winid)
+      api.nvim_win_close(self.preview_winid, true)
       self.preview_winid = nil
       self.preview_bufnr = nil
       return
