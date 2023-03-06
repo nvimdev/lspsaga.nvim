@@ -748,6 +748,7 @@ function finder:open_preview()
   else
     vim.bo[data.bufnr].syntax = 'on'
     pcall(
+      ---@diagnostic disable-next-line: param-type-mismatch
       vim.cmd,
       string.format('syntax include %s syntax/%s.vim', '@' .. lang, vim.bo[self.main_buf].filetype)
     )
@@ -857,6 +858,9 @@ function finder:open_link(action)
     api.nvim_win_set_cursor(0, { short_link[current_line].row + 1, short_link[current_line].col })
   end
   local width = #api.nvim_get_current_line()
+  if not width or width <= 0 then
+    width = 10
+  end
   libs.jump_beacon({ short_link[current_line].row, 0 }, width)
   self:clean_ctx()
 end
