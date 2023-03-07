@@ -9,7 +9,7 @@
                           ⚡ Designed for convenience and efficiency ⚡
 ```
 
-A lightweight LSP plugin based on Neovim's built-in LSP with a highly performant UI.
+Neovim lsp enhance plugin.
 
 [![](https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white)](https://matrix.to/#/#lspsaga-nvim:matrix.org)
 

@@ -5,7 +5,7 @@ end
 vim.g.lspsaga_version = '0.2.9'
 
 vim.api.nvim_create_user_command('Lspsaga', function(args)
-  require('lspsaga.command').load_command(unpack(args.fargs))
+  require('lspsaga.command').load_command(args.fargs[1], args.fargs[2])
 end, {
   range = true,
   nargs = '+',

@@ -22,14 +22,14 @@ local subcommands = {
   hover_doc = function(arg)
     require('lspsaga.hover'):render_hover_doc(arg)
   end,
-  show_cursor_diagnostics = function()
-    require('lspsaga.diagnostic'):show_diagnostics(arg, 'cursor')
+  show_cursor_diagnostics = function(arg)
+    require('lspsaga.showdiag'):show_diagnostics({ cursor = true, arg = arg })
   end,
   show_line_diagnostics = function(arg)
-    require('lspsaga.diagnostic'):show_diagnostics(arg, 'line')
+    require('lspsaga.showdiag'):show_diagnostics({ line = true, arg = arg })
   end,
-  show_buf_diagnostics = function()
-    require('lspsaga.diagnostic'):show_buf_diagnostic(arg)
+  show_buf_diagnostics = function(arg)
+    require('lspsaga.showdiag'):show_diagnostics({ buffer = true, arg = arg })
   end,
   diagnostic_jump_next = function()
     require('lspsaga.diagnostic'):goto_next()
@@ -58,13 +58,8 @@ function command.command_list()
   return vim.tbl_keys(subcommands)
 end
 
-function command.load_command(cmd, ...)
-  local args = { ... }
-  if next(args) ~= nil then
-    subcommands[cmd](args[1])
-  else
-    subcommands[cmd]()
-  end
+function command.load_command(cmd, arg)
+  subcommands[cmd](arg)
 end
 
 return command

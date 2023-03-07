@@ -341,4 +341,9 @@ function libs.jump_beacon(bufpos, width)
   )
 end
 
+function libs.gen_truncate_line(width)
+  local char = '─'
+  return char:rep(math.floor(width / api.nvim_strwidth(char)))
+end
+
 return libs
