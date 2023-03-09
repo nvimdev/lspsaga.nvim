@@ -132,7 +132,7 @@ local function make_floating_popup_options(width, height, opts)
 
   new_option.zindex = opts.zindex or nil
 
-  if opts.row == nil and opts.col == nil then
+  if not opts.row and not opts.col and not opts.bufpos then
     local lines_above = vim.fn.winline() - 1
     local lines_below = vim.fn.winheight(0) - lines_above
     new_option.anchor = ''
