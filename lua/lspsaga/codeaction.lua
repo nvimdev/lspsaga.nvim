@@ -368,40 +368,26 @@ function act:action_preview(main_winid, main_buf)
   table.remove(tbl, 1)
 
   local win_conf = api.nvim_win_get_config(main_winid)
-  local opt = {}
-  opt.relative = 'editor'
-  local max_height = math.floor(vim.o.lines * 0.4)
+  local max_height
+  local opt = {
+    relative = win_conf.relative,
+    win = win_conf.win,
+    width = win_conf.width,
+    no_size_override = true,
+    col = win_conf.col[false],
+    anchor = win_conf.anchor,
+    -- focusable = false,
+  }
+  local winheight = api.nvim_win_get_height(win_conf.win)
+
+  if win_conf.anchor:find('^S') then
+    opt.row = win_conf.row[false] - win_conf.height - 2
+    max_height = win_conf.row[false] - win_conf.height
+  elseif win_conf.anchor:find('^N') then
+    opt.row = win_conf.row[false] + win_conf.height + 2
+    max_height = winheight - opt.row
+  end
   opt.height = #tbl > max_height and max_height or #tbl
-
-  if win_conf.anchor:find('^N') then
-    if win_conf.row[false] - opt.height > 0 then
-      opt.row = win_conf.row[false]
-      opt.anchor = win_conf.anchor:gsub('N', 'S')
-    else
-      opt.row = win_conf.row[false] + win_conf.height + 2
-      if #vim.wo[fn.bufwinid(main_buf)].winbar > 0 then
-        opt.row = opt.row + 1
-      end
-      opt.anchor = win_conf.anchor
-    end
-  else
-    if win_conf.row[false] - win_conf.height - opt.height - 4 > 0 then
-      opt.row = win_conf.row[false] - win_conf.height - 2
-      opt.anchor = win_conf.anchor
-    else
-      opt.row = win_conf.row[false] + 2
-      opt.anchor = win_conf.anchor:gsub('S', 'N')
-    end
-  end
-  opt.col = win_conf.col[false]
-
-  local max_width = math.floor(vim.o.columns * 0.6)
-  if max_width < win_conf.width or win_conf.width > 50 then
-    max_width = win_conf.width
-  end
-
-  opt.width = max_width
-  opt.no_size_override = true
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = { { 'Action Preview', 'ActionPreviewTitle' } }
