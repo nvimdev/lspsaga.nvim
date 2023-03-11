@@ -2,10 +2,15 @@ local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local insert = table.insert
 
 local finder = {}
 local ctx = {}
+
+local function clean_ctx()
+  for k, _ in pairs(ctx) do
+    ctx[k] = nil
+  end
+end
 
 finder.__index = finder
 finder.__newindex = function(t, k, v)
@@ -38,7 +43,7 @@ end
 
 local function supports_implement(buf)
   local support = false
-  for _, client in pairs(lsp.get_active_clients({ bufnr = buf })) do
+  for _, client in ipairs(lsp.get_active_clients({ bufnr = buf })) do
     if client.supports_method('textDocument/implementation') then
       support = true
       break
@@ -70,7 +75,7 @@ function finder:lsp_finder()
     table.remove(meths, 2)
   end
   ---@diagnostic disable-next-line: param-type-mismatch
-  for _, method in pairs(meths) do
+  for _, method in ipairs(meths) do
     self:do_request(params, method)
   end
   -- make a spinner
@@ -80,7 +85,7 @@ end
 function finder:request_done()
   local done = true
   ---@diagnostic disable-next-line: param-type-mismatch
-  for _, method in pairs(methods()) do
+  for _, method in ipairs(methods()) do
     if not self.request_status[method] then
       done = false
       break
@@ -171,11 +176,11 @@ function finder:do_request(params, method)
   end
   lsp.buf_request_all(self.current_buf, method, params, function(results)
     local result = {}
-    for _, res in pairs(results or {}) do
+    for _, res in ipairs(results or {}) do
       if res.result and not (res.result.uri or res.result.targetUri) then
         libs.merge_table(result, res.result)
       elseif res.result and (res.result.uri or res.result.targetUri) then
-        table.insert(result, res.result)
+        result[#result + 1] = res.result
       end
     end
 
@@ -198,39 +203,58 @@ function finder:get_uri_scope(method, start_lnum, end_lnum)
   end
 end
 
+local function keymap_tip()
+  local function gen_str(key)
+    if type(key) == 'table' then
+      return key[1]
+    end
+    return key
+  end
+  local keys = config.finder.keys
+
+  return {
+    '[edit] '
+      .. gen_str(keys.edit)
+      .. ' [vsplit] '
+      .. gen_str(keys.vsplit)
+      .. ' [split] '
+      .. gen_str(keys.split),
+    '[tabe] '
+      .. gen_str(keys.tabe)
+      .. ' [tabnew] '
+      .. gen_str(keys.tabnew)
+      .. ' [quit] '
+      .. gen_str(keys.quit),
+    '',
+  }
+end
+
 function finder:render_finder()
   self.short_link = {}
-  self.contents = {}
+  self.contents = keymap_tip()
   self.wipe_buffers = {}
 
-  local lnum, start_lnum = 0, 0
-
-  local generate_contents = function(tbl, method)
-    if not tbl then
-      return
-    end
-    start_lnum = lnum
-    for _, val in pairs(tbl) do
-      insert(self.contents, val[1])
-      lnum = lnum + 1
-
-      if val[2] then
-        self.short_link[lnum] = val[2]
-      end
-    end
-    self:get_uri_scope(method, start_lnum, lnum - 1)
-  end
-
+  local method_scopes = {}
   ---@diagnostic disable-next-line: param-type-mismatch
-  for i, method in pairs(methods()) do
+  for i, method in ipairs(methods()) do
     if i == 2 and #self.request_result[method] == 0 then
       goto skip
     end
-    local tbl = self:create_finder_contents(self.request_result[method], method)
-    generate_contents(tbl, method)
+    local content = self:create_finder_contents(self.request_result[method], method)
+    local start = #self.contents + 1
+    for _, data in ipairs(content) do
+      self.contents[#self.contents + 1] = data[1]
+      if data[2] then
+        self.short_link[#self.contents] = data[2]
+      end
+    end
+    method_scopes[method] = { start, start + #content - 1}
     ::skip::
   end
-  self:render_finder_result()
+  --clean data
+  self.request_result = nil
+  self.request_status = nil
+  self:render_finder_result(method_scopes)
 end
 
 local function get_msg(method)
@@ -246,8 +270,7 @@ end
 function finder:create_finder_contents(result, method)
   local contents = {}
   local title = get_titles(libs.tbl_index(methods(), method))
-  insert(contents, { title .. '  ' .. #result })
-  insert(contents, { ' ' })
+  contents[#contents + 1] = { title .. '  ' .. #result }
 
   local icon_data = get_file_icon(self.main_buf)
   if #result == 0 then
@@ -262,13 +285,12 @@ function finder:create_finder_contents(result, method)
     return contents
   end
 
-  local root_dir = libs.get_lsp_root_dir()
   local wipe = false
   for _, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
       vim.notify('miss uri in server response')
-      return
+      return contents
     end
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
@@ -280,28 +302,16 @@ function finder:create_finder_contents(result, method)
       --restore eventignore
       vim.opt.eventignore:remove({ 'FileType' })
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
-        table.insert(self.wipe_buffers, bufnr)
+        self.wipe_buffers[#self.wipe_buffers + 1] = bufnr
       end
     end
 
     if libs.iswin then
       link = link:gsub('^%l', link:sub(1, 1):upper())
     end
-    local short_name
-    local path_sep = libs.path_sep
-    -- reduce filename length by root_dir or home dir
-    if root_dir and link:find(root_dir, 1, true) then
-      local root_parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
-      local link_parts = vim.split(link, libs.path_sep, { trimempty = true })
-      short_name = table.concat({ unpack(link_parts, #root_parts + 1) }, libs.path_sep)
-    else
-      local _split = vim.split(link, path_sep)
-      if #_split >= 4 then
-        short_name = table.concat(_split, path_sep, #_split - 2, #_split)
-      end
-    end
+    local short_name = table.concat(libs.get_path_info(bufnr, 2), libs.path_sep)
 
-    local target_line = '    ' .. icon_data[1] .. short_name
+    local line = '    ' .. icon_data[1] .. short_name
 
     local range = res.targetRange or res.range
 
@@ -314,18 +324,15 @@ function finder:create_finder_contents(result, method)
       _end_col = range['end'].character,
     }
 
-    contents[#contents + 1] = { target_line, link_with_preview }
+    contents[#contents + 1] = { line, link_with_preview }
   end
   contents[#contents + 1] = { ' ' }
   return contents
 end
 
-function finder:render_finder_result()
-  --clean data
-  self.request_result = nil
-  self.request_status = nil
-
-  if vim.tbl_isempty(self.contents) then
+function finder:render_finder_result(method_scopes)
+  if #self.contents == 0 then
+    clean_ctx()
     return
   end
 
@@ -399,99 +406,96 @@ function finder:render_finder_result()
       self:close_auto_preview_win()
       api.nvim_del_augroup_by_id(self.group)
       self:clean_data()
-      self:clean_ctx()
+      clean_ctx()
     end,
   })
 
-  self:set_cursor()
+  local def_scope = method_scopes[methods(1)]
+  local imp_scope = method_scopes[methods(2)]
+  local ref_scope = method_scopes[methods(3)]
+
+  self:set_cursor(def_scope, ref_scope, imp_scope)
+  self:open_preview()
 
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
-      self:set_cursor()
+      self:set_cursor(def_scope, ref_scope, imp_scope)
       self:open_preview()
     end,
   })
 
-  local virt_hi = 'finderVirtText'
+  local virt_hi = 'FinderVirtText'
 
   local ns_id = api.nvim_create_namespace('lspsagafinder')
-  api.nvim_buf_set_extmark(0, ns_id, 1, 0, {
-    virt_text = { { '│', virt_hi } },
-    virt_text_pos = 'overlay',
-  })
 
   local icon, icon_hl = unpack(get_file_icon(self.main_buf))
-  for i = self.def_scope[1] + 2, self.def_scope[2] - 1, 1 do
+
+  for i = def_scope[1] + 1, def_scope[2] - 1, 1 do
     local virt_texts = {}
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'finderFileName', 1 + i, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'FinderFileName', i - 1, 0, -1)
     if icon_hl then
-      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
+      api.nvim_buf_add_highlight(self.bufnr, 0, icon_hl, i - 1, 0, 4 + #icon)
     end
 
-    if i == self.def_scope[2] - 1 then
-      insert(virt_texts, { '└', virt_hi })
-      insert(virt_texts, { '───', virt_hi })
+    if i == def_scope[2] - 1 then
+      virt_texts[#virt_texts + 1] = { '└', virt_hi }
+      virt_texts[#virt_texts + 1] = { '───', virt_hi }
     else
-      insert(virt_texts, { '├', virt_hi })
-      insert(virt_texts, { '───', virt_hi })
+      virt_texts[#virt_texts + 1] = { '├', virt_hi }
+      virt_texts[#virt_texts + 1] = { '───', virt_hi }
     end
 
-    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
+    api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
       virt_text = virt_texts,
       virt_text_pos = 'overlay',
     })
   end
 
-  if self.imp_scope then
-    api.nvim_buf_set_extmark(0, ns_id, self.imp_scope[1] + 1, 0, {
-      virt_text = { { '│', virt_hi } },
-      virt_text_pos = 'overlay',
-    })
-
-    for i = self.imp_scope[1] + 2, self.imp_scope[2] - 1, 1 do
+  if imp_scope then
+    for i = imp_scope[1] + 1, imp_scope[2] - 1, 1 do
       local virt_texts = {}
-      api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', 1 + i, 0, -1)
+      api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderFileName', i - 1, 0, -1)
       if icon_hl then
-        api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
+        api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i - 1, 0, 4 + #icon)
       end
 
-      if i == self.imp_scope[2] - 1 then
-        insert(virt_texts, { '└', virt_hi })
-        insert(virt_texts, { '───', virt_hi })
+      if i == imp_scope[2] - 1 then
+        virt_texts[#virt_texts + 1] = { '└', virt_hi }
+        virt_texts[#virt_texts + 1] = { '───', virt_hi }
       else
-        insert(virt_texts, { '├', virt_hi })
-        insert(virt_texts, { '───', virt_hi })
+        virt_texts[#virt_texts + 1] = { '├', virt_hi }
+        virt_texts[#virt_texts + 1] = { '───', virt_hi }
       end
 
-      api.nvim_buf_set_extmark(0, ns_id, i, 0, {
+      api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
         virt_text = virt_texts,
         virt_text_pos = 'overlay',
       })
     end
   end
 
-  api.nvim_buf_set_extmark(0, ns_id, self.ref_scope[1] + 1, 0, {
+  api.nvim_buf_set_extmark(0, ns_id, ref_scope[1] + 1, 0, {
     virt_text = { { '│', virt_hi } },
     virt_text_pos = 'overlay',
   })
 
-  for i = self.ref_scope[1] + 2, self.ref_scope[2] - 1 do
+  for i = ref_scope[1] + 1, ref_scope[2] - 1 do
     local virt_texts = {}
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'TargetFileName', i, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderFileName', i - 1, 0, -1)
     if icon_hl then
-      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i, 0, 4 + #icon)
+      api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i - 1, 0, 4 + #icon)
     end
 
-    if i == self.ref_scope[2] - 1 then
-      insert(virt_texts, { '└', virt_hi })
-      insert(virt_texts, { '───', virt_hi })
+    if i == ref_scope[2] - 1 then
+      virt_texts[#virt_texts + 1] = { '└', virt_hi }
+      virt_texts[#virt_texts + 1] = { '───', virt_hi }
     else
-      insert(virt_texts, { '├', virt_hi })
-      insert(virt_texts, { '───', virt_hi })
+      virt_texts[#virt_texts + 1] = { '├', virt_hi }
+      virt_texts[#virt_texts + 1] = { '───', virt_hi }
     end
 
-    api.nvim_buf_set_extmark(0, ns_id, i, 0, {
+    api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
       virt_text = virt_texts,
       virt_text_pos = 'overlay',
     })
@@ -501,7 +505,16 @@ function finder:render_finder_result()
   libs.disable_move_keys(self.bufnr)
   -- load float window map
   self:apply_map()
-  self:lsp_finder_highlight()
+  local len = string.len('Definition')
+
+  for _, v in ipairs({ def_scope[1] - 1, ref_scope[1] - 1, imp_scope and imp_scope[1] - 1 or nil }) do
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderIcon', v, 0, 3)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderType', v, 4, 4 + len)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderCount', v, 4 + len, -1)
+  end
+
+  self.match_ids = {}
+  self.match_ids[#self.match_ids + 1] = vim.fn.matchadd('FinderTips','\\[\\w\\+\\]')
 end
 
 local function unpack_map()
@@ -543,7 +556,7 @@ function finder:apply_map()
       end
       self:quit_float_window()
       self:clean_data()
-      self:clean_ctx()
+      clean_ctx()
     end, opts)
   end
 
@@ -554,54 +567,50 @@ function finder:apply_map()
   end, opts)
 end
 
-function finder:lsp_finder_highlight()
-  local len = string.len('Definition')
-
-  for _, v in pairs({ 0, self.ref_scope[1], self.imp_scope and self.imp_scope[1] or nil }) do
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderIcon', v, 0, 3)
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderType', v, 4, 4 + len)
-    api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderCount', v, 4 + len, -1)
-  end
-end
-
 local finder_ns = api.nvim_create_namespace('finder_select')
 
-function finder:set_cursor()
+function finder:set_cursor(def_scope, ref_scope, imp_scope)
   local current_line = api.nvim_win_get_cursor(0)[1]
   local icon = get_file_icon(self.main_buf)[1]
-  local column = 5 + #icon
+  local column = 4 + #icon
 
-  local first_def_uri_lnum = self.def_scope[1] + 3
-  local last_def_uri_lnum = self.def_scope[2]
-  local first_ref_uri_lnum = self.ref_scope[1] + 3
-  local last_ref_uri_lnum = self.ref_scope[2]
+  local first_def_uri_lnum = def_scope[1] + 1
+  local last_def_uri_lnum = def_scope[2] - 1
+  local first_ref_uri_lnum = ref_scope[1] + 1
+  local last_ref_uri_lnum = ref_scope[2] - 1
 
-  local first_imp_uri_lnum = self.imp_scope and self.imp_scope[1] + 3 or -2
-  local last_imp_uri_lnum = self.imp_scope and self.imp_scope[2] or -2
+  local first_imp_uri_lnum = imp_scope and imp_scope[1] + 1 or -2
+  local last_imp_uri_lnum = imp_scope and imp_scope[2] - 1 or -2
+
+  local new_pos = {}
 
   if current_line == 1 then
-    fn.cursor(first_def_uri_lnum, column)
+    new_pos = { first_def_uri_lnum, column }
   elseif current_line == last_def_uri_lnum + 1 then
-    fn.cursor(first_imp_uri_lnum > 0 and first_imp_uri_lnum or first_ref_uri_lnum, column)
+    new_pos = { first_imp_uri_lnum > 0 and first_imp_uri_lnum or first_ref_uri_lnum, column }
   elseif current_line == last_imp_uri_lnum + 1 then
-    fn.cursor(first_ref_uri_lnum, column)
+    new_pos = { first_ref_uri_lnum, column }
   elseif current_line == last_ref_uri_lnum + 1 then
-    fn.cursor(first_def_uri_lnum, column)
+    new_pos = { first_def_uri_lnum, column }
   elseif current_line == first_ref_uri_lnum - 1 then
-    fn.cursor(last_imp_uri_lnum > 0 and last_imp_uri_lnum or last_def_uri_lnum, column)
+    new_pos = { last_imp_uri_lnum > 0 and last_imp_uri_lnum or last_def_uri_lnum, column }
   elseif current_line == first_imp_uri_lnum - 1 then
-    fn.cursor(last_def_uri_lnum, column)
+    new_pos = { last_def_uri_lnum, column }
   elseif current_line == first_def_uri_lnum - 1 then
-    fn.cursor(last_ref_uri_lnum, column)
+    new_pos = { last_ref_uri_lnum, column }
   end
 
-  local actual_line = api.nvim_win_get_cursor(0)[1]
-  if actual_line == first_def_uri_lnum then
-    api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', 2, 4 + #icon, -1)
+  if #new_pos > 0 then
+    api.nvim_win_set_cursor(self.winid, new_pos)
+  end
+
+  local actual = api.nvim_win_get_cursor(0)[1] - 1
+  if new_pos[1] == first_def_uri_lnum then
+    api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
   end
 
   api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
-  api.nvim_buf_add_highlight(0, finder_ns, 'finderSelection', actual_line - 1, 4 + #icon, -1)
+  api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
 end
 
 local function create_preview_window(finder_winid, main_win)
@@ -766,7 +775,7 @@ function finder:open_preview()
       api.nvim_win_close(self.preview_winid, true)
     end
     self:clean_data()
-    self:clean_ctx()
+    clean_ctx()
   end, { buffer = data.bufnr, nowait = true, silent = true })
 
   api.nvim_create_autocmd('WinClosed', {
@@ -847,13 +856,17 @@ function finder:open_link(action)
   if data.row then
     libs.jump_beacon({ data.row, 0 }, width)
   end
-  self:clean_ctx()
+  clean_ctx()
 end
 
 function finder:clean_data()
-  for _, buf in pairs(self.wipe_buffers or {}) do
+  for _, buf in ipairs(self.wipe_buffers or {}) do
     api.nvim_buf_delete(buf, { force = true })
     pcall(vim.keymap.del, 'n', config.finder.keys.close_in_preview, { buffer = buf })
+  end
+
+  for _, id in ipairs(self.match_ids or {}) do
+    pcall(vim.fn.matchdelete,id)
   end
 
   if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
@@ -870,12 +883,6 @@ function finder:quit_float_window()
   if self.winid and self.winid > 0 then
     window.nvim_close_valid_window(self.winid)
     self.winid = nil
-  end
-end
-
-function finder:clean_ctx()
-  for k, _ in pairs(ctx) do
-    ctx[k] = nil
   end
 end
 

@@ -29,11 +29,10 @@ local function title_text(fname)
   if not fname then
     return
   end
-  local title = {
-    { fn.fnamemodify(fname, ':t'), 'TitleString' },
-  }
+  local title = {}
   local data = libs.icon_from_devicon(vim.bo.filetype)
   title[#title + 1] = { data[1], data[2] or 'TitleString' }
+  title[#title + 1] = { fn.fnamemodify(fname, ':t'), 'TitleString' }
 
   return title
 end

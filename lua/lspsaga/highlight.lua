@@ -30,7 +30,7 @@ local function hi_define()
     CodeActionNumber = { link = 'DiffAdd' },
     -- finder
     FinderSelection = { link = '@variable' },
-    FinderFileName = { link = 'Comment' },
+    FinderFileName = {},
     FinderCount = { link = 'Constant' },
     FinderIcon = { link = 'Type' },
     FinderType = { link = 'Type' },
@@ -38,7 +38,8 @@ local function hi_define()
     FinderSpinnerTitle = { link = 'Statement' },
     FinderSpinner = { link = 'Statement' },
     FinderPreviewSearch = { link = 'Search' },
-    FinderVirtText = { link = 'Operator' },
+    FinderVirtText = { link = '@parameter' },
+    FinderTips = { fg = '#475164' },
     FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },

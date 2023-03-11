@@ -13,7 +13,7 @@ local default_config = {
     incoming = ' ',
     outgoing = ' ',
     hover = ' ',
-    diagnostic = ' ',
+    theme = 'arrow',
     kind = {},
   },
   hover = {

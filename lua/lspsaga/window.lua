@@ -233,6 +233,7 @@ function M.create_win_with_border(content_opts, opts)
   local bufnr = content_opts.bufnr or api.nvim_create_buf(false, false)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
+  ---@diagnostic disable-next-line: missing-parameter
   local content = lsp.util._trim(contents)
 
   if filetype then

@@ -63,7 +63,7 @@ local function get_kind()
     -- for completion sb microsoft!!!
     [300] = { 'Text', ' ', 'String' },
     [301] = { 'Snippet', ' ', '@variable' },
-    [302] = { 'Folder', ' ', '@parameter' },
+    [302] = { 'Folder', ' ', 'Title' },
     [303] = { 'Unit', ' ', 'Number' },
     [304] = { 'Value', ' ', '@variable' },
   }

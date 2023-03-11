@@ -45,7 +45,7 @@ function act:action_callback()
           .. ')'
       end
     end
-    table.insert(contents, action_title)
+    contents[#contents + 1] = action_title
   end
 
   local content_opts = {
