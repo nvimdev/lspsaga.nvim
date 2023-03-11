@@ -65,6 +65,7 @@ local default_config = {
   finder = {
     --percentage
     max_height = 0.5,
+    min_width = 40,
     force_max_height = false,
     keys = {
       jump_to = 'p',

@@ -180,7 +180,7 @@ function finder:do_request(params, method)
       if res.result and not (res.result.uri or res.result.targetUri) then
         libs.merge_table(result, res.result)
       elseif res.result and (res.result.uri or res.result.targetUri) then
-        result[#result + 1] = res.result
+        result[#result + 1] = res.resultfinder
       end
     end
 
@@ -514,7 +514,7 @@ function finder:render_finder_result(method_scopes)
   end
 
   self.match_ids = {}
-  self.match_ids[#self.match_ids + 1] = vim.fn.matchadd('FinderTips','\\[\\w\\+\\]')
+  self.match_ids[#self.match_ids + 1] = vim.fn.matchadd('FinderTips', '\\[\\w\\+\\]')
 end
 
 local function unpack_map()
@@ -562,7 +562,12 @@ function finder:apply_map()
 
   vim.keymap.set('n', config.finder.keys.jump_to, function()
     if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+      local lnum = api.nvim_win_get_cursor(0)[1]
       api.nvim_set_current_win(self.preview_winid)
+      local data = self.short_link[lnum]
+      if data then
+        api.nvim_win_set_cursor(0, { data.row + 1, data.col })
+      end
     end
   end, opts)
 end
@@ -613,57 +618,56 @@ function finder:set_cursor(def_scope, ref_scope, imp_scope)
   api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
 end
 
-local function create_preview_window(finder_winid, main_win)
+local function create_preview_window(finder_winid)
   if not finder_winid or not api.nvim_win_is_valid(finder_winid) then
     return
   end
 
   local opts = {
-    relative = 'win',
-    win = main_win,
+    relative = 'editor',
     no_size_override = true,
   }
 
+  --TODO: test shadow border
+  local screencol = fn.screencol() + 2
+  local wincol = fn.wincol()
+  local win_screen_col = screencol - wincol
   local winconfig = api.nvim_win_get_config(finder_winid)
-  opts.col = winconfig.col[false] + winconfig.width + 2 + (config.ui.border == 'shadow' and -2 or 0)
-  opts.row = winconfig.row[false]
+  opts.row = winconfig.row[false] + 1
   opts.height = winconfig.height
-  local max_width = api.nvim_win_get_width(main_win) - opts.col - 6
-  if max_width > 80 then
-    max_width = 80
-  end
-  opts.width = max_width
-  local screenpos = fn.win_screenpos(finder_winid)
-  local main_screenpos = fn.win_screenpos(main_win)
-  local available_screen_width = vim.o.columns - screenpos[2] - 4
-  if opts.width <= 15 then
-    if available_screen_width < 6 then
-      if ctx.winid and api.nvim_win_is_valid(ctx.winid) then
-        api.nvim_win_set_config(
-          ctx.winid,
-          { border = window.combine_border(config.ui.border, {}, 'FinderBorder') }
-        )
-      end
-      return
-    end
-    opts.relative = 'editor'
-    opts.row = opts.row + 1
-    opts.col = (screenpos[2] - main_screenpos[2])
-      + winconfig.width
-      + 2
-      + (config.ui.border == 'shadow' and -2 or 0)
-    opts.win = nil
-    opts.width = available_screen_width
+
+  local border_side = {}
+  local top = window.combine_char()['top'][config.ui.border]
+  local bottom = window.combine_char()['bottom'][config.ui.border]
+
+  --in right
+  if vim.o.columns - win_screen_col - winconfig.width > config.finder.min_width then
+    opts.col = win_screen_col + winconfig.width + 4
+    opts.width = vim.o.columns - opts.col
+    border_side = {
+      ['lefttop'] = top,
+      ['leftbottom'] = bottom,
+    }
+  --in left
+  elseif win_screen_col > config.finder.min_width then
+    opts.col = 10
+    opts.width = win_screen_col - 12
+    border_side = {
+      ['righttop'] = top,
+      ['rightbottom'] = bottom
+    }
+    api.nvim_win_set_config(finder_winid, {
+      border = window.combine_border(config.ui.border,{
+        ['lefttop'] = '',
+        ['left'] = '',
+        ['leftbottom'] = '',
+      }, 'FinderBorder')
+    })
   end
 
-  local rtop = window.combine_char()['righttop'][config.ui.border]
-  local rbottom = window.combine_char()['rightbottom'][config.ui.border]
   local content_opts = {
     contents = {},
-    border_side = {
-      ['lefttop'] = rtop,
-      ['leftbottom'] = rbottom,
-    },
+    border_side = border_side,
     bufhidden = '',
     highlight = {
       border = 'FinderPreviewBorder',
@@ -692,7 +696,7 @@ function finder:open_preview()
   local data = self.short_link[current_line]
 
   if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
-    self.preview_bufnr, self.preview_winid = create_preview_window(self.winid, self.main_win)
+    self.preview_bufnr, self.preview_winid = create_preview_window(self.winid)
   end
 
   if not self.preview_winid then
@@ -866,7 +870,7 @@ function finder:clean_data()
   end
 
   for _, id in ipairs(self.match_ids or {}) do
-    pcall(vim.fn.matchdelete,id)
+    pcall(vim.fn.matchdelete, id)
   end
 
   if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then

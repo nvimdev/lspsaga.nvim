@@ -65,13 +65,13 @@ end
 
 function M.combine_char()
   return {
-    ['righttop'] = {
+    ['top'] = {
       ['single'] = '┬',
       ['rounded'] = '┬',
       ['double'] = '╦',
       ['solid'] = ' ',
     },
-    ['rightbottom'] = {
+    ['bottom'] = {
       ['single'] = '┴',
       ['rounded'] = '┴',
       ['double'] = '╩',
