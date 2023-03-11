@@ -248,7 +248,7 @@ function finder:render_finder()
         self.short_link[#self.contents] = data[2]
       end
     end
-    method_scopes[method] = { start, start + #content - 1}
+    method_scopes[method] = { start, start + #content - 1 }
     ::skip::
   end
   --clean data
