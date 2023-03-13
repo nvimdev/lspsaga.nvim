@@ -180,7 +180,7 @@ function finder:do_request(params, method)
       if res.result and not (res.result.uri or res.result.targetUri) then
         libs.merge_table(result, res.result)
       elseif res.result and (res.result.uri or res.result.targetUri) then
-        result[#result + 1] = res.resultfinder
+        result[#result + 1] = res.result
       end
     end
 

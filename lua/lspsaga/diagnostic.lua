@@ -206,19 +206,19 @@ function diag:render_virt_line(content, opts, hi_name)
 
     if not above then
       if i == #content + 1 then
-        insert(virt_tbl, { pos_char[2], hi_name })
-        insert(virt_tbl, { '━', hi_name })
-        insert(virt_tbl, { pos_char[3], hi_name })
+        virt_tbl[#virt_tbl + 1] = { pos_char[2], hi_name }
+        virt_tbl[#virt_tbl + 1] = { '━', hi_name }
+        virt_tbl[#virt_tbl + 1] = { pos_char[3], hi_name }
       else
-        insert(virt_tbl, { '┃', hi_name })
+        virt_tbl[#virt_tbl + 1] = { '┃', hi_name }
       end
     else
       if i == 1 then
-        insert(virt_tbl, { pos_char[2], hi_name })
-        insert(virt_tbl, { '━', hi_name })
-        insert(virt_tbl, { pos_char[3], hi_name })
+        virt_tbl[#virt_tbl + 1] = { pos_char[2], hi_name }
+        virt_tbl[#virt_tbl + 1] = { '━', hi_name }
+        virt_tbl[#virt_tbl + 1] = { pos_char[3], hi_name }
       else
-        insert(virt_tbl, { '┃', hi_name })
+        virt_tbl[#virt_tbl + 1] = { '┃', hi_name }
       end
     end
 
