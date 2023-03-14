@@ -339,8 +339,8 @@ function finder:render_finder_result(method_scopes)
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
 
   local opt = {
-    relative = 'win',
-    width = window.get_max_content_length(self.contents),
+    relative = 'editor',
+    -- width = window.get_max_content_length(self.contents),
   }
 
   local max_height = math.floor(vim.o.lines * config.finder.max_height)
@@ -359,7 +359,8 @@ function finder:render_finder_result(method_scopes)
   end
   winline = fn.winline()
   opt.row = winline + 1
-  opt.col = 8
+  local wincol = fn.wincol()
+  opt.col = fn.screencol() - math.floor(wincol * 0.4)
 
   local side_char = window.border_chars()['top'][config.ui.border]
   local normal_right_side = ' '
@@ -629,11 +630,8 @@ local function create_preview_window(finder_winid)
   }
 
   --TODO: test shadow border
-  local screencol = fn.screencol() + 2
-  local wincol = fn.wincol()
-  local win_screen_col = screencol - wincol
   local winconfig = api.nvim_win_get_config(finder_winid)
-  opts.row = winconfig.row[false] + 1
+  opts.row = winconfig.row[false]
   opts.height = winconfig.height
 
   local border_side = {}
@@ -641,17 +639,19 @@ local function create_preview_window(finder_winid)
   local bottom = window.combine_char()['bottom'][config.ui.border]
 
   --in right
-  if vim.o.columns - win_screen_col - winconfig.width > config.finder.min_width then
-    opts.col = win_screen_col + winconfig.width + 4
-    opts.width = vim.o.columns - opts.col
+  if vim.o.columns - winconfig.col[false] - winconfig.width > config.finder.min_width then
+    local adjust = config.ui.border == 'shadow' and -2 or 2
+    opts.col = winconfig.col[false] + winconfig.width + adjust
+    opts.width = vim.o.columns - opts.col - 2
     border_side = {
       ['lefttop'] = top,
       ['leftbottom'] = bottom,
     }
   --in left
-  elseif win_screen_col > config.finder.min_width then
-    opts.col = 10
-    opts.width = win_screen_col - 12
+  elseif winconfig.col[false] > config.finder.min_width then
+    opts.width = math.floor(winconfig.col[false] * 0.8)
+    local adjust = config.ui.border == 'shadow' and -2 or  0
+    opts.col = winconfig.col[false] - opts.width - adjust
     border_side = {
       ['righttop'] = top,
       ['rightbottom'] = bottom
