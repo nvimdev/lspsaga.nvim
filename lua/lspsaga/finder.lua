@@ -189,20 +189,6 @@ function finder:do_request(params, method)
   end)
 end
 
-function finder:get_uri_scope(method, start_lnum, end_lnum)
-  if method == methods(1) then
-    self.def_scope = { start_lnum, end_lnum }
-  end
-
-  if method == methods(2) then
-    self.imp_scope = { start_lnum, end_lnum }
-  end
-
-  if method == methods(3) then
-    self.ref_scope = { start_lnum, end_lnum }
-  end
-end
-
 local function keymap_tip()
   local function gen_str(key)
     if type(key) == 'table' then
@@ -218,20 +204,21 @@ local function keymap_tip()
       .. ' [vsplit] '
       .. gen_str(keys.vsplit)
       .. ' [split] '
-      .. gen_str(keys.split),
-    '[tabe] '
+      .. gen_str(keys.split)
+      ..' [tabe] '
       .. gen_str(keys.tabe)
       .. ' [tabnew] '
       .. gen_str(keys.tabnew)
       .. ' [quit] '
-      .. gen_str(keys.quit),
-    '',
+      .. gen_str(keys.quit)
+      .. ' [jump] '
+      .. gen_str(keys.jump_to)
   }
 end
 
 function finder:render_finder()
   self.short_link = {}
-  self.contents = keymap_tip()
+  self.contents = {}
   self.wipe_buffers = {}
 
   local method_scopes = {}
@@ -340,7 +327,6 @@ function finder:render_finder_result(method_scopes)
 
   local opt = {
     relative = 'editor',
-    -- width = window.get_max_content_length(self.contents),
   }
 
   local max_height = math.floor(vim.o.lines * config.finder.max_height)
@@ -411,6 +397,30 @@ function finder:render_finder_result(method_scopes)
     end,
   })
 
+  opt.row = opt.row - 3
+  local maptip = keymap_tip()
+  opt.width = #maptip[1] > vim.o.columns and vim.o.columns or #maptip[1]
+  opt.height = 1
+  opt.no_size_override = true
+  opt.title = nil
+  opt.title_pos = nil
+  opt.border = 'solid'
+
+  if config.finder.show_tip then
+    _, self.tip_winid = window.create_win_with_border({
+      contents = maptip,
+      bufhidden = 'wipe',
+      highlight = {
+        border = 'FinderBorder',
+        normal = 'FinderNormal',
+      }
+    }, opt)
+    api.nvim_win_call(self.tip_winid, function()
+      self.match_ids = {}
+      self.match_ids[#self.match_ids + 1] = vim.fn.matchadd('FinderTips', '\\[\\w\\+\\]')
+    end)
+  end
+
   local def_scope = method_scopes[methods(1)]
   local imp_scope = method_scopes[methods(2)]
   local ref_scope = method_scopes[methods(3)]
@@ -426,7 +436,7 @@ function finder:render_finder_result(method_scopes)
     end,
   })
 
-  local virt_hi = 'FinderVirtText'
+  local virt_hi = 'Finderlines'
 
   local ns_id = api.nvim_create_namespace('lspsagafinder')
 
@@ -513,9 +523,6 @@ function finder:render_finder_result(method_scopes)
     api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderType', v, 4, 4 + len)
     api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderCount', v, 4 + len, -1)
   end
-
-  self.match_ids = {}
-  self.match_ids[#self.match_ids + 1] = vim.fn.matchadd('FinderTips', '\\[\\w\\+\\]')
 end
 
 local function unpack_map()
@@ -555,7 +562,7 @@ function finder:apply_map()
       if ok then
         pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
       end
-      self:quit_float_window()
+      window.nvim_close_valid_window({self.winid, self.preview_winid, self.tip_winid or nil})
       self:clean_data()
       clean_ctx()
     end, opts)
@@ -629,7 +636,6 @@ local function create_preview_window(finder_winid)
     no_size_override = true,
   }
 
-  --TODO: test shadow border
   local winconfig = api.nvim_win_get_config(finder_winid)
   opts.row = winconfig.row[false]
   opts.height = winconfig.height
@@ -758,7 +764,6 @@ function finder:open_preview()
   if not self.preview_hl_ns then
     self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
   end
-  -- api.nvim_win_set_hl_ns(self.preview_winid, self.preview_hl_ns)
 
   if data.row then
     api.nvim_buf_add_highlight(
@@ -772,12 +777,7 @@ function finder:open_preview()
   end
 
   vim.keymap.set('n', config.finder.keys.close_in_preview, function()
-    if self.winid and api.nvim_win_is_valid(self.winid) then
-      api.nvim_win_close(self.winid, true)
-    end
-    if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-      api.nvim_win_close(self.preview_winid, true)
-    end
+    window.nvim_close_valid_window({self.winid, self.preview_winid, self.tip_winid or nil})
     self:clean_data()
     clean_ctx()
   end, { buffer = data.bufnr, nowait = true, silent = true })
@@ -789,13 +789,16 @@ function finder:open_preview()
       local curwin = api.nvim_get_current_win()
       if curwin == self.preview_winid then
         clear_preview_ns(self.preview_hl_ns, opt.buf)
+
         if self.winid and api.nvim_win_is_valid(self.winid) then
           api.nvim_set_current_win(self.winid)
           vim.defer_fn(function()
             self:open_preview()
           end, 0)
         end
+
         self.preview_winid = nil
+        self.preview_bufnr = nil
       end
     end,
   })
@@ -828,7 +831,7 @@ function finder:open_link(action)
     restore_opts = self.restore_opts
   end
 
-  self:quit_float_window()
+  window.nvim_close_valid_window({self.winid,self.preview_winid, self.tip_winid or nil})
   self:clean_data()
 
   -- if buffer not saved save it before jump
@@ -879,14 +882,6 @@ function finder:clean_data()
 
   if self.group then
     pcall(api.nvim_del_augroup_by_id, self.group)
-  end
-end
-
-function finder:quit_float_window()
-  self:close_auto_preview_win()
-  if self.winid and self.winid > 0 then
-    window.nvim_close_valid_window(self.winid)
-    self.winid = nil
   end
 end
 

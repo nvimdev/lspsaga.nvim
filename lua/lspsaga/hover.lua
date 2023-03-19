@@ -54,7 +54,7 @@ function hover:open_floating_preview(res, option_fn)
       line = line:gsub('</pre>', '```')
     end
     if #line > 0 then
-      table.insert(new, line)
+      new[#new + 1] = line
     end
   end
   content = new

@@ -141,18 +141,18 @@ local function make_floating_popup_options(width, height, opts)
     local pum_vis = not vim.tbl_isempty(pum_pos) -- pumvisible() can be true and pum_pos() returns {}
     if pum_vis and vim.fn.line('.') >= pum_pos.row or not pum_vis and lines_above < lines_below then
       new_option.anchor = 'N'
-      new_option.row = opts.move_row and opts.move_row or 1
+      new_option.row = 1
     else
       new_option.anchor = 'S'
-      new_option.row = opts.move_row and opts.move_row or 0
+      new_option.row = 0
     end
 
     if vim.fn.wincol() + width <= vim.o.columns then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = opts.move_col and opts.move_col or 0
+      new_option.col = 0
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = opts.move_col and opts.move_col or 1
+      new_option.col = 1
     end
   else
     new_option.row = opts.row

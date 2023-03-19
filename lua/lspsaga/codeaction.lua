@@ -367,7 +367,7 @@ function act:get_action_diff(num, main_buf)
   return diff
 end
 
-function act:action_preview(main_winid, main_buf)
+function act:action_preview(main_winid, main_buf, border_hi)
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
     self.preview_winid = nil
@@ -395,7 +395,7 @@ function act:action_preview(main_winid, main_buf)
     no_size_override = true,
     col = win_conf.col[false],
     anchor = win_conf.anchor,
-    -- focusable = false,
+    focusable = false,
   }
   local winheight = api.nvim_win_get_height(win_conf.win)
 
@@ -418,7 +418,7 @@ function act:action_preview(main_winid, main_buf)
     bufhidden = 'wipe',
     highlight = {
       normal = 'ActionPreviewNormal',
-      border = 'ActionPreviewBorder',
+      border = border_hi or 'ActionPreviewBorder',
     },
   }
 
