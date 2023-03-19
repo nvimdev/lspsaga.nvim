@@ -205,14 +205,14 @@ local function keymap_tip()
       .. gen_str(keys.vsplit)
       .. ' [split] '
       .. gen_str(keys.split)
-      ..' [tabe] '
+      .. ' [tabe] '
       .. gen_str(keys.tabe)
       .. ' [tabnew] '
       .. gen_str(keys.tabnew)
       .. ' [quit] '
       .. gen_str(keys.quit)
       .. ' [jump] '
-      .. gen_str(keys.jump_to)
+      .. gen_str(keys.jump_to),
   }
 end
 
@@ -223,20 +223,18 @@ function finder:render_finder()
 
   local method_scopes = {}
   ---@diagnostic disable-next-line: param-type-mismatch
-  for i, method in ipairs(methods()) do
-    if i == 2 and #self.request_result[method] == 0 then
-      goto skip
-    end
-    local content = self:create_finder_contents(self.request_result[method], method)
-    local start = #self.contents + 1
-    for _, data in ipairs(content) do
-      self.contents[#self.contents + 1] = data[1]
-      if data[2] then
-        self.short_link[#self.contents] = data[2]
+  for _, method in ipairs(methods()) do
+    if #self.request_result[method] ~= 0 then
+      local content = self:create_finder_contents(self.request_result[method], method)
+      local start = #self.contents + 1
+      for _, data in ipairs(content) do
+        self.contents[#self.contents + 1] = data[1]
+        if data[2] then
+          self.short_link[#self.contents] = data[2]
+        end
       end
+      method_scopes[method] = { start, start + #content - 1 }
     end
-    method_scopes[method] = { start, start + #content - 1 }
-    ::skip::
   end
   --clean data
   self.request_result = nil
@@ -413,7 +411,7 @@ function finder:render_finder_result(method_scopes)
       highlight = {
         border = 'FinderBorder',
         normal = 'FinderNormal',
-      }
+      },
     }, opt)
     api.nvim_win_call(self.tip_winid, function()
       self.match_ids = {}
@@ -562,7 +560,7 @@ function finder:apply_map()
       if ok then
         pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
       end
-      window.nvim_close_valid_window({self.winid, self.preview_winid, self.tip_winid or nil})
+      window.nvim_close_valid_window({ self.winid, self.preview_winid, self.tip_winid or nil })
       self:clean_data()
       clean_ctx()
     end, opts)
@@ -656,18 +654,18 @@ local function create_preview_window(finder_winid)
   --in left
   elseif winconfig.col[false] > config.finder.min_width then
     opts.width = math.floor(winconfig.col[false] * 0.8)
-    local adjust = config.ui.border == 'shadow' and -2 or  0
+    local adjust = config.ui.border == 'shadow' and -2 or 0
     opts.col = winconfig.col[false] - opts.width - adjust
     border_side = {
       ['righttop'] = top,
-      ['rightbottom'] = bottom
+      ['rightbottom'] = bottom,
     }
     api.nvim_win_set_config(finder_winid, {
-      border = window.combine_border(config.ui.border,{
+      border = window.combine_border(config.ui.border, {
         ['lefttop'] = '',
         ['left'] = '',
         ['leftbottom'] = '',
-      }, 'FinderBorder')
+      }, 'FinderBorder'),
     })
   end
 
@@ -777,7 +775,7 @@ function finder:open_preview()
   end
 
   vim.keymap.set('n', config.finder.keys.close_in_preview, function()
-    window.nvim_close_valid_window({self.winid, self.preview_winid, self.tip_winid or nil})
+    window.nvim_close_valid_window({ self.winid, self.preview_winid, self.tip_winid or nil })
     self:clean_data()
     clean_ctx()
   end, { buffer = data.bufnr, nowait = true, silent = true })
@@ -831,7 +829,7 @@ function finder:open_link(action)
     restore_opts = self.restore_opts
   end
 
-  window.nvim_close_valid_window({self.winid,self.preview_winid, self.tip_winid or nil})
+  window.nvim_close_valid_window({ self.winid, self.preview_winid, self.tip_winid or nil })
   self:clean_data()
 
   -- if buffer not saved save it before jump
