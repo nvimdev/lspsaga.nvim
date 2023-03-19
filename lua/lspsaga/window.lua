@@ -89,9 +89,9 @@ function M.combine_border(style, side, hi)
 
   for _, pos in ipairs(order) do
     if not vim.tbl_isempty(side) and vim.tbl_contains(vim.tbl_keys(side), pos) then
-      table.insert(res, { side[pos], hi })
+      res[#res + 1] = { side[pos], hi }
     else
-      table.insert(res, { border_chars[pos][style], hi })
+      res[#res + 1] = { border_chars[pos][style], hi }
     end
   end
   return res

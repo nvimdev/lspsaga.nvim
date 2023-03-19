@@ -190,7 +190,7 @@ function rename:lsp_rename(arg)
 end
 
 function rename:get_lsp_result()
-  -- local original = lsp.handlers['textDocument/rename']
+  ---@diagnostic disable-next-line: duplicate-set-field
   lsp.handlers['textDocument/rename'] = function(_, result, ctx, _)
     if not result then
       vim.notify("Language server couldn't provide rename result", vim.log.levels.INFO)
@@ -218,7 +218,7 @@ function rename:get_lsp_result()
           self.lspres[fname] = {}
         end
         for _, edit in pairs(change) do
-          table.insert(self.lspres[fname], edit.range)
+          self.lspres[fname][#self.lspres[fname] + 1] = edit.range
         end
       end
     elseif result.documentChanges then
@@ -229,7 +229,7 @@ function rename:get_lsp_result()
             self.lspres[fname] = {}
           end
           for _, edit in pairs(change.edits) do
-            table.insert(self.lspres[fname], edit.range or edit.location.range)
+            self.lspres[fname][#self.lspres[fname] + 1] = edit.range or edit.location.range
           end
         end
       end
@@ -392,7 +392,7 @@ function rename:popup_win(lines)
     api.nvim_buf_add_highlight(0, ns, 'FinderSelection', line - 1, 0, -1)
     for i, data in pairs(self.rg_data) do
       if i == line then
-        table.insert(self.confirmed, data)
+        self.confirmed[#self.confirmed + 1] = data
       end
     end
   end, { buffer = self.p_bufnr, nowait = true })
@@ -468,7 +468,7 @@ function rename:whole_project(cur_name, root_dir)
       self.rg_data = {}
     end
 
-    for _, v in pairs(parsed) do
+    for _, v in ipairs(parsed) do
       local path = vim.tbl_get(v, 'data', 'path', 'text')
       local lnum = vim.tbl_get(v, 'data', 'line_number')
       if v.type == 'match' and path and lnum and not self:check_in_lspres(path, lnum) then
@@ -482,7 +482,7 @@ function rename:whole_project(cur_name, root_dir)
       local root_parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
       local fname_parts = vim.split(item.data.path.text, libs.path_sep, { trimempty = true })
       local short = table.concat({ unpack(fname_parts, #root_parts + 1) }, libs.path_sep)
-      table.insert(lines, short)
+      lines[#lines + 1] = short
       local uri = vim.uri_from_fname(item.data.path.text)
       local bufnr = vim.uri_to_bufnr(uri)
       item.data.bufnr = bufnr
@@ -520,7 +520,7 @@ function rename:whole_project(cur_name, root_dir)
 
     if data then
       local tbl = vim.split(data, '\n', { trimempty = true })
-      table.insert(res, tbl)
+      res[#res + 1] = tbl
     end
   end)
 end

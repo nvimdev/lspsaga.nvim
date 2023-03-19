@@ -184,7 +184,7 @@ function act:send_code_action_request(main_buf, options, cb)
 
     for client_id, result in pairs(results) do
       for _, action in pairs(result.result or {}) do
-        table.insert(self.action_tuples, { client_id, action })
+        self.action_tuples[#self.action_tuples + 1] = { client_id, action }
       end
     end
 
@@ -192,7 +192,7 @@ function act:send_code_action_request(main_buf, options, cb)
       local res = self:extend_gitsing(params)
       if res then
         for _, action in pairs(res) do
-          table.insert(self.action_tuples, { 'gitsigns', action })
+          self.action_tuples[#self.action_tuples + 1] = { 'gitsigns', action }
         end
       end
     end
@@ -468,13 +468,13 @@ function act:extend_gitsing(params)
         action({ params.range.start.line, params.range['end'].line })
       end
     end
-    table.insert(actions, {
+    actions[#actions + 1] = {
       title = title,
       action = function()
         local bufnr = vim.uri_to_bufnr(params.textDocument.uri)
         vim.api.nvim_buf_call(bufnr, cb)
       end,
-    })
+    }
   end
   return actions
 end

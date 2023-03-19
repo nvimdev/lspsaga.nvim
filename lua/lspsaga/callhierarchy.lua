@@ -3,7 +3,6 @@ local config = require('lspsaga').config
 local libs = require('lspsaga.libs')
 local window = require('lspsaga.window')
 local call_conf, ui = config.callhierarchy, config.ui
-local insert = table.insert
 
 local ctx = {}
 
@@ -120,10 +119,10 @@ function ch:call_hierarchy(item, parent)
       local icons = {}
       for i, v in pairs(res) do
         local target = v.from and v.from or v.to
-        table.insert(icons, kind[target.kind])
+        icons[#icons + 1] = kind[target.kind]
         local expand_collapse = '  ' .. ui.expand
         local icon = kind[target.kind][2]
-        insert(self.data, {
+        self.data[#self.data + 1] = {
           target = target,
           name = expand_collapse .. icon .. target.name,
           highlights = {
@@ -134,7 +133,7 @@ function ch:call_hierarchy(item, parent)
           expand = false,
           children = {},
           requested = false,
-        })
+        }
       end
       self:render_win()
       return
@@ -156,7 +155,7 @@ function ch:call_hierarchy(item, parent)
       local target = v.from and v.from or v.to
       local expand_collapse = indent .. ui.expand
       local icon = kind[target.kind][2]
-      insert(parent.children, {
+      parent.children[#parent + 1] = {
         target = target,
         name = expand_collapse .. icon .. target.name,
         highlights = {
@@ -167,8 +166,8 @@ function ch:call_hierarchy(item, parent)
         expand = false,
         children = {},
         requested = false,
-      })
-      insert(tbl, expand_collapse .. icon .. target.name)
+      }
+      tbl[#tbl + 1] = expand_collapse .. icon .. target.name
     end
 
     api.nvim_buf_set_lines(self.bufnr, parent.winline, parent.winline, false, tbl)
@@ -223,7 +222,7 @@ function ch:expand_collapse()
       local tbl = {}
       for i, v in ipairs(node.children) do
         v.winline = node.winline + i
-        insert(tbl, v.name)
+        tbl[#tbl + 1] = v.name
       end
       node.expand = true
       api.nvim_buf_set_lines(self.bufnr, node.winline, node.winline, false, tbl)
@@ -323,11 +322,10 @@ function ch:apply_map()
 end
 
 function ch:render_win()
-  local content = {}
-  insert(content, self.cword)
+  local content = { self.cword }
 
   for _, v in pairs(self.data) do
-    insert(content, v.name)
+    content[#content + 1] = v.name
   end
 
   local side_char = window.border_chars()['top'][config.ui.border]
