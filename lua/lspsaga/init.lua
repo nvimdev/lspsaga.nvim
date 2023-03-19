@@ -110,6 +110,7 @@ local default_config = {
     auto_refresh = true,
     auto_close = true,
     custom_sort = nil,
+    preview_width = 0.4,
     keys = {
       jump = 'o',
       expand_collapse = 'u',
