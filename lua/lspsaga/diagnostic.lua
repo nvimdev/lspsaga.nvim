@@ -29,6 +29,7 @@ function diag:get_diagnostic_sign(severity)
   local prefix = 'DiagnosticSign'
   local sign_icon = fn.sign_getdefined(prefix .. type)[1].text
   if not sign_icon then
+    ---@diagnostic disable-next-line: param-type-mismatch
     sign_icon = type:gsub(1, 1)
   end
   return sign_icon
@@ -315,19 +316,31 @@ function diag:move_cursor(entry)
 end
 
 function diag:goto_next(opts)
-  local next = diagnostic.get_next(opts)
-  if next == nil then
+  local incursor = require('lspsaga.showdiag'):get_diagnostic({ cursor = true })
+  local entry
+  if next(incursor) ~= nil then
+    entry = incursor[1]
+  else
+    entry = diagnostic.get_next(opts)
+  end
+  if not entry then
     return
   end
-  self:move_cursor(next)
+  self:move_cursor(entry)
 end
 
 function diag:goto_prev(opts)
-  local prev = diagnostic.get_prev(opts)
-  if not prev then
-    return false
+  local incursor = require('lspsaga.showdiag'):get_diagnostic({ cursor = true })
+  local entry
+  if next(incursor) ~= nil then
+    entry = incursor[1]
+  else
+    entry = diagnostic.get_prev(opts)
   end
-  self:move_cursor(prev)
+  if not entry then
+    return
+  end
+  self:move_cursor(entry)
 end
 
 function diag:close_exist_win()

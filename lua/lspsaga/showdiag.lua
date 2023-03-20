@@ -23,7 +23,7 @@ end
 
 ---get the line or cursor diagnostics
 ---@param opt table
-local function get_diagnostic(opt)
+function sd:get_diagnostic(opt)
   local cur_buf = api.nvim_get_current_buf()
   if opt.buffer then
     return vim.diagnostic.get(cur_buf)
@@ -234,7 +234,7 @@ function sd:show(opt)
 end
 
 function sd:show_diagnostics(opt)
-  local entrys = get_diagnostic(opt)
+  local entrys = self:get_diagnostic(opt)
   if next(entrys) == nil then
     return
   end
