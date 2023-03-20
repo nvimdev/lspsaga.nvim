@@ -29,12 +29,13 @@ local default_config = {
     show_source = true,
     jump_num_shortcut = true,
     max_width = 0.7,
-    text_hl_follow = false,
+    text_hl_follow = true,
     border_follow = true,
     keys = {
       exec_action = 'o',
       quit = 'q',
       go_action = 'g',
+      jump_in_show = '<CR>',
     },
   },
   code_action = {
@@ -49,7 +50,6 @@ local default_config = {
   lightbulb = {
     enable = true,
     enable_in_insert = true,
-    -- cache_code_action = true,
     sign = true,
     sign_priority = 40,
     virtual_text = true,

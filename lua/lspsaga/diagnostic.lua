@@ -17,7 +17,6 @@ end
 diag.__index = diag
 
 --- clean ctx table data
---- notice just make ctx to empty not free memory before gc
 ---@private
 local function clean_ctx()
   for k, _ in pairs(ctx) do
@@ -25,7 +24,8 @@ local function clean_ctx()
   end
 end
 
-local function get_diagnostic_sign(type)
+function diag:get_diagnostic_sign(severity)
+  local type = self:get_diag_type(severity)
   local prefix = 'DiagnosticSign'
   local sign_icon = fn.sign_getdefined(prefix .. type)[1].text
   if not sign_icon then
@@ -40,8 +40,9 @@ function diag:get_diag_type(severity)
 end
 
 local function clean_msg(msg)
-  if msg:find('%(.+%)%S$') then
-    return msg:gsub('%(.+%)%S$', '')
+  local pattern = '%(.+%)%S$'
+  if msg:find(pattern) then
+    return msg:gsub(pattern, '')
   end
   return msg
 end
@@ -156,24 +157,8 @@ function diag:render_diagnostic_window(entry, option)
   option = option or {}
   self.main_buf = api.nvim_get_current_buf()
   local diag_type = self:get_diag_type(entry.severity)
-  local sign = get_diagnostic_sign(diag_type)
-  local curline = api.nvim_win_get_cursor(0)[1]
-  local counts = self:get_diag_counts(vim.diagnostic.get(self.main_buf, { lnum = curline - 1 }))
-  local content = {
-    'Lnum: ' .. entry.lnum + 1,
-  }
-
-  local counts_scope = {}
-  local title_start = #tostring(curline) + 6
-  for k, v in ipairs(counts) do
-    if v ~= 0 then
-      local type = self:get_diag_type(k)
-      content[1] = content[1] .. ' ' .. type .. ' ' .. v
-      local start = #counts_scope == 0 and title_start or counts_scope[#counts_scope][2]
-      local _end = start + #type + 2 + #tostring(v)
-      counts_scope[#counts_scope + 1] = { start, _end, 'Diagnostic' .. type }
-    end
-  end
+  local sign = self:get_diagnostic_sign(entry.severity)
+  local content = {}
 
   local source = ' '
 
@@ -238,12 +223,15 @@ function diag:render_diagnostic_window(entry, option)
   vim.wo[self.winid].breakindent = true
   vim.wo[self.winid].breakindentopt = 'shift:0'
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', 0, 0, 6 + #tostring(curline))
-  for _, scope in ipairs(counts_scope) do
-    api.nvim_buf_add_highlight(self.bufnr, 0, scope[3], 0, scope[1], scope[2])
-  end
-
-  api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, 1, 0, #sign)
+  api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, 0, 0, #sign)
+  api.nvim_buf_add_highlight(
+    self.bufnr,
+    0,
+    diag_conf.text_hl_follow and hi_name or 'DiagnosticText',
+    0,
+    #sign,
+    -1
+  )
   api.nvim_buf_add_highlight(
     self.bufnr,
     0,

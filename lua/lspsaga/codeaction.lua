@@ -41,7 +41,7 @@ function act:action_callback()
       else
         action_title = action_title
           .. '  ('
-          .. vim.lsp.get_client_by_id(client_with_actions[1]).name
+          .. lsp.get_client_by_id(client_with_actions[1]).name
           .. ')'
       end
     end

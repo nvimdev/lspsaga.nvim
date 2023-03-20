@@ -26,6 +26,7 @@ local function open_link()
     for i = 0, node:named_child_count() - 1, 1 do
       local child = node:named_child(i)
       if child:type() == 'link_destination' then
+        ---@diagnostic disable-next-line: undefined-field
         path = vim.treesitter.get_node_text(child, 0)
         break
       end

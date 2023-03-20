@@ -2,8 +2,10 @@ local api, fn = vim.api, vim.fn
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local diag = require('lspsaga.diagnostic')
-local ui = require('lspsaga').config.ui
+local config = require('lspsaga').config
+local diag_conf = config.diagnostic
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+local ns = api.nvim_create_namespace('SagaDiagnostic')
 local ctx = {}
 local sd = {}
 sd.__index = sd
@@ -50,40 +52,6 @@ local function sort_by_severity(entrys)
   end)
 end
 
----@private append table 2 to table1
-local function tbl_append(t1, t2)
-  for _, v in ipairs(t2) do
-    t1[#t1 + 1] = v
-  end
-end
-
-local function generate_title(counts, content, width)
-  local fname = fn.fnamemodify(api.nvim_buf_get_name(0), ':t')
-  local title_count = ' ' .. fname
-  local title_hi_scope = {}
-  title_hi_scope[#title_hi_scope + 1] = { 'DiagnosticHead', 0, #title_count }
-
-  for _, i in ipairs(vim.tbl_keys(vim.diagnostic.serverity)) do
-    if counts[i] ~= 0 then
-      local start = #title_count
-      title_count = title_count .. ' ' .. i .. ': ' .. counts[i]
-      title_hi_scope[#title_hi_scope + 1] = { 'Diagnostic' .. i, start + 1, #title_count }
-    end
-  end
-  local title = {
-    title_count,
-    libs.gen_truncate_line(width),
-  }
-
-  tbl_append(content, title)
-
-  return function(bufnr)
-    for _, item in pairs(title_hi_scope) do
-      api.nvim_buf_add_highlight(bufnr, 0, item[1], 0, item[2], item[3])
-    end
-  end
-end
-
 ---@private get the actual window height when wrap is enable
 local function get_actual_height(content)
   local height = 0
@@ -97,41 +65,62 @@ local function get_actual_height(content)
   return height
 end
 
-function sd:show(entrys, dtype, arg)
+function sd:show(opt)
   local cur_buf = api.nvim_get_current_buf()
   local cur_win = api.nvim_get_current_win()
-  local content = {}
-  local len = {}
-  local counts = {
-    Error = 0,
-    Warn = 0,
-    Info = 0,
-    Hint = 0,
+  local icon_data = libs.icon_from_devicon(vim.bo[cur_buf].filetype)
+  local fname = api.nvim_buf_get_name(cur_buf)
+  fname = fn.fnamemodify(fname, ':t')
+  local indent = '   '
+
+  local content = {
+    icon_data[1] .. fname,
   }
-  for _, entry in pairs(entrys) do
-    local type = diag:get_diag_type(entry.severity)
-    counts[type] = counts[type] + 1
-    local start_col = entry.end_col > entry.col and entry.col or entry.end_col
-    local end_col = entry.end_col > entry.col and entry.end_col or entry.col
-    local code_source =
-      api.nvim_buf_get_text(entry.bufnr, entry.lnum, start_col, entry.lnum, end_col, {})
-    len[#len + 1] = #code_source[1]
-    local line = ui.diagnostic
-      .. ' '
-      .. code_source[1]
-      .. ' |'
-      .. (dtype == 'buf' and entry.lnum + 1 or 'Col')
-      .. ':'
-      .. entry.col
-      .. '|'
-      .. '\n'
+
+  local hi = {}
+  if icon_data[2] then
+    hi[1] = {
+      { 0, #icon_data[1], icon_data[2] },
+    }
+  end
+  hi[1][#hi[1] + 1] = { #icon_data[1], #icon_data[1] + #fname, 'DiagnosticFname' }
+
+  local counts = diag:get_diag_counts(opt.entrys)
+  for i, count in ipairs(counts) do
+    if count > 0 then
+      local sign = diag:get_diagnostic_sign(i)
+      local dtype = diag:get_diag_type(i)
+      content[1] = content[1] .. ' ' .. sign .. count
+      local prev = hi[1][#hi[1]]
+      hi[1][#hi[1] + 1] = { prev[2], prev[2] + #sign, 'Diagnostic' .. dtype }
+      prev = hi[1][#hi[1]]
+      hi[1][#hi[1] + 1] = { prev[2] + 1, prev[2] + 1 + #tostring(count), 'Diagnostic' .. dtype }
+    end
+  end
+
+  for _, entry in pairs(opt.entrys) do
+    local sign = diag:get_diagnostic_sign(entry.severity)
+
     if entry.message then
-      line = line .. '  ' .. entry.message
+      local line = indent
+        .. sign
+        .. entry.message
+        .. (entry.source and '(' .. entry.source .. ')' or nil)
+      if opt.buffer then
+        line = line .. ' ' .. entry.lnum + 1 .. ':' .. entry.col
+      end
+      content[#content + 1] = line
+      local hi_name = 'Diagnostic' .. diag:get_diag_type(entry.severity)
+      hi[#hi + 1] = {
+        { #indent, #indent + #sign, hi_name },
+        {
+          #indent + #sign,
+          #indent + #sign + #entry.message,
+          diag_conf.text_hl_follow and hi_name or 'DiagnosticText',
+        },
+        { #indent + #sign + #entry.message, -1, 'Comment' },
+      }
     end
-    if entry.source then
-      line = line .. '(' .. entry.source .. ')'
-    end
-    content[#content + 1] = line
   end
 
   local increase = window.win_height_increase(content)
@@ -139,15 +128,21 @@ function sd:show(entrys, dtype, arg)
   local max_height = math.floor(vim.o.lines * 0.6)
   local actual_height = get_actual_height(content) + increase
   local max_width = math.floor(vim.o.columns * 0.6)
-  local opt = {
+  local float_opt = {
     width = max_len < max_width and max_len or max_width,
     height = actual_height > max_height and max_height or actual_height,
     no_size_override = true,
   }
 
-  local func
-  if dtype == 'buf' then
-    func = generate_title(counts, content, opt.width)
+  if fn.has('nvim-0.9') == 1 then
+    if opt.buffer then
+      float_opt.title = 'Buffer'
+    elseif opt.line then
+      float_opt.title = 'Line'
+    else
+      float_opt.title = 'Cursor'
+    end
+    float_opt.title_pos = 'center'
   end
 
   local content_opt = {
@@ -186,61 +181,49 @@ function sd:show(entrys, dtype, arg)
     })
   end
 
-  self.lnum_bufnr, self.lnum_winid = window.create_win_with_border(content_opt, opt)
+  self.lnum_bufnr, self.lnum_winid = window.create_win_with_border(content_opt, float_opt)
   vim.wo[self.lnum_winid].conceallevel = 2
   vim.wo[self.lnum_winid].concealcursor = 'niv'
-  vim.wo[self.lnum_winid].showbreak = 'NONE'
+  vim.wo[self.lnum_winid].showbreak = '┃'
   vim.wo[self.lnum_winid].breakindent = true
-  vim.wo[self.lnum_winid].breakindentopt = ''
+  vim.wo[self.lnum_winid].breakindentopt = 'shift:2,sbr'
 
-  if func then
-    func(self.lnum_bufnr)
+  for i, item in pairs(hi) do
+    for _, scope in ipairs(item) do
+      api.nvim_buf_add_highlight(self.lnum_bufnr, 0, scope[3], i - 1, scope[1], scope[2])
+    end
+    if i > 1 then
+      local symbol = i ~= #hi and '┣' or '┗'
+      api.nvim_buf_set_extmark(self.lnum_bufnr, ns, i - 1, 0, {
+        virt_text = { { symbol, 'FinderLines' }, { '━━', 'FinderLines' } },
+        virt_text_pos = 'overlay',
+      })
+    end
   end
 
-  api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'Comment', 1, 0, -1)
+  local nontext = api.nvim_get_hl_by_name('NonText', true)
+  api.nvim_set_hl(0, 'NonText', {
+    link = 'FinderLines',
+  })
 
-  local function get_color(hi_name)
-    local color = api.nvim_get_hl_by_name(hi_name, true)
-    return color.foreground
-  end
-
-  local index = func and 2 or 0
-  for k, item in pairs(entrys) do
-    local diag_type = diag:get_diag_type(item.severity)
-    local hi = 'Diagnostic' .. diag_type
-    local fg = get_color(hi)
-    local col_end = 4
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticType' .. k, index, 0, col_end)
-    api.nvim_set_hl(0, 'DiagnosticType' .. k, { fg = fg })
-    api.nvim_buf_add_highlight(
-      self.lnum_bufnr,
-      0,
-      'DiagnosticWord',
-      index,
-      col_end,
-      col_end + len[k]
-    )
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, 'DiagnosticPos', index, col_end + len[k] + 1, -1)
-    api.nvim_buf_add_highlight(self.lnum_bufnr, 0, hi, index + 1, 2, -1)
-    index = index + 2
-  end
-
-  nvim_buf_set_keymap(self.lnum_bufnr, 'n', '<CR>', '', {
+  nvim_buf_set_keymap(self.lnum_bufnr, 'n', diag_conf.keys.jump_in_show, '', {
     nowait = true,
     silent = true,
     callback = function()
-      local text = api.nvim_get_current_line()
-      local data = text:match('%d+:%d+')
-      if data then
-        local lnum, col = unpack(vim.split(data, ':', { trimempty = true }))
-        if lnum and col then
-          api.nvim_win_close(self.lnum_winid, true)
-          clean_ctx()
-          api.nvim_set_current_win(cur_win)
-          api.nvim_win_set_cursor(cur_win, { tonumber(lnum), tonumber(col) })
-          local width = #api.nvim_get_current_line()
-          libs.jump_beacon({ tonumber(lnum) - 1, tonumber(col) }, width)
-        end
+      local index = api.nvim_win_get_cursor(self.lnum_winid)[1] - 1
+      local entry = opt.entrys[index]
+      api.nvim_set_hl(0, 'NonText', {
+        foreground = nontext.foreground,
+        background = nontext.background,
+      })
+
+      if entry then
+        api.nvim_win_close(self.lnum_winid, true)
+        clean_ctx()
+        api.nvim_set_current_win(cur_win)
+        api.nvim_win_set_cursor(cur_win, { entry.lnum + 1, entry.col })
+        local width = #api.nvim_get_current_line()
+        libs.jump_beacon({ entry.lnum, entry.col }, width)
       end
     end,
   })
@@ -256,7 +239,8 @@ function sd:show_diagnostics(opt)
     return
   end
   sort_by_severity(entrys)
-  self:show(entrys, type, arg)
+  opt.entrys = entrys
+  self:show(opt)
 end
 
 return setmetatable(ctx, sd)
