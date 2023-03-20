@@ -12,6 +12,42 @@ local function has_arg(args, arg)
   return false
 end
 
+local function open_link()
+  local ts_utils = require('nvim-treesitter.ts_utils')
+  local node = ts_utils.get_node_at_cursor()
+
+  if node ~= nil and node:type() ~= 'inline_link' then
+    node = node:parent()
+  end
+
+  if node ~= nil and node:type() == 'inline_link' then
+    local path
+
+    for i = 0, node:named_child_count() - 1, 1 do
+      local child = node:named_child(i)
+      if child:type() == 'link_destination' then
+        path = vim.treesitter.get_node_text(child, 0)
+        break
+      end
+    end
+
+    local cmd
+    if libs.iswin then
+      cmd = '!start cmd /cstart /b '
+    elseif libs.ismac then
+      cmd = 'silent !open '
+    else
+      cmd = config.hover.open_browser .. ' '
+    end
+
+    if path and path:find('file://') then
+      vim.cmd.edit(vim.uri_to_fname(path))
+    else
+      fn.execute(cmd .. '"' .. fn.escape(path, '#') .. '"')
+    end
+  end
+end
+
 function hover:open_floating_preview(res, option_fn)
   vim.validate({
     res = { res, 't' },
@@ -153,6 +189,15 @@ function hover:open_floating_preview(res, option_fn)
       end,
     })
   end
+
+  api.nvim_buf_set_keymap(self.preview_bufnr, 'n', config.hover.open_link, '', {
+    nowait = true,
+    noremap = true,
+    callback = function()
+      open_link()
+    end,
+  })
+
   libs.scroll_in_preview(bufnr, self.preview_winid)
 end
 

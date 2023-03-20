@@ -18,6 +18,8 @@ local default_config = {
   },
   hover = {
     max_width = 0.6,
+    open_link = 'gx',
+    open_browser = '!chrome',
   },
   diagnostic = {
     on_insert = true,
