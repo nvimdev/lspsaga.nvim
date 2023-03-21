@@ -155,6 +155,7 @@ function sd:show(opt)
   local content_opt = {
     contents = content,
     filetype = 'markdown',
+    enter = true,
     wrap = true,
     highlight = {
       normal = 'DiagnosticNormal',
@@ -167,6 +168,7 @@ function sd:show(opt)
   if arg and arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
+    content_opt.enter = false
   else
     opt.focusable = true
     api.nvim_create_autocmd('BufEnter', {
@@ -210,6 +212,7 @@ function sd:show(opt)
     end
   end
 
+  api.nvim_win_set_cursor(self.lnum_winid, { 2, 7 })
   local nontext = api.nvim_get_hl_by_name('NonText', true)
   api.nvim_set_hl(0, 'NonText', {
     link = 'FinderLines',

@@ -7,6 +7,7 @@ local ui = config.ui
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local ns = api.nvim_create_namespace('DiagnosticJump')
+local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 
 local diag = {}
 
@@ -131,6 +132,37 @@ function diag:code_action_cb(hi_name)
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
+
+  local function scroll_with_preview(direction)
+    api.nvim_win_call(self.winid, function()
+      local curlnum = api.nvim_win_get_cursor(self.winid)[1]
+      local col = 6
+      if curlnum < 4 then
+        curlnum = 4
+      elseif curlnum >= 4 then
+        curlnum = curlnum + direction > api.nvim_buf_line_count(self.bufnr) and 4
+          or curlnum + direction
+      end
+      api.nvim_win_set_cursor(self.winid, { curlnum, col })
+      self.preview_winid = act:action_preview(self.winid, self.main_buf, hi_name)
+    end)
+  end
+
+  nvim_buf_set_keymap(self.main_buf, 'n', config.scroll_preview.scroll_down, '', {
+    noremap = true,
+    nowait = true,
+    callback = function()
+      scroll_with_preview(1)
+    end,
+  })
+
+  nvim_buf_set_keymap(self.main_buf, 'n', config.scroll_preview.scroll_up, '', {
+    noremap = true,
+    nowait = true,
+    callback = function()
+      scroll_with_preview(-1)
+    end,
+  })
 end
 
 local function cursor_diagnostic()
@@ -172,11 +204,11 @@ end
 function diag:apply_map()
   keymap('n', diag_conf.keys.exec_action, function()
     self:do_code_action()
-    window.nvim_close_valid_window({ self.winid, self.virt_winid, self.preview_winid })
+    window.nvim_close_valid_window({ self.winid, self.preview_winid })
   end, { buffer = self.bufnr, nowait = true })
 
   keymap('n', diag_conf.keys.quit, function()
-    for _, id in pairs({ self.winid, self.virt_winid, self.preview_winid }) do
+    for _, id in pairs({ self.winid, self.preview_winid }) do
       if api.nvim_win_is_valid(id) then
         api.nvim_win_close(id, true)
       end
@@ -329,6 +361,10 @@ function diag:render_diagnostic_window(entry, option)
       function(event)
         if self.remove_num_map then
           self.remove_num_map()
+        end
+        --close preview window which create by scroll keymap
+        if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+          api.nvim_win_close(self.preview_winid, true)
         end
         if event == 'InsertEnter' then
           act:clean_context()
