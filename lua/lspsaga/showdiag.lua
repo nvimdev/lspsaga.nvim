@@ -3,6 +3,7 @@ local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local diag = require('lspsaga.diagnostic')
 local config = require('lspsaga').config
+local ui = config.ui
 local diag_conf = config.diagnostic
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns = api.nvim_create_namespace('SagaDiagnostic')
@@ -36,13 +37,17 @@ function sd:get_diagnostic(opt)
     return entrys
   end
 
-  local res = {}
-  for _, v in pairs(entrys) do
-    if v.col <= col and v.end_col >= col then
-      res[#res + 1] = v
+  if opt.cursor then
+    local res = {}
+    for _, v in pairs(entrys) do
+      if v.col <= col and v.end_col >= col then
+        res[#res + 1] = v
+      end
     end
+    return res
   end
-  return res
+
+  return vim.diagnostic.get()
 end
 
 ---@private sort table by diagnsotic severity
@@ -74,16 +79,18 @@ function sd:show(opt)
   local indent = '   '
 
   local content = {
-    icon_data[1] .. fname,
+    ui.collapse .. icon_data[1] .. fname,
   }
 
   local hi = {}
   if icon_data[2] then
     hi[1] = {
-      { 0, #icon_data[1], icon_data[2] },
+      { 0, #ui.collapse, 'SagaCollapse' },
+      { #ui.collapse, #ui.collapse + #icon_data[1], icon_data[2] },
     }
   end
-  hi[1][#hi[1] + 1] = { #icon_data[1], #icon_data[1] + #fname, 'DiagnosticFname' }
+  hi[1][#hi[1] + 1] =
+    { #ui.collapse + #icon_data[1], #ui.collapse + #icon_data[1] + #fname, 'DiagnosticFname' }
 
   local counts = diag:get_diag_counts(opt.entrys)
   for i, count in ipairs(counts) do
@@ -184,7 +191,7 @@ function sd:show(opt)
   self.lnum_bufnr, self.lnum_winid = window.create_win_with_border(content_opt, float_opt)
   vim.wo[self.lnum_winid].conceallevel = 2
   vim.wo[self.lnum_winid].concealcursor = 'niv'
-  vim.wo[self.lnum_winid].showbreak = '┃'
+  vim.wo[self.lnum_winid].showbreak = ui.lines[3]
   vim.wo[self.lnum_winid].breakindent = true
   vim.wo[self.lnum_winid].breakindentopt = 'shift:2,sbr'
 
@@ -193,9 +200,11 @@ function sd:show(opt)
       api.nvim_buf_add_highlight(self.lnum_bufnr, 0, scope[3], i - 1, scope[1], scope[2])
     end
     if i > 1 then
-      local symbol = i ~= #hi and '┣' or '┗'
+      local symbol = i ~= #hi and ui.lines[2] or ui.lines[1]
+      -- local dtype = diag:get_diag_type(opt.entrys[i - 1].severity)
+      -- local symbol_hi = config.diagnostic.text_hl_follow and 'Diagnostic' .. dtype or 'FinderLines'
       api.nvim_buf_set_extmark(self.lnum_bufnr, ns, i - 1, 0, {
-        virt_text = { { symbol, 'FinderLines' }, { '━━', 'FinderLines' } },
+        virt_text = { { symbol, 'FinderLines' }, { ui.lines[4]:rep(2), 'FinderLines' } },
         virt_text_pos = 'overlay',
       })
     end

@@ -1,5 +1,6 @@
 local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
+local ui = config.ui
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 
@@ -448,11 +449,11 @@ function finder:render_finder_result(method_scopes)
     end
 
     if i == def_scope[2] - 1 then
-      virt_texts[#virt_texts + 1] = { '└', virt_hi }
-      virt_texts[#virt_texts + 1] = { '───', virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[1], virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
     else
-      virt_texts[#virt_texts + 1] = { '├', virt_hi }
-      virt_texts[#virt_texts + 1] = { '───', virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[2], virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
     end
 
     api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
@@ -470,11 +471,11 @@ function finder:render_finder_result(method_scopes)
       end
 
       if i == imp_scope[2] - 1 then
-        virt_texts[#virt_texts + 1] = { '└', virt_hi }
-        virt_texts[#virt_texts + 1] = { '───', virt_hi }
+        virt_texts[#virt_texts + 1] = { ui.lines[1], virt_hi }
+        virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
       else
-        virt_texts[#virt_texts + 1] = { '├', virt_hi }
-        virt_texts[#virt_texts + 1] = { '───', virt_hi }
+        virt_texts[#virt_texts + 1] = { ui.lines[2], virt_hi }
+        virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
       end
 
       api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
@@ -485,7 +486,7 @@ function finder:render_finder_result(method_scopes)
   end
 
   api.nvim_buf_set_extmark(0, ns_id, ref_scope[1] + 1, 0, {
-    virt_text = { { '│', virt_hi } },
+    virt_text = { { ui.lines[3], virt_hi } },
     virt_text_pos = 'overlay',
   })
 
@@ -497,11 +498,11 @@ function finder:render_finder_result(method_scopes)
     end
 
     if i == ref_scope[2] - 1 then
-      virt_texts[#virt_texts + 1] = { '└', virt_hi }
-      virt_texts[#virt_texts + 1] = { '───', virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[1], virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
     else
-      virt_texts[#virt_texts + 1] = { '├', virt_hi }
-      virt_texts[#virt_texts + 1] = { '───', virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[2], virt_hi }
+      virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
     end
 
     api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {

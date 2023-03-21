@@ -3,8 +3,10 @@ local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local diag_conf = config.diagnostic
+local ui = config.ui
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
+local ns = api.nvim_create_namespace('DiagnosticJump')
 
 local diag = {}
 
@@ -53,8 +55,13 @@ function diag:code_action_cb(hi_name)
     return
   end
 
-  local contents = {}
+  local win_conf = api.nvim_win_get_config(self.winid)
+  local contents = {
+    libs.gen_truncate_line(win_conf.width),
+    config.ui.actionfix .. 'Actions',
+  }
 
+  local indent = '   '
   for index, client_with_actions in pairs(act.action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
@@ -62,14 +69,12 @@ function diag:code_action_cb(hi_name)
     end
     if client_with_actions[2].title then
       local title = clean_msg(client_with_actions[2].title)
-      local action_title = '[[' .. index .. ']] ' .. title
+      local action_title = indent .. '[[' .. index .. ']] ' .. title
       contents[#contents + 1] = action_title
     end
   end
 
-  local win_conf = api.nvim_win_get_config(self.winid)
   local increase = window.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
-  table.insert(contents, 1, libs.gen_truncate_line(win_conf.width))
 
   local start_line = api.nvim_buf_line_count(self.bufnr) + 1
   api.nvim_win_set_config(self.winid, { height = win_conf.height + increase + #contents })
@@ -79,9 +84,18 @@ function diag:code_action_cb(hi_name)
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
   api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, start_line - 1, 0, -1)
-  for i = 2, #contents do
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'ActionFix', start_line, 0, #config.ui.actionfix)
+
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'TitleString', start_line, #config.ui.actionfix, -1)
+
+  for i = 3, #contents do
     local row = start_line + i - 2
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 4 + #tostring(row), -1)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 7 + #tostring(row), -1)
+    local symbol = i == #contents and ui.lines[1] or ui.lines[2]
+    api.nvim_buf_set_extmark(self.bufnr, ns, row, 0, {
+      virt_text = { { symbol, 'FinderLines' }, { ui.lines[4]:rep(2), 'FinderLines' } },
+      virt_text_pos = 'overlay',
+    })
   end
 
   keymap('n', diag_conf.keys.go_action, function()
@@ -117,6 +131,33 @@ function diag:code_action_cb(hi_name)
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
+end
+
+local function cursor_diagnostic()
+  local diags = require('lspsaga.showdiag'):get_diagnostic({ cursor = true })
+  local res = {}
+  for _, entry in ipairs(diags) do
+    res[#res + 1] = {
+      message = entry.message,
+      code = entry.code or nil,
+      codeDescription = entry.codeDescription or nil,
+      data = entry.data or nil,
+      tags = entry.tags or nil,
+      relatedInformation = entry.relatedInformation or nil,
+      source = entry.source or nil,
+      severity = entry.severity or nil,
+      range = {
+        start = {
+          line = entry.lnum,
+        },
+        ['end'] = {
+          line = entry.end_lnum,
+        },
+      },
+    }
+  end
+
+  return res
 end
 
 function diag:do_code_action()
@@ -178,7 +219,9 @@ function diag:render_diagnostic_window(entry, option)
   local hi_name = 'Diagnostic' .. diag_type
 
   if diag_conf.show_code_action and libs.get_client_by_cap('codeActionProvider') then
+    local cursor_diags = cursor_diagnostic()
     act:send_code_action_request(self.main_buf, {
+      context = { diagnostics = cursor_diags },
       range = {
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
@@ -318,7 +361,7 @@ end
 function diag:goto_next(opts)
   local incursor = require('lspsaga.showdiag'):get_diagnostic({ cursor = true })
   local entry
-  if next(incursor) ~= nil then
+  if next(incursor) ~= nil and not (self.winid and api.nvim_win_is_valid(self.winid)) then
     entry = incursor[1]
   else
     entry = diagnostic.get_next(opts)
@@ -332,7 +375,7 @@ end
 function diag:goto_prev(opts)
   local incursor = require('lspsaga.showdiag'):get_diagnostic({ cursor = true })
   local entry
-  if next(incursor) ~= nil then
+  if next(incursor) ~= nil and not (self.winid and api.nvim_win_is_valid(self.winid)) then
     entry = incursor[1]
   else
     entry = diagnostic.get_prev(opts)

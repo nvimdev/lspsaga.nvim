@@ -21,6 +21,7 @@ local function hi_define()
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
     -- code action
+    ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
     ActionPreviewTitle = { link = 'Title' },
