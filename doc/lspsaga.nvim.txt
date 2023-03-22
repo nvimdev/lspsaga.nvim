@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 March 21
+*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 March 22
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -237,8 +237,8 @@ DEFAULT OPTIONS           *lspsaga.nvim-example-configuration-default-options*
 
 :LSPSAGA LSP_FINDER   *lspsaga.nvim-example-configuration-:lspsaga-lsp_finder*
 
-A `finder` to show the defintion, reference and implementation (only shown when
-current hovered word is a function, a type, a class, or an interface).
+A `finder` to show the definition, reference and implementation (only shown
+when current hovered word is a function, a type, a class, or an interface).
 
 Default options:
 
@@ -289,10 +289,13 @@ Default options:
 
 peek_definition showcase ~
 
-The steps demonstrated in this showcase are: - Pressing `gd` to run `:Lspsaga
-peek_definition` - Editing a comment and using `:w` to save - Pressing `<C-c>o`
-to jump to the file in the floating window - Lspsaga shows a beacon highlight
-after jumping to the file
+The steps demonstrated in this showcase are:
+
+
+- Pressing `gd` to run `:Lspsaga peek_definition`
+- Editing a comment and using `:w` to save
+- Pressing `<C-c>o` to jump to the file in the floating window
+- Lspsaga shows a beacon highlight after jumping to the file
 
 
 :LSPSAGA GOTO_DEFINITION*lspsaga.nvim-example-configuration-:lspsaga-goto_definition*
@@ -323,9 +326,12 @@ Default options:
 
 code_action showcase ~
 
-The steps demonstrated in this showcase are: - Pressing `ga` to run `:Lspsaga
-code_action` - Pressing `j` to move within the code action preview window -
-Pressing `<Cr>` to run the action
+The steps demonstrated in this showcase are:
+
+
+- Pressing `ga` to run `:Lspsaga code_action`
+- Pressing `j` to move within the code action preview window
+- Pressing `<Cr>` to run the action
 
 
 :LSPSAGA LIGHTBULB     *lspsaga.nvim-example-configuration-:lspsaga-lightbulb*
@@ -357,9 +363,12 @@ keyboard shortcut for `:Lspsaga hover_doc` twice to enter the hover window.
 
 hover_docshow case ~
 
-The steps demonstrated in this showcase are: - Pressing `K` once to run
-`:Lspsaga hover_doc` - Pressing `K` again to enter the hover window - Pressing
-`q` to quit
+The steps demonstrated in this showcase are:
+
+
+- Pressing `K` once to run `:Lspsaga hover_doc`
+- Pressing `K` again to enter the hover window
+- Pressing `q` to quit
 
 
 
@@ -422,10 +431,11 @@ identical to `:h vim.diagnostic.get_next`.
 
 showcase ~
 
-The steps demonstrated in this showcase are: - Pressing `[e` to jump to the
-next diagnostic position, which shows the beacon highlight and the code actions
-in a diagnostic window - Pressing the number `2` to execute the code action
-without needing to enter the floating window
+The steps demonstrated in this showcase are:
+
+
+- Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
+- Pressing the number `2` to execute the code action without needing to enter the floating window
 
 
 
@@ -475,14 +485,20 @@ Default options:
 
 rename showcase ~
 
-The steps demonstrated in this showcase are: - Pressing `gr` to run `:Lspsaga
-rename` - Typing `stesdd` and then pressing `<CR>` to execute the rename
+The steps demonstrated in this showcase are:
+
+
+- Pressing `gr` to run `:Lspsaga rename`
+- Typing `stesdd` and then pressing `<CR>` to execute the rename
 
 
 
-The steps demonstrated in this showcase are: - Pressing `gR` to run `:Lspsaga
-rename ++project` - Pressing `x` to mark the file - Pressing `<CR>` to execute
-rename
+The steps demonstrated in this showcase are:
+
+
+- Pressing `gR` to run `:Lspsaga rename ++project`
+- Pressing `x` to mark the file
+- Pressing `<CR>` to execute rename
 
 
 :LSPSAGA OUTLINE         *lspsaga.nvim-example-configuration-:lspsaga-outline*
@@ -509,8 +525,12 @@ Default options:
 
 outline showcase ~
 
-The steps demonstrated in this showcase are: - Pressing `<Leader>o` run
-`:Lspsaga outline` - Pressing `j` to move down - Pressing `o` to jump
+The steps demonstrated in this showcase are:
+
+
+- Pressing `<Leader>o` run `:Lspsaga outline`
+- Pressing `j` to move down
+- Pressing `o` to jump
 
 
 :LSPSAGA INCOMING_CALLS / OUTGOING_CALLS*lspsaga.nvim-example-configuration-:lspsaga-incoming_calls-/-outgoing_calls*
