@@ -171,7 +171,7 @@ keymap({"n", "t"}, "<A-d>", "<cmd>Lspsaga term_toggle<CR>")
 **Note that the title in the floating window requires Neovim 0.9 or greater.**
 **If you are using Neovim 0.8 you won't see a title.**
 
-**If you are using Neovim 0.9 and want to disable the title, see [Customizing Lspsaga's Appearance](#customizing-lspsagas-appearance)
+\*\*If you are using Neovim 0.9 and want to disable the title, see [Customizing Lspsaga's Appearance](#customizing-lspsagas-appearance)
 
 **You need not copy all of the options into the setup function. Just set the options that you've changed in the setup function and it will be extended with the default options!**
 
@@ -193,9 +193,10 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
 
 ## :Lspsaga lsp_finder
 
-A `finder` to show the defintion, reference and implementation (only shown when current hovered word is a function, a type, a class, or an interface).
+A `finder` to show the definition, reference and implementation (only shown when current hovered word is a function, a type, a class, or an interface).
 
 Default options:
+
 ```lua
   finder = {
     --percentage
@@ -225,13 +226,13 @@ Default options:
 <img src="https://user-images.githubusercontent.com/41671631/215719819-4bfe6e86-fecc-4dc0-bac0-837c0bdeb349.gif" height=80% width=80%/>
 </details>
 
-
 ## :Lspsaga peek_definition
 
 There are two commands, `:Lspsaga peek_definition` and `:Lspsaga goto_definition`. The `peek_definition`
 command works like the VSCode command of the same name, which shows the target file in an editable floating window.
 
 Default options:
+
 ```lua
   definition = {
     edit = "<C-c>o",
@@ -246,6 +247,7 @@ Default options:
 <summary>peek_definition showcase</summary>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `gd` to run `:Lspsaga peek_definition`
 - Editing a comment and using `:w` to save
 - Pressing `<C-c>o` to jump to the file in the floating window
@@ -258,10 +260,10 @@ The steps demonstrated in this showcase are:
 
 Jumps to the definition of the hovered word and shows a beacon highlight.
 
-
 ## :Lspsaga code_action
 
 Default options:
+
 ```lua
   code_action = {
     num_shortcut = true,
@@ -274,6 +276,7 @@ Default options:
     },
   },
 ```
+
 - `num_shortcut` - It is `true` by default so you can quickly run a code action by pressing its corresponding number.
 - `extend_gitsigns` show gitsings in code action.
 
@@ -281,6 +284,7 @@ Default options:
 <summary>code_action showcase</summary>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `ga` to run `:Lspsaga code_action`
 - Pressing `j` to move within the code action preview window
 - Pressing `<Cr>` to run the action
@@ -293,6 +297,7 @@ The steps demonstrated in this showcase are:
 When there are possible code actions to be taken, a lightbulb icon will be shown.
 
 Default options:
+
 ```lua
   lightbulb = {
     enable = true,
@@ -318,6 +323,7 @@ You can press the keyboard shortcut for `:Lspsaga hover_doc` twice to enter the 
 <summary>hover_docshow case</summary>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `K` once to run `:Lspsaga hover_doc`
 - Pressing `K` again to enter the hover window
 - Pressing `q` to quit
@@ -331,6 +337,7 @@ The steps demonstrated in this showcase are:
 Jumps to next diagnostic position and show a beacon highlight. Lspsaga will then show the code actions.
 
 Default options:
+
 ```lua
   diagnostic = {
     on_insert = true,
@@ -382,6 +389,7 @@ require("lspsaga.diagnostic"):goto_prev({ severity = vim.diagnostic.severity.ERR
 <summary> showcase</summary>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
 - Pressing the number `2` to execute the code action without needing to enter the floating window
 
@@ -398,7 +406,6 @@ The steps demonstrated in this showcase are:
 `on_insert_follow` is true
 
 <img src="https://user-images.githubusercontent.com/41671631/219909443-f5b4f796-e59d-47cf-9f9a-8a9a69d92449.gif" height=80% width=80%/>
-
 
 </details>
 
@@ -419,6 +426,7 @@ The steps demonstrated in this showcase are:
 Uses the current LSP to rename the hovered word.
 
 Default options:
+
 ```lua
   rename = {
     quit = "<C-c>",
@@ -436,12 +444,14 @@ Default options:
 <summary>rename showcase</summary>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `gr` to run `:Lspsaga rename`
 - Typing `stesdd` and then pressing `<CR>` to execute the rename
 
 <img src="" height=80% width=80%/>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `gR` to run `:Lspsaga rename ++project`
 - Pressing `x` to mark the file
 - Pressing `<CR>` to execute rename
@@ -452,6 +462,7 @@ The steps demonstrated in this showcase are:
 ## :Lspsaga outline
 
 Default options:
+
 ```lua
   outline = {
     win_position = "right",
@@ -474,6 +485,7 @@ Default options:
 <summary>outline showcase</summary>
 
 The steps demonstrated in this showcase are:
+
 - Pressing `<Leader>o` run `:Lspsaga outline`
 - Pressing `j` to move down
 - Pressing `o` to jump
@@ -486,6 +498,7 @@ The steps demonstrated in this showcase are:
 Runs the LSP's callhierarchy/incoming_calls.
 
 Default options:
+
 ```lua
   callhierarchy = {
     show_detail = false,
@@ -506,12 +519,12 @@ Default options:
 <img src="https://user-images.githubusercontent.com/41671631/215719762-9482e84b-921e-425e-b1a9-7bd1f569a5ce.gif" height=80% width=80%/>
 </details>
 
-
 ## :Lspsaga symbols in winbar
 
 This requires Neovim version >= 0.8.
 
 Default options:
+
 ```lua
   symbol_in_winbar = {
     enable = true,
@@ -524,6 +537,7 @@ Default options:
     color_mode = true,
   },
 ```
+
 - `hide_keyword` - The default value is `true`. Lspsaga will hide some keywords and temporary variables to make the symbols look cleaner.
 - `folder_level` only works when `show_file` is `true`.
 - `respect_root` will respect the LSP's root. If this is `true`, Lspsaga will ignore the `folder_level` option. If no LSP client is being used, Lspsaga will fall back to using folder level.
@@ -571,6 +585,7 @@ after jump from float window there will show beacon to remind you where the curs
 ## :Lspsaga UI
 
 Default UI options
+
 ```lua
   ui = {
     -- This option only works in Neovim 0.9
@@ -592,11 +607,10 @@ Default UI options
 
 All highlight groups can be found in [highlight.lua](./lua/lspsaga/highlight.lua).
 
-`require('lspsaga.lspkind').get_kind_group()` will return all the SagaWinbar + kind name group . also 
-include `SagaWinbarFileName SagaWinbarFileIcon SagaWinbarFolderName SagaWinbarSep`. These groups are 
+`require('lspsaga.lspkind').get_kind_group()` will return all the SagaWinbar + kind name group . also
+include `SagaWinbarFileName SagaWinbarFileIcon SagaWinbarFolderName SagaWinbarSep`. These groups are
 special. so if you want use this api to custom the highlight. you need dealwith these 4 groups the
 last item is `SagaWinbarSep`.
-
 
 # Custom Kind
 
@@ -607,12 +621,12 @@ The key in `ui.kind` is the kind name, and the value can either be a string or a
 
 # Donate
 
-Currently, I am in need of some donations. If you'd like to support my work financially, please donate through Github Sponsor button or 
+Currently, I am in need of some donations. If you'd like to support my work financially, please donate through Github Sponsor button or
 [PayPal](https://paypal.me/bobbyhub). Thanks!
 [![](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/bobbyhub)
 
-
 # Backers
+
 Thanks for everyone!
 
 [Scott Ming](https://github.com/scottming)
@@ -622,7 +636,6 @@ Thanks for everyone!
 [@zhourrr](https://github.com/zhourrr)
 [@Burgess Darrion](https://github.com/ca-mantis-shrimp)
 [@Ceserani Alessandro](https://github.com/al-ce)
-
 
 # License
 
