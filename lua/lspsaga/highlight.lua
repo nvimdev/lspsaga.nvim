@@ -38,7 +38,7 @@ local function hi_define()
     --finder spinner
     FinderSpinnerTitle = { link = 'Statement' },
     FinderSpinner = { link = 'Statement' },
-    FinderPreviewSearch = { link = 'Search' },
+    FinderPreview = { link = 'Search' },
     FinderLines = { link = 'Operator' },
     FinderTips = { fg = '#475164' },
     FinderNormal = { link = 'SagaNormal' },

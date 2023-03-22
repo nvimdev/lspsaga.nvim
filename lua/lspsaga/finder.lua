@@ -3,6 +3,8 @@ local config = require('lspsaga').config
 local ui = config.ui
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
+local nvim_buf_set_extmark = api.nvim_buf_set_extmark
+local ns_id = api.nvim_create_namespace('lspsagafinder')
 
 local finder = {}
 local ctx = {}
@@ -152,7 +154,6 @@ function finder:loading_bar()
         end
         window.nvim_close_valid_window(spin_win)
         vim.notify('request timeout')
-        self.request_status = nil
         return
       end
 
@@ -164,7 +165,6 @@ function finder:loading_bar()
         end
         window.nvim_close_valid_window(spin_win)
         self:render_finder()
-        self.request_status = nil
       end
     end)
   )
@@ -172,7 +172,7 @@ end
 
 function finder:do_request(params, method)
   if method == methods(3) then
-    params.context = { includeDeclaration = true }
+    params.context = { includeDeclaration = false }
   end
   lsp.buf_request_all(self.current_buf, method, params, function(results)
     local result = {}
@@ -184,7 +184,8 @@ function finder:do_request(params, method)
       end
     end
 
-    if method == methods(1) then
+    local uri = result[1].uri or result[1].targetUri
+    if method == methods(1) and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf() then
       local col = api.nvim_win_get_cursor(0)[2]
       local range = result[1].targetRange or result[1].range
       if col >= range.start.character and col <= range['end'].character then
@@ -198,43 +199,6 @@ function finder:do_request(params, method)
   end)
 end
 
-local function keymap_tip()
-  local function gen_str(key)
-    if type(key) == 'table' then
-      return key[1]
-    end
-    return key
-  end
-  local keys = config.finder.keys
-
-  return {
-    '[edit] '
-      .. gen_str(keys.edit)
-      .. ' [vsplit] '
-      .. gen_str(keys.vsplit)
-      .. ' [split] '
-      .. gen_str(keys.split)
-      .. ' [tabe] '
-      .. gen_str(keys.tabe)
-      .. ' [tabnew] '
-      .. gen_str(keys.tabnew)
-      .. ' [quit] '
-      .. gen_str(keys.quit)
-      .. ' [jump] '
-      .. gen_str(keys.jump_to),
-  }
-end
-
-local function get_msg(method)
-  local idx = libs.tbl_index(methods(), method)
-  local t = {
-    'No Definition Found',
-    'No Implementation  Found',
-    'No Reference  Found',
-  }
-  return t[idx]
-end
-
 function finder:create_finder_data(result, method)
   if #result == 1 and result[1].inline then
     return
@@ -243,15 +207,20 @@ function finder:create_finder_data(result, method)
     self.lspdata = {}
   end
 
+  if not self.wipe_buffers then
+    self.wipe_buffers = {}
+  end
+
   if not self.lspdata[method] then
     self.lspdata[method] = {}
     local title = get_titles(libs.tbl_index(methods(), method))
-    self.lspdata[method]['title'] = title .. '  ' .. #result
+    self.lspdata[method].title = title .. '  ' .. #result
   end
   local parent = self.lspdata[method]
+  parent.data = {}
 
   local wipe = false
-  for _, res in ipairs(result) do
+  for i, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
       vim.notify('[Lspsaga] miss uri in server response', vim.logs.level.WARN)
@@ -282,75 +251,78 @@ function finder:create_finder_data(result, method)
       bufnr = bufnr,
       fname = fname,
       wipe = wipe,
-      expand = false,
       row = range.start.line,
       col = range.start.character,
+      ecol = range['end'].character,
       winline = -1,
     }
 
-    node.word = api.nvim_buf_get_text(
-      node.bufnr,
-      node.row,
-      node.col,
-      node.row + 1,
-      range['end'].character,
-      {}
-    )[1]
-
-    if not parent[node.fname] then
-      parent[node.fname] = {}
-      node.expand = true
+    node.word = api.nvim_buf_get_text(node.bufnr, node.row, 0, node.row, -1, {})[1]
+    if node.word:find('^%s') then
+      node.word = node.word:sub(node.word:find('%S'), #node.word)
     end
-    parent[node.fname][#parent[node.fname] + 1] = node
+
+    if not parent.data[node.fname] then
+      parent.data[node.fname] = {
+        expand = true,
+        nodes = {},
+      }
+      node.first = true
+    end
+    if i == #result then
+      node.tail = true
+    end
+    parent.data[node.fname].nodes[#parent.data[node.fname].nodes + 1] = node
   end
 end
 
 function finder:render_finder()
-  self.wipe_buffers = {}
   local icon, icon_group = unpack(get_file_icon(api.nvim_get_current_buf()))
   local indent = (' '):rep(2)
   self.bufnr = api.nvim_create_buf(false, false)
   local virt_hi = 'Finderlines'
-  local ns_id = api.nvim_create_namespace('lspsagafinder')
 
-  local width = 0
-  for _, data in pairs(self.lspdata) do
-    local lines = {}
-    local virt_tbl = {}
-    lines[#lines + 1] = vim.tbl_get(data, 'title')
-    data.title = nil
-    for _, buf_data in pairs(data) do
-      local count = api.nvim_buf_line_count(self.bufnr)
-      count = count == 1 and 0 or count
-      for i, item in ipairs(buf_data) do
-        if i == 1 then
-          local fill = item.expand and indent .. ui.collapse .. ' ' or indent .. ui.expand .. ' '
-          local symbol = i == #buf_data and ui.lines[1] or ui.lines[2]
-          lines[#lines + 1] = fill .. icon .. item.fname .. ' ' .. #buf_data
-          indent = (' '):rep(6)
-          item.winline = #lines
-          virt_tbl[#virt_tbl + 1] = { { symbol, virt_hi }, { ui.lines[4]:rep(1), virt_hi } }
-        end
-        if item.expand then
-          lines[#lines + 1] = indent .. item.word
-          item.winline = item.winline > -1 and item.winline or #lines
-        end
-      end
+  local line_count = 0
+  local width = {}
 
-      api.nvim_buf_set_lines(self.bufnr, count, count, false, lines)
-      for i, item in ipairs(virt_tbl) do
-        api.nvim_buf_set_extmark(self.bufnr, ns_id, count + i, 0, {
-          virt_text = item,
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for i, method in pairs(methods()) do
+    local meth_data = self.lspdata[method]
+    if not meth_data then
+      goto skip
+    end
+    local title = { meth_data.title }
+    if i > 1 and api.nvim_buf_line_count(self.bufnr) ~= 1 then
+      table.insert(title, 1, '')
+    end
+    api.nvim_buf_set_lines(self.bufnr, line_count, line_count, false, title)
+    width[#width + 1] = #meth_data.title
+    line_count = line_count + #title
+
+    for fname, item in pairs(meth_data.data) do
+      local text = indent .. icon .. fname .. ' ' .. ui.collapse .. ' ' .. #item.nodes
+      indent = (' '):rep(6)
+      api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
+      width[#width + 1] = #text
+      line_count = line_count + 1
+
+      for k, v in ipairs(item.nodes) do
+        local tbl = {
+          { k == #item.nodes and ui.lines[1] or ui.lines[2], virt_hi },
+          { ui.lines[4]:rep(3), virt_hi },
+        }
+        text = indent .. v.word
+        api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
+        line_count = line_count + 1
+        v.winline = v.winline > -1 and v.winline or line_count
+        nvim_buf_set_extmark(self.bufnr, ns_id, line_count - 1, 2, {
+          virt_text = tbl,
           virt_text_pos = 'overlay',
         })
       end
-      local curwidth = window.get_max_content_length(lines)
-      if curwidth > width then
-        width = curwidth
-      end
-
       indent = '  '
     end
+    ::skip::
   end
 
   if api.nvim_buf_line_count(self.bufnr) == 0 then
@@ -358,8 +330,10 @@ function finder:render_finder()
     vim.notify('[Lspsaga] finder nothing to show', vim.logs.level.WARN)
     return
   end
+  api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { '' })
 
-  self:create_finder_win(width)
+  table.sort(width)
+  self:create_finder_win(width[#width])
 end
 
 function finder:create_finder_win(width)
@@ -417,7 +391,7 @@ function finder:create_finder_win(width)
     buffer = self.bufnr,
     once = true,
     callback = function()
-      local ok, buf = pcall(api.nvim_win_get_buf, self.preview_winid)
+      local ok, buf = pcall(api.nvim_win_get_buf, self.peek_winid)
       if ok then
         pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
       end
@@ -428,75 +402,27 @@ function finder:create_finder_win(width)
     end,
   })
 
-  -- self:set_cursor(def_scope, ref_scope, imp_scope)
-  -- self:open_preview()
-
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
-      -- self:set_cursor(def_scope, ref_scope, imp_scope)
-      -- self:open_preview()
+      local curline = api.nvim_win_get_cursor(self.winid)[1]
+
+      if curline < 3 or curline > api.nvim_buf_line_count(self.bufnr) - 1 then
+        curline = 3
+      else
+        local node = self:get_node_by_lnum(curline)
+        if not node then
+        end
+      end
+      api.nvim_win_set_cursor(self.winid, { curline, 6 })
+
+      -- api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
+
+      -- api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
+      -- api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
+      self:open_preview()
     end,
   })
-
-  -- if imp_scope then
-  --   for i = imp_scope[1] + 1, imp_scope[2] - 1, 1 do
-  --     local virt_texts = {}
-  --     api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderFileName', i - 1, 0, -1)
-  --     if icon_hl then
-  --       api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i - 1, 0, 4 + #icon)
-  --     end
-
-  --     if i == imp_scope[2] - 1 then
-  --       virt_texts[#virt_texts + 1] = { ui.lines[1], virt_hi }
-  --       virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
-  --     else
-  --       virt_texts[#virt_texts + 1] = { ui.lines[2], virt_hi }
-  --       virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
-  --     end
-
-  --     api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
-  --       virt_text = virt_texts,
-  --       virt_text_pos = 'overlay',
-  --     })
-  --   end
-  -- end
-
-  -- api.nvim_buf_set_extmark(0, ns_id, ref_scope[1] + 1, 0, {
-  --   virt_text = { { ui.lines[3], virt_hi } },
-  --   virt_text_pos = 'overlay',
-  -- })
-
-  -- for i = ref_scope[1] + 1, ref_scope[2] - 1 do
-  --   local virt_texts = {}
-  --   api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderFileName', i - 1, 0, -1)
-  --   if icon_hl then
-  --     api.nvim_buf_add_highlight(self.bufnr, -1, icon_hl, i - 1, 0, 4 + #icon)
-  --   end
-
-  --   if i == ref_scope[2] - 1 then
-  --     virt_texts[#virt_texts + 1] = { ui.lines[1], virt_hi }
-  --     virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
-  --   else
-  --     virt_texts[#virt_texts + 1] = { ui.lines[2], virt_hi }
-  --     virt_texts[#virt_texts + 1] = { ui.lines[4]:rep(3), virt_hi }
-  --   end
-
-  --   api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
-  --     virt_text = virt_texts,
-  --     virt_text_pos = 'overlay',
-  --   })
-  -- end
-
-  -- libs.disable_move_keys(self.bufnr)
-  -- self:apply_map()
-  -- local len = string.len('Definition')
-
-  -- for _, v in ipairs({ def_scope[1] - 1, ref_scope[1] - 1, imp_scope and imp_scope[1] - 1 or nil }) do
-  --   api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderIcon', v, 0, 3)
-  --   api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderType', v, 4, 4 + len)
-  --   api.nvim_buf_add_highlight(self.bufnr, -1, 'FinderCount', v, 4 + len, -1)
-  -- end
 end
 
 local function unpack_map()
@@ -532,20 +458,20 @@ function finder:apply_map()
 
   for _, key in pairs(config.finder.keys.quit) do
     vim.keymap.set('n', key, function()
-      local ok, buf = pcall(api.nvim_win_get_buf, self.preview_winid)
+      local ok, buf = pcall(api.nvim_win_get_buf, self.peek_winid)
       if ok then
         pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
       end
-      window.nvim_close_valid_window({ self.winid, self.preview_winid, self.tip_winid or nil })
+      window.nvim_close_valid_window({ self.winid, self.peek_winid, self.tip_winid or nil })
       self:clean_data()
       clean_ctx()
     end, opts)
   end
 
   vim.keymap.set('n', config.finder.keys.jump_to, function()
-    if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
       local lnum = api.nvim_win_get_cursor(0)[1]
-      api.nvim_set_current_win(self.preview_winid)
+      api.nvim_set_current_win(self.peek_winid)
       local data = self.short_link[lnum]
       if data then
         api.nvim_win_set_cursor(0, { data.row + 1, data.col })
@@ -554,34 +480,19 @@ function finder:apply_map()
   end, opts)
 end
 
-local finder_ns = api.nvim_create_namespace('finder_select')
-
-function finder:set_cursor(def_scope, ref_scope, imp_scope)
-  local curline = api.nvim_win_get_cursor(0)[1]
-  local icon = get_file_icon(self.main_buf)[1]
-  local col = 4 + #icon
-
-  local def_first = def_scope and def_scope[1] + 1 or -2
-  local def_last = def_scope and def_scope[2] - 1 or -2
-  local ref_first = ref_scope[1] + 1
-  local ref_last = ref_scope[2] - 1
-
-  local imp_first = imp_scope and imp_scope[1] + 1 or -2
-  local imp_last = imp_scope and imp_scope[2] - 1 or -2
-
-  local new_pos = {}
-
-  if #new_pos > 0 then
-    api.nvim_win_set_cursor(self.winid, new_pos)
+function finder:get_node_by_lnum(lnum)
+  local node
+  for _, meth_data in pairs(self.lspdata) do
+    for _, item in pairs(meth_data.data) do
+      for _, v in ipairs(item.nodes) do
+        if v.winline == lnum then
+          node = v
+          break
+        end
+      end
+    end
   end
-
-  local actual = api.nvim_win_get_cursor(0)[1] - 1
-  if new_pos[1] == def_first then
-    api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
-  end
-
-  api.nvim_buf_clear_namespace(0, finder_ns, 0, -1)
-  api.nvim_buf_add_highlight(0, finder_ns, 'FinderSelection', actual, 4 + #icon, -1)
+  return node
 end
 
 local function create_preview_window(finder_winid)
@@ -647,125 +558,68 @@ local function clear_preview_ns(ns, buf)
 end
 
 function finder:open_preview()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    local before_buf = api.nvim_win_get_buf(self.preview_winid)
-    clear_preview_ns(self.preview_hl_ns, before_buf)
+  if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
+    local before_buf = api.nvim_win_get_buf(self.peek_winid)
+    clear_preview_ns(ns_id, before_buf)
   end
 
-  local current_line = api.nvim_win_get_cursor(self.winid)[1]
-  if not self.short_link[current_line] then
+  local curline = api.nvim_win_get_cursor(self.winid)[1]
+  local node = self:get_node_by_lnum(curline)
+  if not node then
     return
   end
 
-  local data = self.short_link[current_line]
-
-  if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
-    self.preview_bufnr, self.preview_winid = create_preview_window(self.winid)
+  if not self.peek_winid or not api.nvim_win_is_valid(self.peek_winid) then
+    self.preview_bufnr, self.peek_winid = create_preview_window(self.winid)
+    api.nvim_win_set_hl_ns(self.peek_winid, ns_id)
   end
 
-  if not self.preview_winid then
+  local function highlight_word()
+    api.nvim_buf_add_highlight(node.bufnr, ns_id, 'FinderPreview', node.row, node.col, node.ecol)
+  end
+
+  local buf_in_peek = api.nvim_win_get_buf(self.peek_winid)
+  if buf_in_peek == node.bufnr then
+    api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
+    highlight_word()
     return
   end
 
-  if data.content then
-    if not data.bufnr then
-      data.bufnr = self.preview_bufnr
-    end
-    api.nvim_win_set_buf(self.preview_winid, data.bufnr)
-    api.nvim_set_option_value('bufhidden', '', { buf = self.preview_bufnr })
-    vim.bo[self.preview_bufnr].modifiable = true
-    api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, data.content)
-    vim.bo[self.preview_bufnr].modifiable = false
-    return
-  end
+  api.nvim_win_set_buf(self.peek_winid, node.bufnr)
+  api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
+  api.nvim_win_call(self.peek_winid, function()
+    vim.cmd.normal('zt')
+  end)
+  highlight_word()
 
-  if data.bufnr then
-    api.nvim_win_set_buf(self.preview_winid, data.bufnr)
-    if config.ui.title and fn.has('nvim-0.9') == 1 then
-      local path = vim.split(data.link, libs.path_sep, { trimempty = true })
-      local icon = get_file_icon(self.main_buf)
-      api.nvim_win_set_config(self.preview_winid, {
-        title = {
-          { icon[1], icon[2] or 'TitleString' },
-          { path[#path], 'TitleString' },
-        },
-        title_pos = 'center',
-      })
-    end
-    api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.preview_winid })
-  end
+  api.nvim_set_option_value('winbar', '', {
+    scope = 'local',
+    win = self.peek_winid,
+  })
 
   api.nvim_set_option_value(
     'winhl',
     'Normal:finderNormal,FloatBorder:finderPreviewBorder',
-    { scope = 'local', win = self.preview_winid }
+    { scope = 'local', win = self.peek_winid }
   )
 
-  if data.row then
-    api.nvim_win_set_cursor(self.preview_winid, { data.row + 1, data.col })
-  end
-
-  local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
-  if fn.has('nvim-0.9') then
-    vim.treesitter.start(data.bufnr, lang)
-  else
-    vim.bo[data.bufnr].syntax = 'on'
-    pcall(
-      ---@diagnostic disable-next-line: param-type-mismatch
-      vim.cmd,
-      string.format('syntax include %s syntax/%s.vim', '@' .. lang, vim.bo[self.main_buf].filetype)
-    )
-  end
-
-  libs.scroll_in_preview(self.bufnr, self.preview_winid)
-
-  if not self.preview_hl_ns then
-    self.preview_hl_ns = api.nvim_create_namespace('finderPreview')
-  end
-
-  if data.row then
-    api.nvim_buf_add_highlight(
-      data.bufnr,
-      self.preview_hl_ns,
-      'finderPreviewSearch',
-      data.row,
-      data.col,
-      data._end_col
-    )
-  end
-
-  vim.keymap.set('n', config.finder.keys.close_in_preview, function()
-    window.nvim_close_valid_window({ self.winid, self.preview_winid, self.tip_winid or nil })
-    self:clean_data()
-    clean_ctx()
-  end, { buffer = data.bufnr, nowait = true, silent = true })
-
-  api.nvim_create_autocmd('WinClosed', {
-    group = self.group,
-    buffer = data.bufnr,
-    callback = function(opt)
-      local curwin = api.nvim_get_current_win()
-      if curwin == self.preview_winid then
-        clear_preview_ns(self.preview_hl_ns, opt.buf)
-
-        if self.winid and api.nvim_win_is_valid(self.winid) then
-          api.nvim_set_current_win(self.winid)
-          vim.defer_fn(function()
-            self:open_preview()
-          end, 0)
-        end
-
-        self.preview_winid = nil
-        self.preview_bufnr = nil
-      end
-    end,
-  })
+  -- local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
+  -- if fn.has('nvim-0.9') then
+  -- vim.treesitter.start(data.bufnr, lang)
+  -- else
+  -- vim.bo[data.bufnr].syntax = 'on'
+  --   pcall(
+  --     ---@diagnostic disable-next-line: param-type-mismatch
+  --     vim.cmd,
+  --     string.format('syntax include %s syntax/%s.vim', '@' .. lang, vim.bo[self.main_buf].filetype)
+  --   )
+  -- end
 end
 
 function finder:close_auto_preview_win()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    api.nvim_win_close(self.preview_winid, true)
-    self.preview_winid = nil
+  if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
+    api.nvim_win_close(self.peek_winid, true)
+    self.peek_winid = nil
   end
 end
 
@@ -779,8 +633,8 @@ function finder:open_link(action)
 
   local data = self.short_link[current_line]
 
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    local pbuf = api.nvim_win_get_buf(self.preview_winid)
+  if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
+    local pbuf = api.nvim_win_get_buf(self.peek_winid)
     clear_preview_ns(self.preview_hl_ns, pbuf)
   end
   local restore_opts
@@ -789,7 +643,7 @@ function finder:open_link(action)
     restore_opts = self.restore_opts
   end
 
-  window.nvim_close_valid_window({ self.winid, self.preview_winid, self.tip_winid or nil })
+  window.nvim_close_valid_window({ self.winid, self.peek_winid, self.tip_winid or nil })
   self:clean_data()
 
   -- if buffer not saved save it before jump

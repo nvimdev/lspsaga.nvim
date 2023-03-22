@@ -205,6 +205,7 @@ end
 function hover:do_request(args)
   local params = util.make_position_params()
   lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
+    self.pending_request = false
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
@@ -306,6 +307,12 @@ function hover:render_hover_doc(args)
     return
   end
 
+  if self.pending_request then
+    print('[Lspsaga] there already have a hover request please wait for response')
+    return
+  end
+
+  self.pending_request = true
   self:do_request(args)
 end
 
