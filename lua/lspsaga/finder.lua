@@ -426,14 +426,21 @@ function finder:create_finder_win(width)
         start = 2
       else
         local node = self:get_node({ lnum = curline })
+        local increase = curline > before and 1 or -1
         if not node then
-          local increase = curline > before and 1 or -1
           for _, v in ipairs({
             curline,
             curline + increase,
             curline + increase * 2,
             curline + increase * 3,
           }) do
+            --TODO: bug fix
+            local text = api.nvim_buf_get_lines(self.bufnr, v - 1, v, false)[1]
+            if text:find(ui.expand) then
+              curline = v
+              break
+            end
+
             local next = self:get_node({ lnum = v })
             if next then
               curline = next.winline
@@ -541,7 +548,6 @@ function finder:apply_map()
           v.winline = -1
         end
         api.nvim_win_set_cursor(self.winid, { next.winline, 6 })
-        -- api.nvim_buf_clear_namespace(self.bufnr, ns_id,)
       end
     end,
   })
