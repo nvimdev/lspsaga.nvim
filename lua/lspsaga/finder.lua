@@ -285,11 +285,6 @@ function finder:create_finder_contents(result, method)
     local bufnr = vim.uri_to_bufnr(uri)
     local link = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     if not api.nvim_buf_is_loaded(bufnr) then
-      --ignore the FileType event avoid trigger the lsp
-      vim.opt.eventignore:append({ 'FileType' })
-      fn.bufload(bufnr)
-      --restore eventignore
-      vim.opt.eventignore:remove({ 'FileType' })
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         table.insert(self.wipe_buffers, bufnr)
       end
