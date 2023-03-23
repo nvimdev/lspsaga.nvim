@@ -68,7 +68,7 @@ local default_config = {
   finder = {
     --percentage
     max_height = 0.5,
-    min_width = 40,
+    min_width = 30,
     force_max_height = false,
     show_tip = false,
     keys = {
@@ -78,6 +78,7 @@ local default_config = {
       split = 'i',
       tabe = 't',
       tabnew = 'r',
+      expand = 'u',
       quit = { 'q', '<ESC>' },
       close_in_preview = '<ESC>',
     },

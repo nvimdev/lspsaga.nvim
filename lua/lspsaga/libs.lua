@@ -25,7 +25,6 @@ function libs.icon_from_devicon(ft, color)
   if not libs.devicons then
     local ok, devicons = pcall(require, 'nvim-web-devicons')
     if not ok then
-      vim.notify('[Lspsaga.nvim] does not found nvim-web-devicons.')
       return { '' }
     end
     libs.devicons = devicons
