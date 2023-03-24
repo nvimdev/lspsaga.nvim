@@ -6,6 +6,7 @@ local libs = require('lspsaga.libs')
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns_id = api.nvim_create_namespace('lspsagafinder')
+local co = coroutine
 
 local finder = {}
 local ctx = {}
@@ -273,95 +274,110 @@ function finder:create_finder_data(result, method)
   end
 end
 
-function finder:render_finder()
-  local indent = (' '):rep(2)
-  self.bufnr = api.nvim_create_buf(false, false)
-  local virt_hi = 'Finderlines'
-
-  local line_count = 0
-  local width = {}
-
-  ---@diagnostic disable-next-line: param-type-mismatch
-  for i, method in pairs(methods()) do
-    local meth_data = self.lspdata[method]
-    if not meth_data then
-      goto skip
-    end
-    local title = { meth_data.title }
-    if i > 1 and api.nvim_buf_line_count(self.bufnr) ~= 1 then
-      table.insert(title, 1, '')
-    end
-    api.nvim_buf_set_lines(self.bufnr, line_count, line_count, false, title)
-    width[#width + 1] = #meth_data.title
-    line_count = line_count + #title
-    api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderType', line_count - 1, 4, 16)
-    api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderIcon', line_count - 1, 0, 4)
-    api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCount', line_count - 1, 16, -1)
-
-    local first = true
-    for fname, item in pairs(meth_data.data) do
-      local text = indent .. ui.collapse .. ' ' .. fname .. ' ' .. #item.nodes
-      indent = (' '):rep(5)
-      api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-      width[#width + 1] = #text
-      line_count = line_count + 1
-      local start = line_count
-      api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaCollapse', line_count - 1, 0, 5)
-      api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderFname', line_count - 1, 6, -1)
-
-      for k, v in pairs(item.nodes) do
-        local tbl = {
-          { k == #item.nodes and ui.lines[1] or ui.lines[2], virt_hi },
-          { ui.lines[4]:rep(2), virt_hi },
-        }
-        if first then
-          v.first = true
-          first = false
-          meth_data.start = start
-        end
-        v.start = start
-        text = indent .. v.word
-        api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-        line_count = line_count + 1
-        api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCode', line_count - 1, 5, -1)
-        v.winline = v.winline > -1 and v.winline or line_count
-        nvim_buf_set_extmark(self.bufnr, ns_id, line_count - 1, 2, {
-          virt_text = tbl,
-          virt_text_pos = 'overlay',
-        })
-      end
-      indent = '  '
-    end
-    ::skip::
-  end
-
-  if api.nvim_buf_line_count(self.bufnr) == 0 then
-    clean_ctx()
-    vim.notify('[Lspsaga] finder nothing to show', vim.logs.level.WARN)
-    return
-  end
-  api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { '' })
-  vim.bo[self.bufnr].modifiable = false
-
-  table.sort(width)
-  self:apply_map()
-  self:create_finder_win(width[#width])
+local function get_max_height()
+  return math.floor(vim.o.lines * config.finder.max_height)
 end
 
-function finder:create_finder_win(width)
+function finder:render_finder()
+  local width = {}
+  self.bufnr = api.nvim_create_buf(false, false)
+  local float_height = get_max_height()
+
+  self.render_fn = co.create(function(need_yield)
+    local indent = (' '):rep(2)
+    local virt_hi = 'Finderlines'
+    local line_count = 0
+
+    ---@diagnostic disable-next-line: param-type-mismatch
+    for i, method in pairs(methods()) do
+      local meth_data = self.lspdata[method]
+      if not meth_data then
+        goto skip
+      end
+      local title = { meth_data.title }
+      if i > 1 and api.nvim_buf_line_count(self.bufnr) ~= 1 then
+        table.insert(title, 1, '')
+      end
+      api.nvim_buf_set_lines(self.bufnr, line_count, line_count, false, title)
+      width[#width + 1] = #meth_data.title
+      line_count = line_count + #title
+      api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderType', line_count - 1, 4, 16)
+      api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderIcon', line_count - 1, 0, 4)
+      api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCount', line_count - 1, 16, -1)
+
+      local first = true
+      for fname, item in pairs(meth_data.data) do
+        local text = indent .. ui.collapse .. ' ' .. fname .. ' ' .. #item.nodes
+        indent = (' '):rep(5)
+        api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
+        width[#width + 1] = #text
+        line_count = line_count + 1
+        local start = line_count
+        api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaCollapse', line_count - 1, 0, 5)
+        api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderFname', line_count - 1, 6, -1)
+
+        for k, v in pairs(item.nodes) do
+          local tbl = {
+            { k == #item.nodes and ui.lines[1] or ui.lines[2], virt_hi },
+            { ui.lines[4]:rep(2), virt_hi },
+          }
+          if first then
+            v.first = true
+            first = false
+            meth_data.start = start
+          end
+          v.start = start
+          text = indent .. v.word
+          api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
+          line_count = line_count + 1
+          api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCode', line_count - 1, 5, -1)
+          v.winline = v.winline > -1 and v.winline or line_count
+          nvim_buf_set_extmark(self.bufnr, ns_id, line_count - 1, 2, {
+            virt_text = tbl,
+            virt_text_pos = 'overlay',
+          })
+
+          if line_count > float_height + 10 and need_yield then
+            table.sort(width)
+            need_yield = co.yield(width[#width])
+          end
+        end
+        indent = '  '
+      end
+      ::skip::
+    end
+
+    if api.nvim_buf_line_count(self.bufnr) == 0 then
+      clean_ctx()
+      vim.notify('[Lspsaga] finder nothing to show', vim.logs.level.WARN)
+      return
+    end
+    api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { '' })
+    vim.bo[self.bufnr].modifiable = false
+  end)
+
+  local status, float_width = co.resume(self.render_fn, true)
+  if not status then
+    vim.notify('[Lspsaga] get float_width error in render coroutine', vim.logs.level.ERROR)
+    return
+  end
+  if not float_width then
+    table.sort(width)
+    float_width = width[#width]
+  end
+
+  self:create_finder_win(float_width, float_height)
+end
+
+function finder:create_finder_win(width, height)
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
 
   local opt = {
     relative = 'editor',
+    width = width,
+    height = height,
+    no_size_override = true,
   }
-
-  local max_height = math.floor(vim.o.lines * config.finder.max_height)
-  local line_count = api.nvim_buf_line_count(self.bufnr)
-  opt.height = line_count > max_height and max_height or line_count
-  if opt.height <= 0 or not opt.height or config.finder.force_max_height then
-    opt.height = max_height
-  end
-  opt.width = width
 
   local winline = fn.winline()
   if vim.o.lines - 6 - opt.height - winline <= 0 then
@@ -423,10 +439,15 @@ function finder:create_finder_win(width)
       local curline = api.nvim_win_get_cursor(self.winid)[1]
       api.nvim_buf_clear_namespace(self.bufnr, ns_select, 0, -1)
       local col = 5
+      local buf_lines = api.nvim_buf_line_count(self.bufnr)
 
-      if curline < 3 or curline > api.nvim_buf_line_count(self.bufnr) - 1 then
+      if curline == 1 or curline > buf_lines - 1 then
         curline = 3
         start = 2
+      elseif curline == 2 and curline < before then
+        curline = buf_lines - 1
+        local node = self:get_node({ lnum = curline })
+        start = node.start
       else
         local node = self:get_node({ lnum = curline })
         local increase = curline > before and 1 or -1
@@ -467,6 +488,11 @@ function finder:create_finder_win(width)
       self:open_preview()
     end,
   })
+  self:apply_map()
+
+  if self.render_fn and co.status(self.render_fn) == 'suspended' then
+    co.resume(self.render_fn, false)
+  end
 end
 
 local function unpack_map()
