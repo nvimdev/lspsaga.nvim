@@ -211,6 +211,7 @@ function finder:create_finder_data(result, method)
     self.lspdata[method] = {}
     local title = get_titles(libs.tbl_index(methods(), method))
     self.lspdata[method].title = title .. '  ' .. #result
+    self.lspdata[method].count = #result
   end
   local parent = self.lspdata[method]
   parent.data = {}
@@ -316,6 +317,7 @@ function finder:render_finder()
         if first then
           v.first = true
           first = false
+          meth_data.start = start
         end
         v.start = start
         text = indent .. v.word
@@ -420,6 +422,7 @@ function finder:create_finder_win(width)
     callback = function()
       local curline = api.nvim_win_get_cursor(self.winid)[1]
       api.nvim_buf_clear_namespace(self.bufnr, ns_select, 0, -1)
+      local col = 5
 
       if curline < 3 or curline > api.nvim_buf_line_count(self.bufnr) - 1 then
         curline = 3
@@ -427,20 +430,17 @@ function finder:create_finder_win(width)
       else
         local node = self:get_node({ lnum = curline })
         local increase = curline > before and 1 or -1
-        if not node then
+        local text = api.nvim_get_current_line()
+        local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+        col = in_fname and 7 or col
+
+        if not node and not in_fname then
           for _, v in ipairs({
             curline,
             curline + increase,
             curline + increase * 2,
             curline + increase * 3,
           }) do
-            --TODO: bug fix
-            local text = api.nvim_buf_get_lines(self.bufnr, v - 1, v, false)[1]
-            if text:find(ui.expand) then
-              curline = v
-              break
-            end
-
             local next = self:get_node({ lnum = v })
             if next then
               curline = next.winline
@@ -448,13 +448,13 @@ function finder:create_finder_win(width)
               break
             end
           end
-        else
+        elseif node then
           start = node.start
         end
       end
 
       before = curline
-      api.nvim_win_set_cursor(self.winid, { curline, 5 })
+      api.nvim_win_set_cursor(self.winid, { curline, col })
       api.nvim_buf_add_highlight(
         self.bufnr,
         ns_select,
@@ -523,20 +523,29 @@ function finder:apply_map()
     nowait = true,
     callback = function()
       local curline = api.nvim_win_get_cursor(self.winid)[1]
-      local node = self:get_node({ lnum = curline })
-      if not node then
-        return
+      local text = api.nvim_get_current_line()
+      local in_expand_fname = text:find(ui.expand)
+      local node, next_node
+
+      if in_expand_fname then
+        goto try_expand
+      else
+        node = self:get_node({ lnum = curline })
+        if not node then
+          return
+        end
+
+        next_node = self:next_node_in_meth(node.method, node.fname, curline)
+        if not next_node then
+          return
+        end
       end
-      local next = self:next_node_in_meth(node.method, node.fname, curline)
-      if not next then
-        return
-      end
-      local nodes = self.lspdata[node.method].data[node.fname].nodes
 
       if self.lspdata[node.method].data[node.fname].expand then
         vim.bo[self.bufnr].modifiable = true
+        local nodes = self.lspdata[node.method].data[node.fname].nodes
         api.nvim_buf_clear_namespace(self.bufnr, ns_id, node.start, node.start + #nodes)
-        local text = api.nvim_buf_get_lines(self.bufnr, node.start - 1, node.start, false)[1]
+        text = api.nvim_buf_get_lines(self.bufnr, node.start - 1, node.start, false)[1]
         text = text:gsub(ui.collapse, ui.expand)
         api.nvim_buf_set_lines(self.bufnr, node.start - 1, node.start + #nodes, false, { text })
         api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaExpand', node.start - 1, 0, 5)
@@ -547,10 +556,58 @@ function finder:apply_map()
         for _, v in ipairs(nodes) do
           v.winline = -1
         end
-        api.nvim_win_set_cursor(self.winid, { next.winline, 6 })
+        if next_node then
+          api.nvim_win_set_cursor(self.winid, { next_node.winline, 6 })
+        end
+        vim.bo[self.bufnr].modifiable = false
+        return
       end
+
+      ::try_expand::
+      local fname = text:match(ui.expand .. '%s(.+)%s')
+      if not fname then
+        return
+      end
+      vim.bo[self.bufnr].modifiable = true
+      local nodes = self:find_nodes_by_fname(fname)
+      text = text:gsub(ui.expand, ui.collapse)
+      local lines = vim.tbl_map(function(i)
+        return (' '):rep(5) .. i.word
+      end, nodes)
+      table.insert(lines, 1, text)
+      api.nvim_buf_set_lines(self.bufnr, curline - 1, curline, false, lines)
+      for i = 1, #nodes do
+        api.nvim_buf_set_extmark(self.bufnr, ns_id, curline - 1 + i, 2, {
+          virt_text = {
+            { i == #nodes and ui.lines[1] or ui.lines[2], 'FinderLines' },
+            { ui.lines[4]:rep(2), 'FinderLines' },
+          },
+          virt_text_pos = 'overlay',
+        })
+        api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCode', curline - 1 + i, 5, -1)
+      end
+      self:change_node_winline(function(item)
+        return item.winline > curline
+      end, #nodes)
+      for i, v in ipairs(nodes) do
+        v.winline = curline + i
+      end
+      api.nvim_win_set_cursor(self.winid, { curline + 1, 5 })
+      api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaCollapse', curline - 1, 0, 5)
+      vim.bo[self.bufnr].modifiable = false
+      self.lspdata[nodes[1].method].data[nodes[1].fname].expand = true
     end,
   })
+end
+
+function finder:find_nodes_by_fname(fname)
+  for _, meth_data in pairs(self.lspdata) do
+    for f, item in pairs(meth_data.data) do
+      if f == fname then
+        return item.nodes
+      end
+    end
+  end
 end
 
 function finder:next_node_in_meth(method, cur_fname, lnum)
@@ -569,7 +626,7 @@ function finder:change_node_winline(cond, increase)
   for _, meth_data in pairs(self.lspdata) do
     for _, item in pairs(meth_data.data) do
       for _, node in ipairs(item.nodes) do
-        if cond then
+        if cond(node) then
           node.winline = node.winline + increase
           node.start = node.start + increase
         end
