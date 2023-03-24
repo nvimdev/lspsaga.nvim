@@ -3,7 +3,6 @@ local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local diag_conf = config.diagnostic
-local ui = config.ui
 local diagnostic = vim.diagnostic
 local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
 local ns = api.nvim_create_namespace('DiagnosticJump')
@@ -62,7 +61,6 @@ function diag:code_action_cb(hi_name)
     config.ui.actionfix .. 'Actions',
   }
 
-  local indent = '   '
   for index, client_with_actions in pairs(act.action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
@@ -70,7 +68,7 @@ function diag:code_action_cb(hi_name)
     end
     if client_with_actions[2].title then
       local title = clean_msg(client_with_actions[2].title)
-      local action_title = indent .. '[[' .. index .. ']] ' .. title
+      local action_title = '[[' .. index .. ']] ' .. title
       contents[#contents + 1] = action_title
     end
   end
@@ -91,12 +89,7 @@ function diag:code_action_cb(hi_name)
 
   for i = 3, #contents do
     local row = start_line + i - 2
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 7 + #tostring(row), -1)
-    local symbol = i == #contents and ui.lines[1] or ui.lines[2]
-    api.nvim_buf_set_extmark(self.bufnr, ns, row, 0, {
-      virt_text = { { symbol, 'FinderLines' }, { ui.lines[4]:rep(2), 'FinderLines' } },
-      virt_text_pos = 'overlay',
-    })
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'CodeActionText', row, 6, -1)
   end
 
   keymap('n', diag_conf.keys.go_action, function()
@@ -136,14 +129,22 @@ function diag:code_action_cb(hi_name)
   local function scroll_with_preview(direction)
     api.nvim_win_call(self.winid, function()
       local curlnum = api.nvim_win_get_cursor(self.winid)[1]
+      local lines = api.nvim_buf_line_count(self.bufnr)
       local col = 6
       if curlnum < 4 then
         curlnum = 4
       elseif curlnum >= 4 then
-        curlnum = curlnum + direction > api.nvim_buf_line_count(self.bufnr) and 4
-          or curlnum + direction
+        curlnum = curlnum + direction > lines and 4 or curlnum + direction
       end
       api.nvim_win_set_cursor(self.winid, { curlnum, col })
+      print(curlnum, lines)
+      api.nvim_buf_clear_namespace(
+        self.bufnr,
+        ns,
+        curlnum > 4 and curlnum - 2 or lines - 1,
+        curlnum > 4 and curlnum - 1 or lines
+      )
+      api.nvim_buf_add_highlight(self.bufnr, ns, 'FinderSelection', curlnum - 1, 6, -1)
       self.preview_winid = act:action_preview(self.winid, self.main_buf, hi_name)
     end)
   end

@@ -27,7 +27,7 @@ local function hi_define()
     ActionPreviewTitle = { link = 'Title' },
     CodeActionNormal = { link = 'SagaNormal' },
     CodeActionBorder = { link = 'SagaBorder' },
-    CodeActionText = { link = 'String' },
+    CodeActionText = { link = '@variable' },
     CodeActionNumber = { link = 'DiffAdd' },
     -- finder
     FinderSelection = { link = 'String' },
