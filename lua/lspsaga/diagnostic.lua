@@ -121,7 +121,10 @@ function diag:code_action_cb(hi_name)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
-      self.preview_winid = act:action_preview(self.winid, self.main_buf, hi_name)
+      local curline = api.nvim_win_get_cursor(self.winid)[1]
+      if curline > 3 then
+        self.preview_winid = act:action_preview(self.winid, self.main_buf, hi_name)
+      end
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
   })
@@ -137,7 +140,6 @@ function diag:code_action_cb(hi_name)
         curlnum = curlnum + direction > lines and 4 or curlnum + direction
       end
       api.nvim_win_set_cursor(self.winid, { curlnum, col })
-      print(curlnum, lines)
       api.nvim_buf_clear_namespace(
         self.bufnr,
         ns,
@@ -228,27 +230,57 @@ function diag:get_diag_counts(entrys)
   return counts
 end
 
+local function source_clean(source)
+  if source == 'typescript' then
+    return 'ts'
+  end
+end
+
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
   self.main_buf = api.nvim_get_current_buf()
   local diag_type = self:get_diag_type(entry.severity)
   local sign = self:get_diagnostic_sign(entry.severity)
-  local content = {}
 
-  local source = ' '
+  local source = ''
 
   if entry.source then
-    source = source .. entry.source
+    source = source .. source_clean(entry.source)
   end
 
   if entry.code then
-    source = source .. '[' .. entry.code .. ']'
+    source = source .. '(' .. entry.code .. ')'
   end
 
-  local convert = vim.split(entry.message, '\n', { trimempty = true })
-  convert[1] = sign .. ' ' .. convert[1]
-  vim.list_extend(content, convert)
-  content[#content] = content[#content] .. source
+  local content = {}
+  content = vim.split(entry.message, '\n', { trimempty = true })
+  content[1] = sign .. ' ' .. content[1]
+  local source_col
+  if #source > 0 then
+    source_col = #content[1] + 1
+    content[1] = content[1] .. ' ' .. source
+  end
+
+  if diag_conf.extend_relatedInformation then
+    if entry.user_data.lsp.relatedInformation and #entry.user_data.lsp.relatedInformation > 0 then
+      vim.tbl_map(function(item)
+        if item.location and item.location.range then
+          local fname
+          if item.location.uri then
+            fname = fn.fnamemodify(vim.uri_to_fname(item.location.uri), ':t')
+          end
+          local range = '('
+            .. item.location.range.start.line + 1
+            .. ':'
+            .. item.location.range.start.character
+            .. '): '
+          item.message = fname and fname .. range .. item.message or range .. item.message
+        end
+        content[#content + 1] = (' '):rep(3) .. item.message
+      end, entry.user_data.lsp.relatedInformation)
+    end
+  end
+
   local hi_name = 'Diagnostic' .. diag_type
 
   if diag_conf.show_code_action and libs.get_client_by_cap('codeActionProvider') then
@@ -299,24 +331,25 @@ function diag:render_diagnostic_window(entry, option)
   vim.wo[self.winid].showbreak = 'NONE'
   vim.wo[self.winid].breakindent = true
   vim.wo[self.winid].breakindentopt = 'shift:0'
+  vim.wo[self.winid].linebreak = false
 
   api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, 0, 0, #sign)
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    0,
-    diag_conf.text_hl_follow and hi_name or 'DiagnosticText',
-    0,
-    #sign,
-    -1
-  )
-  api.nvim_buf_add_highlight(
-    self.bufnr,
-    0,
-    'DiagnosticSource',
-    #content - 1,
-    #content[#content] - #source,
-    -1
-  )
+
+  for i, _ in ipairs(content) do
+    local start = i == 1 and #sign or 3
+    api.nvim_buf_add_highlight(
+      self.bufnr,
+      0,
+      diag_conf.text_hl_follow and hi_name or 'DiagnosticText',
+      i - 1,
+      start,
+      -1
+    )
+  end
+
+  if source_col then
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticSource', 0, source_col, -1)
+  end
 
   local current_buffer = api.nvim_get_current_buf()
 

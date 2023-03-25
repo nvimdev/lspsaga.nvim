@@ -33,6 +33,7 @@ local default_config = {
     max_width = 0.7,
     text_hl_follow = true,
     border_follow = true,
+    extend_relatedInformation = true,
     keys = {
       exec_action = 'o',
       quit = 'q',

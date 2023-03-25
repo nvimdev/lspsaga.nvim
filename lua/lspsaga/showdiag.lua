@@ -147,7 +147,7 @@ function sd:show(opt)
     elseif opt.line then
       float_opt.title = 'Line'
     else
-      float_opt.title = 'Cursor'
+      float_opt.title = 'Workspace'
     end
     float_opt.title_pos = 'center'
   end
