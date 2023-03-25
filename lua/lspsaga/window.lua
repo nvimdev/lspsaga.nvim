@@ -190,7 +190,7 @@ end
 local function open_shadow_win()
   local opts = get_shadow_config()
   local shadow_winhl = 'Normal:SagaShadow'
-  local shadow_bufnr = api.nvim_create_buf(false, true)
+  local shadow_bufnr = api.nvim_create_buf(false, false)
   local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
   api.nvim_set_option_value('winhl', shadow_winhl, { scope = 'local', win = shadow_winid })
   api.nvim_set_option_value('winblend', 70, { scope = 'local', win = shadow_winid })

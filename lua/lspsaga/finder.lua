@@ -338,8 +338,7 @@ function finder:render_finder()
           })
 
           if line_count > float_height + 10 and need_yield then
-            table.sort(width)
-            need_yield = co.yield(width[#width])
+            need_yield = co.yield()
           end
         end
         indent = '  '
@@ -356,15 +355,15 @@ function finder:render_finder()
     vim.bo[self.bufnr].modifiable = false
   end)
 
-  local status, float_width = co.resume(self.render_fn, true)
+  local status = co.resume(self.render_fn, true)
   if not status then
     vim.notify('[Lspsaga] get float_width error in render coroutine', vim.logs.level.ERROR)
     return
   end
-  if not float_width then
-    table.sort(width)
-    float_width = width[#width]
-  end
+  self:apply_map()
+
+  table.sort(width)
+  local float_width = width[#width]
 
   self:create_finder_win(float_width, float_height)
 end
@@ -488,7 +487,6 @@ function finder:create_finder_win(width, height)
       self:open_preview()
     end,
   })
-  self:apply_map()
 
   if self.render_fn and co.status(self.render_fn) == 'suspended' then
     co.resume(self.render_fn, false)

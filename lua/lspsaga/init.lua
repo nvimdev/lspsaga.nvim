@@ -31,6 +31,7 @@ local default_config = {
     show_source = true,
     jump_num_shortcut = true,
     max_width = 0.7,
+    max_height = 0.6,
     text_hl_follow = true,
     border_follow = true,
     extend_relatedInformation = true,
@@ -39,6 +40,8 @@ local default_config = {
       quit = 'q',
       go_action = 'g',
       jump_in_show = '<CR>',
+      quit_in_show = { 'q', '<ESC>' },
+      expand_in_show = 'u',
     },
   },
   code_action = {

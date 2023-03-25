@@ -7,6 +7,8 @@ local ui = config.ui
 local diag_conf = config.diagnostic
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns = api.nvim_create_namespace('SagaDiagnostic')
+local nvim_buf_set_extmark = api.nvim_buf_set_extmark
+local co = coroutine
 local ctx = {}
 local sd = {}
 sd.__index = sd
@@ -70,71 +72,13 @@ local function get_actual_height(content)
   return height
 end
 
-function sd:show(opt)
-  local cur_buf = api.nvim_get_current_buf()
-  local cur_win = api.nvim_get_current_win()
-  local icon_data = libs.icon_from_devicon(vim.bo[cur_buf].filetype)
-  local fname = api.nvim_buf_get_name(cur_buf)
-  fname = fn.fnamemodify(fname, ':t')
-  local indent = '   '
-
-  local content = {
-    ui.collapse .. icon_data[1] .. fname,
-  }
-
-  local hi = {}
-  if icon_data[2] then
-    hi[1] = {
-      { 0, #ui.collapse, 'SagaCollapse' },
-      { #ui.collapse, #ui.collapse + #icon_data[1], icon_data[2] },
-    }
-  end
-  hi[1][#hi[1] + 1] =
-    { #ui.collapse + #icon_data[1], #ui.collapse + #icon_data[1] + #fname, 'DiagnosticFname' }
-
-  local counts = diag:get_diag_counts(opt.entrys)
-  for i, count in ipairs(counts) do
-    if count > 0 then
-      local sign = diag:get_diagnostic_sign(i)
-      local dtype = diag:get_diag_type(i)
-      content[1] = content[1] .. ' ' .. sign .. count
-      local prev = hi[1][#hi[1]]
-      hi[1][#hi[1] + 1] = { prev[2], prev[2] + #sign, 'Diagnostic' .. dtype }
-      prev = hi[1][#hi[1]]
-      hi[1][#hi[1] + 1] = { prev[2] + 1, prev[2] + 1 + #tostring(count), 'Diagnostic' .. dtype }
-    end
-  end
-
-  for _, entry in pairs(opt.entrys) do
-    local sign = diag:get_diagnostic_sign(entry.severity)
-
-    if entry.message then
-      local line = indent
-        .. sign
-        .. entry.message
-        .. (entry.source and '(' .. entry.source .. ')' or nil)
-      if opt.buffer then
-        line = line .. ' ' .. entry.lnum + 1 .. ':' .. entry.col
-      end
-      content[#content + 1] = line
-      local hi_name = 'Diagnostic' .. diag:get_diag_type(entry.severity)
-      hi[#hi + 1] = {
-        { #indent, #indent + #sign, hi_name },
-        {
-          #indent + #sign,
-          #indent + #sign + #entry.message,
-          diag_conf.text_hl_follow and hi_name or 'DiagnosticText',
-        },
-        { #indent + #sign + #entry.message, -1, 'Comment' },
-      }
-    end
-  end
-
+function sd:create_win(opt, content)
+  local curbuf = api.nvim_get_current_buf()
   local increase = window.win_height_increase(content)
   local max_len = window.get_max_content_length(content)
   local max_height = math.floor(vim.o.lines * 0.6)
   local actual_height = get_actual_height(content) + increase
-  local max_width = math.floor(vim.o.columns * 0.6)
+  local max_width = math.floor(vim.o.columns * 0.8)
   local float_opt = {
     width = max_len < max_width and max_len or max_width,
     height = actual_height > max_height and max_height or actual_height,
@@ -153,9 +97,10 @@ function sd:show(opt)
   end
 
   local content_opt = {
-    contents = content,
+    contents = {},
     filetype = 'markdown',
     enter = true,
+    bufnr = self.bufnr,
     wrap = true,
     highlight = {
       normal = 'DiagnosticNormal',
@@ -173,16 +118,12 @@ function sd:show(opt)
     opt.focusable = true
     api.nvim_create_autocmd('BufEnter', {
       callback = function(args)
-        if not self.lnum_winid or not api.nvim_win_is_valid(self.lnum_winid) then
+        if not self.winid or not api.nvim_win_is_valid(self.winid) then
           pcall(api.nvim_del_autocmd, args.id)
         end
-        local curbuf = api.nvim_get_current_buf()
-        if
-          curbuf ~= self.lnum_bufnr
-          and self.lnum_winid
-          and api.nvim_win_is_valid(self.lnum_winid)
-        then
-          api.nvim_win_close(self.lnum_winid, true)
+        local cur_buf = api.nvim_get_current_buf()
+        if cur_buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
+          api.nvim_win_close(self.winid, true)
           clean_ctx()
           pcall(api.nvim_del_autocmd, args.id)
         end
@@ -190,39 +131,25 @@ function sd:show(opt)
     })
   end
 
-  self.lnum_bufnr, self.lnum_winid = window.create_win_with_border(content_opt, float_opt)
-  vim.wo[self.lnum_winid].conceallevel = 2
-  vim.wo[self.lnum_winid].concealcursor = 'niv'
-  vim.wo[self.lnum_winid].showbreak = ui.lines[3]
-  vim.wo[self.lnum_winid].breakindent = true
-  vim.wo[self.lnum_winid].breakindentopt = 'shift:2,sbr'
+  _, self.winid = window.create_win_with_border(content_opt, float_opt)
+  vim.wo[self.winid].conceallevel = 2
+  vim.wo[self.winid].concealcursor = 'niv'
+  vim.wo[self.winid].showbreak = ui.lines[3]
+  vim.wo[self.winid].breakindent = true
+  vim.wo[self.winid].breakindentopt = 'shift:2,sbr'
+  vim.wo[self.winid].linebreak = true
 
-  for i, item in pairs(hi) do
-    for _, scope in ipairs(item) do
-      api.nvim_buf_add_highlight(self.lnum_bufnr, 0, scope[3], i - 1, scope[1], scope[2])
-    end
-    if i > 1 then
-      local symbol = i ~= #hi and ui.lines[2] or ui.lines[1]
-      -- local dtype = diag:get_diag_type(opt.entrys[i - 1].severity)
-      -- local symbol_hi = config.diagnostic.text_hl_follow and 'Diagnostic' .. dtype or 'FinderLines'
-      api.nvim_buf_set_extmark(self.lnum_bufnr, ns, i - 1, 0, {
-        virt_text = { { symbol, 'FinderLines' }, { ui.lines[4]:rep(2), 'FinderLines' } },
-        virt_text_pos = 'overlay',
-      })
-    end
-  end
-
-  api.nvim_win_set_cursor(self.lnum_winid, { 2, 7 })
+  -- api.nvim_win_set_cursor(self.winid, { 2, 7 })
   local nontext = api.nvim_get_hl_by_name('NonText', true)
   api.nvim_set_hl(0, 'NonText', {
     link = 'FinderLines',
   })
 
-  nvim_buf_set_keymap(self.lnum_bufnr, 'n', diag_conf.keys.jump_in_show, '', {
+  nvim_buf_set_keymap(self.bufnr, 'n', diag_conf.keys.jump_in_show, '', {
     nowait = true,
     silent = true,
     callback = function()
-      local index = api.nvim_win_get_cursor(self.lnum_winid)[1] - 1
+      local index = api.nvim_win_get_cursor(self.winid)[1] - 1
       local entry = opt.entrys[index]
       api.nvim_set_hl(0, 'NonText', {
         foreground = nontext.foreground,
@@ -230,19 +157,91 @@ function sd:show(opt)
       })
 
       if entry then
-        api.nvim_win_close(self.lnum_winid, true)
+        api.nvim_win_close(self.winid, true)
         clean_ctx()
-        api.nvim_set_current_win(cur_win)
-        api.nvim_win_set_cursor(cur_win, { entry.lnum + 1, entry.col })
-        local width = #api.nvim_get_current_line()
-        libs.jump_beacon({ entry.lnum, entry.col }, width)
+        -- api.nvim_set_current_win(cur_win)
+        -- api.nvim_win_set_cursor(cur_win, { entry.lnum + 1, entry.col })
+        -- local width = #api.nvim_get_current_line()
+        -- libs.jump_beacon({ entry.lnum, entry.col }, width)
       end
     end,
   })
 
+  for _, key in ipairs(diag_conf.keys.quit_in_show) do
+    nvim_buf_set_keymap(self.bufnr, 'n', key, '', {
+      noremap = true,
+      nowait = true,
+      callback = function()
+        local curwin = api.nvim_get_current_win()
+        if curwin ~= self.winid then
+          return
+        end
+        if api.nvim_win_is_valid(curwin) then
+          api.nvim_win_close(curwin, true)
+          clean_ctx()
+        end
+      end,
+    })
+  end
+
   vim.defer_fn(function()
-    libs.close_preview_autocmd(cur_buf, self.lnum_winid, close_autocmds)
+    libs.close_preview_autocmd(curbuf, self.winid, close_autocmds)
   end, 0)
+end
+
+function sd:show(opt)
+  local indent = '   '
+  local line_count = 0
+  local content = {}
+
+  self.bufnr = api.nvim_create_buf(false, false)
+  for bufnr, items in pairs(opt.entrys) do
+    local icon_data = libs.icon_from_devicon(vim.bo[tonumber(bufnr)].filetype)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(bufnr)), ':t')
+    local counts = diag:get_diag_counts(items)
+    local text = ui.collapse .. ' ' .. icon_data[1] .. fname
+    for i, v in ipairs(counts) do
+      if v > 0 then
+        text = text .. ' ' .. diag:get_diagnostic_sign(i) .. v
+      end
+    end
+    content[#content + 1] = text
+    api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
+    line_count = line_count + 1
+    for i, item in ipairs(items) do
+      if item.message:find('\n') then
+        item.message = item.message:gsub('\n', '')
+      end
+      text = indent .. item.message
+      api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
+      line_count = line_count + 1
+      content[#content + 1] = text
+      nvim_buf_set_extmark(self.bufnr, ns, line_count - 1, 0, {
+        virt_text = {
+          { i == #items and ui.lines[1] or ui.lines[2], 'FinderLines' },
+          { ui.lines[4]:rep(2), 'FinderLines' },
+        },
+        virt_text_pos = 'overlay',
+      })
+    end
+  end
+
+  self:create_win(opt, content)
+end
+
+---migreate diagnostic to a table that
+---use in show function
+local function migrate_diagnostics(entrys)
+  local tbl = {}
+  for _, item in ipairs(entrys) do
+    local key = tostring(item.bufnr)
+    if not tbl[key] then
+      tbl[key] = {}
+    end
+    tbl[key][#tbl[key] + 1] = item
+  end
+  return tbl
 end
 
 function sd:show_diagnostics(opt)
@@ -251,7 +250,7 @@ function sd:show_diagnostics(opt)
     return
   end
   sort_by_severity(entrys)
-  opt.entrys = entrys
+  opt.entrys = migrate_diagnostics(entrys)
   self:show(opt)
 end
 

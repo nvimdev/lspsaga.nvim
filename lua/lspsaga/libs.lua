@@ -32,9 +32,9 @@ function libs.icon_from_devicon(ft, color)
   local icon, hl = libs.devicons.get_icon_by_filetype(ft)
   if color then
     local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
-    return { icon .. ' ', rgb }
+    return { icon and icon .. ' ' or '', rgb }
   end
-  return { icon .. ' ', hl }
+  return { icon and icon .. ' ' or '', hl }
 end
 
 function libs.get_home_dir()
