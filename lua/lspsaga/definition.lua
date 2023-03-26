@@ -2,6 +2,7 @@ local config = require('lspsaga').config
 local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
 local libs = require('lspsaga.libs')
 local window = require('lspsaga.window')
+local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local def = {}
 
 -- a double linked list for store the node infor
@@ -29,13 +30,10 @@ local function title_text(fname)
   if not fname then
     return
   end
-  local title = {
-    { fn.fnamemodify(fname, ':t'), 'TitleString' },
-  }
+  local title = {}
   local data = libs.icon_from_devicon(vim.bo.filetype)
-  if data[1] then
-    table.insert(title, 1, { data[1] .. ' ', data[2] })
-  end
+  title[#title + 1] = { data[1], data[2] or 'TitleString' }
+  title[#title + 1] = { fn.fnamemodify(fname, ':t'), 'TitleString' }
 
   return title
 end
@@ -101,6 +99,9 @@ function def:apply_aciton_keys(buf, main_buf)
           vim.cmd('write!')
         end
         vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
+        if not node.wipe then
+          self.restore_opts.restore()
+        end
         api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
         local width = #api.nvim_get_current_line()
         libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
@@ -109,33 +110,7 @@ function def:apply_aciton_keys(buf, main_buf)
     end
   end
 
-  keymap.set('n', '<C-o>', function()
-    local index = find_node_index()
-    if not index or not self:has_peek_win() then
-      return
-    end
-    local prev = ctx[index - 1]
-    if not prev then
-      return
-    end
-    if not api.nvim_buf_is_valid(prev.bufnr) then
-      prev.bufnr = vim.uri_to_bufnr(prev.uri)
-      fn.bufload(prev.bufnr)
-      self:apply_aciton_keys(prev.bufnr)
-    end
-
-    api.nvim_win_set_buf(self.winid, prev.bufnr)
-    api.nvim_set_option_value(
-      'winhl',
-      'Normal:DefinitionNormal',
-      { scope = 'local', win = self.winid }
-    )
-    api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.winid })
-    api.nvim_win_set_cursor(self.winid, { prev.pos[1] + 1, prev.pos[2] })
-    vim.cmd('normal! zz')
-  end, opt)
-
-  keymap.set('n', config.definition.quit, function()
+  local function quit_fn()
     local index = find_node_index()
     if not index or not self:has_peek_win() then
       return
@@ -151,7 +126,18 @@ function def:apply_aciton_keys(buf, main_buf)
     end
 
     clean_ctx()
-  end, opt)
+  end
+
+  local quit = {}
+  quit = type(config.definition.quit) == 'string' and { config.definition.quit }
+    or config.definition.quit
+  for _, v in ipairs(quit) do
+    nvim_buf_set_keymap(buf, 'n', v, '', {
+      noremap = true,
+      nowait = true,
+      callback = quit_fn,
+    })
+  end
 end
 
 local function get_method(index)
@@ -163,10 +149,10 @@ local function create_window(node)
   local cur_winline = fn.winline()
   local max_height = math.floor(vim.o.lines * 0.5)
   local max_width = math.floor(vim.o.columns * 0.6)
+  def.restore_opts = window.restore_option()
 
   local opt = {
     relative = 'cursor',
-    style = '',
     no_override_size = true,
     height = max_height,
     width = max_width,
@@ -267,6 +253,25 @@ function def:peek_definition(method)
     push(node)
 
     self:apply_aciton_keys(node.bufnr, current_buf)
+
+    local color = api.nvim_get_hl_by_name('NormalFloat', true)
+    api.nvim_set_hl(0, 'NormalFloat', {
+      link = 'Normal',
+    })
+
+    api.nvim_create_autocmd('WinClosed', {
+      once = true,
+      callback = function(opt)
+        local curwin = api.nvim_get_current_win()
+        if curwin == self.winid then
+          api.nvim_set_hl(0, 'NormalFloat', {
+            foreground = color.foreground or nil,
+            background = color.bakcground or nil,
+          })
+          api.nvim_del_autocmd(opt.id)
+        end
+      end,
+    })
   end)
 end
 

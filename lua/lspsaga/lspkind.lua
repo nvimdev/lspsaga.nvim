@@ -1,6 +1,32 @@
 local ui = require('lspsaga').config.ui
 local api = vim.api
 
+local function merge_custom(kind)
+  local function find_index_by_type(k)
+    for index, opts in pairs(kind) do
+      if opts[1] == k then
+        return index
+      end
+    end
+    return nil
+  end
+
+  for k, v in pairs(ui.kind) do
+    local index = find_index_by_type(k)
+    if not index then
+      vim.notify('[lspsaga.nvim] could not find kind in default')
+      return
+    end
+    if type(v) == 'table' then
+      kind[index][2], kind[index][3] = unpack(v)
+    elseif type(v) == 'string' then
+      kind[index][3] = v
+    else
+      vim.notify('[Lspsaga.nvim] value must be string or table')
+    end
+  end
+end
+
 local function get_kind()
   local kind = {
     [1] = { 'File', ' ', 'Tag' },
@@ -37,35 +63,12 @@ local function get_kind()
     -- for completion sb microsoft!!!
     [300] = { 'Text', ' ', 'String' },
     [301] = { 'Snippet', ' ', '@variable' },
-    [302] = { 'Folder', ' ', '@parameter' },
+    [302] = { 'Folder', ' ', 'Title' },
     [303] = { 'Unit', ' ', 'Number' },
     [304] = { 'Value', ' ', '@variable' },
   }
 
-  local function find_index_by_type(k)
-    for index, opts in pairs(kind) do
-      if opts[1] == k then
-        return index
-      end
-    end
-    return nil
-  end
-
-  for k, v in pairs(ui.kind) do
-    local index = find_index_by_type(k)
-    if not index then
-      vim.notify('[lspsaga.nvim] could not find kind in default')
-      return
-    end
-    if type(v) == 'table' then
-      kind[index][2], kind[index][3] = unpack(v)
-    elseif type(v) == 'string' then
-      kind[index][3] = v
-    else
-      vim.notify('[Lspsaga.nvim] value must be string or table')
-    end
-  end
-
+  merge_custom(kind)
   return kind
 end
 

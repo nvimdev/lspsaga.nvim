@@ -4,14 +4,12 @@ local libs = {}
 local saga_augroup = require('lspsaga').saga_augroup
 
 libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
+libs.ismac = vim.loop.os_uname().sysname == 'Darwin'
 
 libs.path_sep = libs.iswin and '\\' or '/'
 
 function libs.get_path_info(buf, level)
-  if level == 0 then
-    vim.notify('[Lspsaga] Level must bigger than 0', vim.log.levels.ERROR)
-    return
-  end
+  level = level or 1
   local fname = api.nvim_buf_get_name(buf)
   local tbl = vim.split(fname, libs.path_sep, { trimempty = true })
   if level == 1 then
@@ -27,17 +25,16 @@ function libs.icon_from_devicon(ft, color)
   if not libs.devicons then
     local ok, devicons = pcall(require, 'nvim-web-devicons')
     if not ok then
-      vim.notify('[Lspsaga.nvim] does not found nvim-web-devicons.')
-      return {}
+      return { '' }
     end
     libs.devicons = devicons
   end
   local icon, hl = libs.devicons.get_icon_by_filetype(ft)
   if color then
     local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
-    return { icon, rgb }
+    return { icon and icon .. ' ' or '', rgb }
   end
-  return { icon, hl }
+  return { icon and icon .. ' ' or '', hl }
 end
 
 function libs.get_home_dir()
@@ -159,14 +156,6 @@ function libs.close_preview_autocmd(bufnr, winids, events, cb)
       end
     end,
   })
-end
-
-function libs.disable_move_keys(bufnr)
-  local keys = { 'h', 'ge', 'e', '0', '$', 'l', 'w', 'b', '<Bs>' }
-  local opts = { nowait = true, noremap = true, silent = true }
-  for _, key in pairs(keys) do
-    api.nvim_buf_set_keymap(bufnr, 'n', key, '', opts)
-  end
 end
 
 function libs.find_buffer_by_filetype(ft)
@@ -342,6 +331,11 @@ function libs.jump_beacon(bufpos, width)
       end
     end)
   )
+end
+
+function libs.gen_truncate_line(width)
+  local char = '─'
+  return char:rep(math.floor(width / api.nvim_strwidth(char)))
 end
 
 return libs

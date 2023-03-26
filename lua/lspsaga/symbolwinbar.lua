@@ -19,7 +19,6 @@ end
 
 local function get_kind_icon(type, index)
   local kind = require('lspsaga.lspkind').get_kind()
-  ---@diagnostic disable-next-line: need-check-nil
   return kind[type][index]
 end
 
@@ -58,7 +57,7 @@ local function bar_file_name(buf)
   for i, v in pairs(res) do
     if i == #res then
       if #data > 0 then
-        table.insert(items, '%#SagaWinbarFileIcon#' .. data[1] .. ' ' .. '%*')
+        items[#items + 1] = '%#SagaWinbarFileIcon#' .. data[1] .. '%*'
 
         local ok, conf = pcall(api.nvim_get_hl_by_name, 'SagaWinbarFileIcon', true)
         if not ok then
@@ -78,21 +77,18 @@ local function bar_file_name(buf)
           })
         )
       end
-      table.insert(items, bar.prefix .. 'FileName#' .. v .. '%*')
+      items[#items + 1] = bar.prefix .. 'FileName#' .. v .. '%*'
     else
-      table.insert(
-        items,
-        bar.prefix
-          .. 'Folder#'
-          .. get_kind_icon(302, 2)
-          .. '%*'
-          .. bar.prefix
-          .. 'FolderName'
-          .. '#'
-          .. v
-          .. '%*'
-          .. bar.sep
-      )
+      items[#items + 1] = bar.prefix
+        .. 'Folder#'
+        .. get_kind_icon(302, 2)
+        .. '%*'
+        .. bar.prefix
+        .. 'FolderName'
+        .. '#'
+        .. v
+        .. '%*'
+        .. bar.sep
     end
   end
   return table.concat(items, '')
@@ -177,7 +173,7 @@ local function insert_elements(buf, node, elements)
 
   if config.color_mode then
     local node_context = bar.prefix .. type .. '#' .. icon .. node.name
-    table.insert(elements, node_context)
+    elements[#elements + 1] = node_context
   else
     local node_context = bar.prefix
       .. type
@@ -187,7 +183,7 @@ local function insert_elements(buf, node, elements)
       .. 'Word'
       .. '#'
       .. node.name
-    table.insert(elements, node_context)
+    elements[#elements + 1] = node_context
   end
 end
 
@@ -272,8 +268,6 @@ local render_symbol_winbar = function(buf, symbols)
     if #winbar_str == 0 then
       winbar_str = bar_prefix().prefix .. ' #'
     end
-    --TODO: some string has invalidate character handle this string
-    --ref: neovim/filetype/detect.lua scroll in 1588 line
     api.nvim_set_option_value('winbar', winbar_str, { scope = 'local', win = cur_win })
   end
   return winbar_str
