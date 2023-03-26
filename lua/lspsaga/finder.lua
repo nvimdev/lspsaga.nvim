@@ -222,17 +222,33 @@ function finder:create_finder_data(result, method)
   local parent = self.lspdata[method]
   parent.data = {}
 
-  local wipe = false
   for i, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
       vim.notify('[Lspsaga] miss uri in server response', vim.log.levels.WARN)
       return
     end
+
     local bufnr = vim.uri_to_bufnr(uri)
     local fname = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
+    local range = res.targetRange or res.range
+    if libs.iswin then
+      fname = fname:gsub('^%l', fname:sub(1, 1):upper())
+    end
+    fname = table.concat(libs.get_path_info(bufnr, 2), libs.path_sep)
+
+    local node = {
+      bufnr = bufnr,
+      fname = fname,
+      row = range.start.line,
+      col = range.start.character,
+      ecol = range['end'].character,
+      method = method,
+      winline = -1,
+    }
+
     if not api.nvim_buf_is_loaded(bufnr) then
-      wipe = true
+      node.wipe = true
       --ignore the FileType event avoid trigger the lsp
       vim.opt.eventignore:append({ 'FileType' })
       fn.bufload(bufnr)
@@ -242,24 +258,6 @@ function finder:create_finder_data(result, method)
         self.wipe_buffers[#self.wipe_buffers + 1] = bufnr
       end
     end
-
-    if libs.iswin then
-      fname = fname:gsub('^%l', fname:sub(1, 1):upper())
-    end
-    fname = table.concat(libs.get_path_info(bufnr, 2), libs.path_sep)
-
-    local range = res.targetRange or res.range
-
-    local node = {
-      bufnr = bufnr,
-      fname = fname,
-      wipe = wipe,
-      row = range.start.line,
-      col = range.start.character,
-      ecol = range['end'].character,
-      method = method,
-      winline = -1,
-    }
 
     node.word = api.nvim_buf_get_text(node.bufnr, node.row, 0, node.row, -1, {})[1]
     if node.word:find('^%s') then
@@ -445,19 +443,21 @@ function finder:create_finder_win(width)
       api.nvim_buf_clear_namespace(self.bufnr, ns_select, 0, -1)
       local col = 5
       local buf_lines = api.nvim_buf_line_count(self.bufnr)
+      local in_fname, node
 
       if curline == 1 or curline > buf_lines - 1 then
         curline = 3
         start = 2
+        node = self:get_node({ lnum = 3 })
       elseif curline == 2 and curline < before then
         curline = buf_lines - 1
-        local node = self:get_node({ lnum = curline })
+        node = self:get_node({ lnum = curline })
         start = node.start
       else
-        local node = self:get_node({ lnum = curline })
+        node = self:get_node({ lnum = curline })
         local increase = curline > before and 1 or -1
         local text = api.nvim_get_current_line()
-        local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+        in_fname = text:find(ui.expand) or text:find(ui.collapse)
         col = in_fname and 7 or col
 
         if not node and not in_fname then
@@ -490,7 +490,10 @@ function finder:create_finder_win(width)
         -1
       )
       api.nvim_buf_add_highlight(self.bufnr, ns_select, 'FinderSelection', curline - 1, 5, -1)
-      self:open_preview()
+
+      if not in_fname then
+        self:open_preview(node)
+      end
     end,
   })
 
@@ -758,14 +761,12 @@ local function clear_preview_ns(ns, buf)
   pcall(api.nvim_buf_clear_namespace, buf, ns, 0, -1)
 end
 
-function finder:open_preview()
+function finder:open_preview(node)
   if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
     local before_buf = api.nvim_win_get_buf(self.peek_winid)
     clear_preview_ns(ns_id, before_buf)
   end
 
-  local curline = api.nvim_win_get_cursor(self.winid)[1]
-  local node = self:get_node({ lnum = curline })
   if not node then
     return
   end
@@ -788,9 +789,6 @@ function finder:open_preview()
 
   api.nvim_win_set_buf(self.peek_winid, node.bufnr)
   api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
-  api.nvim_win_call(self.peek_winid, function()
-    vim.cmd.normal('zt')
-  end)
   highlight_word()
 
   api.nvim_set_option_value('winbar', '', {
@@ -804,13 +802,19 @@ function finder:open_preview()
     { scope = 'local', win = self.peek_winid }
   )
 
-  if fn.has('nvim-0.9') == 1 and node.wipe then
+  if fn.has('nvim-0.9') == 1 and node.wipe and not node.loaded then
     local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
-    vim.treesitter.start(node.bufnr, lang)
-  elseif node.wipe and fn.has('nvim-0.8') == 1 then
+    vim.defer_fn(function()
+      vim.treesitter.start(node.bufnr, lang)
+    end, 5)
+    node.loaded = true
+  elseif node.wipe and fn.has('nvim-0.8') == 1 and not node.loaded then
     api.nvim_buf_call(node.bufnr, function()
-      vim.cmd('TSBufEnable highlight')
+      vim.defer_fn(function()
+        vim.cmd('TSBufEnable highlight')
+      end, 5)
     end)
+    node.loaded = true
   end
 end
 
