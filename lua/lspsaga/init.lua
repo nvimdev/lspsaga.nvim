@@ -71,19 +71,17 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
-    --percentage
     max_height = 0.5,
     min_width = 30,
     force_max_height = false,
     show_tip = false,
     keys = {
       jump_to = 'p',
-      edit = { 'o', '<CR>' },
+      expand_or_jump = 'o',
       vsplit = 's',
       split = 'i',
       tabe = 't',
       tabnew = 'r',
-      expand = 'u',
       quit = { 'q', '<ESC>' },
       close_in_preview = '<ESC>',
     },

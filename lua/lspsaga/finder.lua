@@ -496,7 +496,7 @@ end
 local function unpack_map()
   local map = {}
   for k, v in pairs(config.finder.keys) do
-    if k ~= 'jump_to' and k ~= 'close_in_preview' and k ~= 'expand' then
+    if k ~= 'jump_to' and k ~= 'close_in_preview' and k ~= 'expand_or_jump' then
       map[k] = v
     end
   end
@@ -518,7 +518,12 @@ function finder:apply_map()
     for _, key in pairs(map) do
       if key ~= 'quit' then
         vim.keymap.set('n', key, function()
-          self:open_link(action)
+          local curline = api.nvim_win_get_cursor(self.winid)[1]
+          local node = self:get_node({ lnum = curline })
+          if not node then
+            return
+          end
+          self:do_action(node, action)
         end, opts)
       end
     end
@@ -542,58 +547,19 @@ function finder:apply_map()
     end
   end, opts)
 
-  nvim_buf_set_keymap(self.bufnr, 'n', config.finder.keys.expand, '', {
-    noremap = true,
-    nowait = true,
-    callback = function()
-      local curline = api.nvim_win_get_cursor(self.winid)[1]
-      local text = api.nvim_get_current_line()
-      local in_expand_fname = text:find(ui.expand)
-      local node, next_node
+  local function expand_or_collapse(text, curline)
+    local fname = text:match(ui.expand .. '%s(.+)%s')
+    if not fname then
+      fname = text:match(ui.collapse .. '%s(.+)%s')
+    end
+    if not fname then
+      return
+    end
 
-      if in_expand_fname then
-        goto try_expand
-      else
-        node = self:get_node({ lnum = curline })
-        if not node then
-          return
-        end
+    local nodes = self:find_nodes_by_fname(fname)
+    vim.bo[self.bufnr].modifiable = true
 
-        next_node = self:next_node_in_meth(node.method, node.fname, curline)
-        if not next_node then
-          return
-        end
-      end
-
-      if self.lspdata[node.method].data[node.fname].expand then
-        vim.bo[self.bufnr].modifiable = true
-        local nodes = self.lspdata[node.method].data[node.fname].nodes
-        api.nvim_buf_clear_namespace(self.bufnr, ns_id, node.start, node.start + #nodes)
-        text = api.nvim_buf_get_lines(self.bufnr, node.start - 1, node.start, false)[1]
-        text = text:gsub(ui.collapse, ui.expand)
-        api.nvim_buf_set_lines(self.bufnr, node.start - 1, node.start + #nodes, false, { text })
-        api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaExpand', node.start - 1, 0, 5)
-        self.lspdata[node.method].data[node.fname].expand = false
-        self:change_node_winline(function(item)
-          return item.winline > node.winline + #nodes
-        end, -#nodes)
-        for _, v in ipairs(nodes) do
-          v.winline = -1
-        end
-        if next_node then
-          api.nvim_win_set_cursor(self.winid, { next_node.winline, 6 })
-        end
-        vim.bo[self.bufnr].modifiable = false
-        return
-      end
-
-      ::try_expand::
-      local fname = text:match(ui.expand .. '%s(.+)%s')
-      if not fname then
-        return
-      end
-      vim.bo[self.bufnr].modifiable = true
-      local nodes = self:find_nodes_by_fname(fname)
+    if not self.lspdata[nodes[1].method].data[nodes[1].fname].expand then
       text = text:gsub(ui.expand, ui.collapse)
       local lines = vim.tbl_map(function(i)
         return (' '):rep(5) .. i.word
@@ -620,6 +586,39 @@ function finder:apply_map()
       api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaCollapse', curline - 1, 0, 5)
       vim.bo[self.bufnr].modifiable = false
       self.lspdata[nodes[1].method].data[nodes[1].fname].expand = true
+      return
+    end
+
+    text = text:gsub(ui.collapse, ui.expand)
+    api.nvim_buf_clear_namespace(self.bufnr, ns_id, curline - 1, curline + #nodes)
+    api.nvim_buf_set_lines(self.bufnr, curline - 1, curline + #nodes, false, { text })
+    api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaExpand', nodes[1].start - 1, 0, 5)
+    self.lspdata[nodes[1].method].data[fname].expand = false
+    self:change_node_winline(function(item)
+      return item.winline > curline + #nodes
+    end, -#nodes)
+    for _, v in ipairs(nodes) do
+      v.winline = -1
+    end
+    vim.bo[self.bufnr].modifiable = false
+  end
+
+  nvim_buf_set_keymap(self.bufnr, 'n', config.finder.keys.expand_or_jump, '', {
+    noremap = true,
+    nowait = true,
+    callback = function()
+      local curline = api.nvim_win_get_cursor(self.winid)[1]
+      local text = api.nvim_get_current_line()
+      local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+      if in_fname then
+        expand_or_collapse(text, curline)
+        return
+      end
+      local node = self:get_node({ lnum = curline })
+      if not node then
+        return
+      end
+      self:do_action(node, 'edit')
     end,
   })
 end
@@ -822,22 +821,14 @@ function finder:close_auto_preview_win()
   end
 end
 
-function finder:open_link(action)
-  local current_line = api.nvim_win_get_cursor(0)[1]
-
-  if not self.short_link[current_line] then
-    vim.notify('[LspSaga] no file link in current line', vim.log.levels.WARN)
-    return
-  end
-
-  local data = self.short_link[current_line]
-
+function finder:do_action(node, action)
   if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
     local pbuf = api.nvim_win_get_buf(self.peek_winid)
     clear_preview_ns(ns_id, pbuf)
   end
   local restore_opts
-
+  local data = vim.deepcopy(node)
+  local fname = api.nvim_buf_get_name(data.bufnr)
   if not data.wipe then
     restore_opts = self.restore_opts
   end
@@ -857,7 +848,7 @@ function finder:open_link(action)
     api.nvim_set_current_win(winid)
     api.nvim_win_set_buf(winid, data.bufnr)
   else
-    vim.cmd(action .. ' ' .. uv.fs_realpath(data.link))
+    vim.cmd(action .. ' ' .. uv.fs_realpath(fname))
   end
 
   if restore_opts then
