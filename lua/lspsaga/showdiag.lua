@@ -59,29 +59,15 @@ local function sort_by_severity(entrys)
   end)
 end
 
----@private get the actual window height when wrap is enable
-local function get_actual_height(content)
-  local height = 0
-  for _, v in pairs(content) do
-    if v:find('\n.') then
-      height = height + #vim.split(v, '\n')
-    else
-      height = height + 1
-    end
-  end
-  return height
-end
-
 function sd:create_win(opt, content)
   local curbuf = api.nvim_get_current_buf()
   local increase = window.win_height_increase(content)
   local max_len = window.get_max_content_length(content)
   local max_height = math.floor(vim.o.lines * diag_conf.max_show_height)
-  local actual_height = get_actual_height(content) + increase
   local max_width = math.floor(vim.o.columns * diag_conf.max_show_width)
   local float_opt = {
     width = max_len < max_width and max_len or max_width,
-    height = actual_height > max_height and max_height or actual_height,
+    height = #content + increase > max_height and max_height or #content + #increase,
     no_size_override = true,
   }
 

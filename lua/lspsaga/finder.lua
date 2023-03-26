@@ -798,17 +798,13 @@ function finder:open_preview()
     { scope = 'local', win = self.peek_winid }
   )
 
-  local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
-
-  if fn.has('nvim-0.9') then
+  if fn.has('nvim-0.9') == 1 and node.wipe then
+    local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
     vim.treesitter.start(node.bufnr, lang)
-  else
-    vim.bo[node.bufnr].syntax = 'on'
-    pcall(
-      ---@diagnostic disable-next-line: param-type-mismatch
-      vim.cmd,
-      string.format('syntax include %s syntax/%s.vim', '@' .. lang, vim.bo[self.main_buf].filetype)
-    )
+  elseif node.wipe and fn.has('nvim-0.8') == 1 then
+    api.nvim_buf_call(node.bufnr, function()
+      vim.cmd('TSBufEnable highlight')
+    end)
   end
 end
 

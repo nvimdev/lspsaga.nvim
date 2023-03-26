@@ -120,8 +120,7 @@ local default_config = {
     custom_sort = nil,
     preview_width = 0.4,
     keys = {
-      jump = 'o',
-      expand_collapse = 'u',
+      expand_or_jump = 'o',
       quit = 'q',
     },
   },

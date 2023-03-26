@@ -167,11 +167,7 @@ function ot:apply_map()
     clean_ctx()
   end, opt)
 
-  keymap.set('n', maps.expand_collapse, function()
-    self:expand_collapse()
-  end, opt)
-
-  keymap.set('n', maps.jump, function()
+  local function open()
     local curline = api.nvim_win_get_cursor(0)[1]
     local node
     for _, nodes in pairs(self.data) do
@@ -195,6 +191,15 @@ function ot:apply_map()
     end
     local width = #api.nvim_get_current_line()
     libs.jump_beacon({ range.start.line, range.start.character }, width)
+  end
+
+  keymap.set('n', maps.expand_or_jump, function()
+    local text = api.nvim_get_current_line()
+    if text:find(config.ui.expand) or text:find(config.ui.collapse) then
+      self:expand_collapse()
+      return
+    end
+    open()
   end, opt)
 end
 
