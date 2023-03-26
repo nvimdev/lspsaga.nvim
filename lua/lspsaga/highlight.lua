@@ -61,6 +61,10 @@ local function hi_define()
     DiagnosticSource = { link = 'Comment' },
     DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticText = {},
+    DiagnosticBufnr = { link = '@variable' },
+    DiagnosticFname = { link = 'KeyWord' },
+    DiagnosticShowNormal = { link = 'SagaNormal' },
+    DiagnosticShowBorder = { link = '@property' },
     -- Call Hierachry
     CallHierarchyNormal = { link = 'SagaNormal' },
     CallHierarchyBorder = { link = 'SagaBorder' },

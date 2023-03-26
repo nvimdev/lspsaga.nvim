@@ -234,6 +234,7 @@ local function source_clean(source)
   if source == 'typescript' then
     return 'ts'
   end
+  return source
 end
 
 function diag:render_diagnostic_window(entry, option)
