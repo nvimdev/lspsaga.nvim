@@ -221,7 +221,7 @@ function finder:create_finder_data(result, method)
   for i, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
-      vim.notify('[Lspsaga] miss uri in server response', vim.logs.level.WARN)
+      vim.notify('[Lspsaga] miss uri in server response', vim.log.levels.WARN)
       return
     end
     local bufnr = vim.uri_to_bufnr(uri)
@@ -338,7 +338,8 @@ function finder:render_finder()
           })
 
           if line_count > float_height + 10 and need_yield then
-            need_yield = co.yield()
+            table.sort(width)
+            need_yield = co.yield(width[#width])
           end
         end
         indent = '  '
@@ -348,33 +349,33 @@ function finder:render_finder()
 
     if api.nvim_buf_line_count(self.bufnr) == 0 then
       clean_ctx()
-      vim.notify('[Lspsaga] finder nothing to show', vim.logs.level.WARN)
+      vim.notify('[Lspsaga] finder nothing to show', vim.log.levels.WARN)
       return
     end
     api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { '' })
     vim.bo[self.bufnr].modifiable = false
   end)
 
-  local status = co.resume(self.render_fn, true)
-  if not status then
-    vim.notify('[Lspsaga] get float_width error in render coroutine', vim.logs.level.ERROR)
-    return
-  end
   self:apply_map()
 
-  table.sort(width)
-  local float_width = width[#width]
-
-  self:create_finder_win(float_width, float_height)
+  while true do
+    local _, float_width = co.resume(self.render_fn, true)
+    if not float_width and co.status(self.render_fn) == 'dead' then
+      table.sort(width)
+      float_width = width[#width]
+    end
+    self:create_finder_win(float_width)
+    break
+  end
 end
 
-function finder:create_finder_win(width, height)
+function finder:create_finder_win(width)
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
 
   local opt = {
     relative = 'editor',
     width = width,
-    height = height,
+    height = get_max_height(),
     no_size_override = true,
   }
 
