@@ -7,6 +7,9 @@ local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns_id = api.nvim_create_namespace('lspsagafinder')
 local co = coroutine
+local print = function (...)
+  require('core.utils').log('[lspsaga]',...)
+end
 
 local finder = {}
 local ctx = {}
@@ -167,6 +170,64 @@ function finder:loading_bar()
   )
 end
 
+
+local get_data_fn = function(fname)
+  local init_time = uv.fs_stat(fname).mtime.nsec
+  local data
+  return function()
+    if uv.fs_stat(fname).mtime.nsec == init_time and data then
+      print('using cached')
+      return data
+    else
+      local fd = uv.fs_open(fname, 'r', 438)
+      if not fd then
+        print('wrong fd:',fname)
+        data = {''}
+      else
+        local stat = uv.fs_fstat(fd)
+        data = uv.fs_read(fd, stat.size, 0)
+        init_time = stat.mtime.nsec
+      end
+      uv.fs_close(fd)
+      return data
+    end
+  end
+end
+
+local get_text = function(fname,rows,get_data)
+  local data = get_data()
+  local lines = {} -- rows we need to retrieve
+  local need = 0 -- keep track of how many unique rows we need
+  for _, row in pairs(rows) do
+    if not lines[row] then
+      need = need + 1
+    end
+    lines[row] = true
+  end
+
+  local found = 0
+  local lnum = 0
+
+  for line in string.gmatch(data, '([^\n]*)\n?') do
+    if lines[lnum] == true then
+      lines[lnum] = line
+      found = found + 1
+      if found == need then
+        break
+      end
+    end
+    lnum = lnum + 1
+  end
+
+  -- change any lines we didn't find to the empty string
+  for i, line in pairs(lines) do
+    if line == true then
+      lines[i] = ''
+    end
+  end
+  return lines
+end
+
 function finder:do_request(params, method)
   if method == methods(3) then
     params.context = { includeDeclaration = false }
@@ -181,6 +242,10 @@ function finder:do_request(params, method)
       end
     end
 
+    if #result == 0 then
+      self.request_status[method] = true
+      return
+    end
     local uri = result[1].uri or result[1].targetUri
     if method == methods(1) and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf() then
       local col = api.nvim_win_get_cursor(0)[2]
@@ -191,7 +256,9 @@ function finder:do_request(params, method)
       return
     end
 
+    local start = vim.loop.hrtime()
     self:create_finder_data(result, method)
+    print(string.format('create_finder_data|bufload spent time: %s ms',(vim.loop.hrtime()-start)/1e6))
     self.request_status[method] = true
   end)
 end
@@ -218,6 +285,7 @@ function finder:create_finder_data(result, method)
   parent.data = {}
 
   local wipe = false
+  local get_data_fns = {}
   for i, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
@@ -226,13 +294,17 @@ function finder:create_finder_data(result, method)
     end
     local bufnr = vim.uri_to_bufnr(uri)
     local fname = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
+    local full_fname = fname
+    if not get_data_fns[full_fname] then
+      get_data_fns[full_fname] = get_data_fn(full_fname)
+    end
     if not api.nvim_buf_is_loaded(bufnr) then
       wipe = true
-      --ignore the FileType event avoid trigger the lsp
-      vim.opt.eventignore:append({ 'FileType' })
-      fn.bufload(bufnr)
-      --restore eventignore
-      vim.opt.eventignore:remove({ 'FileType' })
+      -- --ignore the FileType event avoid trigger the lsp
+      -- vim.opt.eventignore:append({ 'FileType' })
+      -- fn.bufload(bufnr)
+      -- --restore eventignore
+      -- vim.opt.eventignore:remove({ 'FileType' })
       if not vim.tbl_contains(self.wipe_buffers, bufnr) then
         self.wipe_buffers[#self.wipe_buffers + 1] = bufnr
       end
@@ -256,7 +328,8 @@ function finder:create_finder_data(result, method)
       winline = -1,
     }
 
-    node.word = api.nvim_buf_get_text(node.bufnr, node.row, 0, node.row, -1, {})[1]
+    -- node.word = api.nvim_buf_get_text(node.bufnr, node.row, 0, node.row, -1, {})[1]
+    node.word = get_text(full_fname, {node.row},get_data_fns[full_fname])[node.row]
     if node.word:find('^%s') then
       node.word = node.word:sub(node.word:find('%S'), #node.word)
     end
@@ -284,6 +357,7 @@ function finder:render_finder()
   local float_height = get_max_height()
 
   self.render_fn = co.create(function(need_yield)
+    start_time = vim.loop.hrtime()
     local indent = (' '):rep(2)
     local virt_hi = 'Finderlines'
     local line_count = 0
@@ -338,7 +412,9 @@ function finder:render_finder()
           })
 
           if line_count > float_height + 10 and need_yield then
+            print(string.format('first yield spent time: %s ms',(vim.loop.hrtime()-start_time)/1e6))
             need_yield = co.yield()
+            start_time = vim.loop.hrtime()
           end
         end
         indent = '  '
@@ -490,6 +566,7 @@ function finder:create_finder_win(width, height)
 
   if self.render_fn and co.status(self.render_fn) == 'suspended' then
     co.resume(self.render_fn, false)
+    print(string.format('status: %s,the second yield spent time: %s ms',co.status(self.render_fn),(vim.loop.hrtime()-start_time)/1e6))
   end
 end
 

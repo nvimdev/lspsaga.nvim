@@ -382,7 +382,7 @@ function M.restore_option()
     ['list'] = vim.opt.list,
     ['signcolumn'] = vim.opt.signcolumn,
     ['colorcolumn'] = vim.opt.colorcolumn,
-    ['statuscolumn'] = vim.opt.statuscolumn,
+    -- ['statuscolumn'] = vim.opt.statuscolumn,
     ['fillchars'] = vim.opt.fillchars,
   }
 
