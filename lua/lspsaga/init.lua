@@ -21,7 +21,7 @@ local default_config = {
   hover = {
     max_width = 0.6,
     open_link = 'gx',
-    open_browser = '!chrome',
+    open_browser = '!xdg-open',
   },
   diagnostic = {
     on_insert = true,
