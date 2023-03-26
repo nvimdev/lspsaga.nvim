@@ -181,6 +181,11 @@ function finder:do_request(params, method)
       end
     end
 
+    if vim.tbl_isempty(result) then
+      self.request_status[method] = true
+      return
+    end
+
     local uri = result[1].uri or result[1].targetUri
     if method == methods(1) and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf() then
       local col = api.nvim_win_get_cursor(0)[2]
