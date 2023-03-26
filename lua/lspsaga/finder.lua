@@ -884,6 +884,7 @@ function finder:open_preview(node)
     node.loaded = true
   elseif node.wipe and fn.has('nvim-0.8') == 1 and not node.loaded then
     api.nvim_buf_call(node.bufnr, function()
+      vim.api.nvim_buf_set_option(node.bufnr,'filetype',vim.bo[self.main_buf].filetype)
       vim.cmd('TSBufEnable highlight')
     end)
     node.loaded = true
