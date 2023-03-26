@@ -382,9 +382,12 @@ function M.restore_option()
     ['list'] = vim.opt.list,
     ['signcolumn'] = vim.opt.signcolumn,
     ['colorcolumn'] = vim.opt.colorcolumn,
-    -- ['statuscolumn'] = vim.opt.statuscolumn,
     ['fillchars'] = vim.opt.fillchars,
   }
+
+  if vim.fn.has('nvim-0.9') == 1 then
+    minimal_opts['statuscolumn'] = vim.opt.statuscolumn
+  end
 
   function minimal_opts.restore()
     for opt, val in pairs(minimal_opts) do

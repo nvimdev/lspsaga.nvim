@@ -99,12 +99,6 @@ function diag:code_action_cb(hi_name)
   end, { buffer = self.bufnr, nowait = true, noremap = true })
 
   if diag_conf.jump_num_shortcut then
-    self.remove_num_map = function()
-      for i = 1, #(act.action_tuples or {}) do
-        pcall(vim.keymap.del, 'n', tostring(i), { buffer = self.main_buf })
-      end
-    end
-
     act:num_shortcut(self.main_buf, function()
       if self.winid and api.nvim_win_is_valid(self.winid) then
         api.nvim_win_close(self.winid, true)
@@ -112,9 +106,7 @@ function diag:code_action_cb(hi_name)
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
         api.nvim_win_close(self.preview_winid, true)
       end
-      vim.defer_fn(function()
-        clean_ctx()
-      end, 10)
+      clean_ctx()
     end)
   end
 
@@ -140,13 +132,10 @@ function diag:code_action_cb(hi_name)
         curlnum = curlnum + direction > lines and 4 or curlnum + direction
       end
       api.nvim_win_set_cursor(self.winid, { curlnum, col })
-      api.nvim_buf_clear_namespace(
-        self.bufnr,
-        ns,
-        curlnum > 4 and curlnum - 2 or lines - 1,
-        curlnum > 4 and curlnum - 1 or lines
-      )
-      api.nvim_buf_add_highlight(self.bufnr, ns, 'FinderSelection', curlnum - 1, 6, -1)
+      api.nvim_buf_clear_namespace(self.bufnr, ns, 0, -1)
+      if curlnum > 3 then
+        api.nvim_buf_add_highlight(self.bufnr, ns, 'FinderSelection', curlnum - 1, 6, -1)
+      end
       self.preview_winid = act:action_preview(self.winid, self.main_buf, hi_name)
     end)
   end

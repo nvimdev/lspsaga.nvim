@@ -36,7 +36,7 @@ local default_config = {
     max_show_height = 0.6,
     text_hl_follow = true,
     border_follow = true,
-    extend_relatedInformation = true,
+    extend_relatedInformation = false,
     keys = {
       exec_action = 'o',
       quit = 'q',
@@ -74,7 +74,6 @@ local default_config = {
     max_height = 0.5,
     min_width = 30,
     force_max_height = false,
-    show_tip = false,
     keys = {
       jump_to = 'p',
       expand_or_jump = 'o',
@@ -120,8 +119,7 @@ local default_config = {
     custom_sort = nil,
     preview_width = 0.4,
     keys = {
-      jump = 'o',
-      expand_collapse = 'u',
+      expand_or_jump = 'o',
       quit = 'q',
     },
   },

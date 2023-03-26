@@ -176,7 +176,6 @@ local get_data_fn = function(fname)
   local data
   return function()
     if uv.fs_stat(fname).mtime.nsec == init_time and data then
-      print('using cached')
       return data
     else
       local fd = uv.fs_open(fname, 'r', 438)
@@ -242,10 +241,11 @@ function finder:do_request(params, method)
       end
     end
 
-    if #result == 0 then
+    if vim.tbl_isempty(result) then
       self.request_status[method] = true
       return
     end
+
     local uri = result[1].uri or result[1].targetUri
     if method == methods(1) and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf() then
       local col = api.nvim_win_get_cursor(0)[2]
@@ -284,22 +284,38 @@ function finder:create_finder_data(result, method)
   local parent = self.lspdata[method]
   parent.data = {}
 
-  local wipe = false
   local get_data_fns = {}
   for i, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
-      vim.notify('[Lspsaga] miss uri in server response', vim.logs.level.WARN)
+      vim.notify('[Lspsaga] miss uri in server response', vim.log.levels.WARN)
       return
     end
+
     local bufnr = vim.uri_to_bufnr(uri)
     local fname = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     local full_fname = fname
+    local range = res.targetRange or res.range
     if not get_data_fns[full_fname] then
       get_data_fns[full_fname] = get_data_fn(full_fname)
     end
+    if libs.iswin then
+      fname = fname:gsub('^%l', fname:sub(1, 1):upper())
+    end
+    fname = table.concat(libs.get_path_info(bufnr, 2), libs.path_sep)
+
+    local node = {
+      bufnr = bufnr,
+      fname = fname,
+      row = range.start.line,
+      col = range.start.character,
+      ecol = range['end'].character,
+      method = method,
+      winline = -1,
+    }
+
     if not api.nvim_buf_is_loaded(bufnr) then
-      wipe = true
+      node.wipe = true
       -- --ignore the FileType event avoid trigger the lsp
       -- vim.opt.eventignore:append({ 'FileType' })
       -- fn.bufload(bufnr)
@@ -309,25 +325,6 @@ function finder:create_finder_data(result, method)
         self.wipe_buffers[#self.wipe_buffers + 1] = bufnr
       end
     end
-
-    if libs.iswin then
-      fname = fname:gsub('^%l', fname:sub(1, 1):upper())
-    end
-    fname = table.concat(libs.get_path_info(bufnr, 2), libs.path_sep)
-
-    local range = res.targetRange or res.range
-
-    local node = {
-      bufnr = bufnr,
-      fname = fname,
-      wipe = wipe,
-      row = range.start.line,
-      col = range.start.character,
-      ecol = range['end'].character,
-      method = method,
-      winline = -1,
-    }
-
     -- node.word = api.nvim_buf_get_text(node.bufnr, node.row, 0, node.row, -1, {})[1]
     node.word = get_text(full_fname, {node.row},get_data_fns[full_fname])[node.row]
     if node.word:find('^%s') then
@@ -412,8 +409,8 @@ function finder:render_finder()
           })
 
           if line_count > float_height + 10 and need_yield then
-            print(string.format('first yield spent time: %s ms',(vim.loop.hrtime()-start_time)/1e6))
-            need_yield = co.yield()
+            table.sort(width)
+            need_yield = co.yield(width[#width])
             start_time = vim.loop.hrtime()
           end
         end
@@ -424,33 +421,33 @@ function finder:render_finder()
 
     if api.nvim_buf_line_count(self.bufnr) == 0 then
       clean_ctx()
-      vim.notify('[Lspsaga] finder nothing to show', vim.logs.level.WARN)
+      vim.notify('[Lspsaga] finder nothing to show', vim.log.levels.WARN)
       return
     end
     api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { '' })
     vim.bo[self.bufnr].modifiable = false
   end)
 
-  local status = co.resume(self.render_fn, true)
-  if not status then
-    vim.notify('[Lspsaga] get float_width error in render coroutine', vim.logs.level.ERROR)
-    return
-  end
   self:apply_map()
 
-  table.sort(width)
-  local float_width = width[#width]
-
-  self:create_finder_win(float_width, float_height)
+  while true do
+    local _, float_width = co.resume(self.render_fn, true)
+    if not float_width and co.status(self.render_fn) == 'dead' then
+      table.sort(width)
+      float_width = width[#width]
+    end
+    self:create_finder_win(float_width)
+    break
+  end
 end
 
-function finder:create_finder_win(width, height)
+function finder:create_finder_win(width)
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
 
   local opt = {
     relative = 'editor',
     width = width,
-    height = height,
+    height = get_max_height(),
     no_size_override = true,
   }
 
@@ -515,19 +512,21 @@ function finder:create_finder_win(width, height)
       api.nvim_buf_clear_namespace(self.bufnr, ns_select, 0, -1)
       local col = 5
       local buf_lines = api.nvim_buf_line_count(self.bufnr)
+      local in_fname, node
 
       if curline == 1 or curline > buf_lines - 1 then
         curline = 3
         start = 2
+        node = self:get_node({ lnum = 3 })
       elseif curline == 2 and curline < before then
         curline = buf_lines - 1
-        local node = self:get_node({ lnum = curline })
+        node = self:get_node({ lnum = curline })
         start = node.start
       else
-        local node = self:get_node({ lnum = curline })
+        node = self:get_node({ lnum = curline })
         local increase = curline > before and 1 or -1
         local text = api.nvim_get_current_line()
-        local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+        in_fname = text:find(ui.expand) or text:find(ui.collapse)
         col = in_fname and 7 or col
 
         if not node and not in_fname then
@@ -560,7 +559,10 @@ function finder:create_finder_win(width, height)
         -1
       )
       api.nvim_buf_add_highlight(self.bufnr, ns_select, 'FinderSelection', curline - 1, 5, -1)
-      self:open_preview()
+
+      if not in_fname then
+        self:open_preview(node)
+      end
     end,
   })
 
@@ -829,14 +831,12 @@ local function clear_preview_ns(ns, buf)
   pcall(api.nvim_buf_clear_namespace, buf, ns, 0, -1)
 end
 
-function finder:open_preview()
+function finder:open_preview(node)
   if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
     local before_buf = api.nvim_win_get_buf(self.peek_winid)
     clear_preview_ns(ns_id, before_buf)
   end
 
-  local curline = api.nvim_win_get_cursor(self.winid)[1]
-  local node = self:get_node({ lnum = curline })
   if not node then
     return
   end
@@ -859,9 +859,6 @@ function finder:open_preview()
 
   api.nvim_win_set_buf(self.peek_winid, node.bufnr)
   api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
-  api.nvim_win_call(self.peek_winid, function()
-    vim.cmd.normal('zt')
-  end)
   highlight_word()
 
   api.nvim_set_option_value('winbar', '', {
@@ -875,17 +872,19 @@ function finder:open_preview()
     { scope = 'local', win = self.peek_winid }
   )
 
-  local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
-
-  if fn.has('nvim-0.9') then
-    vim.treesitter.start(node.bufnr, lang)
-  else
-    vim.bo[node.bufnr].syntax = 'on'
-    pcall(
-      ---@diagnostic disable-next-line: param-type-mismatch
-      vim.cmd,
-      string.format('syntax include %s syntax/%s.vim', '@' .. lang, vim.bo[self.main_buf].filetype)
-    )
+  if fn.has('nvim-0.9') == 1 and node.wipe and not node.loaded then
+    local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
+    vim.defer_fn(function()
+      vim.treesitter.start(node.bufnr, lang)
+    end, 5)
+    node.loaded = true
+  elseif node.wipe and fn.has('nvim-0.8') == 1 and not node.loaded then
+    api.nvim_buf_call(node.bufnr, function()
+      vim.defer_fn(function()
+        vim.cmd('TSBufEnable highlight')
+      end, 5)
+    end)
+    node.loaded = true
   end
 end
 
