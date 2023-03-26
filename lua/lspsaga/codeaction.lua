@@ -2,6 +2,7 @@ local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
+local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local act = {}
 local ctx = {}
 
@@ -92,9 +93,6 @@ function act:action_callback()
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
   end
-
-  -- dsiable some move keys in codeaction
-  libs.disable_move_keys(self.action_bufnr)
 
   self:apply_action_keys()
   if config.code_action.num_shortcut then
@@ -222,12 +220,16 @@ end
 
 function act:num_shortcut(bufnr, callback)
   for num, _ in pairs(self.action_tuples or {}) do
-    vim.keymap.set('n', tostring(num), function()
-      if callback then
-        callback()
-      end
-      self:do_code_action(num)
-    end, { buffer = bufnr })
+    nvim_buf_set_keymap(bufnr, 'n', tostring(num), '', {
+      noremap = true,
+      nowait = true,
+      callback = function()
+        if callback then
+          callback()
+        end
+        self:do_code_action(num)
+      end,
+    })
   end
 end
 
@@ -286,8 +288,13 @@ function act:do_code_action(num)
     return
   end
 
-  local action = self.action_tuples[number][2]
+  local action = vim.deepcopy(self.action_tuples[number][2])
   local client = lsp.get_client_by_id(self.action_tuples[number][1])
+
+  local curbuf = api.nvim_get_current_buf()
+  for i = 1, #self.action_tuples do
+    pcall(api.nvim_buf_del_keymap, curbuf, 'n', tostring(i))
+  end
 
   if
     not action.edit

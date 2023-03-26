@@ -1,36 +1,34 @@
-*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 March 22
+*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 March 26
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
 
-1. Install                                              |lspsaga.nvim-install|
-  - Lazy                                           |lspsaga.nvim-install-lazy|
-  - Packer                                       |lspsaga.nvim-install-packer|
-2. Example Configuration                  |lspsaga.nvim-example-configuration|
-  - Using Lspsaga           |lspsaga.nvim-example-configuration-using-lspsaga|
-  - Default options       |lspsaga.nvim-example-configuration-default-options|
-  - :Lspsaga lsp_finder|lspsaga.nvim-example-configuration-:lspsaga-lsp_finder|
-  - :Lspsaga peek_definition|lspsaga.nvim-example-configuration-:lspsaga-peek_definition|
-  - :Lspsaga goto_definition|lspsaga.nvim-example-configuration-:lspsaga-goto_definition|
-  - :Lspsaga code_action|lspsaga.nvim-example-configuration-:lspsaga-code_action|
-  - :Lspsaga Lightbulb |lspsaga.nvim-example-configuration-:lspsaga-lightbulb|
-  - :Lspasga hover_doc |lspsaga.nvim-example-configuration-:lspasga-hover_doc|
-  - :Lspsaga diagnostic_jump_next|lspsaga.nvim-example-configuration-:lspsaga-diagnostic_jump_next|
-  - :Lspsaga show_diagnostics|lspsaga.nvim-example-configuration-:lspsaga-show_diagnostics|
-  - :Lspsaga rename       |lspsaga.nvim-example-configuration-:lspsaga-rename|
-  - :Lspsaga outline     |lspsaga.nvim-example-configuration-:lspsaga-outline|
-  - :Lspsaga incoming_calls / outgoing_calls|lspsaga.nvim-example-configuration-:lspsaga-incoming_calls-/-outgoing_calls|
-  - :Lspsaga symbols in winbar|lspsaga.nvim-example-configuration-:lspsaga-symbols-in-winbar|
-  - :Lspsaga symbols in a custom winbar/statusline|lspsaga.nvim-example-configuration-:lspsaga-symbols-in-a-custom-winbar/statusline|
-  - :Lspsaga term_toggle|lspsaga.nvim-example-configuration-:lspsaga-term_toggle|
-  - :Lspsaga beacon       |lspsaga.nvim-example-configuration-:lspsaga-beacon|
-  - Customizing Lspsaga’s Appearance|lspsaga.nvim-example-configuration-customizing-lspsaga’s-appearance|
-  - :Lspsaga UI               |lspsaga.nvim-example-configuration-:lspsaga-ui|
-3. Custom Highlighting                      |lspsaga.nvim-custom-highlighting|
-4. Custom Kind                                      |lspsaga.nvim-custom-kind|
-5. Donate                                                |lspsaga.nvim-donate|
-6. Backers                                              |lspsaga.nvim-backers|
-7. License                                              |lspsaga.nvim-license|
+  - Install                                             |lspsaga.nvim-install|
+  - Example Configuration                 |lspsaga.nvim-example-configuration|
+  - Using Lspsaga                                 |lspsaga.nvim-using-lspsaga|
+  - Default options                             |lspsaga.nvim-default-options|
+  - :Lspsaga lsp_finder                     |lspsaga.nvim-:lspsaga-lsp_finder|
+  - :Lspsaga peek_definition           |lspsaga.nvim-:lspsaga-peek_definition|
+  - :Lspsaga goto_definition           |lspsaga.nvim-:lspsaga-goto_definition|
+  - :Lspsaga code_action                   |lspsaga.nvim-:lspsaga-code_action|
+  - :Lspsaga Lightbulb                       |lspsaga.nvim-:lspsaga-lightbulb|
+  - :Lspasga hover_doc                       |lspsaga.nvim-:lspasga-hover_doc|
+  - :Lspsaga diagnostic_jump_next |lspsaga.nvim-:lspsaga-diagnostic_jump_next|
+  - :Lspsaga show_diagnostics         |lspsaga.nvim-:lspsaga-show_diagnostics|
+  - :Lspsaga rename                             |lspsaga.nvim-:lspsaga-rename|
+  - :Lspsaga outline                           |lspsaga.nvim-:lspsaga-outline|
+  - :Lspsaga incoming_calls / outgoing_calls|lspsaga.nvim-:lspsaga-incoming_calls-/-outgoing_calls|
+  - :Lspsaga symbols in winbar       |lspsaga.nvim-:lspsaga-symbols-in-winbar|
+  - :Lspsaga symbols in a custom winbar/statusline|lspsaga.nvim-:lspsaga-symbols-in-a-custom-winbar/statusline|
+  - :Lspsaga term_toggle                   |lspsaga.nvim-:lspsaga-term_toggle|
+  - :Lspsaga beacon                             |lspsaga.nvim-:lspsaga-beacon|
+  - Customizing Lspsaga’s Appearance|lspsaga.nvim-customizing-lspsaga’s-appearance|
+  - :Lspsaga UI                                     |lspsaga.nvim-:lspsaga-ui|
+1. Custom Highlighting                      |lspsaga.nvim-custom-highlighting|
+2. Custom Kind                                      |lspsaga.nvim-custom-kind|
+3. Donate                                                |lspsaga.nvim-donate|
+4. Backers                                              |lspsaga.nvim-backers|
+5. License                                              |lspsaga.nvim-license|
 >
                                      __
                                     / /________  _________ _____ _____ _
@@ -42,8 +40,7 @@ Table of Contents                             *lspsaga.nvim-table-of-contents*
                               ⚡ Designed for convenience and efficiency ⚡
 <
 
-A lightweight LSP plugin based on Neovim’s built-in LSP with a highly
-performant UI.
+Neovim lsp enhance plugin.
 
 <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 
@@ -51,8 +48,7 @@ performant UI.
 1. |lspsaga.nvim-install|2. |lspsaga.nvim-example-configuration|3. |lspsaga.nvim-using-lspsaga|4. |lspsaga.nvim-customizing-lspsaga’s-appearance|5. |lspsaga.nvim-backers|6. |lspsaga.nvim-donate|7. |lspsaga.nvim-license|
 
 
-==============================================================================
-1. Install                                              *lspsaga.nvim-install*
+INSTALL                                                 *lspsaga.nvim-install*
 
 You can use plugin managers like `lazy.nvim` and `packer.nvim` to install
 `lspsaga` and lazy load `lspsaga` using the plugin manager’s keyword for lazy
@@ -60,13 +56,21 @@ loading (`lazy` for `lazy.nvim` and `opt` for `packer.nvim`).
 
 
 - `cmd` - Load `lspsaga` only when a `lspsaga` command is called.
-- `ft` - `lazy.nvim` and `packer.nvim` both provide lazy loading by filetype. This way, you can load `lspsaga` according to the filetypes that you use a LSP in.
-- `event` - Only load `lspsaga` on an event like `BufRead` or `BufReadPost`. Do make sure that your LSP plugins, like lsp-zero <https://github.com/VonHeikemen/lsp-zero.nvim> or lsp-config <https://github.com/neovim/nvim-lspconfig>, are loaded before loading `lspsaga`.
-- `dependencies` - For `lazy.nvim` you can set `glepnir/lspsaga.nvim` as a dependency of `nvim-lspconfig` using the `dependencies` keyword and vice versa. For `packer.nvim` you should use `requires` as the keyword instead.
-- `after` - For `packer.nvim` you can use `after` keyword to ensure `lspsaga` only loads after your LSP plugins have loaded. This is not necessary for `lazy.nvim`.
-
-
-LAZY                                               *lspsaga.nvim-install-lazy*
+- `ft` - `lazy.nvim` and `packer.nvim` both provide lazy loading by filetype.
+    This way, you can load `lspsaga` according to the filetypes that you use a LSP
+    in.
+- `event` - Only load `lspsaga` on an event like `BufRead` or `BufReadPost`. Do
+    make sure that your LSP plugins, like lsp-zero
+    <https://github.com/VonHeikemen/lsp-zero.nvim> or lsp-config
+    <https://github.com/neovim/nvim-lspconfig>, are loaded before loading
+    `lspsaga`.
+- `dependencies` - For `lazy.nvim` you can set `glepnir/lspsaga.nvim` as a
+    dependency of `nvim-lspconfig` using the `dependencies` keyword and vice versa.
+    For `packer.nvim` you should use `requires` as the keyword instead.
+- `after` - For `packer.nvim` you can use `after` keyword to ensure `lspsaga`
+    only loads after your LSP plugins have loaded. This is not necessary for
+    `lazy.nvim`.
+- Lazy <https://github.com/folke/lazy.nvim>
 
 >lua
     require("lazy").setup({
@@ -84,7 +88,7 @@ LAZY                                               *lspsaga.nvim-install-lazy*
 <
 
 
-PACKER                                           *lspsaga.nvim-install-packer*
+- Packer <https://github.com/wbthomason/packer.nvim>
 
 >lua
     use({
@@ -102,8 +106,7 @@ PACKER                                           *lspsaga.nvim-install-packer*
 <
 
 
-==============================================================================
-2. Example Configuration                  *lspsaga.nvim-example-configuration*
+EXAMPLE CONFIGURATION                     *lspsaga.nvim-example-configuration*
 
 >lua
     require("lazy").setup({
@@ -205,7 +208,7 @@ PACKER                                           *lspsaga.nvim-install-packer*
 <
 
 
-USING LSPSAGA               *lspsaga.nvim-example-configuration-using-lspsaga*
+USING LSPSAGA                                     *lspsaga.nvim-using-lspsaga*
 
 **Note that the title in the floating window requires Neovim 0.9 or greater.**
 **If you are using Neovim 0.8 you won’t see a title.**
@@ -220,7 +223,7 @@ with the default options!**
 You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
 
 
-DEFAULT OPTIONS           *lspsaga.nvim-example-configuration-default-options*
+DEFAULT OPTIONS                                 *lspsaga.nvim-default-options*
 
 >lua
       preview = {
@@ -235,7 +238,7 @@ DEFAULT OPTIONS           *lspsaga.nvim-example-configuration-default-options*
 <
 
 
-:LSPSAGA LSP_FINDER   *lspsaga.nvim-example-configuration-:lspsaga-lsp_finder*
+:LSPSAGA LSP_FINDER                         *lspsaga.nvim-:lspsaga-lsp_finder*
 
 A `finder` to show the definition, reference and implementation (only shown
 when current hovered word is a function, a type, a class, or an interface).
@@ -269,7 +272,7 @@ Default options:
 lsp_finder showcase ~
 
 
-:LSPSAGA PEEK_DEFINITION*lspsaga.nvim-example-configuration-:lspsaga-peek_definition*
+:LSPSAGA PEEK_DEFINITION               *lspsaga.nvim-:lspsaga-peek_definition*
 
 There are two commands, `:Lspsaga peek_definition` and `:Lspsaga
 goto_definition`. The `peek_definition` command works like the VSCode command
@@ -298,12 +301,12 @@ The steps demonstrated in this showcase are:
 - Lspsaga shows a beacon highlight after jumping to the file
 
 
-:LSPSAGA GOTO_DEFINITION*lspsaga.nvim-example-configuration-:lspsaga-goto_definition*
+:LSPSAGA GOTO_DEFINITION               *lspsaga.nvim-:lspsaga-goto_definition*
 
 Jumps to the definition of the hovered word and shows a beacon highlight.
 
 
-:LSPSAGA CODE_ACTION *lspsaga.nvim-example-configuration-:lspsaga-code_action*
+:LSPSAGA CODE_ACTION                       *lspsaga.nvim-:lspsaga-code_action*
 
 Default options:
 
@@ -334,7 +337,7 @@ The steps demonstrated in this showcase are:
 - Pressing `<Cr>` to run the action
 
 
-:LSPSAGA LIGHTBULB     *lspsaga.nvim-example-configuration-:lspsaga-lightbulb*
+:LSPSAGA LIGHTBULB                           *lspsaga.nvim-:lspsaga-lightbulb*
 
 When there are possible code actions to be taken, a lightbulb icon will be
 shown.
@@ -354,7 +357,7 @@ Default options:
 lightbulb showcase ~
 
 
-:LSPASGA HOVER_DOC     *lspsaga.nvim-example-configuration-:lspasga-hover_doc*
+:LSPASGA HOVER_DOC                           *lspsaga.nvim-:lspasga-hover_doc*
 
 You should install the treesitter
 <https://github.com/nvim-treesitter/nvim-treesitter> markdown and markdown_line
@@ -373,7 +376,7 @@ The steps demonstrated in this showcase are:
 
 
 
-:LSPSAGA DIAGNOSTIC_JUMP_NEXT*lspsaga.nvim-example-configuration-:lspsaga-diagnostic_jump_next*
+:LSPSAGA DIAGNOSTIC_JUMP_NEXT     *lspsaga.nvim-:lspsaga-diagnostic_jump_next*
 
 Jumps to next diagnostic position and show a beacon highlight. Lspsaga will
 then show the code actions.
@@ -453,7 +456,7 @@ The steps demonstrated in this showcase are:
 
 
 
-:LSPSAGA SHOW_DIAGNOSTICS*lspsaga.nvim-example-configuration-:lspsaga-show_diagnostics*
+:LSPSAGA SHOW_DIAGNOSTICS             *lspsaga.nvim-:lspsaga-show_diagnostics*
 
 `show_line_diagnostics`, `show_buf_diagnostics`, `show_cursor_diagnostics`
 
@@ -463,7 +466,7 @@ The steps demonstrated in this showcase are:
 show_diagnostics showcase ~
 
 
-:LSPSAGA RENAME           *lspsaga.nvim-example-configuration-:lspsaga-rename*
+:LSPSAGA RENAME                                 *lspsaga.nvim-:lspsaga-rename*
 
 Uses the current LSP to rename the hovered word.
 
@@ -501,7 +504,7 @@ The steps demonstrated in this showcase are:
 - Pressing `<CR>` to execute rename
 
 
-:LSPSAGA OUTLINE         *lspsaga.nvim-example-configuration-:lspsaga-outline*
+:LSPSAGA OUTLINE                               *lspsaga.nvim-:lspsaga-outline*
 
 Default options:
 
@@ -533,7 +536,7 @@ The steps demonstrated in this showcase are:
 - Pressing `o` to jump
 
 
-:LSPSAGA INCOMING_CALLS / OUTGOING_CALLS*lspsaga.nvim-example-configuration-:lspsaga-incoming_calls-/-outgoing_calls*
+:LSPSAGA INCOMING_CALLS / OUTGOING_CALLS*lspsaga.nvim-:lspsaga-incoming_calls-/-outgoing_calls*
 
 Runs the LSP’s callhierarchy/incoming_calls.
 
@@ -557,7 +560,7 @@ Default options:
 incoming_calls showcase ~
 
 
-:LSPSAGA SYMBOLS IN WINBAR*lspsaga.nvim-example-configuration-:lspsaga-symbols-in-winbar*
+:LSPSAGA SYMBOLS IN WINBAR           *lspsaga.nvim-:lspsaga-symbols-in-winbar*
 
 This requires Neovim version >= 0.8.
 
@@ -587,7 +590,7 @@ Default options:
 Symbols in winbar ~
 
 
-:LSPSAGA SYMBOLS IN A CUSTOM WINBAR/STATUSLINE*lspsaga.nvim-example-configuration-:lspsaga-symbols-in-a-custom-winbar/statusline*
+:LSPSAGA SYMBOLS IN A CUSTOM WINBAR/STATUSLINE*lspsaga.nvim-:lspsaga-symbols-in-a-custom-winbar/statusline*
 
 Lspsaga provides an API that you can use in your custom winbar or statusline.
 
@@ -596,14 +599,14 @@ Lspsaga provides an API that you can use in your custom winbar or statusline.
 <
 
 
-:LSPSAGA TERM_TOGGLE *lspsaga.nvim-example-configuration-:lspsaga-term_toggle*
+:LSPSAGA TERM_TOGGLE                       *lspsaga.nvim-:lspsaga-term_toggle*
 
 A simple floating terminal.
 
 Toggling the floating terminal ~
 
 
-:LSPSAGA BEACON           *lspsaga.nvim-example-configuration-:lspsaga-beacon*
+:LSPSAGA BEACON                                 *lspsaga.nvim-:lspsaga-beacon*
 
 after jump from float window there will show beacon to remind you where the
 cursor is.
@@ -618,10 +621,10 @@ cursor is.
 `frequency` the blink frequency.
 
 
-CUSTOMIZING LSPSAGA’S APPEARANCE*lspsaga.nvim-example-configuration-customizing-lspsaga’s-appearance*
+CUSTOMIZING LSPSAGA’S APPEARANCE*lspsaga.nvim-customizing-lspsaga’s-appearance*
 
 
-:LSPSAGA UI                   *lspsaga.nvim-example-configuration-:lspsaga-ui*
+:LSPSAGA UI                                         *lspsaga.nvim-:lspsaga-ui*
 
 Default UI options
 
@@ -644,7 +647,7 @@ Default UI options
 
 
 ==============================================================================
-3. Custom Highlighting                      *lspsaga.nvim-custom-highlighting*
+1. Custom Highlighting                      *lspsaga.nvim-custom-highlighting*
 
 All highlight groups can be found in highlight.lua
 <./lua/lspsaga/highlight.lua>.
@@ -657,7 +660,7 @@ item is `SagaWinbarSep`.
 
 
 ==============================================================================
-4. Custom Kind                                      *lspsaga.nvim-custom-kind*
+2. Custom Kind                                      *lspsaga.nvim-custom-kind*
 
 Modify `ui.kind` to change the icons of the kinds.
 
@@ -670,7 +673,7 @@ the `icon`. If table is passed, it will be passed as `{ icon, highlight group
 
 
 ==============================================================================
-5. Donate                                                *lspsaga.nvim-donate*
+3. Donate                                                *lspsaga.nvim-donate*
 
 Currently, I am in need of some donations. If you’d like to support my work
 financially, please donate through Github Sponsor button or PayPal
@@ -678,7 +681,7 @@ financially, please donate through Github Sponsor button or PayPal
 
 
 ==============================================================================
-6. Backers                                              *lspsaga.nvim-backers*
+4. Backers                                              *lspsaga.nvim-backers*
 
 Thanks for everyone!
 
@@ -691,12 +694,12 @@ Darrion <https://github.com/ca-mantis-shrimp> @Ceserani Alessandro
 
 
 ==============================================================================
-7. License                                              *lspsaga.nvim-license*
+5. License                                              *lspsaga.nvim-license*
 
 Licensed under the MIT <./LICENSE> license.
 
 ==============================================================================
-8. Links                                                  *lspsaga.nvim-links*
+6. Links                                                  *lspsaga.nvim-links*
 
 1. **: https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white
 2. **: https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white

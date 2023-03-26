@@ -132,6 +132,7 @@ function hover:open_floating_preview(res, option_fn)
     bufnr = self.preview_bufnr,
   }
   _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
+  vim.bo[self.preview_bufnr].modifiable = false
 
   vim.wo[self.preview_winid].conceallevel = 2
   vim.wo[self.preview_winid].concealcursor = 'niv'
