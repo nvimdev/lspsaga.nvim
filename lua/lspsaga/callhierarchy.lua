@@ -471,8 +471,8 @@ local function create_preview_window(winid)
   }
   opt.width = vim.o.columns - opt.col - 6
 
-  local rtop = window.combine_char()['righttop'][config.ui.border]
-  local rbottom = window.combine_char()['rightbottom'][config.ui.border]
+  local rtop = window.combine_char()['top'][config.ui.border]
+  local rbottom = window.combine_char()['bottom'][config.ui.border]
   local content_opt = {
     contents = {},
     border_side = {
