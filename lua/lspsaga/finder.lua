@@ -707,6 +707,7 @@ local function create_preview_window(finder_winid)
   local opts = {
     relative = 'editor',
     no_size_override = true,
+    zindex = 80,
   }
 
   local winconfig = api.nvim_win_get_config(finder_winid)
