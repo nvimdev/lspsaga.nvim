@@ -41,11 +41,11 @@ function act:action_callback()
       else
         action_title = action_title
           .. '  ('
-          .. vim.lsp.get_client_by_id(client_with_actions[1]).name
+          .. lsp.get_client_by_id(client_with_actions[1]).name
           .. ')'
       end
     end
-    table.insert(contents, action_title)
+    contents[#contents + 1] = action_title
   end
 
   local content_opts = {
@@ -111,6 +111,39 @@ local function map_keys(mode, keys, action, options)
   end
 end
 
+---@private
+---@param bufnr integer
+---@param mode "v"|"V"
+---@return table {start={row, col}, end={row, col}} using (1, 0) indexing
+local function range_from_selection(bufnr, mode)
+  -- TODO: Use `vim.region()` instead https://github.com/neovim/neovim/pull/13896
+  -- [bufnum, lnum, col, off]; both row and column 1-indexed
+  local start = vim.fn.getpos('v')
+  local end_ = vim.fn.getpos('.')
+  local start_row = start[2]
+  local start_col = start[3]
+  local end_row = end_[2]
+  local end_col = end_[3]
+
+  -- A user can start visual selection at the end and move backwards
+  -- Normalize the range to start < end
+  if start_row == end_row and end_col < start_col then
+    end_col, start_col = start_col, end_col
+  elseif end_row < start_row then
+    start_row, end_row = end_row, start_row
+    start_col, end_col = end_col, start_col
+  end
+  if mode == 'V' then
+    start_col = 1
+    local lines = api.nvim_buf_get_lines(bufnr, end_row - 1, end_row, true)
+    end_col = #lines[1]
+  end
+  return {
+    ['start'] = { start_row, start_col - 1 },
+    ['end'] = { end_row, end_col - 1 },
+  }
+end
+
 function act:apply_action_keys()
   map_keys('n', config.code_action.keys.exec, function()
     self:do_code_action()
@@ -135,23 +168,8 @@ function act:send_code_action_request(main_buf, options, cb)
     local end_ = assert(options.range['end'], 'range must have an `end` property')
     params = util.make_given_range_params(start, end_)
   elseif mode == 'v' or mode == 'V' then
-    -- [bufnum, lnum, col, off]; both row and column 1-indexed
-    local start = fn.getpos('v')
-    local end_ = fn.getpos('.')
-    local start_row = start[2]
-    local start_col = start[3]
-    local end_row = end_[2]
-    local end_col = end_[3]
-
-    -- A user can start visual selection at the end and move backwards
-    -- Normalize the range to start < end
-    if start_row == end_row and end_col < start_col then
-      end_col, start_col = start_col, end_col
-    elseif end_row < start_row then
-      start_row, end_row = end_row, start_row
-      start_col, end_col = end_col, start_col
-    end
-    params = util.make_given_range_params({ start_row, start_col - 1 }, { end_row, end_col - 1 })
+    local range = range_from_selection(0, mode)
+    params = util.make_given_range_params(range.start, range['end'])
   else
     params = util.make_range_params()
   end
@@ -166,7 +184,7 @@ function act:send_code_action_request(main_buf, options, cb)
 
     for client_id, result in pairs(results) do
       for _, action in pairs(result.result or {}) do
-        table.insert(self.action_tuples, { client_id, action })
+        self.action_tuples[#self.action_tuples + 1] = { client_id, action }
       end
     end
 
@@ -174,7 +192,7 @@ function act:send_code_action_request(main_buf, options, cb)
       local res = self:extend_gitsing(params)
       if res then
         for _, action in pairs(res) do
-          table.insert(self.action_tuples, { 'gitsigns', action })
+          self.action_tuples[#self.action_tuples + 1] = { 'gitsigns', action }
         end
       end
     end
@@ -349,7 +367,7 @@ function act:get_action_diff(num, main_buf)
   return diff
 end
 
-function act:action_preview(main_winid, main_buf)
+function act:action_preview(main_winid, main_buf, border_hi)
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
     self.preview_winid = nil
@@ -377,7 +395,7 @@ function act:action_preview(main_winid, main_buf)
     no_size_override = true,
     col = win_conf.col[false],
     anchor = win_conf.anchor,
-    -- focusable = false,
+    focusable = false,
   }
   local winheight = api.nvim_win_get_height(win_conf.win)
 
@@ -400,7 +418,7 @@ function act:action_preview(main_winid, main_buf)
     bufhidden = 'wipe',
     highlight = {
       normal = 'ActionPreviewNormal',
-      border = 'ActionPreviewBorder',
+      border = border_hi or 'ActionPreviewBorder',
     },
   }
 
@@ -450,13 +468,13 @@ function act:extend_gitsing(params)
         action({ params.range.start.line, params.range['end'].line })
       end
     end
-    table.insert(actions, {
+    actions[#actions + 1] = {
       title = title,
       action = function()
         local bufnr = vim.uri_to_bufnr(params.textDocument.uri)
         vim.api.nvim_buf_call(bufnr, cb)
       end,
-    })
+    }
   end
   return actions
 end

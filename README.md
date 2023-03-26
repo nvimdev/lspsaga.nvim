@@ -9,7 +9,7 @@
                           ⚡ Designed for convenience and efficiency ⚡
 ```
 
-A lightweight LSP plugin based on Neovim's built-in LSP with a highly performant UI.
+Neovim lsp enhance plugin.
 
 [![](https://img.shields.io/badge/Element-0DBD8B?style=for-the-badge&logo=element&logoColor=white)](https://matrix.to/#/#lspsaga-nvim:matrix.org)
 
@@ -21,7 +21,7 @@ A lightweight LSP plugin based on Neovim's built-in LSP with a highly performant
 6. [Donate](#donate)
 7. [License](#license)
 
-# Install
+## Install
 
 You can use plugin managers like `lazy.nvim` and `packer.nvim` to install `lspsaga` and lazy load `lspsaga` using the plugin manager's keyword for lazy loading (`lazy` for `lazy.nvim` and `opt` for `packer.nvim`).
 
@@ -31,7 +31,7 @@ You can use plugin managers like `lazy.nvim` and `packer.nvim` to install `lspsa
 - `dependencies` - For `lazy.nvim` you can set `glepnir/lspsaga.nvim` as a dependency of `nvim-lspconfig` using the `dependencies` keyword and vice versa. For `packer.nvim` you should use `requires` as the keyword instead.
 - `after` - For `packer.nvim` you can use `after` keyword to ensure `lspsaga` only loads after your LSP plugins have loaded. This is not necessary for `lazy.nvim`.
 
-## [Lazy](https://github.com/folke/lazy.nvim)
+- [Lazy](https://github.com/folke/lazy.nvim)
 
 ```lua
 require("lazy").setup({
@@ -48,7 +48,7 @@ require("lazy").setup({
 }, opt)
 ```
 
-## [Packer](https://github.com/wbthomason/packer.nvim)
+- [Packer](https://github.com/wbthomason/packer.nvim)
 
 ```lua
 use({
@@ -65,7 +65,7 @@ use({
 })
 ```
 
-# Example Configuration
+## Example Configuration
 
 ```lua
 require("lazy").setup({

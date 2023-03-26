@@ -5,7 +5,6 @@ local libs = require('lspsaga.libs')
 local symbar = require('lspsaga.symbolwinbar')
 local window = require('lspsaga.window')
 local outline_conf = config.outline
-local insert = table.insert
 local ctx = {}
 
 function ot.__newindex(t, k, v)
@@ -103,7 +102,7 @@ local function parse_symbols(buf, symbols)
       end
       if not symbar.node_is_keyword(buf, v) then
         local tmp = tmp_node(v)
-        insert(res[v.kind].data, tmp)
+        table.insert(res[v.kind].data, tmp)
       end
       if v.children then
         recursive_parse(v.children)
@@ -252,7 +251,6 @@ function ot:expand_collapse()
     api.nvim_buf_add_highlight(
       self.bufnr,
       0,
-      ---@diagnostic disable-next-line: need-check-nil
       prefix .. kind[node.data[1].kind][1],
       curline - 1,
       5,
@@ -265,9 +263,9 @@ function ot:expand_collapse()
   local lines = {}
   local text = api.nvim_get_current_line()
   text = text:gsub(config.ui.expand, config.ui.collapse)
-  insert(lines, text)
+  lines[#lines + 1] = text
   for i, v in pairs(node.data) do
-    insert(lines, v.name)
+    lines[#lines + 1] = v.name
     v.winline = curline + i
   end
   vim.bo[self.bufnr].modifiable = true
@@ -278,7 +276,6 @@ function ot:expand_collapse()
   api.nvim_buf_add_highlight(
     self.bufnr,
     0,
-    ---@diagnostic disable-next-line: need-check-nil
     prefix .. kind[node.data[1].kind][1],
     curline - 1,
     5,
@@ -334,21 +331,22 @@ function ot:auto_preview()
     return
   end
 
-  local content = api.nvim_buf_get_lines(
-    self.render_buf,
-    range.start.line,
-    range['end'].line + config.preview.lines_below,
-    false
-  )
+  if range.start.line == range['end'].line then
+    range['end'].line = range['end'].line + 1
+  end
+
+  local content =
+    api.nvim_buf_get_lines(self.render_buf, range.start.line, range['end'].line, false)
 
   local WIN_WIDTH = vim.o.columns
-  local max_width = math.floor(WIN_WIDTH * 0.5)
+  local max_width = math.floor(WIN_WIDTH * outline_conf.preview_width)
 
   local opts = {
     relative = 'editor',
     style = 'minimal',
-    height = #content,
+    height = #content > 0 and #content or 1,
     width = max_width,
+    no_size_override = true,
   }
 
   local winid = fn.bufwinid(self.render_buf)
@@ -375,7 +373,6 @@ function ot:auto_preview()
       opts.row = fn.winline()
     end
   end
-  opts.noautocmd = true
 
   local content_opts = {
     contents = content,
@@ -474,32 +471,31 @@ function ot:render_outline(buf, symbols)
   local kind = get_kind() or {}
   local fname = libs.get_path_info(buf, 1)
   local data = libs.icon_from_devicon(vim.bo[buf].filetype)
-  ---@diagnostic disable-next-line: need-check-nil
-  insert(lines, ' ' .. (data[1] or '') .. ' ' .. fname[1])
+  lines[#lines + 1] = ' ' .. data[1] .. fname[1]
   local prefix = get_hi_prefix()
   local hi = {}
 
   for k, v in pairs(res) do
     local scope = {}
     local indent_with_icon = '  ' .. config.ui.collapse
-    insert(lines, indent_with_icon .. ' ' .. kind[k][1] .. ':' .. #v.data)
+    lines[#lines + 1] = indent_with_icon .. ' ' .. kind[k][1] .. ':' .. #v.data
     scope['SagaCount'] = { #indent_with_icon + #kind[k][1] + 1, -1 }
     scope['SagaCollapse'] = { 0, #indent_with_icon }
     scope[prefix .. kind[k][1]] = { #indent_with_icon, -1 }
-    insert(hi, scope)
+    hi[#hi + 1] = scope
     v.winline = #lines
     for j, node in pairs(v.data) do
       node.hi_scope = {}
       local indent = j == #v.data and '  └' .. '─' or '  ├' .. '─'
       node.name = indent .. kind[node.kind][2] .. node.name
-      insert(lines, node.name)
+      lines[#lines + 1] = node.name
       node.hi_scope['OutlineIndent'] = { 0, #indent }
       node.hi_scope[prefix .. kind[node.kind][1]] = { #indent, #indent + #kind[node.kind][2] }
-      insert(hi, node.hi_scope)
+      hi[#hi + 1] = node.hi_scope
       node.winline = #lines
     end
-    table.insert(lines, '')
-    table.insert(hi, {})
+    lines[#lines + 1] = ''
+    hi[#hi + 1] = {}
   end
 
   api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)

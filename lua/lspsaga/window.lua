@@ -65,13 +65,13 @@ end
 
 function M.combine_char()
   return {
-    ['righttop'] = {
+    ['top'] = {
       ['single'] = '┬',
       ['rounded'] = '┬',
       ['double'] = '╦',
       ['solid'] = ' ',
     },
-    ['rightbottom'] = {
+    ['bottom'] = {
       ['single'] = '┴',
       ['rounded'] = '┴',
       ['double'] = '╩',
@@ -89,9 +89,9 @@ function M.combine_border(style, side, hi)
 
   for _, pos in ipairs(order) do
     if not vim.tbl_isempty(side) and vim.tbl_contains(vim.tbl_keys(side), pos) then
-      table.insert(res, { side[pos], hi })
+      res[#res + 1] = { side[pos], hi }
     else
-      table.insert(res, { border_chars[pos][style], hi })
+      res[#res + 1] = { border_chars[pos][style], hi }
     end
   end
   return res
@@ -141,18 +141,18 @@ local function make_floating_popup_options(width, height, opts)
     local pum_vis = not vim.tbl_isempty(pum_pos) -- pumvisible() can be true and pum_pos() returns {}
     if pum_vis and vim.fn.line('.') >= pum_pos.row or not pum_vis and lines_above < lines_below then
       new_option.anchor = 'N'
-      new_option.row = opts.move_row and opts.move_row or 1
+      new_option.row = 1
     else
       new_option.anchor = 'S'
-      new_option.row = opts.move_row and opts.move_row or 0
+      new_option.row = 0
     end
 
     if vim.fn.wincol() + width <= vim.o.columns then
       new_option.anchor = new_option.anchor .. 'W'
-      new_option.col = opts.move_col and opts.move_col or 0
+      new_option.col = 0
     else
       new_option.anchor = new_option.anchor .. 'E'
-      new_option.col = opts.move_col and opts.move_col or 1
+      new_option.col = 1
     end
   else
     new_option.row = opts.row
@@ -190,7 +190,7 @@ end
 local function open_shadow_win()
   local opts = get_shadow_config()
   local shadow_winhl = 'Normal:SagaShadow'
-  local shadow_bufnr = api.nvim_create_buf(false, true)
+  local shadow_bufnr = api.nvim_create_buf(false, false)
   local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
   api.nvim_set_option_value('winhl', shadow_winhl, { scope = 'local', win = shadow_winid })
   api.nvim_set_option_value('winblend', 70, { scope = 'local', win = shadow_winid })
@@ -233,6 +233,7 @@ function M.create_win_with_border(content_opts, opts)
   local bufnr = content_opts.bufnr or api.nvim_create_buf(false, false)
   -- buffer settings for contents buffer
   -- Clean up input: trim empty lines from the end, pad
+  ---@diagnostic disable-next-line: missing-parameter
   local content = lsp.util._trim(contents)
 
   if filetype then
@@ -368,6 +369,32 @@ function M.win_height_increase(content, percent)
     end, new)
   end
   return increase
+end
+
+function M.restore_option()
+  local minimal_opts = {
+    ['number'] = vim.opt.number,
+    ['relativenumber'] = vim.opt.relativenumber,
+    ['cursorline'] = vim.opt.cursorline,
+    ['cursorcolumn'] = vim.opt.cursorcolumn,
+    ['foldcolumn'] = vim.opt.foldcolumn,
+    ['spell'] = vim.opt.spell,
+    ['list'] = vim.opt.list,
+    ['signcolumn'] = vim.opt.signcolumn,
+    ['colorcolumn'] = vim.opt.colorcolumn,
+    ['statuscolumn'] = vim.opt.statuscolumn,
+    ['fillchars'] = vim.opt.fillchars,
+  }
+
+  function minimal_opts.restore()
+    for opt, val in pairs(minimal_opts) do
+      if type(val) ~= 'function' then
+        vim.opt[opt] = val
+      end
+    end
+  end
+
+  return minimal_opts
 end
 
 return M

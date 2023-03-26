@@ -29,13 +29,10 @@ local function title_text(fname)
   if not fname then
     return
   end
-  local title = {
-    { fn.fnamemodify(fname, ':t'), 'TitleString' },
-  }
+  local title = {}
   local data = libs.icon_from_devicon(vim.bo.filetype)
-  if data[1] then
-    table.insert(title, 1, { data[1] .. ' ', data[2] })
-  end
+  title[#title + 1] = { data[1], data[2] or 'TitleString' }
+  title[#title + 1] = { fn.fnamemodify(fname, ':t'), 'TitleString' }
 
   return title
 end
@@ -101,6 +98,9 @@ function def:apply_aciton_keys(buf, main_buf)
           vim.cmd('write!')
         end
         vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
+        if not node.wipe then
+          self.restore_opts.restore()
+        end
         api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
         local width = #api.nvim_get_current_line()
         libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
@@ -163,10 +163,10 @@ local function create_window(node)
   local cur_winline = fn.winline()
   local max_height = math.floor(vim.o.lines * 0.5)
   local max_width = math.floor(vim.o.columns * 0.6)
+  def.restore_opts = window.restore_option()
 
   local opt = {
     relative = 'cursor',
-    style = '',
     no_override_size = true,
     height = max_height,
     width = max_width,
