@@ -72,7 +72,7 @@ use({
 ```lua
 require("lazy").setup({
     "glepnir/lspsaga.nvim",
-    event = "BufRead",
+    event = "LspAttach",
     config = function()
       require("lspsaga").setup({})
     end,
