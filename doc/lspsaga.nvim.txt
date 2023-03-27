@@ -75,7 +75,7 @@ loading (`lazy` for `lazy.nvim` and `opt` for `packer.nvim`).
 >lua
     require("lazy").setup({
         "glepnir/lspsaga.nvim",
-        event = "BufRead",
+        event = "LspAttach",
         config = function()
             require("lspsaga").setup({})
         end,
@@ -93,7 +93,9 @@ loading (`lazy` for `lazy.nvim` and `opt` for `packer.nvim`).
 >lua
     use({
         "glepnir/lspsaga.nvim",
+        opt = true,
         branch = "main",
+        event = "LspAttach"
         config = function()
             require("lspsaga").setup({})
         end,
