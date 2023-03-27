@@ -62,6 +62,7 @@ function finder:lsp_finder()
   fn.settagstack(self.main_win, { items = items }, 't')
 
   self.request_status = {}
+  self.lspdata = {}
 
   local params = lsp.util.make_position_params()
   ---@diagnostic disable-next-line: param-type-mismatch
@@ -173,7 +174,7 @@ function finder:do_request(params, method)
   end
   lsp.buf_request_all(self.current_buf, method, params, function(results)
     local result = {}
-    for _, res in ipairs(results or {}) do
+    for _, res in pairs(results or {}) do
       if res.result and not (res.result.uri or res.result.targetUri) then
         libs.merge_table(result, res.result)
       elseif res.result and (res.result.uri or res.result.targetUri) then
@@ -205,10 +206,6 @@ function finder:create_finder_data(result, method)
   if #result == 1 and result[1].inline then
     return
   end
-  if not self.lspdata then
-    self.lspdata = {}
-  end
-
   if not self.wipe_buffers then
     self.wipe_buffers = {}
   end
@@ -249,9 +246,6 @@ function finder:create_finder_data(result, method)
 
     if not api.nvim_buf_is_loaded(bufnr) then
       node.wipe = true
-      if method == methods(1) then
-        print(bufnr, vim.inspect(node))
-      end
       --ignore the FileType event avoid trigger the lsp
       vim.opt.eventignore:append({ 'FileType' })
       fn.bufload(bufnr)
@@ -370,6 +364,11 @@ function finder:render_finder()
     if not float_width and co.status(self.render_fn) == 'dead' then
       table.sort(width)
       float_width = width[#width]
+    end
+
+    if not float_width then
+      print('[lspsaga] no data to show')
+      return
     end
     self:create_finder_win(float_width)
     break
