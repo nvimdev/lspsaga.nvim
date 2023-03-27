@@ -781,6 +781,9 @@ function finder:open_preview(node)
 
   if not self.peek_winid or not api.nvim_win_is_valid(self.peek_winid) then
     self.preview_bufnr, self.peek_winid = create_preview_window(self.winid)
+    if not self.peek_winid then
+      return
+    end
     api.nvim_win_set_hl_ns(self.peek_winid, ns_id)
   end
 
