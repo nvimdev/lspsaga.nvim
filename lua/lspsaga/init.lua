@@ -24,7 +24,7 @@ local default_config = {
     open_browser = '!chrome',
   },
   diagnostic = {
-    on_insert = true,
+    on_insert = false,
     on_insert_follow = false,
     insert_winblend = 0,
     show_code_action = true,

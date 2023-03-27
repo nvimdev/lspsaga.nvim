@@ -477,17 +477,15 @@ local function get_row_col(content)
   local res = {}
   local curwin = api.nvim_get_current_win()
   local max_len = window.get_max_content_length(content)
-  local tail = #api.nvim_get_current_line() + 20
-  local curline = api.nvim_get_current_line()
-  local end_col = api.nvim_strwidth(curline)
-  if tail + max_len >= api.nvim_win_get_width(curwin) then
-    res.row = fn.winline()
-  else
+  local current_col = api.nvim_win_get_cursor(curwin)[2]
+  local winwidth = api.nvim_win_get_width(curwin)
+  if winwidth - max_len > current_col + 20 then
     res.row = fn.winline() - 1
+    res.col = current_col + 20
+  else
+    res.row = fn.winline() + 1
+    res.col = current_col + 20
   end
-  -- col should at the end of line
-  res.col = end_col + 10
-
   return res
 end
 
@@ -510,7 +508,7 @@ function diag:on_insert()
     return width
   end
 
-  local function create_window(content)
+  local function create_window(content, buf)
     local float_opt
     if not config.diagnostic.on_insert_follow then
       float_opt = on_top_right(content)
@@ -529,6 +527,7 @@ function diag:on_insert()
 
     return window.create_win_with_border({
       contents = content,
+      bufnr = buf or nil,
       winblend = config.diagnostic.insert_winblend,
       highlight = {
         normal = 'DiagnosticInsertNormal',
@@ -547,14 +546,7 @@ function diag:on_insert()
     if not winid or not api.nvim_win_is_valid(winid) then
       return
     end
-    local win_conf = api.nvim_win_get_config(winid)
-    api.nvim_win_set_config(winid, {
-      relative = win_conf.relative,
-      width = 1,
-      win = win_conf.win,
-      row = win_conf.row[false],
-      col = vim.o.columns,
-    })
+    api.nvim_win_hide(winid)
   end
 
   local group = api.nvim_create_augroup('Lspsaga Diagnostic on insert', { clear = true })
@@ -587,7 +579,8 @@ function diag:on_insert()
       end
 
       if not winid or not api.nvim_win_is_valid(winid) then
-        bufnr, winid = create_window(content)
+        bufnr, winid =
+          create_window(content, (bufnr and api.nvim_buf_is_valid(bufnr)) and bufnr or nil)
         vim.bo[bufnr].modifiable = true
         vim.wo[winid].wrap = true
         if fn.has('nvim-0.9') == 1 then
