@@ -256,7 +256,12 @@ function finder:create_finder_data(result, method)
       end
     end
 
-    node.word = api.nvim_buf_get_text(node.bufnr, node.row, 0, node.row, node.ecol, {})[1]
+    local start_col = 0
+    --avoid the preview code too long
+    if node.col > 15 then
+      start_col = node.col - 10
+    end
+    node.word = api.nvim_buf_get_text(node.bufnr, node.row, start_col, node.row, node.ecol, {})[1]
     if node.word:find('^%s') then
       node.word = node.word:sub(node.word:find('%S'), #node.word)
     end
