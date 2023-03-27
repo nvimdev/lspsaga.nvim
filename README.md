@@ -36,7 +36,7 @@ You can use plugin managers like `lazy.nvim` and `packer.nvim` to install `lspsa
 ```lua
 require("lazy").setup({
     "glepnir/lspsaga.nvim",
-    event = "BufRead",
+    event = "LspAttach",
     config = function()
         require("lspsaga").setup({})
     end,
@@ -53,7 +53,9 @@ require("lazy").setup({
 ```lua
 use({
     "glepnir/lspsaga.nvim",
+    opt = true,
     branch = "main",
+    event = "LspAttach"
     config = function()
         require("lspsaga").setup({})
     end,
