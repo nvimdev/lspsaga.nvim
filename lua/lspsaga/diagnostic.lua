@@ -478,7 +478,12 @@ local function get_row_col(content)
   local curwin = api.nvim_get_current_win()
   local max_len = window.get_max_content_length(content)
   local current_col = api.nvim_win_get_cursor(curwin)[2]
+  local end_col = api.nvim_strwidth(api.nvim_get_current_line())
   local winwidth = api.nvim_win_get_width(curwin)
+  if current_col < end_col then
+    current_col = end_col
+  end
+
   if winwidth - max_len > current_col + 20 then
     res.row = fn.winline() - 1
     res.col = current_col + 20
