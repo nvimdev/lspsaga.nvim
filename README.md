@@ -53,7 +53,9 @@ require("lazy").setup({
 ```lua
 use({
     "glepnir/lspsaga.nvim",
+    opt = true,
     branch = "main",
+    event = "LspAttach"
     config = function()
         require("lspsaga").setup({})
     end,
