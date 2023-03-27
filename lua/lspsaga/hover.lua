@@ -68,7 +68,7 @@ function hover:open_floating_preview(res, option_fn)
     if line:find('\\') then
       line = line:gsub('\\(?![tn])', '')
     end
-    if line:find('%[%w+%][^%(]') and not content[i - 1]:find('```') then
+    if line:find('%[%w+%][^%(]') and not content[(i - 1 > 0 and i - 1 or 1)]:find('```') then
       line = line:gsub('%[', '%[%[')
       line = line:gsub('%]', '%]%]')
     end
