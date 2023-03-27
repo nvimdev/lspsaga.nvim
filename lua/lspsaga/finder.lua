@@ -231,7 +231,7 @@ function finder:create_finder_data(result, method)
 
     local bufnr = vim.uri_to_bufnr(uri)
     local fname = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
-    local range = res.targetRange or res.range
+    local range = res.targetSelectionRange or res.targetRange or res.range
     if libs.iswin then
       fname = fname:gsub('^%l', fname:sub(1, 1):upper())
     end
@@ -249,6 +249,9 @@ function finder:create_finder_data(result, method)
 
     if not api.nvim_buf_is_loaded(bufnr) then
       node.wipe = true
+      if method == methods(1) then
+        print(bufnr, vim.inspect(node))
+      end
       --ignore the FileType event avoid trigger the lsp
       vim.opt.eventignore:append({ 'FileType' })
       fn.bufload(bufnr)
@@ -445,7 +448,8 @@ function finder:create_finder_win(width)
       local col = 5
       local buf_lines = api.nvim_buf_line_count(self.bufnr)
       local text = api.nvim_get_current_line()
-      local in_fname, node
+      local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+      local node
 
       if curline == 1 or curline > buf_lines - 1 then
         curline = 3
@@ -455,30 +459,26 @@ function finder:create_finder_win(width)
         curline = buf_lines - 1
         node = self:get_node({ lnum = curline })
         start = node.start
-      else
+      elseif text:find('%sDef') or text:find('%sRef') or text:find('%sImp') or #text == 0 then
         local increase = curline > before and 1 or -1
-        in_fname = text:find(ui.expand) or text:find(ui.collapse)
-        col = in_fname and 7 or col
-
-        if in_fname or #text == 0 then
-          for _, v in ipairs({
-            curline,
-            curline + increase,
-            curline + increase * 2,
-            curline + increase * 3,
-          }) do
-            node = self:get_node({ lnum = v })
-            if node then
-              curline = node.winline
-              start = node.start
-            end
+        for _, v in ipairs({
+          curline,
+          curline + increase,
+          curline + increase * 2,
+          curline + increase * 3,
+        }) do
+          node = self:get_node({ lnum = v })
+          if node then
+            curline = node.winline
+            start = node.start
           end
-        else
-          node = self:get_node({ lnum = curline })
-          start = node.start
         end
+      elseif not in_fname then
+        node = self:get_node({ lnum = curline })
+        start = node.start
       end
 
+      col = in_fname and 7 or col
       before = curline
       api.nvim_win_set_cursor(self.winid, { curline, col })
       api.nvim_buf_add_highlight(
@@ -803,17 +803,17 @@ function finder:open_preview(node)
     { scope = 'local', win = self.peek_winid }
   )
 
-  if fn.has('nvim-0.9') == 1 and node.wipe then
+  if fn.has('nvim-0.9') == 1 then
     local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
     vim.defer_fn(function()
       vim.treesitter.start(node.bufnr, lang)
-    end, 0)
+    end, 5)
     node.loaded = true
-  elseif node.wipe and fn.has('nvim-0.8') == 1 and not node.loaded then
+  elseif fn.has('nvim-0.8') == 1 and not node.loaded then
     api.nvim_buf_call(node.bufnr, function()
       vim.defer_fn(function()
         vim.cmd('TSBufEnable highlight')
-      end, 0)
+      end, 5)
     end)
     node.loaded = true
   end
