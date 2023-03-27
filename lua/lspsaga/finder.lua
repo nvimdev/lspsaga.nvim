@@ -744,6 +744,14 @@ local function create_preview_window(finder_winid)
     })
   end
 
+  if not opts.col then
+    vim.notify(
+      '[Lspsaga] finder previee get col failed try change finder.min_width',
+      vim.log.levels.WARN
+    )
+    return
+  end
+
   local content_opts = {
     contents = {},
     border_side = border_side,
