@@ -435,8 +435,8 @@ function finder:create_finder_win(width)
       if ok then
         pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
       end
+      pcall(api.nvim_del_augroup_by_id, self.group)
       self:close_auto_preview_win()
-      api.nvim_del_augroup_by_id(self.group)
       self:clean_data()
       clean_ctx()
     end,

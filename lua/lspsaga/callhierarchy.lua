@@ -63,7 +63,7 @@ function ch:call_hierarchy(item, parent)
         local text = api.nvim_get_current_line()
         local replace_icon = text:find(ui.expand) and ui.expand or ui.collapse
         if self.pending_request then
-          self.pending_request = true
+          self.pending_request = false
           local next = frame + 1 == 9 and 1 or frame + 1
           if text:find(replace_icon) then
             text = text:gsub(replace_icon, spinner[next])
@@ -127,7 +127,7 @@ function ch:call_hierarchy(item, parent)
           name = expand_collapse .. icon .. target.name,
           highlights = {
             ['SagaCollapse'] = { 0, #expand_collapse },
-            ['LSOutline' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
+            ['SagaWinbar' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
           },
           winline = i + 1,
           expand = false,
@@ -160,7 +160,7 @@ function ch:call_hierarchy(item, parent)
         name = expand_collapse .. icon .. target.name,
         highlights = {
           ['SagaCollapse'] = { 0, #expand_collapse },
-          ['LSOutline' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
+          ['SagaWinbar' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
         },
         winline = parent.winline + i,
         expand = false,
@@ -354,8 +354,7 @@ function ch:render_win()
   end
 
   local opt = {
-    relative = 'win',
-    win = api.nvim_get_current_win(),
+    relative = 'editor',
     row = fn.winline() + 1,
     col = 10,
     height = math.floor(vim.o.lines * 0.4),
@@ -462,8 +461,7 @@ end
 local function create_preview_window(winid)
   local winconfig = api.nvim_win_get_config(winid)
   local opt = {
-    relative = winconfig.relative,
-    win = winconfig.win,
+    relative = 'editor',
     row = winconfig.row[false],
     height = winconfig.height,
     col = winconfig.col[false] + winconfig.width + 2,
@@ -480,6 +478,10 @@ local function create_preview_window(winid)
       ['leftbottom'] = rbottom,
     },
     enter = false,
+    highlight = {
+      normal = 'CallHierarchyNormal',
+      border = 'CallHierarchyBorder',
+    },
   }
 
   return window.create_win_with_border(content_opt, opt)
