@@ -96,7 +96,7 @@ function sd:create_win(opt, content)
 
   local close_autocmds =
     { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScrolled' }
-  if arg and arg == '++unfocus' then
+  if opt.arg and opt.arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
     content_opt.enter = false
