@@ -64,11 +64,12 @@ function hover:open_floating_preview(res, option_fn)
   end
 
   local new = {}
-  for i, line in pairs(content) do
+  local in_codeblock = false
+  for _, line in pairs(content) do
     if line:find('\\') then
       line = line:gsub('\\(?![tn])', '')
     end
-    if line:find('%[%w+%][^%(]') and not content[(i - 1 > 0 and i - 1 or 1)]:find('```') then
+    if line:find('%[%w+%][^%(]') and not in_codeblock then
       line = line:gsub('%[', '%[%[')
       line = line:gsub('%]', '%]%]')
     end
@@ -86,9 +87,14 @@ function hover:open_floating_preview(res, option_fn)
     end
     if line:find('<pre>') then
       line = line:gsub('<pre>', '```')
+      in_codeblock = true
     end
     if line:find('</pre>') then
       line = line:gsub('</pre>', '```')
+      in_codeblock = false
+    end
+    if line:find('```') then
+      in_codeblock = in_codeblock and false or true
     end
     if #line > 0 then
       new[#new + 1] = line
