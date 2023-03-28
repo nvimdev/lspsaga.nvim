@@ -76,6 +76,8 @@ function sd:create_win(opt, content)
       float_opt.title = 'Buffer'
     elseif opt.line then
       float_opt.title = 'Line'
+    elseif opt.cursor then
+      float_opt.title = 'Cursor'
     else
       float_opt.title = 'Workspace'
     end

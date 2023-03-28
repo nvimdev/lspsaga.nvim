@@ -125,6 +125,12 @@ keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
 -- Show buffer diagnostics
 keymap("n", "<leader>sb", "<cmd>Lspsaga show_buf_diagnostics<CR>")
 
+-- Show workspace diagnostics
+keymap("n", "<leader>sw", "<cmd>Lspsaga show_workspace_diagnostics<CR>")
+
+-- Show cursor diagnostics
+keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
+
 -- Diagnostic jump
 -- You can use <C-o> to jump back to your previous location
 keymap("n", "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>")
@@ -432,7 +438,8 @@ The steps demonstrated in this showcase are:
 
 ## :Lspsaga show_diagnostics
 
-`show_line_diagnostics`, `show_buf_diagnostics`, `show_workspace_diagnostics`. and support an
+`show_line_diagnostics`, `show_buf_diagnostics`, `show_workspace_diagnostics`
+`show_cursor_diagnsotics`. and support an
 argument `++unfocus` to make it unfocus. like `:Lspsaga show_workspace_diagnostics ++unfocus` 
 you can press the `expand_or_jump` key to expand on fname line or jump into location on message line.
 
