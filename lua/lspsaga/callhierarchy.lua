@@ -380,6 +380,15 @@ function ch:render_win()
     end,
   })
 
+  api.nvim_create_autocmd('BufDelete', {
+    buffer = self.bufnr,
+    once = true,
+    callback = function()
+      window.nvim_close_valid_window({ self.winid, self.preview_winid })
+      clean_ctx()
+    end,
+  })
+
   api.nvim_buf_add_highlight(self.bufnr, 0, 'LSOutlinePackage', 0, 0, -1)
 
   for i, items in pairs(self.data) do
