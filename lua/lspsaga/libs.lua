@@ -153,6 +153,7 @@ function libs.close_preview_autocmd(bufnr, winids, events, cb)
       window.nvim_close_valid_window(winids)
       if cb then
         cb(opt.event)
+        libs.delete_scroll_map(bufnr)
       end
     end,
   })
@@ -275,8 +276,8 @@ end
 
 function libs.delete_scroll_map(bufnr)
   local config = require('lspsaga').config
-  vim.keymap.del('n', config.scroll_preview.scroll_down, { buffer = bufnr })
-  vim.keymap.del('n', config.scroll_preview.scroll_up, { buffer = bufnr })
+  pcall(vim.keymap.del, 'n', config.scroll_preview.scroll_down, { buffer = bufnr })
+  pcall(vim.keymap.del, 'n', config.scroll_preview.scroll_up, { buffer = bufnr })
 end
 
 function libs.jump_beacon(bufpos, width)
