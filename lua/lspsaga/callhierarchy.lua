@@ -380,7 +380,7 @@ function ch:render_win()
     end,
   })
 
-  api.nvim_create_autocmd('BufDelete', {
+  api.nvim_create_autocmd('BufWipeOut', {
     buffer = self.bufnr,
     once = true,
     callback = function()
