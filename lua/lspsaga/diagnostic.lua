@@ -383,13 +383,11 @@ function diag:render_diagnostic_window(entry, option)
       { self.winid, self.preview_winid or nil },
       close_autocmds,
       function(event)
-        if self.remove_num_map then
-          self.remove_num_map()
-        end
         --close preview window which create by scroll keymap
         if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
           api.nvim_win_close(self.preview_winid, true)
         end
+        libs.delete_scroll_map(current_buffer)
         if event == 'InsertEnter' then
           act:clean_context()
           clean_ctx()
