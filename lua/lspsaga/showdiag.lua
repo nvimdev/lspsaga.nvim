@@ -261,7 +261,7 @@ function sd:show(opt)
   vim.bo[self.bufnr].modifiable = false
 
   local nontext = api.nvim_get_hl_by_name('NonText', true)
-  api.nvim_set_hl(0, 'NonText', {
+  api.nvim_set_hl(ns, 'NonText', {
     link = 'FinderLines',
   })
 
