@@ -275,8 +275,8 @@ end
 
 function libs.delete_scroll_map(bufnr)
   local config = require('lspsaga').config
-  vim.keymap.del('n', config.scroll_preview.scroll_down, { buffer = bufnr })
-  vim.keymap.del('n', config.scroll_preview.scroll_up, { buffer = bufnr })
+  pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_down)
+  pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_up)
 end
 
 function libs.jump_beacon(bufpos, width)
