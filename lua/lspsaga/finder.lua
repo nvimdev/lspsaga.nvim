@@ -872,19 +872,11 @@ function finder:do_action(node, action)
   self:clean_data()
 
   -- if buffer not saved save it before jump
-  if vim.bo.modified then
+  if fname == api.nvim_buf_get_name(0) and vim.bo.modified then
     vim.cmd('write')
   end
 
-  local special = { 'edit', 'tab', 'tabnew' }
-  if vim.tbl_contains(special, action) and not data.wipe then
-    local wins = fn.win_findbuf(data.bufnr)
-    local winid = wins[#wins] or api.nvim_get_current_win()
-    api.nvim_set_current_win(winid)
-    api.nvim_win_set_buf(winid, data.bufnr)
-  else
-    vim.cmd(action .. ' ' .. uv.fs_realpath(fname))
-  end
+  vim.cmd(action .. ' ' .. fn.fnameescape(fname))
 
   if restore_opts then
     restore_opts.restore()

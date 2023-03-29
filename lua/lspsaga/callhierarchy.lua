@@ -207,10 +207,8 @@ function ch:expand_collapse()
   end
 
   if not node.expand then
-    if not node.requested then
-      if not self.pending_request then
-        self:call_hierarchy(node.target, node)
-      end
+    if not node.requested and not self.pending_request then
+      self:call_hierarchy(node.target, node)
     else
       node.name = node.name:gsub(ui.expand, ui.collapse)
       node.highlights['SagaCollapse'] = { unpack(node.highlights['SagaExpand']) }
