@@ -839,7 +839,7 @@ function finder:open_preview(node)
     end, 5)
     node.loaded = true
   elseif fn.has('nvim-0.8') == 1 and node.wipe then
-    vim.schedule(function ()
+    vim.schedule(function()
       api.nvim_buf_call(node.bufnr, function()
         vim.cmd('TSBufEnable highlight')
       end)
