@@ -36,7 +36,7 @@ You can use plugin managers like `lazy.nvim` and `packer.nvim` to install `lspsa
 ```lua
 require("lazy").setup({
     "glepnir/lspsaga.nvim",
-    event = "BufRead",
+    event = "LspAttach",
     config = function()
         require("lspsaga").setup({})
     end,
@@ -53,7 +53,9 @@ require("lazy").setup({
 ```lua
 use({
     "glepnir/lspsaga.nvim",
+    opt = true,
     branch = "main",
+    event = "LspAttach"
     config = function()
         require("lspsaga").setup({})
     end,
@@ -70,7 +72,7 @@ use({
 ```lua
 require("lazy").setup({
     "glepnir/lspsaga.nvim",
-    event = "BufRead",
+    event = "LspAttach",
     config = function()
       require("lspsaga").setup({})
     end,
@@ -120,12 +122,14 @@ keymap("n","gt", "<cmd>Lspsaga goto_type_definition<CR>")
 -- unfocus the show_line_diagnostics floating window
 keymap("n", "<leader>sl", "<cmd>Lspsaga show_line_diagnostics<CR>")
 
--- Show cursor diagnostics
--- Like show_line_diagnostics, it supports passing the ++unfocus argument
-keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
-
 -- Show buffer diagnostics
 keymap("n", "<leader>sb", "<cmd>Lspsaga show_buf_diagnostics<CR>")
+
+-- Show workspace diagnostics
+keymap("n", "<leader>sw", "<cmd>Lspsaga show_workspace_diagnostics<CR>")
+
+-- Show cursor diagnostics
+keymap("n", "<leader>sc", "<cmd>Lspsaga show_cursor_diagnostics<CR>")
 
 -- Diagnostic jump
 -- You can use <C-o> to jump back to your previous location
@@ -199,18 +203,18 @@ Default options:
 
 ```lua
   finder = {
-    --percentage
     max_height = 0.5,
-    force_max_height = false
+    min_width = 30,
+    force_max_height = false,
     keys = {
       jump_to = 'p',
-      edit = { 'o', '<CR>' },
+      expand_or_jump = 'o',
       vsplit = 's',
       split = 'i',
       tabe = 't',
       tabnew = 'r',
       quit = { 'q', '<ESC>' },
-      close_in_preview = '<ESC>'
+      close_in_preview = '<ESC>',
     },
   },
 ```
@@ -219,11 +223,12 @@ Default options:
 - `force_max_height` force window height to max_height
 - `keys.jump_to` finder peek window.
 - `close_in_preview` will close all finder window in when you in preview window.
+- `min_width` is finder preview window min width.
 
 <details>
 <summary>lsp_finder showcase</summary>
 
-<img src="https://user-images.githubusercontent.com/41671631/215719819-4bfe6e86-fecc-4dc0-bac0-837c0bdeb349.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/227929557-74ac7d69-2488-46e2-a138-3772a349bcaf.png" height=80% width=80%/>
 </details>
 
 ## :Lspsaga peek_definition
@@ -315,9 +320,24 @@ Default options:
 
 ## :Lspasga hover_doc
 
-You should install the [treesitter](https://github.com/nvim-treesitter/nvim-treesitter) markdown and markdown_line parser.
+default options
+
+```lua
+  hover = {
+    max_width = 0.6,
+    open_link = 'gx',
+    open_browser = '!chrome',
+  },
+```
+
+you can use `open_link` key to open a http link or a file link in hover doc window. the
+`open_browser` is `chrome` in default you need config it to your browser
+
+You need install the [treesitter](https://github.com/nvim-treesitter/nvim-treesitter) markdown and markdown_line parser.
 Lspsaga can use it to render the hover window.
 You can press the keyboard shortcut for `:Lspsaga hover_doc` twice to enter the hover window.
+
+if you got something wrong in hover please run `:checkhealth`
 
 <details>
 <summary>hover_docshow case</summary>
@@ -340,33 +360,35 @@ Default options:
 
 ```lua
   diagnostic = {
-    on_insert = true,
+    on_insert = false,
     on_insert_follow = false,
     insert_winblend = 0,
-    show_virt_line = true,
     show_code_action = true,
     show_source = true,
     jump_num_shortcut = true,
-     --1 is max
     max_width = 0.7,
-    custom_fix = nil,
-    custom_msg = nil,
-    text_hl_follow = false,
+    max_height = 0.6,
+    max_show_width = 0.9,
+    max_show_height = 0.6,
+    text_hl_follow = true,
     border_follow = true,
+    extend_relatedInformation = false,
     keys = {
-      exec_action = "o",
-      quit = "q",
-      go_action = "g"
+      exec_action = 'o',
+      quit = 'q',
+      go_action = 'g',
+      expand_or_jump = '<CR>',
+      quit_in_show = { 'q', '<ESC>' },
     },
   },
 ```
 
-- `show_virt_line` default is true, show a line when using diagnostic jump. false disable it.
 - Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
-- `custom_msg` string used to custom the diagnostic jump `Msg` section titile
-- `custom_fix` string used to custom the diagnostic jump `Fix` section titile
+- `show_codeaction` default is true it will show available actions in the diagnsotic jump window
+- `show_source` default is true extend `source` into the diagnostic message
 - `max_width` is the max width for diagnostic jump window. percentage
+- `max_height` is the max height of diagnostic jump window percentage
 - `text_hl_follow` is false default true that you can define `DiagnostcText` to custom the diagnotic
   text color
 - `border_follow` the border highlight will follow the diagnostic type. if false it will use the
@@ -375,6 +397,10 @@ Default options:
 - `on_insert_follow` true will follow current line. false will on top right
 - `insert_winblend` default is 0, when it's to 100 will completely transparent. the color will
   changed a little light. 0 will use the `NormalFloat` group. it will link to `Normal` by Lspsaga.
+- `max_show_width` is the width of show diagnostic window
+- `max_show_height` is the height of show diagnostic widnow
+- `extend_relatedInformation` default is false when is true it will extend this message into
+  diagnostic message
 
 You can also use a filter when using diagnostic jump by using a Lspsaga function. The function takes a table as its argument.
 It is functionally identical to `:h vim.diagnostic.get_next`.
@@ -391,9 +417,10 @@ require("lspsaga.diagnostic"):goto_prev({ severity = vim.diagnostic.severity.ERR
 The steps demonstrated in this showcase are:
 
 - Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
+- Use `scroll_in_preview` keys to show action preview.
 - Pressing the number `2` to execute the code action without needing to enter the floating window
 
-<img src="https://user-images.githubusercontent.com/41671631/219829469-ea0e6367-a8ad-4e07-b890-0115848bbc9f.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/227763194-ee0958cf-65f8-4c11-9ee8-956227932114.gif" height=80% width=80%/>
 
 - If you want to see the code action, you can use `<C-w>w` to enter the floating window.
 - Press `g` to go to the action line and see the code action preview.
@@ -411,14 +438,15 @@ The steps demonstrated in this showcase are:
 
 ## :Lspsaga show_diagnostics
 
-`show_line_diagnostics`, `show_buf_diagnostics`, `show_cursor_diagnostics`
-
-- you can use `<C-w>w` jump into and use `<CR>` jump to diagnostic position
+`show_line_diagnostics`, `show_buf_diagnostics`, `show_workspace_diagnostics`
+`show_cursor_diagnsotics`. and support an
+argument `++unfocus` to make it unfocus. like `:Lspsaga show_workspace_diagnostics ++unfocus` 
+you can press the `expand_or_jump` key to expand on fname line or jump into location on message line.
 
 <details>
 <summary>show_diagnostics showcase</summary>
 
-<img src="https://user-images.githubusercontent.com/41671631/219829470-9b49a6c2-5ded-4b3f-ab38-96cce32d0435.gif" height=80% width=80%/>
+<img src="https://user-images.githubusercontent.com/41671631/227762998-a61c5df3-6a08-4d76-941c-f1cd2aa77f03.png" height=80% width=80%/>
 </details>
 
 ## :Lspsaga rename
@@ -468,14 +496,14 @@ Default options:
     win_position = "right",
     win_with = "",
     win_width = 30,
+    preview_width= 0.4,
     show_detail = true,
     auto_preview = true,
     auto_refresh = true,
     auto_close = true,
     custom_sort = nil,
     keys = {
-      jump = "o",
-      expand_collapse = "u",
+      expand_or_collapse = 'o',
       quit = "q",
     },
   },
@@ -487,8 +515,6 @@ Default options:
 The steps demonstrated in this showcase are:
 
 - Pressing `<Leader>o` run `:Lspsaga outline`
-- Pressing `j` to move down
-- Pressing `o` to jump
 
 <img src="https://user-images.githubusercontent.com/41671631/215719836-25a03774-891b-4dfd-ab2f-0b590ae1c862.gif" height=80% width=80%/>
 </details>
@@ -629,7 +655,8 @@ Currently, I am in need of some donations. If you'd like to support my work fina
 
 Thanks for everyone!
 
-[Scott Ming](https://github.com/scottming)
+[@Tuo Huang](https://github.com/youngtuotuo)
+[@Scott Ming](https://github.com/scottming)
 [@Möller Lukas](https://github.com/lmllrjr)
 [@HendrikPetertje](https://github.com/HendrikPetertje)
 [@Bojan Wilytsch](https://github.com/bwilytsch)

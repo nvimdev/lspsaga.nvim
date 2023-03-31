@@ -93,7 +93,7 @@ local function parse_symbols(buf, symbols)
   end
 
   local function recursive_parse(tbl)
-    for _, v in pairs(tbl) do
+    for _, v in ipairs(tbl) do
       if not res[v.kind] then
         res[v.kind] = {
           expand = true,
@@ -113,7 +113,7 @@ local function parse_symbols(buf, symbols)
   local keys = vim.tbl_keys(res)
   table.sort(keys, outline_conf.custom_sort)
   local new = {}
-  for _, v in pairs(keys) do
+  for _, v in ipairs(keys) do
     new[v] = res[v]
   end
 
@@ -122,7 +122,7 @@ local function parse_symbols(buf, symbols)
     if #v.data == 0 then
       new[k] = nil
     else
-      for _, item in pairs(v.data) do
+      for _, item in ipairs(v.data) do
         if item.selectionRange then
           item.pos = { item.selectionRange.start.line, item.selectionRange.start.character }
           item.selectionRange = nil
@@ -245,7 +245,7 @@ function ot:expand_collapse()
   if node.expand then
     local text = api.nvim_get_current_line()
     text = text:gsub(config.ui.collapse, config.ui.expand)
-    for _, v in pairs(node.data) do
+    for _, v in ipairs(node.data) do
       v.winline = -1
     end
     vim.bo[self.bufnr].modifiable = true
@@ -286,7 +286,7 @@ function ot:expand_collapse()
     5,
     -1
   )
-  for _, v in pairs(node.data) do
+  for _, v in ipairs(node.data) do
     for group, scope in pairs(v.hi_scope) do
       api.nvim_buf_add_highlight(self.bufnr, 0, group, v.winline - 1, scope[1], scope[2])
     end
@@ -422,7 +422,7 @@ function ot:close_when_last()
       end
 
       local both_nofile = {}
-      for _, buf in pairs(bufs) do
+      for _, buf in ipairs(bufs) do
         if buf ~= self.bufnr and (vim.bo[buf].buftype == 'nofile' or #vim.bo[buf].buftype == 0) then
           table.insert(both_nofile, true)
         end
@@ -439,7 +439,7 @@ function ot:close_when_last()
         local buffers = api.nvim_list_bufs()
         local scratch = true
         local setbuf
-        for _, buf in pairs(buffers) do
+        for _, buf in ipairs(buffers) do
           if
             api.nvim_buf_is_loaded(buf)
             and fn.bufwinid(buf) == -1

@@ -76,6 +76,8 @@ function sd:create_win(opt, content)
       float_opt.title = 'Buffer'
     elseif opt.line then
       float_opt.title = 'Line'
+    elseif opt.cursor then
+      float_opt.title = 'Cursor'
     else
       float_opt.title = 'Workspace'
     end
@@ -96,7 +98,7 @@ function sd:create_win(opt, content)
 
   local close_autocmds =
     { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScrolled' }
-  if arg and arg == '++unfocus' then
+  if opt.arg and opt.arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
     content_opt.enter = false
@@ -259,7 +261,7 @@ function sd:show(opt)
   vim.bo[self.bufnr].modifiable = false
 
   local nontext = api.nvim_get_hl_by_name('NonText', true)
-  api.nvim_set_hl(0, 'NonText', {
+  api.nvim_set_hl(ns, 'NonText', {
     link = 'FinderLines',
   })
 

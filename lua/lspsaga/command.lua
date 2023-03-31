@@ -31,6 +31,9 @@ local subcommands = {
   show_buf_diagnostics = function(arg)
     require('lspsaga.showdiag'):show_diagnostics({ buffer = true, arg = arg })
   end,
+  show_cursor_diagnostics = function(arg)
+    require('lspsaga.showdiag'):show_diagnostics({ cursor = true, arg = arg })
+  end,
   diagnostic_jump_next = function()
     require('lspsaga.diagnostic'):goto_next()
   end,
