@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 March 29
+*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 April 01
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -549,7 +549,7 @@ Default options:
         auto_close = true,
         custom_sort = nil,
         keys = {
-          expand_or_collapse = 'o',
+          expand_or_jump = 'o',
           quit = "q",
         },
       },
