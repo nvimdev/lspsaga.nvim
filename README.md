@@ -503,7 +503,7 @@ Default options:
     auto_close = true,
     custom_sort = nil,
     keys = {
-      expand_or_collapse = 'o',
+      expand_or_jump = 'o',
       quit = "q",
     },
   },
