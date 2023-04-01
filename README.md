@@ -55,7 +55,7 @@ use({
     "glepnir/lspsaga.nvim",
     opt = true,
     branch = "main",
-    event = "LspAttach"
+    event = "LspAttach",
     config = function()
         require("lspsaga").setup({})
     end,
