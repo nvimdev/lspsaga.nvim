@@ -184,7 +184,7 @@ local in_process = 0
 function def:peek_definition(method)
   local cur_winid = api.nvim_get_current_win()
   if in_process == cur_winid then
-    vim.notify('[Lspsaga] Already have a peek_definition request please wait', vim.log.levels.WARN)
+    vim.notify('[Lspsaga] There is already a peek_definition request, please wait for the response.', vim.log.levels.WARN)
     return
   end
 

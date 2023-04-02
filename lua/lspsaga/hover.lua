@@ -315,7 +315,7 @@ function hover:render_hover_doc(args)
   end
 
   if self.pending_request then
-    print('[Lspsaga] there already have a hover request please wait for response')
+    print('[Lspsaga] There is already a hover request, please wait for the response.')
     return
   end
 
