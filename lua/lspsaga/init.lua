@@ -118,6 +118,7 @@ local default_config = {
     auto_close = true,
     custom_sort = nil,
     preview_width = 0.4,
+    close_after_jump = false,
     keys = {
       expand_or_jump = 'o',
       quit = 'q',
