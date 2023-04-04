@@ -510,7 +510,7 @@ function ch:preview()
   end
 
   api.nvim_win_set_buf(self.preview_winid, data.bufnr)
-  if config.ui.title and fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     local path = vim.split(api.nvim_buf_get_name(data.bufnr), libs.path_sep, { trimempty = true })
     local icon = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
     api.nvim_win_set_config(self.preview_winid, {
