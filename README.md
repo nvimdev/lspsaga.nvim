@@ -183,6 +183,8 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
 
 ## Default options
 
+The top-level default options (command-specific default options below):
+
 ```lua
   preview = {
     lines_above = 0,
@@ -193,6 +195,30 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
     scroll_up = "<C-b>",
   },
   request_timeout = 2000,
+```
+
+Example setup using default options:
+
+```lua
+require("lspsaga").setup({
+  preview = {
+    lines_above = 0,
+    lines_below = 10,
+  },
+  scroll_preview = {
+    scroll_down = "<C-f>",
+    scroll_up = "<C-b>",
+  },
+  request_timeout = 2000,
+
+  -- See Customizing Lspsaga's Appearance
+  ui = { ... },
+
+  -- For default options for each command, see below
+  finder = { ... },
+  code_action = { ... }
+  -- etc.
+})
 ```
 
 ## :Lspsaga lsp_finder
@@ -440,7 +466,7 @@ The steps demonstrated in this showcase are:
 
 `show_line_diagnostics`, `show_buf_diagnostics`, `show_workspace_diagnostics`
 `show_cursor_diagnsotics`. and support an
-argument `++unfocus` to make it unfocus. like `:Lspsaga show_workspace_diagnostics ++unfocus` 
+argument `++unfocus` to make it unfocus. like `:Lspsaga show_workspace_diagnostics ++unfocus`
 you can press the `expand_or_jump` key to expand on fname line or jump into location on message line.
 
 <details>
