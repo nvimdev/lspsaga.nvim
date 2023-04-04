@@ -219,6 +219,11 @@ function hover:do_request(args)
     end
   end)
 
+  if expected_result_count == 0 then
+    vim.notify('No information available')
+    return
+  end
+
   local result_count = 0
   local has_succeeded = false
 
