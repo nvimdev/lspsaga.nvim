@@ -71,7 +71,7 @@ function sd:create_win(opt, content)
     no_size_override = true,
   }
 
-  if fn.has('nvim-0.9') == 1 then
+  if fn.has('nvim-0.9') == 1 and config.ui.title then
     if opt.buffer then
       float_opt.title = 'Buffer'
     elseif opt.line then
