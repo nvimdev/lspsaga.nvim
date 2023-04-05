@@ -86,9 +86,9 @@ function def:apply_aciton_keys(buf, main_buf)
 
   local function unpack_map()
     local map = {}
-    for _, v in ipairs(config.definition) do
-      if v ~= 'width' or v ~= 'heigth' then
-        map[#map + 1] = v
+    for k, v in pairs(config.definition) do
+      if k ~= 'width' and k ~= 'height' then
+        map[k] = v
       end
     end
     return map
