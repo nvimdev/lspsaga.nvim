@@ -378,26 +378,21 @@ function diag:render_diagnostic_window(entry, option)
 
   local close_autocmds = { 'CursorMoved', 'InsertEnter' }
   vim.defer_fn(function()
-    libs.close_preview_autocmd(
-      current_buffer,
-      { self.winid, self.preview_winid or nil },
-      close_autocmds,
-      function(event)
-        if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-          api.nvim_win_close(self.preview_winid, true)
-        end
-        if event == 'InsertEnter' then
-          act:clean_context()
-          clean_ctx()
-        end
-      end
-    )
+    libs.close_preview_autocmd(current_buffer, self.winid, close_autocmds)
   end, 0)
 
   api.nvim_buf_attach(self.bufnr, false, {
-    on_detach = function()
+    on_detach = vim.schedule_wrap(function()
       libs.delete_scroll_map(current_buffer)
-    end,
+      if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+        api.nvim_win_close(self.preview_winid, true)
+      end
+      for i = 1, #act.action_tuples do
+        pcall(api.nvim_buf_del_keymap, current_buffer, 'n', tostring(i))
+      end
+      act:clean_context()
+      clean_ctx()
+    end),
   })
 end
 

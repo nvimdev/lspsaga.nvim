@@ -281,7 +281,6 @@ function act:do_code_action(num)
     number = cur_text:match('%[(%d+)%]%s+%S')
     number = tonumber(number)
   end
-  self:close_action_window()
 
   if not number then
     vim.notify('[Lspsaga] no action number choice', vim.log.levels.WARN)
@@ -292,10 +291,7 @@ function act:do_code_action(num)
   local client = lsp.get_client_by_id(self.action_tuples[number][1])
 
   local curbuf = api.nvim_get_current_buf()
-  for i = 1, #self.action_tuples do
-    pcall(api.nvim_buf_del_keymap, curbuf, 'n', tostring(i))
-  end
-
+  self:close_action_window(curbuf)
   if
     not action.edit
     and client
@@ -435,12 +431,18 @@ function act:action_preview(main_winid, main_buf, border_hi)
   return self.preview_winid
 end
 
-function act:close_action_window()
+function act:close_action_window(bufnr)
   if self.action_winid and api.nvim_win_is_valid(self.action_winid) then
     api.nvim_win_close(self.action_winid, true)
   end
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
+  end
+
+  if config.code_action.num_shortcut and bufnr and api.nvim_buf_is_valid(bufnr) then
+    for i = 1, #self.action_tuples do
+      pcall(api.nvim_buf_del_keymap, bufnr, 'n', tostring(i))
+    end
   end
 end
 
