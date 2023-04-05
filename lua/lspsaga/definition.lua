@@ -84,7 +84,17 @@ function def:apply_aciton_keys(buf, main_buf)
     return index
   end
 
-  for action, key in pairs(config.definition) do
+  local function unpack_map()
+    local map = {}
+    for _, v in ipairs(config.definition) do
+      if v ~= 'width' or v ~= 'heigth' then
+        map[#map + 1] = v
+      end
+    end
+    return map
+  end
+
+  for action, key in pairs(unpack_map()) do
     if action ~= 'quit' then
       keymap.set('n', key, function()
         local index = find_node_index()
