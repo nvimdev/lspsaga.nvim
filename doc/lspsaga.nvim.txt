@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 April 04
+*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2023 April 05
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -229,6 +229,8 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
 
 DEFAULT OPTIONS                                 *lspsaga.nvim-default-options*
 
+The top-level default options (command-specific default options below):
+
 >lua
       preview = {
         lines_above = 0,
@@ -239,6 +241,30 @@ DEFAULT OPTIONS                                 *lspsaga.nvim-default-options*
         scroll_up = "<C-b>",
       },
       request_timeout = 2000,
+<
+
+Example setup using default options:
+
+>lua
+    require("lspsaga").setup({
+      preview = {
+        lines_above = 0,
+        lines_below = 10,
+      },
+      scroll_preview = {
+        scroll_down = "<C-f>",
+        scroll_up = "<C-b>",
+      },
+      request_timeout = 2000,
+    
+      -- See Customizing Lspsaga's Appearance
+      ui = { ... },
+    
+      -- For default options for each command, see below
+      finder = { ... },
+      code_action = { ... }
+      -- etc.
+    })
 <
 
 
