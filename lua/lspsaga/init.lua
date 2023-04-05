@@ -86,6 +86,8 @@ local default_config = {
     },
   },
   definition = {
+    width = 0.6,
+    height = 0.5,
     edit = '<C-c>o',
     vsplit = '<C-c>v',
     split = '<C-c>i',

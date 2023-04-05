@@ -147,8 +147,8 @@ end
 
 local function create_window(node)
   local cur_winline = fn.winline()
-  local max_height = math.floor(vim.o.lines * 0.5)
-  local max_width = math.floor(vim.o.columns * 0.6)
+  local max_height = math.floor(vim.o.lines * config.definition.height)
+  local max_width = math.floor(vim.o.columns * config.definition.width)
   def.restore_opts = window.restore_option()
 
   local opt = {
@@ -184,7 +184,10 @@ local in_process = 0
 function def:peek_definition(method)
   local cur_winid = api.nvim_get_current_win()
   if in_process == cur_winid then
-    vim.notify('[Lspsaga] There is already a peek_definition request, please wait for the response.', vim.log.levels.WARN)
+    vim.notify(
+      '[Lspsaga] There is already a peek_definition request, please wait for the response.',
+      vim.log.levels.WARN
+    )
     return
   end
 
