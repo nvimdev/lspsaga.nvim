@@ -101,7 +101,7 @@ keymap("n", "gr", "<cmd>Lspsaga rename ++project<CR>")
 -- It also supports open/vsplit/etc operations, do refer to "definition_action_keys"
 -- It also supports tagstack
 -- Use <C-t> to jump back
-keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>")
+keymap("n", "gp", "<cmd>Lspsaga peek_definition<CR>")
 
 -- Go to definition
 keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
@@ -279,7 +279,7 @@ Default options:
 
 The steps demonstrated in this showcase are:
 
-- Pressing `gd` to run `:Lspsaga peek_definition`
+- Pressing `gp` to run `:Lspsaga peek_definition`
 - Editing a comment and using `:w` to save
 - Pressing `<C-c>o` to jump to the file in the floating window
 - Lspsaga shows a beacon highlight after jumping to the file
