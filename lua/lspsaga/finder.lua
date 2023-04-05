@@ -7,9 +7,6 @@ local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns_id = api.nvim_create_namespace('lspsagafinder')
 local co = coroutine
-local print = function (...)
-  require('core.utils').log('[lspsaga]',...)
-end
 
 local finder = {}
 local ctx = {}
@@ -159,12 +156,12 @@ function finder:loading_bar()
       end
 
       if self:request_done() and not spin_timer:is_closing() then
-        spin_timer:stop()
-        spin_timer:close()
+        window.nvim_close_valid_window(spin_win)
         if api.nvim_buf_is_loaded(spin_buf) then
           api.nvim_buf_delete(spin_buf, { force = true })
         end
-        window.nvim_close_valid_window(spin_win)
+        spin_timer:stop()
+        spin_timer:close()
         self:render_finder()
       end
     end)
@@ -181,7 +178,6 @@ local get_data_fn = function(fname)
     else
       local fd = uv.fs_open(fname, 'r', 438)
       if not fd then
-        print('wrong fd:',fname)
         data = {''}
       else
         local stat = uv.fs_fstat(fd)
@@ -259,7 +255,6 @@ function finder:do_request(params, method)
 
     local start = vim.loop.hrtime()
     self:create_finder_data(result, method)
-    print(string.format('spent time: %s ms',(vim.loop.hrtime()-start)/1000000))
     self.request_status[method] = true
   end)
 end
@@ -434,7 +429,6 @@ function finder:render_finder()
     end
 
     if not float_width then
-      print('[lspsaga] no data to show')
       return
     end
     self:create_finder_win()
@@ -566,20 +560,6 @@ function finder:create_finder_win()
       end
     end,
   })
-
-  -- api.nvim_create_autocmd('BufLeave', {
-  --   buffer = self.bufnr,
-  --   once = true,
-  --   callback = function(opts)
-  --     if opts.buf ~= self.bufnr then
-  --       return
-  --     end
-  --     api.nvim_win_close(self.winid, true)
-  --     self:close_auto_preview_win()
-  --     self:clean_data()
-  --     clean_ctx()
-  --   end,
-  -- })
 end
 
 local function unpack_map()
@@ -632,19 +612,8 @@ function finder:apply_map()
 
   vim.keymap.set('n','/',function ()
     if self.search_win and api.nvim_win_is_valid(self.search_win) then
-      print('already opened')
       return
     end
-    local refer_winconfig = api.nvim_win_get_config(self.winid)
-    local win_opts = {
-      relative = 'editor',
-      no_size_override = true,
-      zindex = 80,
-      row = refer_winconfig.row[false] + refer_winconfig.height + 1,
-      col = refer_winconfig.col[false],
-      height = 1,
-      width = refer_winconfig.width,
-    }
     local content_opts = {
       contents = {},
       buftype = 'nofile',
@@ -655,7 +624,7 @@ function finder:apply_map()
       },
       enter = false,
     }
-    self.search_buf, self.search_win = window.create_win_with_border(content_opts, win_opts)   
+    self.search_buf, self.search_win = window.create_win_vertical(self.winid,1,'down',content_opts)
     if not self.search_ns then
       self.search_ns = api.nvim_create_namespace('sagasearch')
     end
@@ -681,7 +650,6 @@ function finder:apply_map()
         local line = api.nvim_buf_get_text(self.search_buf, 0, 0, -1, -1, {})[1]
         line = line:sub(#prefix+1,#line)
         line = vim.trim(line)
-        print('current_line',line)
         local pattern = line:gsub(' ','.*')
         self.matched_lines = {}
         for i, _line in ipairs(api.nvim_buf_get_lines(self.bufnr, 0, -1, false)) do
@@ -736,8 +704,6 @@ function finder:apply_map()
         vim.api.nvim_buf_call(self.bufnr,function ()
           local ok, err = pcall(api.nvim_win_set_cursor, self.winid, {self.matched_lines[self.matched_id], 5})
           if not ok then
-            print('err: ',err)
-            vim.pretty_print("self.matched_lines: ",self.matched_lines)
             return
           end
           vim.cmd [[ normal! zz ]]
@@ -770,8 +736,6 @@ function finder:apply_map()
         vim.api.nvim_buf_call(self.bufnr,function ()
           local ok, err = pcall(api.nvim_win_set_cursor, self.winid, {self.matched_lines[self.matched_id], 5})
           if not ok then
-            print('err: ',err)
-            vim.pretty_print("self.matched_lines: ",self.matched_lines)
             return
           end
           vim.cmd [[ normal! zz ]]
@@ -786,15 +750,12 @@ function finder:apply_map()
     })
 
     vim.keymap.set('n','<Esc>',function ()
-      local ok, err = pcall(vim.api.nvim_win_close, self.search_win, true)
+      window.nvim_close_valid_window(self.search_win)
     end)
 
     vim.keymap.set('i','<CR>',function ()
       -- vim.cmd [[stopinsert]]
-      local ok, err = pcall(vim.api.nvim_win_close, self.search_win, true)
-      if not ok then
-        print('search_win',self.search_win)
-      end
+      window.nvim_close_valid_window(self.search_win)
       vim.api.nvim_buf_call(self.bufnr,function ()
         local curline = api.nvim_win_get_cursor(self.winid)[1]
         local text = api.nvim_get_current_line()
@@ -972,47 +933,15 @@ local function create_preview_window(finder_winid)
     return
   end
 
-  local opts = {
-    relative = 'editor',
-    no_size_override = true,
-    zindex = 80,
-  }
-
-  local winconfig = api.nvim_win_get_config(finder_winid)
-  opts.row = winconfig.row[false] - winconfig.height - 1
-  opts.height = winconfig.height
-
-  local border_side = {}
-  local top = window.combine_char()['top'][config.ui.border]
-  local bottom = window.combine_char()['bottom'][config.ui.border]
-
-  local adjust = config.ui.border == 'shadow' and -2 or 2
-  opts.col = winconfig.col[false]
-  opts.width = winconfig.width
-  border_side = {
-    ['lefttop'] = top,
-    ['leftbottom'] = bottom,
-  }
-
-  if not opts.col then
-    vim.notify(
-      '[Lspsaga] finder previee get col failed try change finder.min_width',
-      vim.log.levels.WARN
-    )
-    return
-  end
-
   local content_opts = {
     contents = {},
-    border_side = border_side,
     bufhidden = '',
     highlight = {
       border = 'FinderPreviewBorder',
       normal = 'FinderNormal',
     },
   }
-
-  return window.create_win_with_border(content_opts, opts)
+  return window.create_win_vertical(finder_winid, nil, 'above', content_opts)
 end
 
 local function clear_preview_ns(ns, buf)
@@ -1062,34 +991,18 @@ function finder:open_preview(node)
     'Normal:finderNormal,FloatBorder:finderPreviewBorder',
     { scope = 'local', win = self.peek_winid }
   )
-  
+
   api.nvim_buf_set_option(node.bufnr,'filetype',api.nvim_buf_get_option(self.main_buf,'filetype'))
   api.nvim_buf_call(node.bufnr, function()
     vim.cmd('TSBufEnable highlight')
   end)
-  -- if fn.has('nvim-0.9') == 1 and node.wipe then
-  --   local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
-  --   vim.defer_fn(function()
-  --     vim.treesitter.start(node.bufnr, lang)
-  --   end, 5)
-  --   node.loaded = true
-  -- elseif fn.has('nvim-0.8') == 1 and node.wipe then
-  --   vim.schedule(function()
-  --     -- api.nvim_buf_call(node.bufnr, function()
-  --     --   vim.cmd('TSBufEnable highlight')
-  --     -- end)
-  --     api.nvim_win_call(self.peek_winid, function()
-  --       vim.cmd('TSBufEnable highlight')
-  --     end)
-  --   end)
-  -- end
 end
 
 function finder:close_auto_preview_win()
   if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
     local buf = api.nvim_win_get_buf(self.peek_winid)
     clear_preview_ns(ns_id, buf)
-    api.nvim_win_close(self.peek_winid, true)
+    window.nvim_close_valid_window(self.peek_winid)
     self.peek_winid = nil
   end
 end
