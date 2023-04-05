@@ -206,7 +206,9 @@ function hover:open_floating_preview(res, option_fn)
     end,
   })
 
-  libs.scroll_in_preview(bufnr, self.preview_winid)
+  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+    libs.scroll_in_preview(bufnr, self.preview_winid)
+  end
 end
 
 function hover:do_request(args)
