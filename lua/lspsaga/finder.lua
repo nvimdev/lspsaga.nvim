@@ -188,9 +188,14 @@ function finder:do_request(params, method)
     end
 
     local uri = result[1].uri or result[1].targetUri
-    if method == methods(1) and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf() then
+    local range = result[1].targetRange or result[1].range
+    local line = api.nvim_win_get_cursor(0)[1]
+    if
+      method == methods(1)
+      and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf()
+      and range.start.line == line
+    then
       local col = api.nvim_win_get_cursor(0)[2]
-      local range = result[1].targetRange or result[1].range
       if col >= range.start.character and col <= range['end'].character then
         self.request_status[method] = true
         return
