@@ -1,7 +1,6 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local act = {}
 local ctx = {}
