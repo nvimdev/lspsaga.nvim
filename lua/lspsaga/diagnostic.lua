@@ -387,8 +387,10 @@ function diag:render_diagnostic_window(entry, option)
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
         api.nvim_win_close(self.preview_winid, true)
       end
-      for i = 1, #act.action_tuples do
-        pcall(api.nvim_buf_del_keymap, current_buffer, 'n', tostring(i))
+      if act.action_tuples and #act.action_tuples > 0 then
+        for i = 1, #act.action_tuples do
+          pcall(api.nvim_buf_del_keymap, current_buffer, 'n', tostring(i))
+        end
       end
       act:clean_context()
       clean_ctx()

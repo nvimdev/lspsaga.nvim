@@ -439,7 +439,7 @@ function act:close_action_window(bufnr)
     api.nvim_win_close(self.preview_winid, true)
   end
 
-  if config.code_action.num_shortcut and bufnr and api.nvim_buf_is_valid(bufnr) then
+  if config.code_action.num_shortcut and self.action_tuples and #self.action_tuples > 1 then
     for i = 1, #self.action_tuples do
       pcall(api.nvim_buf_del_keymap, bufnr, 'n', tostring(i))
     end
