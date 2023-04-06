@@ -506,20 +506,6 @@ function finder:create_finder_win(width)
     end,
   })
 
-  api.nvim_create_autocmd('BufLeave', {
-    buffer = self.bufnr,
-    once = true,
-    callback = function(opts)
-      if opts.buf ~= self.bufnr then
-        return
-      end
-      api.nvim_win_close(self.winid, true)
-      self:close_auto_preview_win()
-      self:clean_data()
-      clean_ctx()
-    end,
-  })
-
   if self.render_fn and co.status(self.render_fn) == 'suspended' then
     co.resume(self.render_fn, false)
   end
