@@ -213,14 +213,43 @@ end
 
 function hover:do_request(args)
   local params = util.make_position_params()
+
+  local expected_result_count = 0
+  lsp.for_each_buffer_client(0, function(client)
+    if client.supports_method('textDocument/hover') then
+      expected_result_count = expected_result_count + 1
+    end
+  end)
+
+  if expected_result_count == 0 then
+    vim.notify('No information available')
+    return
+  end
+
+  local result_count = 0
+  local has_succeeded = false
+
+  local should_error = function()
+    -- Never error if we have ++quiet
+    if args and has_arg(args, '++quiet') then
+      return false
+    end
+
+    -- Only error if all of the possible responding servers did not succeed
+    return result_count == expected_result_count and not has_succeeded
+  end
+
   lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
     self.pending_request = false
+
+    result_count = result_count + 1
+
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
 
     if not result or not result.contents then
-      if not args or not has_arg(args, '++quiet') then
+      if should_error() then
         vim.notify('No information available')
       end
       return
@@ -235,7 +264,7 @@ function hover:do_request(args)
     elseif result.contents.language then -- MarkedString
       value = result.contents.value
     elseif vim.tbl_islist(result.contents) then -- MarkedString[]
-      if vim.tbl_isempty(result.contents) then
+      if vim.tbl_isempty(result.contents) and should_error() then
         vim.notify('No information available')
         return
       end
@@ -265,6 +294,7 @@ function hover:do_request(args)
       end
     end
 
+    has_succeeded = true
     self:open_floating_preview(result.contents, option_fn)
   end)
 end
