@@ -156,12 +156,12 @@ function finder:loading_bar()
       end
 
       if self:request_done() and not spin_timer:is_closing() then
-        spin_timer:stop()
-        spin_timer:close()
+        window.nvim_close_valid_window(spin_win)
         if api.nvim_buf_is_loaded(spin_buf) then
           api.nvim_buf_delete(spin_buf, { force = true })
         end
-        window.nvim_close_valid_window(spin_win)
+        spin_timer:stop()
+        spin_timer:close()
         self:render_finder()
       end
     end)
@@ -266,7 +266,7 @@ function finder:create_finder_data(result, method)
     if node.col > 15 then
       start_col = node.col - 10
     end
-    node.word = api.nvim_buf_get_text(node.bufnr, node.row, start_col, node.row, node.ecol, {})[1]
+    node.word = api.nvim_buf_get_text(node.bufnr, node.row, start_col, node.row, -1, {})[1]
     if node.word:find('^%s') then
       node.word = node.word:sub(node.word:find('%S'), #node.word)
     end
@@ -284,14 +284,23 @@ function finder:create_finder_data(result, method)
   end
 end
 
-local function get_max_height()
-  return math.floor(vim.o.lines * config.finder.max_height)
+local function get_height(height)
+  local _max = math.floor(vim.o.lines * config.finder.max_height_ratio)
+  local _min = config.finder.min_height
+  height = height or math.floor((_min+_max)/2)
+  return math.min( math.max(height, _min) , _max)
+end
+
+local function get_width(width)
+  local _max = math.floor(vim.o.columns * config.finder.max_width_ratio)
+  local _min = config.finder.min_width
+  width = width or math.floor((_min+_max)/2)
+  return math.min( math.max(width, _min) , _max)
 end
 
 function finder:render_finder()
-  local width = {}
   self.bufnr = api.nvim_create_buf(false, false)
-  local float_height = get_max_height()
+  local float_height = get_height()
 
   self.render_fn = co.create(function(need_yield)
     local indent = (' '):rep(2)
@@ -309,7 +318,6 @@ function finder:render_finder()
         table.insert(title, 1, '')
       end
       api.nvim_buf_set_lines(self.bufnr, line_count, line_count, false, title)
-      width[#width + 1] = #meth_data.title
       line_count = line_count + #title
       api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderType', line_count - 1, 4, 16)
       api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderIcon', line_count - 1, 0, 4)
@@ -320,7 +328,6 @@ function finder:render_finder()
         local text = indent .. ui.collapse .. ' ' .. fname .. ' ' .. #item.nodes
         indent = (' '):rep(5)
         api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-        width[#width + 1] = #text
         line_count = line_count + 1
         local start = line_count
         api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaCollapse', line_count - 1, 0, 5)
@@ -339,7 +346,6 @@ function finder:render_finder()
           v.start = start
           text = indent .. v.word
           api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-          width[#width + 1] = #text
           line_count = line_count + 1
           api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCode', line_count - 1, 5, -1)
           v.winline = v.winline > -1 and v.winline or line_count
@@ -349,8 +355,7 @@ function finder:render_finder()
           })
 
           if line_count > float_height + 10 and need_yield then
-            table.sort(width)
-            need_yield = co.yield(width[#width])
+            need_yield = co.yield()
           end
         end
         indent = '  '
@@ -370,28 +375,21 @@ function finder:render_finder()
   self:apply_map()
 
   while true do
-    local _, float_width = co.resume(self.render_fn, true)
-    if not float_width and co.status(self.render_fn) == 'dead' then
-      table.sort(width)
-      float_width = width[#width]
-    end
-
-    if not float_width then
-      print('[lspsaga] no data to show')
-      return
-    end
-    self:create_finder_win(float_width)
+    co.resume(self.render_fn, true)
+    self:create_finder_win()
     break
   end
 end
 
-function finder:create_finder_win(width)
+function finder:create_finder_win()
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
+  local width = get_width(80)
+  local height = get_height()
 
   local opt = {
     relative = 'editor',
     width = width,
-    height = get_max_height(),
+    height = height,
     no_size_override = true,
   }
 
@@ -403,10 +401,8 @@ function finder:create_finder_win(width)
       api.nvim_feedkeys(keycode, 'x', false)
     end)
   end
-  winline = fn.winline()
-  opt.row = winline + 1
-  local wincol = fn.wincol()
-  opt.col = fn.screencol() - math.floor(wincol * 0.4)
+  opt.col = math.floor((vim.fn.winwidth(0)-width)/2)
+  opt.row = math.floor((vim.fn.winheight(0)-opt.height)/2) + 10
 
   local side_char = window.border_chars()['top'][config.ui.border]
   local normal_right_side = ' '
@@ -713,58 +709,8 @@ local function create_preview_window(finder_winid)
     return
   end
 
-  local opts = {
-    relative = 'editor',
-    no_size_override = true,
-    zindex = 80,
-  }
-
-  local winconfig = api.nvim_win_get_config(finder_winid)
-  opts.row = winconfig.row[false]
-  opts.height = winconfig.height
-
-  local border_side = {}
-  local top = window.combine_char()['top'][config.ui.border]
-  local bottom = window.combine_char()['bottom'][config.ui.border]
-
-  --in right
-  if vim.o.columns - winconfig.col[false] - winconfig.width >= config.finder.min_width then
-    local adjust = config.ui.border == 'shadow' and -2 or 2
-    opts.col = winconfig.col[false] + winconfig.width + adjust
-    opts.width = vim.o.columns - opts.col - 2
-    border_side = {
-      ['lefttop'] = top,
-      ['leftbottom'] = bottom,
-    }
-  --in left
-  elseif winconfig.col[false] >= config.finder.min_width then
-    opts.width = math.floor(winconfig.col[false] * 0.8)
-    local adjust = config.ui.border == 'shadow' and -2 or 0
-    opts.col = winconfig.col[false] - opts.width - adjust
-    border_side = {
-      ['righttop'] = top,
-      ['rightbottom'] = bottom,
-    }
-    api.nvim_win_set_config(finder_winid, {
-      border = window.combine_border(config.ui.border, {
-        ['lefttop'] = '',
-        ['left'] = '',
-        ['leftbottom'] = '',
-      }, 'FinderBorder'),
-    })
-  end
-
-  if not opts.col then
-    vim.notify(
-      '[Lspsaga] finder previee get col failed try change finder.min_width',
-      vim.log.levels.WARN
-    )
-    return
-  end
-
   local content_opts = {
     contents = {},
-    border_side = border_side,
     bufhidden = '',
     highlight = {
       border = 'FinderPreviewBorder',
@@ -772,7 +718,7 @@ local function create_preview_window(finder_winid)
     },
   }
 
-  return window.create_win_with_border(content_opts, opts)
+  return window.create_win_vertical(finder_winid, 'above', content_opts)
 end
 
 local function clear_preview_ns(ns, buf)

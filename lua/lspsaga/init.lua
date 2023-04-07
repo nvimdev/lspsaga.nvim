@@ -71,8 +71,10 @@ local default_config = {
   },
   request_timeout = 2000,
   finder = {
-    max_height = 0.5,
-    min_width = 30,
+    max_height_ratio = 0.4,
+    max_width_ratio = 0.9,
+    min_width = 60,
+    min_height = 15,
     force_max_height = false,
     keys = {
       jump_to = 'p',
