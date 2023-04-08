@@ -40,7 +40,6 @@ local default_config = {
     keys = {
       exec_action = 'o',
       quit = 'q',
-      go_action = 'g',
       expand_or_jump = '<CR>',
       quit_in_show = { 'q', '<ESC>' },
     },

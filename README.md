@@ -402,14 +402,12 @@ Default options:
     keys = {
       exec_action = 'o',
       quit = 'q',
-      go_action = 'g',
       expand_or_jump = '<CR>',
       quit_in_show = { 'q', '<ESC>' },
     },
   },
 ```
 
-- Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
 - `show_codeaction` default is true it will show available actions in the diagnsotic jump window
 - `show_source` default is true extend `source` into the diagnostic message

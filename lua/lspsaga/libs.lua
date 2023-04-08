@@ -143,7 +143,7 @@ function libs.get_config_lsp_filetypes()
   return filetypes
 end
 
-function libs.close_preview_autocmd(bufnr, winids, events)
+function libs.close_preview_autocmd(bufnr, winids, events, callback)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
@@ -151,6 +151,9 @@ function libs.close_preview_autocmd(bufnr, winids, events)
     callback = function()
       local window = require('lspsaga.window')
       window.nvim_close_valid_window(winids)
+      if callback then
+        callback()
+      end
     end,
   })
 end
