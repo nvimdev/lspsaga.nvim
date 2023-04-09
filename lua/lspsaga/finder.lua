@@ -426,6 +426,7 @@ function finder:render_finder()
 
   self:apply_map()
 
+  co.resume(self.render_fn,false)
   self:create_finder_win()
 end
 
@@ -448,7 +449,6 @@ function finder:create_finder_win()
       api.nvim_feedkeys(keycode, 'x', false)
     end)
   end
-  winline = fn.winline()
   opt.col = math.floor((vim.fn.winwidth(0)-width)/2)
   opt.row = math.floor((vim.fn.winheight(0)-opt.height)/2) + 10
 
