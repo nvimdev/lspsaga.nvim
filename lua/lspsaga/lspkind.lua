@@ -107,7 +107,7 @@ local function init_kind_hl()
     if vim.tbl_contains(others, v) then
       api.nvim_set_hl(0, v, { fg = '#bdbfb8', default = true })
     elseif i == #tbl then
-      api.nvim_set_hl(0, v, { fg = '#ee4866', default = true })
+      api.nvim_set_hl(0, v, { link = 'Operator', default = true })
     else
       local group = find_kind_group(v)
       api.nvim_set_hl(0, v, { link = group, default = true })
