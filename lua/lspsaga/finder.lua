@@ -341,14 +341,27 @@ function finder:create_finder_data(result, method)
   end
 end
 
-local function get_max_height()
-  return math.floor(vim.o.lines * config.finder.max_height)
+local function get_height(height)
+  config.finder.max_height_ratio = 0.4
+  config.finder.min_height = 10
+  local _max = math.floor(vim.o.lines * config.finder.max_height_ratio)
+  local _min = config.finder.min_height
+  height = height or math.floor((_min+_max)/2)
+  return math.min( math.max(height, _min) , _max)
+end
+
+local function get_width(width)
+  config.finder.max_width_ratio = 0.9
+  config.finder.min_width = 30
+  local _max = math.floor(vim.o.columns * config.finder.max_width_ratio)
+  local _min = config.finder.min_width
+  width = width or math.floor((_min+_max)/2)
+  return math.min( math.max(width, _min) , _max)
 end
 
 function finder:render_finder()
-  local width = {}
   self.bufnr = api.nvim_create_buf(false, false)
-  local float_height = get_max_height()
+  local float_height = get_height()
 
   self.render_fn = co.create(function(need_yield)
     local indent = (' '):rep(2)
@@ -366,7 +379,6 @@ function finder:render_finder()
         table.insert(title, 1, '')
       end
       api.nvim_buf_set_lines(self.bufnr, line_count, line_count, false, title)
-      width[#width + 1] = #meth_data.title
       line_count = line_count + #title
       api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderType', line_count - 1, 4, 16)
       api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderIcon', line_count - 1, 0, 4)
@@ -377,7 +389,6 @@ function finder:render_finder()
         local text = indent .. ui.collapse .. ' ' .. fname .. ' ' .. #item.nodes
         indent = (' '):rep(5)
         api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-        width[#width + 1] = #text
         line_count = line_count + 1
         local start = line_count
         api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaCollapse', line_count - 1, 0, 5)
@@ -396,7 +407,6 @@ function finder:render_finder()
           v.start = start
           text = indent .. v.word
           api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-          width[#width + 1] = #text
           line_count = line_count + 1
           api.nvim_buf_add_highlight(self.bufnr, ns_id, 'FinderCode', line_count - 1, 5, -1)
           v.winline = v.winline > -1 and v.winline or line_count
@@ -406,8 +416,7 @@ function finder:render_finder()
           })
 
           if line_count > float_height + 10 and need_yield then
-            table.sort(width)
-            need_yield = co.yield(width[#width])
+            need_yield = co.yield()
           end
         end
         indent = '  '
@@ -432,8 +441,9 @@ end
 
 function finder:create_finder_win()
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
-  local width = 80
-  local height = 15
+  local width = get_width(80)
+  local height = get_height()
+
   local opt = {
     relative = 'editor',
     width = width,
