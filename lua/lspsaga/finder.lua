@@ -170,7 +170,7 @@ function finder:loading_bar()
 end
 
 
-local get_data_fn = function(fname)
+local get_file_lines = function(fname)
   local init_time = uv.fs_stat(fname).mtime.nsec
   local data
   return function()
@@ -191,8 +191,8 @@ local get_data_fn = function(fname)
   end
 end
 
-local get_text = function(fname,rows,get_data)
-  local data = get_data()
+local get_text = function(fname,rows)
+  local data = get_file_lines(fname)()
   local lines = {} -- rows we need to retrieve
   local need = 0 -- keep track of how many unique rows we need
   for _, row in pairs(rows) do
@@ -281,7 +281,6 @@ function finder:create_finder_data(result, method)
   local parent = self.lspdata[method]
   parent.data = {}
 
-  local get_data_fns = {}
   for i, res in ipairs(result) do
     local uri = res.targetUri or res.uri
     if not uri then
@@ -293,9 +292,6 @@ function finder:create_finder_data(result, method)
     local fname = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     local full_fname = fname
     local range = res.targetSelectionRange or res.targetRange or res.range
-    if not get_data_fns[full_fname] then
-      get_data_fns[full_fname] = get_data_fn(full_fname)
-    end
     if libs.iswin then
       fname = fname:gsub('^%l', fname:sub(1, 1):upper())
     end
@@ -323,7 +319,8 @@ function finder:create_finder_data(result, method)
     if node.col > 15 then
       start_col = node.col - 10
     end
-    node.word = get_text(full_fname, {node.row},get_data_fns[full_fname])[node.row]
+
+    node.word = get_text(full_fname, {node.row})[node.row]
     if node.word:find('^%s') then
       node.word = node.word:sub(node.word:find('%S'), #node.word)
     end
