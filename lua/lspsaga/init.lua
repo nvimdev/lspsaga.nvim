@@ -40,7 +40,6 @@ local default_config = {
     keys = {
       exec_action = 'o',
       quit = 'q',
-      go_action = 'g',
       expand_or_jump = '<CR>',
       quit_in_show = { 'q', '<ESC>' },
     },
@@ -86,6 +85,8 @@ local default_config = {
     },
   },
   definition = {
+    width = 0.6,
+    height = 0.5,
     edit = '<C-c>o',
     vsplit = '<C-c>v',
     split = '<C-c>i',
@@ -118,6 +119,7 @@ local default_config = {
     auto_close = true,
     custom_sort = nil,
     preview_width = 0.4,
+    close_after_jump = false,
     keys = {
       expand_or_jump = 'o',
       quit = 'q',

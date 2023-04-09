@@ -31,34 +31,34 @@ local function get_kind()
   local kind = {
     [1] = { 'File', ' ', 'Tag' },
     [2] = { 'Module', ' ', 'Exception' },
-    [3] = { 'Namespace', ' ', 'Include' },
-    [4] = { 'Package', ' ', 'Label' },
-    [5] = { 'Class', ' ', 'Include' },
-    [6] = { 'Method', ' ', 'Function' },
-    [7] = { 'Property', ' ', '@property' },
-    [8] = { 'Field', ' ', '@field' },
+    [3] = { 'Namespace', ' ', 'Include' },
+    [4] = { 'Package', ' ', 'Label' },
+    [5] = { 'Class', ' ', 'Include' },
+    [6] = { 'Method', ' ', 'Function' },
+    [7] = { 'Property', ' ', '@property' },
+    [8] = { 'Field', ' ', '@field' },
     [9] = { 'Constructor', ' ', '@constructor' },
-    [10] = { 'Enum', '了', '@number' },
-    [11] = { 'Interface', ' ', 'Type' },
+    [10] = { 'Enum', ' ', '@number' },
+    [11] = { 'Interface', ' ', 'Type' },
     [12] = { 'Function', ' ', 'Function' },
-    [13] = { 'Variable', ' ', '@variable' },
-    [14] = { 'Constant', ' ', 'Constant' },
-    [15] = { 'String', ' ', 'String' },
+    [13] = { 'Variable', ' ', '@variable' },
+    [14] = { 'Constant', ' ', 'Constant' },
+    [15] = { 'String', '󰅳 ', 'String' },
     [16] = { 'Number', ' ', 'Number' },
-    [17] = { 'Boolean', ' ', 'Boolean' },
-    [18] = { 'Array', ' ', 'Type' },
+    [17] = { 'Boolean', ' ', 'Boolean' },
+    [18] = { 'Array', '󰅨 ', 'Type' },
     [19] = { 'Object', ' ', 'Type' },
-    [20] = { 'Key', ' ', '' },
-    [21] = { 'Null', ' ', 'Constant' },
-    [22] = { 'EnumMember', ' ', 'Number' },
-    [23] = { 'Struct', ' ', 'Type' },
-    [24] = { 'Event', ' ', 'Constant' },
-    [25] = { 'Operator', ' ', 'Operator' },
-    [26] = { 'TypeParameter', ' ', 'Type' },
+    [20] = { 'Key', ' ', '' },
+    [21] = { 'Null', '󰟢 ', 'Constant' },
+    [22] = { 'EnumMember', ' ', 'Number' },
+    [23] = { 'Struct', ' ', 'Type' },
+    [24] = { 'Event', ' ', 'Constant' },
+    [25] = { 'Operator', ' ', 'Operator' },
+    [26] = { 'TypeParameter', ' ', 'Type' },
     -- ccls
     [252] = { 'TypeAlias', ' ', 'Type' },
-    [253] = { 'Parameter', ' ', '@parameter' },
-    [254] = { 'StaticMethod', 'ﴂ ', 'Function' },
+    [253] = { 'Parameter', ' ', '@parameter' },
+    [254] = { 'StaticMethod', ' ', 'Function' },
     [255] = { 'Macro', ' ', 'Macro' },
     -- for completion sb microsoft!!!
     [300] = { 'Text', ' ', 'String' },
@@ -107,7 +107,7 @@ local function init_kind_hl()
     if vim.tbl_contains(others, v) then
       api.nvim_set_hl(0, v, { fg = '#bdbfb8', default = true })
     elseif i == #tbl then
-      api.nvim_set_hl(0, v, { fg = '#ee4866', default = true })
+      api.nvim_set_hl(0, v, { link = 'Operator', default = true })
     else
       local group = find_kind_group(v)
       api.nvim_set_hl(0, v, { link = group, default = true })

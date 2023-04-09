@@ -191,6 +191,9 @@ function ot:apply_map()
     end
     local width = #api.nvim_get_current_line()
     libs.jump_beacon({ range.start.line, range.start.character }, width)
+    if outline_conf.close_after_jump then
+      self:close_and_clean()
+    end
   end
 
   keymap.set('n', maps.expand_or_jump, function()
@@ -545,11 +548,17 @@ function ot:register_events()
   self.registerd = true
 end
 
+function ot:close_and_clean()
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
+    clean_ctx()
+  end
+end
+
 function ot:outline(buf, non_close)
   non_close = non_close or false
   if self.winid and api.nvim_win_is_valid(self.winid) and not non_close then
-    api.nvim_win_close(self.winid, true)
-    clean_ctx()
+    self:close_and_clean()
     return
   end
 

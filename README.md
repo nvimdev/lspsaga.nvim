@@ -55,7 +55,7 @@ use({
     "glepnir/lspsaga.nvim",
     opt = true,
     branch = "main",
-    event = "LspAttach"
+    event = "LspAttach",
     config = function()
         require("lspsaga").setup({})
     end,
@@ -101,7 +101,7 @@ keymap("n", "gr", "<cmd>Lspsaga rename ++project<CR>")
 -- It also supports open/vsplit/etc operations, do refer to "definition_action_keys"
 -- It also supports tagstack
 -- Use <C-t> to jump back
-keymap("n", "gd", "<cmd>Lspsaga peek_definition<CR>")
+keymap("n", "gp", "<cmd>Lspsaga peek_definition<CR>")
 
 -- Go to definition
 keymap("n","gd", "<cmd>Lspsaga goto_definition<CR>")
@@ -183,6 +183,8 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
 
 ## Default options
 
+The top-level default options (command-specific default options below):
+
 ```lua
   preview = {
     lines_above = 0,
@@ -193,6 +195,30 @@ You can find the documentation for Lspsaga in Neovim by using `:h lspsaga`.
     scroll_up = "<C-b>",
   },
   request_timeout = 2000,
+```
+
+Example setup using default options:
+
+```lua
+require("lspsaga").setup({
+  preview = {
+    lines_above = 0,
+    lines_below = 10,
+  },
+  scroll_preview = {
+    scroll_down = "<C-f>",
+    scroll_up = "<C-b>",
+  },
+  request_timeout = 2000,
+
+  -- See Customizing Lspsaga's Appearance
+  ui = { ... },
+
+  -- For default options for each command, see below
+  finder = { ... },
+  code_action = { ... }
+  -- etc.
+})
 ```
 
 ## :Lspsaga lsp_finder
@@ -253,7 +279,7 @@ Default options:
 
 The steps demonstrated in this showcase are:
 
-- Pressing `gd` to run `:Lspsaga peek_definition`
+- Pressing `gp` to run `:Lspsaga peek_definition`
 - Editing a comment and using `:w` to save
 - Pressing `<C-c>o` to jump to the file in the floating window
 - Lspsaga shows a beacon highlight after jumping to the file
@@ -376,14 +402,12 @@ Default options:
     keys = {
       exec_action = 'o',
       quit = 'q',
-      go_action = 'g',
       expand_or_jump = '<CR>',
       quit_in_show = { 'q', '<ESC>' },
     },
   },
 ```
 
-- Using `go_action`, you can quickly jump to line where actions need to be taken in the diagnostics floating window.
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
 - `show_codeaction` default is true it will show available actions in the diagnsotic jump window
 - `show_source` default is true extend `source` into the diagnostic message
@@ -440,7 +464,7 @@ The steps demonstrated in this showcase are:
 
 `show_line_diagnostics`, `show_buf_diagnostics`, `show_workspace_diagnostics`
 `show_cursor_diagnsotics`. and support an
-argument `++unfocus` to make it unfocus. like `:Lspsaga show_workspace_diagnostics ++unfocus` 
+argument `++unfocus` to make it unfocus. like `:Lspsaga show_workspace_diagnostics ++unfocus`
 you can press the `expand_or_jump` key to expand on fname line or jump into location on message line.
 
 <details>
@@ -503,7 +527,7 @@ Default options:
     auto_close = true,
     custom_sort = nil,
     keys = {
-      expand_or_collapse = 'o',
+      expand_or_jump = 'o',
       quit = "q",
     },
   },

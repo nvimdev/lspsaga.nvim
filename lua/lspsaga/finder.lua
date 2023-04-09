@@ -245,16 +245,20 @@ function finder:do_request(params, method)
     end
 
     local uri = result[1].uri or result[1].targetUri
-    if method == methods(1) and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf() then
+    local range = result[1].targetRange or result[1].range
+    local line = api.nvim_win_get_cursor(0)[1]
+    if
+      method == methods(1)
+      and vim.uri_to_bufnr(uri) == api.nvim_get_current_buf()
+      and range.start.line == line
+    then
       local col = api.nvim_win_get_cursor(0)[2]
-      local range = result[1].targetRange or result[1].range
       if col >= range.start.character and col <= range['end'].character then
         self.request_status[method] = true
         return
       end
     end
 
-    local start = vim.loop.hrtime()
     self:create_finder_data(result, method)
     self.request_status[method] = true
   end)
@@ -422,19 +426,7 @@ function finder:render_finder()
 
   self:apply_map()
 
-  while true do
-    local _, float_width = co.resume(self.render_fn, false)
-    if not float_width and co.status(self.render_fn) == 'dead' then
-      table.sort(width)
-      float_width = width[#width]
-    end
-
-    if not float_width then
-      return
-    end
-    self:create_finder_win()
-    break
-  end
+  self:create_finder_win()
 end
 
 function finder:create_finder_win()
@@ -457,11 +449,7 @@ function finder:create_finder_win()
     end)
   end
   winline = fn.winline()
-  -- opt.row = winline + 1
   opt.col = math.floor((vim.fn.winwidth(0)-width)/2)
-  local wincol = fn.wincol()
-  -- opt.col = fn.screencol() - math.floor(wincol * 0.4)
-  -- opt.col = fn.screencol() - math.floor(wincol * 0.4)
   opt.row = math.floor((vim.fn.winheight(0)-opt.height)/2) + 10
 
   local side_char = window.border_chars()['top'][config.ui.border]

@@ -143,16 +143,16 @@ function libs.get_config_lsp_filetypes()
   return filetypes
 end
 
-function libs.close_preview_autocmd(bufnr, winids, events, cb)
+function libs.close_preview_autocmd(bufnr, winids, events, callback)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
     once = true,
-    callback = function(opt)
+    callback = function()
       local window = require('lspsaga.window')
       window.nvim_close_valid_window(winids)
-      if cb then
-        cb(opt.event)
+      if callback then
+        callback()
       end
     end,
   })
@@ -259,17 +259,22 @@ end
 function libs.scroll_in_preview(bufnr, preview_winid)
   local config = require('lspsaga').config
   if preview_winid and api.nvim_win_is_valid(preview_winid) then
-    vim.keymap.set('n', config.scroll_preview.scroll_down, function()
-      api.nvim_win_call(preview_winid, function()
-        feedkeys('<C-d>')
-      end)
-    end, { buffer = bufnr })
-
-    vim.keymap.set('n', config.scroll_preview.scroll_up, function()
-      api.nvim_win_call(preview_winid, function()
-        feedkeys('<C-u>')
-      end)
-    end, { buffer = bufnr })
+    for i, map in ipairs({ config.scroll_preview.scroll_down, config.scroll_preview.scroll_up }) do
+      api.nvim_buf_set_keymap(bufnr, 'n', map, '', {
+        noremap = true,
+        nowait = true,
+        callback = function()
+          if api.nvim_win_is_valid(preview_winid) then
+            api.nvim_win_call(preview_winid, function()
+              local key = i == 1 and '<C-d>' or '<C-u>'
+              feedkeys(key)
+            end)
+            return
+          end
+          libs.delete_scroll_map(bufnr)
+        end,
+      })
+    end
   end
 end
 

@@ -1,7 +1,6 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local act = {}
 local ctx = {}
@@ -201,7 +200,7 @@ function act:send_code_action_request(main_buf, options, cb)
     end
 
     if cb then
-      cb()
+      cb(vim.deepcopy(self.action_tuples))
     end
   end)
 end
@@ -218,15 +217,12 @@ function act:set_cursor()
   self:action_preview(self.action_winid, self.bufnr)
 end
 
-function act:num_shortcut(bufnr, callback)
+function act:num_shortcut(bufnr)
   for num, _ in pairs(self.action_tuples or {}) do
     nvim_buf_set_keymap(bufnr, 'n', tostring(num), '', {
       noremap = true,
       nowait = true,
       callback = function()
-        if callback then
-          callback()
-        end
         self:do_code_action(num)
       end,
     })
@@ -272,7 +268,7 @@ function act:apply_action(action, client)
   clean_ctx()
 end
 
-function act:do_code_action(num)
+function act:do_code_action(num, tuple)
   local number
   if num then
     number = tonumber(num)
@@ -281,21 +277,18 @@ function act:do_code_action(num)
     number = cur_text:match('%[(%d+)%]%s+%S')
     number = tonumber(number)
   end
-  self:close_action_window()
 
-  if not number then
+  if not number and not tuple then
     vim.notify('[Lspsaga] no action number choice', vim.log.levels.WARN)
     return
   end
 
-  local action = vim.deepcopy(self.action_tuples[number][2])
-  local client = lsp.get_client_by_id(self.action_tuples[number][1])
+  local action = tuple and tuple[2] or vim.deepcopy(self.action_tuples[number][2])
+  local id = tuple and tuple[1] or self.action_tuples[number][1]
+  local client = lsp.get_client_by_id(id)
 
   local curbuf = api.nvim_get_current_buf()
-  for i = 1, #self.action_tuples do
-    pcall(api.nvim_buf_del_keymap, curbuf, 'n', tostring(i))
-  end
-
+  self:close_action_window(curbuf)
   if
     not action.edit
     and client
@@ -315,13 +308,14 @@ function act:do_code_action(num)
   end
 end
 
-function act:get_action_diff(num, main_buf)
-  local action = self.action_tuples[tonumber(num)][2]
+function act:get_action_diff(num, main_buf, tuple)
+  local action = tuple and tuple[2] or self.action_tuples[tonumber(num)][2]
   if not action then
     return
   end
 
-  local client = lsp.get_client_by_id(self.action_tuples[tonumber(num)][1])
+  local id = tuple and tuple[1] or self.action_tuples[tonumber(num)][1]
+  local client = lsp.get_client_by_id(id)
   if
     not action.edit
     and client
@@ -374,7 +368,7 @@ function act:get_action_diff(num, main_buf)
   return diff
 end
 
-function act:action_preview(main_winid, main_buf, border_hi)
+function act:action_preview(main_winid, main_buf, border_hi, tuple)
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
     self.preview_winid = nil
@@ -385,7 +379,7 @@ function act:action_preview(main_winid, main_buf, border_hi)
     return
   end
 
-  local tbl = self:get_action_diff(num, main_buf)
+  local tbl = self:get_action_diff(num, main_buf, tuple)
   if not tbl or #tbl == 0 then
     return
   end
@@ -435,12 +429,18 @@ function act:action_preview(main_winid, main_buf, border_hi)
   return self.preview_winid
 end
 
-function act:close_action_window()
+function act:close_action_window(bufnr)
   if self.action_winid and api.nvim_win_is_valid(self.action_winid) then
     api.nvim_win_close(self.action_winid, true)
   end
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
+  end
+
+  if config.code_action.num_shortcut and self.action_tuples and #self.action_tuples > 1 then
+    for i = 1, #self.action_tuples do
+      pcall(api.nvim_buf_del_keymap, bufnr, 'n', tostring(i))
+    end
   end
 end
 
