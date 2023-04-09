@@ -2,6 +2,7 @@ local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
 local ui = config.ui
 local window = require('lspsaga.window')
+layout = require('lspsaga.layout').new()
 local libs = require('lspsaga.libs')
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
@@ -110,7 +111,7 @@ function finder:loading_bar()
     enter = false,
   }
 
-  local spin_buf, spin_win = window.create_win_with_border(content_opts, opts)
+  local spin_buf, spin_win = layout:add_win(content_opts,opts)
   local spin_config = {
     spinner = {
       '█▁▁▁▁▁▁▁▁▁',
@@ -150,13 +151,13 @@ function finder:loading_bar()
         if api.nvim_buf_is_loaded(spin_buf) then
           api.nvim_buf_delete(spin_buf, { force = true })
         end
-        window.nvim_close_valid_window(spin_win)
+        layout:remove_win(spin_win)
         vim.notify('request timeout')
         return
       end
 
       if self:request_done() and not spin_timer:is_closing() then
-        window.nvim_close_valid_window(spin_win)
+        layout:remove_win(spin_win)
         if api.nvim_buf_is_loaded(spin_buf) then
           api.nvim_buf_delete(spin_buf, { force = true })
         end
@@ -484,7 +485,7 @@ function finder:create_finder_win()
   vim.bo[self.bufnr].buftype = 'nofile'
 
   self.restore_opts = window.restore_option()
-  _, self.winid = window.create_win_with_border(content_opts, opt)
+  _, self.winid = layout:add_win(content_opts,opt)
 
   -- make sure close preview window by using wincmd
   api.nvim_create_autocmd('WinClosed', {
@@ -604,7 +605,7 @@ function finder:apply_map()
       if ok then
         pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
       end
-      window.nvim_close_valid_window({ self.winid, self.peek_winid })
+      layout:remove_win({ self.winid, self.peek_winid })
       self:clean_data()
       clean_ctx()
     end, opts)
@@ -624,7 +625,7 @@ function finder:apply_map()
       },
       enter = false,
     }
-    self.search_buf, self.search_win = window.create_win_vertical(self.winid,1,'down',content_opts)
+    self.search_buf, self.search_win = layout:add_win(content_opts,{ height=1, reference = self.winid, direction = 'down' })
     if not self.search_ns then
       self.search_ns = api.nvim_create_namespace('sagasearch')
     end
@@ -750,12 +751,12 @@ function finder:apply_map()
     })
 
     vim.keymap.set('n','<Esc>',function ()
-      window.nvim_close_valid_window(self.search_win)
+      layout:remove_win(self.search_win)
     end)
 
     vim.keymap.set('i','<CR>',function ()
       -- vim.cmd [[stopinsert]]
-      window.nvim_close_valid_window(self.search_win)
+      layout:remove_win(self.search_win)
       vim.api.nvim_buf_call(self.bufnr,function ()
         local curline = api.nvim_win_get_cursor(self.winid)[1]
         local text = api.nvim_get_current_line()
@@ -941,7 +942,7 @@ local function create_preview_window(finder_winid)
       normal = 'FinderNormal',
     },
   }
-  return window.create_win_vertical(finder_winid, nil, 'above', content_opts)
+  return layout:add_win(content_opts, { reference = finder_winid, direction = 'above' })
 end
 
 local function clear_preview_ns(ns, buf)
@@ -1002,7 +1003,7 @@ function finder:close_auto_preview_win()
   if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
     local buf = api.nvim_win_get_buf(self.peek_winid)
     clear_preview_ns(ns_id, buf)
-    window.nvim_close_valid_window(self.peek_winid)
+    layout:remove_win(self.peek_winid)
     self.peek_winid = nil
   end
 end
@@ -1019,7 +1020,7 @@ function finder:do_action(node, action)
     restore_opts = self.restore_opts
   end
 
-  window.nvim_close_valid_window({ self.winid, self.peek_winid, self.tip_winid or nil })
+  layout:remove_win({ self.winid, self.peek_winid, self.tip_winid or nil })
   self:clean_data()
 
   -- if buffer not saved save it before jump

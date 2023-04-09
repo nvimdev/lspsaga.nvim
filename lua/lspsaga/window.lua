@@ -1,6 +1,6 @@
 local vim, api, lsp = vim, vim.api, vim.lsp
 local M = {}
-M.wins = {}
+local g = vim.api.nvim_create_augroup('sagalayout',{clear=false})
 
 function M.border_chars()
   return {
@@ -205,6 +205,7 @@ end
 -- enter boolean into window or not
 -- highlight border highlight string type
 function M.create_win_with_border(content_opts, opts)
+  local layout = opts.layout
   local config = require('lspsaga').config
   vim.validate({
     content_opts = { content_opts, 't' },
@@ -259,6 +260,16 @@ function M.create_win_with_border(content_opts, opts)
   end
 
   local winid = api.nvim_open_win(bufnr, enter, opts)
+  vim.api.nvim_create_autocmd('WinClosed', {
+    callback = function ()
+      local win = tonumber(vim.fn.expand('<amatch>'))
+      if layout then
+        layout:remove_win(win)
+      end
+    end,
+    group = g,
+  })
+
   api.nvim_set_option_value(
     'winblend',
     content_opts.winblend or config.ui.winblend,
@@ -273,66 +284,46 @@ function M.create_win_with_border(content_opts, opts)
   )
 
   api.nvim_set_option_value('winbar', '', { scope = 'local', win = winid })
-  M.wins[winid] = true
   return bufnr, winid
 end
 
-function M.rearange_all_win()
-  -- TODO: resize and re-position all wins based on M.wins and reference
-  -- local winid
-  -- local new_config = {
-  --   col = {
-  --     [false] = 60,
-  --   },
-  --   row = {
-  --     [false] = 10,
-  --   }
-  -- }
-  -- local curr_config = vim.api.nvim_win_get_config(winid)
-  -- new_config = vim.tbl_deep_extend('force',curr_config,new_config)
-  -- vim.api.nvim_win_set_config(winid,new_config)
-end
-
-function M.create_win_vertical(reference,height,direction,content_opts)
-  local winconfig = api.nvim_win_get_config(reference)
-  if not height then
-    height = (content_opts.contents and #content_opts.contents > 0) 
-      and #content_opts.contents 
-      or winconfig.height
-  end
-  local width = winconfig.width
+function M.create_win_vertical(content_opts,custom_opts)
+  local winconfig = api.nvim_win_get_config(custom_opts.reference)
   local opts = {
     relative = 'editor',
     no_size_override = true,
     zindex = 80,
-    height = height,
-    width = width,
+    height = (content_opts.contents and #content_opts.contents > 0) 
+          and #content_opts.contents 
+          or winconfig.height,
+    width = winconfig.width,
     col = winconfig.col[false],
-    reference = reference,
   }
-  if direction == 'above' then
-    opts.row = winconfig.row[false] - height - 1
+  opts = vim.tbl_deep_extend('keep',custom_opts,opts)
+  if custom_opts.direction == 'above' then
+    opts.row = winconfig.row[false] - opts.height - 1
   else
-    opts.row = winconfig.row[false] + winconfig.height + height + 1
+    -- opts.row = winconfig.row[false] + winconfig.height + opts.height + 1
+    opts.row = winconfig.row[false] + winconfig.height + 1
   end
   return M.create_win_with_border(content_opts, opts)
 end
 
-function M.create_win_horizontal(reference,width,direction,content_opts)
-  local winconfig = api.nvim_win_get_config(reference)
+function M.create_win_horizontal(content_opts, custom_opts)
+  local winconfig = api.nvim_win_get_config(custom_opts.reference)
   local opts = {
     relative = 'editor',
     no_size_override = true,
     zindex = 80,
     height = winconfig.height,
-    width = width,
+    width = custom_opts.width or winconfig.width,
     row = winconfig.row[false],
-    reference = reference,
   }
-  if direction == 'left' then
-    opts.col = winconfig.col[false] - width - 1
+  opts = vim.tbl_deep_extend('keep',custom_opts,opts)
+  if custom_opts.direction == 'left' then
+    opts.col = winconfig.col[false] - opts.width - 1
   else
-    opts.col = winconfig.col[false] + width + 1
+    opts.col = winconfig.col[false] + winconfig.width + 1
   end
   return M.create_win_with_border(content_opts, opts)
 end
@@ -377,8 +368,6 @@ function M.nvim_close_valid_window(winid)
       return
     end
     if vim.api.nvim_win_is_valid(win_id) then
-      print('close win_id: ',win_id)
-      M.wins[win_id] = nil
       api.nvim_win_close(win_id, true)
     end
   end
