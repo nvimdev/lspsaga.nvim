@@ -427,6 +427,14 @@ function diag:move_cursor(entry)
   api.nvim_win_call(current_winid, function()
     -- Save position in the window's jumplist
     vim.cmd("normal! m'")
+    if entry.col == 0 then
+      local text = api.nvim_buf_get_text(entry.bufnr, entry.lnum, 0, entry.lnum, -1, {})[1]
+      local scol = text:find('%S')
+      if scol ~= 0 then
+        entry.col = scol
+      end
+    end
+
     api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
     local width = entry.end_col - entry.col
     if width <= 0 then
