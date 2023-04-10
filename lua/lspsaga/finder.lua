@@ -746,8 +746,13 @@ function finder:apply_map()
     })
 
     vim.keymap.set('n','<Esc>',function ()
-      layout:remove_win(self.search_win)
-    end)
+        layout:remove_win(self.search_win)
+    end,
+    {     
+      buffer = self.search_buf,
+      nowait = true,
+      silent = true,
+    })
 
     vim.keymap.set('i','<CR>',function ()
       -- vim.cmd [[stopinsert]]
