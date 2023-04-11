@@ -214,34 +214,39 @@ local function should_error(args)
   return true
 end
 
-local function check_support(args)
-  local support = true
-  for _, client in ipairs(lsp.get_active_clients({ bufnr = 0 })) do
+local function support_clients()
+  local count = 0
+  local clients = lsp.get_active_clients({ bufnr = 0 })
+  for _, client in ipairs(clients) do
     if client.supports_method('textDocument/hover') then
-      support = true
+      count = count + 1
       break
     end
   end
-
-  if not support and not should_error(args) then
-    vim.notify('[Lspsaga] all servers of this buffer not support hover')
-  end
-
-  return support
+  return count, #clients
 end
 
 function hover:do_request(args)
   local params = util.make_position_params()
+  local count, total = support_clients()
+  if count == 0 and should_error(args) then
+    vim.notify('[Lspsaga] all server of buffer not support hover request')
+    return
+  end
+  count = 0
 
+  local failed = 0
   lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
     self.pending_request = false
+    count = count + 1
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
 
     if not result or not result.contents then
-      if should_error(args) then
+      failed = failed + 1
+      if count == total and failed == total and should_error(args) then
         vim.notify('No information available')
       end
       return
@@ -323,10 +328,6 @@ function hover:render_hover_doc(args)
       '[Lpsaga.nvim] Please install markdown and markdown_inline parser in nvim-treesitter',
       vim.log.levels.WARN
     )
-    return
-  end
-
-  if not check_support(args) then
     return
   end
 
