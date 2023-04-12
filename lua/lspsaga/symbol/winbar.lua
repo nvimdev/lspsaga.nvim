@@ -1,14 +1,7 @@
 local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config.symbol_in_winbar
 local libs = require('lspsaga.libs')
-local symbar = {}
-
-local cache = {}
-symbar.__index = symbar
-
-function symbar.__newindex(t, k, v)
-  rawset(t, k, v)
-end
+local symbol = require('lspsaga.symbol')
 
 local function bar_prefix()
   return {
@@ -139,29 +132,12 @@ local function binary_search(tbl, line)
   end
 end
 
-function symbar.node_is_keyword(buf, node)
-  if not node.selectionRange then
-    return false
-  end
-  local captures = vim.treesitter.get_captures_at_pos(
-    buf,
-    node.selectionRange.start.line,
-    node.selectionRange.start.character
-  )
-  for _, v in pairs(captures) do
-    if v.capture == 'keyword' or v.capture == 'conditional' or v.capture == 'repeat' then
-      return true
-    end
-  end
-  return false
-end
-
 local function stl_escape(str)
   return str:gsub('%%', '')
 end
 
 local function insert_elements(buf, node, elements)
-  if config.hide_keyword and symbar.node_is_keyword(buf, node) then
+  if config.hide_keyword and symbol:node_is_keyword(buf, node) then
     return
   end
   local type = get_kind_icon(node.kind, 1)
@@ -273,113 +249,49 @@ local render_symbol_winbar = function(buf, symbols)
   return winbar_str
 end
 
---- Get buffer symbols from cache
----@private
-local function get_buf_symbol(buf)
-  buf = buf or api.nvim_get_current_buf()
-  local res = {}
-
-  if not cache[buf] then
-    return res
-  end
-
-  if cache[buf].pending_request then
-    res.pending_request = cache[buf].pending_request
-    return res
-  end
-
-  res.symbols = cache[buf].symbols
-  res.pending_request = cache[buf].pending_request
-  return res
-end
-
-function symbar:do_symbol_request(buf, callback)
-  local params = { textDocument = lsp.util.make_text_document_params() }
-
-  local client = libs.get_client_by_cap('documentSymbolProvider')
-  if not client then
-    return
-  end
-  self[buf].pending_request = true
-  client.request('textDocument/documentSymbol', params, callback, buf)
-end
-
-function symbar:refresh_symbol_cache(buf, render_fn)
-  local function handler(_, result, ctx)
-    if api.nvim_get_current_buf() ~= buf or not self[ctx.bufnr] then
-      return
-    end
-
-    self[ctx.bufnr].pending_request = false
-    if not result then
-      return
-    end
-
-    if render_fn then
-      render_fn(buf, result)
-    end
-
-    self[ctx.bufnr].symbols = result
-  end
-  self:do_symbol_request(buf, handler)
-end
-
-function symbar:init_buf_symbols(buf, render_fn)
-  local res = get_buf_symbol(buf)
+local function init_buf_symbols(buf, render_fn)
+  local res = symbol:get_buf_symbols(buf)
   if res.pending_request then
     return
   end
 
   if not res.symbols or (next(res.symbols) == nil and not res.pending_request) then
-    self:refresh_symbol_cache(buf, render_fn)
+    symbol:do_request(buf, render_fn)
   else
     render_fn(buf, res.symbols)
   end
 end
 
-local function clean_buf_cache(buf)
-  buf = buf or api.nvim_get_current_buf()
-  if buf and cache[buf] then
-    for k, _ in pairs(cache[buf]) do
-      cache[buf][k] = nil
-    end
-    cache[buf] = nil
-  end
-end
-
-function symbar:register_events(buf)
+local function register_events(buf)
   local augroup = api.nvim_create_augroup('LspsagaSymbol' .. tostring(buf), { clear = true })
-  self[buf].group = augroup
+  api.nvim_create_autocmd('BufDelete', {
+    group = augroup,
+    buffer = buf,
+    callback = function()
+      pcall(api.nvim_del_augroup_by_id, augroup)
+    end,
+  })
 
   api.nvim_create_autocmd('CursorMoved', {
     group = augroup,
     buffer = buf,
     callback = function()
-      self:init_buf_symbols(buf, render_symbol_winbar)
+      init_buf_symbols(buf, render_symbol_winbar)
     end,
     desc = 'Lspsaga symbols render and request',
   })
 
-  api.nvim_create_autocmd('InsertLeave', {
+  api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
     group = augroup,
     buffer = buf,
     callback = function()
-      if not config.enable then
-        self:refresh_symbol_cache(buf, render_symbol_winbar)
+      if config.enable then
+        symbol:do_request(buf, render_symbol_winbar)
       else
-        self:refresh_symbol_cache(buf)
+        symbol:do_request(buf)
       end
     end,
     desc = 'Lspsaga update symbols',
-  })
-
-  api.nvim_buf_attach(buf, false, {
-    on_detach = function()
-      if self[buf] and self[buf].group then
-        pcall(api.nvim_del_augroup_by_id, self[buf].group)
-      end
-      clean_buf_cache(buf)
-    end,
   })
 end
 
@@ -393,7 +305,7 @@ local function match_ignore(buf)
   return false
 end
 
-function symbar:symbol_autocmd()
+local function symbol_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
     callback = function(opt)
@@ -430,12 +342,8 @@ function symbar:symbol_autocmd()
         return
       end
 
-      if not self[opt.buf] then
-        self[opt.buf] = {}
-      end
-
-      self:init_buf_symbols(opt.buf, render_symbol_winbar)
-      self:register_events(opt.buf)
+      init_buf_symbols(opt.buf, render_symbol_winbar)
+      register_events(opt.buf)
     end,
     desc = 'Lspsaga get and show symbols',
   })
@@ -443,15 +351,11 @@ end
 
 ---Get buffer symbols
 ---@return  string | nil
-function symbar:get_winbar()
+local function get_winbar()
   local buf = api.nvim_get_current_buf()
-  if not self[buf] then
-    self[buf] = {}
-  end
-
-  local res = get_buf_symbol(buf)
+  local res = symbol:get_buf_symbols(buf)
   if vim.tbl_isempty(res) or not res.symbols then
-    self:refresh_symbol_cache(buf)
+    init_buf_symbols(buf, render_symbol_winbar)
     return
   end
 
@@ -459,11 +363,14 @@ function symbar:get_winbar()
     return
   end
 
-  self:register_events(buf)
+  register_events(buf)
 
   if res.symbols then
     return render_symbol_winbar(buf, res.symbols)
   end
 end
 
-return setmetatable(cache, symbar)
+return {
+  symbol_autocmd = symbol_autocmd,
+  get_winbar = get_winbar,
+}

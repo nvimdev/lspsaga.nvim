@@ -155,7 +155,7 @@ function saga.setup(opts)
   end
 
   if saga.config.symbol_in_winbar.enable then
-    require('lspsaga.symbolwinbar'):symbol_autocmd()
+    require('lspsaga.symbol'):winbar()
   end
 
   if saga.config.diagnostic.on_insert then
