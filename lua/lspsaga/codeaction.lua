@@ -262,7 +262,7 @@ function act:apply_action(action, client, enriched_ctx)
         arguments = command.arguments,
         workDoneToken = command.workDoneToken,
       }
-      client.request('workspace/executeCommand', params, nil, self.enriched_ctx.bufnr)
+      client.request('workspace/executeCommand', params, nil, enriched_ctx.bufnr)
     end
   end
   clean_ctx()
