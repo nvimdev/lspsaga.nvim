@@ -208,11 +208,14 @@ function diag:do_code_action()
     return
   end
 
-  if self.action_tuples[num] then
-    act:do_code_action(num, vim.deepcopy(self.action_tuples[num]), self.enriched_ctx)
-    self:close_win()
-  end
+  num = tonumber(num)
+  local action
+  action = self.action_tuples[num] and vim.deepcopy(self.action_tuples[num]) or nil
+  local enriched_ctx = vim.deepcopy(self.enriched_ctx)
   self:clean_data()
+  if action then
+    act:do_code_action(num, action, enriched_ctx)
+  end
 end
 
 function diag:clean_data()
@@ -227,7 +230,6 @@ end
 function diag:apply_map()
   keymap('n', diag_conf.keys.exec_action, function()
     self:do_code_action()
-    self:close_win()
   end, { buffer = self.bufnr, nowait = true })
 
   keymap('n', diag_conf.keys.quit, function()

@@ -327,7 +327,11 @@ function act:get_action_diff(num, main_buf, tuple)
     if not action then
       return
     end
-    self.action_tuples[tonumber(num)][2] = action
+    if tuple then
+      tuple[tonumber(num)][2] = action
+    elseif self.action_tuples then
+      self.action_tuples[tonumber(num)][2] = action
+    end
   end
 
   if not action.edit then
