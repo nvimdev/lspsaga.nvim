@@ -200,7 +200,7 @@ function act:send_code_action_request(main_buf, options, cb)
     end
 
     if cb then
-      cb(vim.deepcopy(self.action_tuples))
+      cb(vim.deepcopy(self.action_tuples), vim.deepcopty(self.enriched_ctx))
     end
   end)
 end
@@ -245,7 +245,7 @@ function act:code_action(options)
   end)
 end
 
-function act:apply_action(action, client)
+function act:apply_action(action, client, enriched_ctx)
   if action.edit then
     util.apply_workspace_edit(action.edit, client.offset_encoding)
   end
@@ -253,7 +253,7 @@ function act:apply_action(action, client)
     local command = type(action.command) == 'table' and action.command or action
     local func = client.commands[command.command] or lsp.commands[command.command]
     if func then
-      local enriched_ctx = vim.deepcopy(self.enriched_ctx)
+      enriched_ctx = enriched_ctx or vim.deepcopy(self.enriched_ctx)
       enriched_ctx.client_id = client.id
       func(command, enriched_ctx)
     else
@@ -268,7 +268,7 @@ function act:apply_action(action, client)
   clean_ctx()
 end
 
-function act:do_code_action(num, tuple)
+function act:do_code_action(num, tuple, enriched_ctx)
   local number
   if num then
     number = tonumber(num)
@@ -299,12 +299,12 @@ function act:do_code_action(num, tuple)
         vim.notify(err.code .. ': ' .. err.message, vim.log.levels.ERROR)
         return
       end
-      self:apply_action(resolved_action, client)
+      self:apply_action(resolved_action, client, enriched_ctx)
     end)
   elseif action.action and type(action.action) == 'function' then
     action.action()
   else
-    self:apply_action(action, client)
+    self:apply_action(action, client, enriched_ctx)
   end
 end
 

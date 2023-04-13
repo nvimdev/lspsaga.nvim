@@ -99,7 +99,7 @@ function diag:code_action_cb(hi_name)
         noremap = true,
         nowait = true,
         callback = function()
-          act:do_code_action(nil, self.action_tuples[num])
+          act:do_code_action(nil, self.action_tuples[num], self.enriched_ctx)
         end,
       })
     end
@@ -209,7 +209,7 @@ function diag:do_code_action()
   end
 
   if self.action_tuples[num] then
-    act:do_code_action(num, vim.deepcopy(self.action_tuples[num]))
+    act:do_code_action(num, vim.deepcopy(self.action_tuples[num]), self.enriched_ctx)
     self:close_win()
   end
   self:clean_data()
@@ -308,8 +308,9 @@ function diag:render_diagnostic_window(entry, option)
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
       },
-    }, function(action_tuples)
+    }, function(action_tuples, enriched_ctx)
       self.action_tuples = action_tuples
+      self.enriched_ctx = enriched_ctx
       act:clean_context()
       self:code_action_cb(hi_name)
     end)
