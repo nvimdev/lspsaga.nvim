@@ -105,7 +105,7 @@ local function init_kind_hl()
   ---@diagnostic disable-next-line: param-type-mismatch
   for i, v in pairs(tbl) do
     if vim.tbl_contains(others, v) then
-      api.nvim_set_hl(0, v, { fg = '#bdbfb8', default = true })
+      api.nvim_set_hl(0, v, { default = true })
     elseif i == #tbl then
       api.nvim_set_hl(0, v, { link = 'Operator', default = true })
     else
