@@ -200,7 +200,7 @@ function act:send_code_action_request(main_buf, options, cb)
     end
 
     if cb then
-      cb(vim.deepcopy(self.action_tuples), vim.deepcopty(self.enriched_ctx))
+      cb(vim.deepcopy(self.action_tuples), vim.deepcopy(self.enriched_ctx))
     end
   end)
 end
