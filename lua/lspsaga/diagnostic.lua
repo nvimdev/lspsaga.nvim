@@ -100,6 +100,7 @@ function diag:code_action_cb(hi_name)
         nowait = true,
         callback = function()
           act:do_code_action(nil, self.action_tuples[num], self.enriched_ctx)
+          self:clean_data()
         end,
       })
     end
