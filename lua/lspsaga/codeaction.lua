@@ -253,7 +253,6 @@ function act:apply_action(action, client, enriched_ctx)
     local command = type(action.command) == 'table' and action.command or action
     local func = client.commands[command.command] or lsp.commands[command.command]
     if func then
-      enriched_ctx = enriched_ctx or vim.deepcopy(self.enriched_ctx)
       enriched_ctx.client_id = client.id
       func(command, enriched_ctx)
     else
@@ -289,6 +288,7 @@ function act:do_code_action(num, tuple, enriched_ctx)
 
   local curbuf = api.nvim_get_current_buf()
   self:close_action_window(curbuf)
+  enriched_ctx = enriched_ctx or vim.deepcopy(self.enriched_ctx)
   if
     not action.edit
     and client
