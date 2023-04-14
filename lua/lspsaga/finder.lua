@@ -261,6 +261,12 @@ function finder:create_finder_data(result, method)
       end
     end
 
+    if node.ecol < node.col then
+      local tmp = node.ecol
+      node.ecol = node.col
+      node.col = tmp
+    end
+
     local start_col = 0
     --avoid the preview code too long
     if node.col > 15 then
