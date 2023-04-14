@@ -225,11 +225,12 @@ local get_text = function(fname,rows)
   return lines
 end
 
+local treesitter_start
 function finder:do_request(params, method)
   if method == methods(3) then
     params.context = { includeDeclaration = false }
   end
-  lsp.buf_request_all(self.current_buf, method, params, function(results)
+  lsp.buf_request_all(self.main_buf, method, params, function(results)
     local result = {}
     for _, res in pairs(results or {}) do
       if res.result and not (res.result.uri or res.result.targetUri) then
@@ -243,6 +244,20 @@ function finder:do_request(params, method)
       self.request_status[method] = true
       return
     end
+
+    local client = lsp.get_active_clients({ bufnr = self.main_buf })[1]
+    local locations = vim.lsp.util.locations_to_items(result, client.offset_encoding)
+    saga_treesitter = {}
+    for i,item in ipairs(locations) do
+      table.insert(saga_treesitter,{
+        file = item.filename,
+        filetick = vim.loop.fs_stat(item.filename).mtime.nsec,
+        filetype = api.nvim_buf_get_option(self.main_buf,'filetype'),
+        position = {item.lnum-1,item.col-1},
+      })
+    end
+    treesitter_start = vim.loop.now()
+    treesitter_job:send(saga_treesitter)
 
     local uri = result[1].uri or result[1].targetUri
     local range = result[1].targetRange or result[1].range
@@ -299,6 +314,7 @@ function finder:create_finder_data(result, method)
 
     local node = {
       bufnr = bufnr,
+      full_fname = full_fname,
       fname = fname,
       row = range.start.line,
       col = range.start.character,
@@ -433,10 +449,17 @@ function finder:render_finder()
   self:apply_map()
 
   co.resume(self.render_fn,false)
-  self:create_finder_win()
+  local start = vim.loop.now()
+  treesitter_job:with_output(function()
+    print("extra wait for treesitter_job: ", vim.loop.now()-start)
+    self:create_finder_win()
+  end)
+  -- self:create_finder_win()
 end
 
 function finder:create_finder_win()
+  print("saga_treesitter done: ",(vim.loop.now()-treesitter_start))
+
   self.group = api.nvim_create_augroup('lspsaga_finder', { clear = true })
   local width = get_width(80)
   local height = get_height()
@@ -982,7 +1005,8 @@ function finder:open_preview(node)
   api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
   highlight_word()
 
-  api.nvim_set_option_value('winbar', '', {
+  local ts = treesitter_job:retrieve(node.full_fname,{ node.row, node.col })
+  api.nvim_set_option_value('winbar', ts, {
     scope = 'local',
     win = self.peek_winid,
   })
