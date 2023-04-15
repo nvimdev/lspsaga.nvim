@@ -1,5 +1,5 @@
 local lsp, api = vim.lsp, vim.api
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local symbol = {}
 
 local cache = {}
@@ -22,7 +22,7 @@ end
 function symbol:do_request(buf, callback)
   local params = { textDocument = lsp.util.make_text_document_params() }
 
-  local client = libs.get_client_by_cap('documentSymbolProvider')
+  local client = util.get_client_by_cap('documentSymbolProvider')
   if not client then
     vim.notify('[lspsaga.nvim] no servers support documentsymbl request in this buffer')
     return

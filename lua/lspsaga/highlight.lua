@@ -34,8 +34,8 @@ local function hi_define()
     FinderFName = {},
     FinderCode = { link = 'Comment' },
     FinderCount = { link = 'Constant' },
-    FinderIcon = { link = 'Type' },
-    FinderType = { link = '@property' },
+    FinderIcon = { link = '@property' },
+    FinderType = { link = 'Type' },
     FinderStart = { link = 'Function' },
     --finder spinner
     FinderSpinnerTitle = { link = 'Statement' },

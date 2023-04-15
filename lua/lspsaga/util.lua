@@ -1,17 +1,17 @@
 local api, lsp = vim.api, vim.lsp
 local saga_conf = require('lspsaga').config
-local libs = {}
+local util = {}
 local saga_augroup = require('lspsaga').saga_augroup
 
-libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
-libs.ismac = vim.loop.os_uname().sysname == 'Darwin'
+util.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
+util.ismac = vim.loop.os_uname().sysname == 'Darwin'
 
-libs.path_sep = libs.iswin and '\\' or '/'
+util.path_sep = util.iswin and '\\' or '/'
 
-function libs.get_path_info(buf, level)
+function util.get_path_info(buf, level)
   level = level or 1
   local fname = api.nvim_buf_get_name(buf)
-  local tbl = vim.split(fname, libs.path_sep, { trimempty = true })
+  local tbl = vim.split(fname, util.path_sep, { trimempty = true })
   if level == 1 then
     return { tbl[#tbl] }
   end
@@ -20,31 +20,31 @@ function libs.get_path_info(buf, level)
 end
 
 --get icon hlgroup color
-function libs.icon_from_devicon(ft, color)
+function util.icon_from_devicon(ft, color)
   color = color ~= nil and color or false
-  if not libs.devicons then
+  if not util.devicons then
     local ok, devicons = pcall(require, 'nvim-web-devicons')
     if not ok then
       return { '' }
     end
-    libs.devicons = devicons
+    util.devicons = devicons
   end
-  local icon, hl = libs.devicons.get_icon_by_filetype(ft)
+  local icon, hl = util.devicons.get_icon_by_filetype(ft)
   if color then
-    local _, rgb = libs.devicons.get_icon_color_by_filetype(ft)
+    local _, rgb = util.devicons.get_icon_color_by_filetype(ft)
     return { icon and icon .. ' ' or '', rgb }
   end
   return { icon and icon .. ' ' or '', hl }
 end
 
-function libs.get_home_dir()
-  if libs.is_win then
+function util.get_home_dir()
+  if util.is_win then
     return os.getenv('USERPROFILE')
   end
   return os.getenv('HOME')
 end
 
-function libs.tbl_index(tbl, val)
+function util.tbl_index(tbl, val)
   for index, v in pairs(tbl) do
     if v == val then
       return index
@@ -52,7 +52,7 @@ function libs.tbl_index(tbl, val)
   end
 end
 
-function libs.has_value(filetypes, val)
+function util.has_value(filetypes, val)
   if type(filetypes) == 'table' then
     for _, v in pairs(filetypes) do
       if v == val then
@@ -67,7 +67,7 @@ function libs.has_value(filetypes, val)
   return false
 end
 
-function libs.check_lsp_active(silent)
+function util.check_lsp_active(silent)
   silent = silent or true
   local current_buf = api.nvim_get_current_buf()
   local active_clients = lsp.get_active_clients({ bufnr = current_buf })
@@ -80,14 +80,14 @@ function libs.check_lsp_active(silent)
   return true
 end
 
-function libs.merge_table(t1, t2)
+function util.merge_table(t1, t2)
   for _, v in pairs(t2) do
     table.insert(t1, v)
   end
 end
 
-function libs.get_lsp_root_dir()
-  if not libs.check_lsp_active() then
+function util.get_lsp_root_dir()
+  if not util.check_lsp_active() then
     return
   end
 
@@ -95,7 +95,7 @@ function libs.get_lsp_root_dir()
   local clients = lsp.get_active_clients({ bufnr = cur_buf })
   for _, client in pairs(clients) do
     if client.config.filetypes and client.config.root_dir then
-      if libs.has_value(client.config.filetypes, vim.bo[cur_buf].filetype) then
+      if util.has_value(client.config.filetypes, vim.bo[cur_buf].filetype) then
         return client.config.root_dir
       end
     else
@@ -111,7 +111,7 @@ function libs.get_lsp_root_dir()
   return nil
 end
 
-function libs.get_config_lsp_filetypes()
+function util.get_config_lsp_filetypes()
   local ok, lsp_config = pcall(require, 'lspconfig.configs')
   if not ok then
     return
@@ -143,7 +143,7 @@ function libs.get_config_lsp_filetypes()
   return filetypes
 end
 
-function libs.close_preview_autocmd(bufnr, winids, events, callback)
+function util.close_preview_autocmd(bufnr, winids, events, callback)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
     buffer = bufnr,
@@ -158,13 +158,13 @@ function libs.close_preview_autocmd(bufnr, winids, events, callback)
   })
 end
 
-function libs.find_buffer_by_filetype(ft)
+function util.find_buffer_by_filetype(ft)
   local all_bufs = vim.fn.getbufinfo()
   local filetype = ''
   for _, bufinfo in pairs(all_bufs) do
     filetype = api.nvim_buf_get_option(bufinfo['bufnr'], 'filetype')
 
-    if type(ft) == 'table' and libs.has_value(ft, filetype) then
+    if type(ft) == 'table' and util.has_value(ft, filetype) then
       return true, bufinfo['bufnr']
     end
 
@@ -176,7 +176,7 @@ function libs.find_buffer_by_filetype(ft)
   return false, nil
 end
 
-function libs.removeElementByKey(tbl, key)
+function util.removeElementByKey(tbl, key)
   local tmp = {}
 
   for i in pairs(tbl) do
@@ -197,7 +197,7 @@ function libs.removeElementByKey(tbl, key)
   return newTbl
 end
 
-function libs.generate_empty_table(length)
+function util.generate_empty_table(length)
   local empty_tbl = {}
   if length == 0 then
     return empty_tbl
@@ -209,30 +209,30 @@ function libs.generate_empty_table(length)
   return empty_tbl
 end
 
-function libs.add_client_filetypes(client, fts)
+function util.add_client_filetypes(client, fts)
   if not client.config.filetypes then
     client.config.filetypes = fts
   end
 end
 
 -- get client by capabilities
-function libs.get_client_by_cap(caps)
+function util.get_client_by_cap(caps)
   local client_caps = {
     ['string'] = function(instance)
-      libs.add_client_filetypes(instance, { vim.bo.filetype })
+      util.add_client_filetypes(instance, { vim.bo.filetype })
       if
         instance.server_capabilities[caps]
-        and libs.has_value(instance.config.filetypes, vim.bo.filetype)
+        and util.has_value(instance.config.filetypes, vim.bo.filetype)
       then
         return instance
       end
       return nil
     end,
     ['table'] = function(instance)
-      libs.add_client_filetypes(instance, { vim.bo.filetype })
+      util.add_client_filetypes(instance, { vim.bo.filetype })
       if
         vim.tbl_get(instance.server_capabilities, unpack(caps))
-        and libs.has_value(instance.config.filetypes, vim.bo.filetype)
+        and util.has_value(instance.config.filetypes, vim.bo.filetype)
       then
         return instance
       end
@@ -256,7 +256,7 @@ local function feedkeys(key)
   api.nvim_feedkeys(k, 'x', false)
 end
 
-function libs.scroll_in_preview(bufnr, preview_winid)
+function util.scroll_in_preview(bufnr, preview_winid)
   local config = require('lspsaga').config
   if preview_winid and api.nvim_win_is_valid(preview_winid) then
     for i, map in ipairs({ config.scroll_preview.scroll_down, config.scroll_preview.scroll_up }) do
@@ -271,20 +271,20 @@ function libs.scroll_in_preview(bufnr, preview_winid)
             end)
             return
           end
-          libs.delete_scroll_map(bufnr)
+          util.delete_scroll_map(bufnr)
         end,
       })
     end
   end
 end
 
-function libs.delete_scroll_map(bufnr)
+function util.delete_scroll_map(bufnr)
   local config = require('lspsaga').config
   pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_down)
   pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_up)
 end
 
-function libs.jump_beacon(bufpos, width)
+function util.jump_beacon(bufpos, width)
   if not saga_conf.beacon.enable then
     return
   end
@@ -338,9 +338,9 @@ function libs.jump_beacon(bufpos, width)
   )
 end
 
-function libs.gen_truncate_line(width)
+function util.gen_truncate_line(width)
   local char = '─'
   return char:rep(math.floor(width / api.nvim_strwidth(char)))
 end
 
-return libs
+return util

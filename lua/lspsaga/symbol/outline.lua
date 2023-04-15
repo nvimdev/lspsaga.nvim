@@ -1,7 +1,7 @@
 local ot = {}
 local api, lsp, fn, keymap = vim.api, vim.lsp, vim.fn, vim.keymap
 local config = require('lspsaga').config
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
 local window = require('lspsaga.window')
 local outline_conf = config.outline
@@ -134,7 +134,7 @@ end
 ---@private
 local function create_outline_window()
   if #outline_conf.win_with > 0 then
-    local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
+    local ok, sp_buf = util.find_buffer_by_filetype(outline_conf.win_with)
 
     if ok then
       local winid = fn.win_findbuf(sp_buf)[1]
@@ -187,7 +187,7 @@ function ot:apply_map(symbol_data)
       api.nvim_win_set_cursor(winid, { range.start.line + 1, range.start.character })
     end
     local width = #api.nvim_get_current_line()
-    libs.jump_beacon({ range.start.line, range.start.character }, width)
+    util.jump_beacon({ range.start.line, range.start.character }, width)
     if outline_conf.close_after_jump then
       self:close_and_clean()
     end
@@ -205,7 +205,7 @@ end
 
 function ot:request_and_render(buf)
   local params = { textDocument = lsp.util.make_text_document_params(buf) }
-  local client = libs.get_client_by_cap('documentSymbolProvider')
+  local client = util.get_client_by_cap('documentSymbolProvider')
   if not client then
     return
   end
@@ -397,7 +397,7 @@ function ot:auto_preview(symbol_data)
   end
   local events = { 'CursorMoved', 'BufLeave' }
   vim.defer_fn(function()
-    libs.close_preview_autocmd(self.bufnr, self.preview_winid, events)
+    util.close_preview_autocmd(self.bufnr, self.preview_winid, events)
   end, 0)
 end
 
@@ -432,8 +432,8 @@ function ot:render_outline(buf, symbols)
 
   local lines = {}
   local kind = get_kind() or {}
-  local fname = libs.get_path_info(buf, 1)
-  local data = libs.icon_from_devicon(vim.bo[buf].filetype)
+  local fname = util.get_path_info(buf, 1)
+  local data = util.icon_from_devicon(vim.bo[buf].filetype)
   lines[#lines + 1] = ' ' .. data[1] .. fname[1]
   local prefix = get_hi_prefix()
   local hi = {}

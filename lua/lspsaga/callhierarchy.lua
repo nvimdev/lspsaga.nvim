@@ -1,6 +1,6 @@
 local api, fn, lsp, uv = vim.api, vim.fn, vim.lsp, vim.loop
 local config = require('lspsaga').config
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local window = require('lspsaga.window')
 local call_conf, ui = config.callhierarchy, config.ui
 
@@ -313,7 +313,7 @@ function ch:apply_map()
         { node.target.selectionRange.start.line + 1, node.target.selectionRange.start.character }
       )
       local width = #api.nvim_get_current_line()
-      libs.jump_beacon({ node.target.selectionRange.start.line, 0 }, width)
+      util.jump_beacon({ node.target.selectionRange.start.line, 0 }, width)
       clean_ctx()
     end, opt)
   end
@@ -511,8 +511,8 @@ function ch:preview()
 
   api.nvim_win_set_buf(self.preview_winid, data.bufnr)
   if fn.has('nvim-0.9') == 1 and config.ui.title then
-    local path = vim.split(api.nvim_buf_get_name(data.bufnr), libs.path_sep, { trimempty = true })
-    local icon = libs.icon_from_devicon(vim.bo[self.main_buf].filetype)
+    local path = vim.split(api.nvim_buf_get_name(data.bufnr), util.path_sep, { trimempty = true })
+    local icon = util.icon_from_devicon(vim.bo[self.main_buf].filetype)
     api.nvim_win_set_config(self.preview_winid, {
       title = {
         { icon[1], icon[2] or 'TitleString' },

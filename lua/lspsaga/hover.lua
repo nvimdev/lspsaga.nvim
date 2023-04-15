@@ -1,7 +1,7 @@
-local api, fn, lsp, util = vim.api, vim.fn, vim.lsp, vim.lsp.util
+local api, fn, lsp = vim.api, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local hover = {}
 
 local function has_arg(args, arg)
@@ -33,9 +33,9 @@ local function open_link()
     end
 
     local cmd
-    if libs.iswin then
+    if util.iswin then
       cmd = '!start cmd /cstart /b '
-    elseif libs.ismac then
+    elseif util.ismac then
       cmd = 'silent !open '
     else
       cmd = config.hover.open_browser .. ' '
@@ -159,7 +159,7 @@ function hover:open_floating_preview(res, option_fn)
       buffer = bufnr,
       callback = function(opt)
         if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
-          libs.delete_scroll_map(bufnr)
+          util.delete_scroll_map(bufnr)
           api.nvim_buf_delete(self.preview_bufnr, { force = true })
         end
 
@@ -202,7 +202,7 @@ function hover:open_floating_preview(res, option_fn)
   })
 
   if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    libs.scroll_in_preview(bufnr, self.preview_winid)
+    util.scroll_in_preview(bufnr, self.preview_winid)
   end
 end
 
@@ -227,7 +227,7 @@ local function support_clients()
 end
 
 function hover:do_request(args)
-  local params = util.make_position_params()
+  local params = lsp.util.make_position_params()
   local count, total = support_clients()
   if count == 0 and should_error(args) then
     vim.notify('[Lspsaga] all server of buffer not support hover request')
@@ -336,7 +336,7 @@ function hover:render_hover_doc(args)
       api.nvim_set_current_win(self.preview_winid)
       return
     elseif args and has_arg(args, '++keep') then
-      libs.delete_scroll_map(api.nvim_get_current_buf())
+      util.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.preview_winid, true)
       self.preview_winid = nil
       self.preview_bufnr = nil

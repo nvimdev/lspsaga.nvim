@@ -2,7 +2,7 @@ local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
 local ui = config.ui
 local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns_id = api.nvim_create_namespace('lspsagafinder')
@@ -176,7 +176,7 @@ function finder:do_request(params, method)
     local result = {}
     for _, res in pairs(results or {}) do
       if res.result and not (res.result.uri or res.result.targetUri) then
-        libs.merge_table(result, res.result)
+        util.merge_table(result, res.result)
       elseif res.result and (res.result.uri or res.result.targetUri) then
         result[#result + 1] = res.result
       end
@@ -217,7 +217,7 @@ function finder:create_finder_data(result, method)
 
   if not self.lspdata[method] then
     self.lspdata[method] = {}
-    local title = get_titles(libs.tbl_index(methods(), method))
+    local title = get_titles(util.tbl_index(methods(), method))
     self.lspdata[method].title = title .. '  ' .. #result
     self.lspdata[method].count = #result
   end
@@ -234,10 +234,10 @@ function finder:create_finder_data(result, method)
     local bufnr = vim.uri_to_bufnr(uri)
     local fname = vim.uri_to_fname(uri) -- returns lowercase drive letters on Windows
     local range = res.targetSelectionRange or res.targetRange or res.range
-    if libs.iswin then
+    if util.iswin then
       fname = fname:gsub('^%l', fname:sub(1, 1):upper())
     end
-    fname = table.concat(libs.get_path_info(bufnr, 2), libs.path_sep)
+    fname = table.concat(util.get_path_info(bufnr, 2), util.path_sep)
 
     local node = {
       bufnr = bufnr,
@@ -881,7 +881,7 @@ function finder:do_action(node, action)
     width = 10
   end
   if data.row then
-    libs.jump_beacon({ data.row, 0 }, width)
+    util.jump_beacon({ data.row, 0 }, width)
   end
   clean_ctx()
 end

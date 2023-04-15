@@ -36,7 +36,7 @@ local default_config = {
     max_show_height = 0.6,
     text_hl_follow = true,
     border_follow = true,
-    extend_relatedInformation = false,
+    extend_relatedInformation = true,
     keys = {
       exec_action = 'o',
       quit = 'q',
@@ -151,7 +151,7 @@ function saga.setup(opts)
   require('lspsaga.highlight'):init_highlight()
   require('lspsaga.lspkind').init_kind_hl()
   if saga.config.lightbulb.enable then
-    require('lspsaga.lightbulb').lb_autocmd()
+    require('lspsaga.codeaction.lightbulb').lb_autocmd()
   end
 
   if saga.config.symbol_in_winbar.enable then
@@ -159,7 +159,7 @@ function saga.setup(opts)
   end
 
   if saga.config.diagnostic.on_insert then
-    require('lspsaga.diagnostic'):on_insert()
+    require('lspsaga.diagnostic.insert').on_insert()
   end
 end
 

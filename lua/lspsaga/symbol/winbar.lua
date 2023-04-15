@@ -1,6 +1,6 @@
 local lsp, api = vim.lsp, vim.api
 local config = require('lspsaga').config.symbol_in_winbar
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
 
 local function bar_prefix()
@@ -22,11 +22,11 @@ local function respect_lsp_root(buf)
   end
   local root_dir = clients[1].config.root_dir
   local bufname = api.nvim_buf_get_name(buf)
-  local bufname_parts = vim.split(bufname, libs.path_sep, { trimempty = true })
+  local bufname_parts = vim.split(bufname, util.path_sep, { trimempty = true })
   if not root_dir then
     return { #bufname_parts }
   end
-  local parts = vim.split(root_dir, libs.path_sep, { trimempty = true })
+  local parts = vim.split(root_dir, util.path_sep, { trimempty = true })
   return { unpack(bufname_parts, #parts + 1) }
 end
 
@@ -38,13 +38,13 @@ local function bar_file_name(buf)
 
   --fallback to config.folder_level
   if not res then
-    res = libs.get_path_info(buf, config.folder_level)
+    res = util.get_path_info(buf, config.folder_level)
   end
 
   if not res or #res == 0 then
     return
   end
-  local data = libs.icon_from_devicon(vim.bo[buf].filetype, true)
+  local data = util.icon_from_devicon(vim.bo[buf].filetype, true)
   local bar = bar_prefix()
   local items = {}
   for i, v in pairs(res) do

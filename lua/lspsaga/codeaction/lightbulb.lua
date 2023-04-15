@@ -1,5 +1,6 @@
 local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config
+local util = require('lspsaga.util')
 local lb = {}
 
 local function get_hl_group()
@@ -15,12 +16,11 @@ function lb:init_sign()
 end
 
 local function check_server_support_codeaction(bufnr)
-  local libs = require('lspsaga.libs')
   local clients = lsp.get_active_clients({ bufnr = bufnr })
-  for _, client in pairs(clients) do
+  for _, client in ipairs(clients) do
     if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
-      for _, fts in pairs(config.server_filetype_map) do
-        if libs.has_value(fts, vim.bo[bufnr].filetype) then
+      for _, fts in ipairs(config.server_filetype_map) do
+        if util.has_value(fts, vim.bo[bufnr].filetype) then
           client.config.filetypes = fts
           break
         end
@@ -29,7 +29,7 @@ local function check_server_support_codeaction(bufnr)
 
     if
       client.supports_method('textDocument/codeAction')
-      and libs.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
+      and util.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
     then
       return true
     end
@@ -118,15 +118,6 @@ local send_request = coroutine.create(function()
         end
       end
 
-      -- if
-      --   has_actions
-      --   and config.code_action_lightbulb.enable
-      --   and config.code_action_lightbulb.cache_code_action
-      -- then
-      --   codeaction.action_tuples = nil
-      --   codeaction:get_clients(results)
-      -- end
-
       render_action_virtual_text(current_buf, line, has_actions)
     end)
     current_buf = coroutine.yield()
@@ -144,7 +135,7 @@ end
 function lb.lb_autocmd()
   lb:init_sign()
   api.nvim_create_autocmd('LspAttach', {
-    group = api.nvim_create_augroup('LspSagaLightBulb', { clear = true }),
+    group = api.nvim_create_augroup('SagaLightBulb', { clear = true }),
     callback = function(opt)
       local buf = opt.buf
       local group = api.nvim_create_augroup(lb.name .. tostring(buf), {})

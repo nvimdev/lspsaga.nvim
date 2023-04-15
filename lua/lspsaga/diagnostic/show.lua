@@ -1,6 +1,6 @@
 local api, fn = vim.api, vim.fn
 local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local diag = require('lspsaga.diagnostic')
 local config = require('lspsaga').config
 local ui = config.ui
@@ -22,34 +22,6 @@ local function clean_ctx()
   for i, _ in pairs(ctx) do
     ctx[i] = nil
   end
-end
-
----get the line or cursor diagnostics
----@param opt table
-function sd:get_diagnostic(opt)
-  local cur_buf = api.nvim_get_current_buf()
-  if opt.buffer then
-    return vim.diagnostic.get(cur_buf)
-  end
-
-  local line, col = unpack(api.nvim_win_get_cursor(0))
-  local entrys = vim.diagnostic.get(cur_buf, { lnum = line - 1 })
-
-  if opt.line then
-    return entrys
-  end
-
-  if opt.cursor then
-    local res = {}
-    for _, v in pairs(entrys) do
-      if v.col <= col and v.end_col >= col then
-        res[#res + 1] = v
-      end
-    end
-    return res
-  end
-
-  return vim.diagnostic.get()
 end
 
 ---@private sort table by diagnsotic severity
@@ -146,7 +118,7 @@ function sd:create_win(opt, content)
   end
 
   vim.defer_fn(function()
-    libs.close_preview_autocmd(curbuf, self.winid, close_autocmds)
+    util.close_preview_autocmd(curbuf, self.winid, close_autocmds)
   end, 0)
 end
 
@@ -175,7 +147,7 @@ function sd:show(opt)
   local line_count = 0
   local content = {}
   local curbuf = api.nvim_get_current_buf()
-  local icon_data = libs.icon_from_devicon(vim.bo[curbuf].filetype)
+  local icon_data = util.icon_from_devicon(vim.bo[curbuf].filetype)
   self.bufnr = api.nvim_create_buf(false, false)
   vim.bo[self.bufnr].buftype = 'nofile'
 
@@ -347,7 +319,7 @@ function sd:show(opt)
         api.nvim_set_current_win(winid)
         api.nvim_win_set_cursor(winid, { entry.lnum + 1, entry.col })
         local width = #api.nvim_get_current_line()
-        libs.jump_beacon({ entry.lnum, entry.col }, width)
+        util.jump_beacon({ entry.lnum, entry.col }, width)
       end
     end,
   })
@@ -372,7 +344,7 @@ local function migrate_diagnostics(entrys)
 end
 
 function sd:show_diagnostics(opt)
-  local entrys = self:get_diagnostic(opt)
+  local entrys = diag:get_diagnostic(opt)
   if next(entrys) == nil then
     return
   end

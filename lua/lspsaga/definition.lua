@@ -1,6 +1,6 @@
 local config = require('lspsaga').config
 local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
-local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local window = require('lspsaga.window')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local def = {}
@@ -31,7 +31,7 @@ local function title_text(fname)
     return
   end
   local title = {}
-  local data = libs.icon_from_devicon(vim.bo.filetype)
+  local data = util.icon_from_devicon(vim.bo.filetype)
   title[#title + 1] = { data[1], data[2] or 'TitleString' }
   title[#title + 1] = { fn.fnamemodify(fname, ':t'), 'TitleString' }
 
@@ -114,7 +114,7 @@ function def:apply_aciton_keys(buf, main_buf)
         end
         api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
         local width = #api.nvim_get_current_line()
-        libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
+        util.jump_beacon({ node.pos[1], node.pos[2] }, width)
         clean_ctx()
       end, opt)
     end
@@ -323,7 +323,7 @@ function def:goto_definition(method)
 
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local width = #api.nvim_get_current_line()
-    libs.jump_beacon({ res.range.start.line, res.range.start.character }, width)
+    util.jump_beacon({ res.range.start.line, res.range.start.character }, width)
   end
   if method == 1 then
     lsp.buf.definition()
