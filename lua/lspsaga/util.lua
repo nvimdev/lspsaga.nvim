@@ -37,13 +37,6 @@ function util.icon_from_devicon(ft, color)
   return { icon and icon .. ' ' or '', hl }
 end
 
-function util.get_home_dir()
-  if util.is_win then
-    return os.getenv('USERPROFILE')
-  end
-  return os.getenv('HOME')
-end
-
 function util.tbl_index(tbl, val)
   for index, v in pairs(tbl) do
     if v == val then
@@ -67,80 +60,10 @@ function util.has_value(filetypes, val)
   return false
 end
 
-function util.check_lsp_active(silent)
-  silent = silent or true
-  local current_buf = api.nvim_get_current_buf()
-  local active_clients = lsp.get_active_clients({ bufnr = current_buf })
-  if next(active_clients) == nil then
-    if not silent then
-      vim.notify('[LspSaga] Current buffer does not have any lsp server')
-    end
-    return false
-  end
-  return true
-end
-
 function util.merge_table(t1, t2)
   for _, v in pairs(t2) do
     table.insert(t1, v)
   end
-end
-
-function util.get_lsp_root_dir()
-  if not util.check_lsp_active() then
-    return
-  end
-
-  local cur_buf = api.nvim_get_current_buf()
-  local clients = lsp.get_active_clients({ bufnr = cur_buf })
-  for _, client in pairs(clients) do
-    if client.config.filetypes and client.config.root_dir then
-      if util.has_value(client.config.filetypes, vim.bo[cur_buf].filetype) then
-        return client.config.root_dir
-      end
-    else
-      for name, fts in pairs(saga_conf.server_filetype_map) do
-        for _, ft in pairs(fts) do
-          if ft == vim.bo.filetype and client.config.name == name and client.config.root_dir then
-            return client.config.root_dir
-          end
-        end
-      end
-    end
-  end
-  return nil
-end
-
-function util.get_config_lsp_filetypes()
-  local ok, lsp_config = pcall(require, 'lspconfig.configs')
-  if not ok then
-    return
-  end
-
-  local filetypes = {}
-  for _, config in pairs(lsp_config) do
-    if config.filetypes then
-      for _, ft in pairs(config.filetypes) do
-        table.insert(filetypes, ft)
-      end
-    end
-  end
-
-  if next(saga_conf.server_filetype_map) == nil then
-    return filetypes
-  end
-
-  for _, fts in pairs(saga_conf.server_filetype_map) do
-    if type(fts) == 'table' then
-      for _, ft in pairs(fts) do
-        table.insert(filetypes, ft)
-      end
-    elseif type(fts) == 'string' then
-      table.insert(filetypes, fts)
-    end
-  end
-
-  return filetypes
 end
 
 function util.close_preview_autocmd(bufnr, winids, events, callback)
@@ -174,39 +97,6 @@ function util.find_buffer_by_filetype(ft)
   end
 
   return false, nil
-end
-
-function util.removeElementByKey(tbl, key)
-  local tmp = {}
-
-  for i in pairs(tbl) do
-    table.insert(tmp, i)
-  end
-
-  local newTbl = {}
-  local i = 1
-  while i <= #tmp do
-    local val = tmp[i]
-    if val == key then
-      table.remove(tmp, i)
-    else
-      newTbl[val] = tbl[val]
-      i = i + 1
-    end
-  end
-  return newTbl
-end
-
-function util.generate_empty_table(length)
-  local empty_tbl = {}
-  if length == 0 then
-    return empty_tbl
-  end
-
-  for _ = 1, length do
-    table.insert(empty_tbl, '   ')
-  end
-  return empty_tbl
 end
 
 function util.add_client_filetypes(client, fts)

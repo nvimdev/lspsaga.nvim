@@ -2,6 +2,7 @@ local api, fn, lsp = vim.api, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
 local util = require('lspsaga.util')
+local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local hover = {}
 
 local function has_arg(args, arg)
@@ -141,12 +142,16 @@ function hover:open_floating_preview(res, option_fn)
 
   vim.treesitter.start(self.preview_bufnr, 'markdown')
 
-  vim.keymap.set('n', 'q', function()
-    if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-      api.nvim_win_close(self.preview_winid, true)
-      self:remove_data()
-    end
-  end, { buffer = self.preview_bufnr })
+  nvim_buf_set_keymap(self.preview_bufnr, 'n', 'q', '', {
+    noremap = true,
+    nowait = true,
+    callback = function()
+      if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+        api.nvim_win_close(self.preview_winid, true)
+        self:remove_data()
+      end
+    end,
+  })
 
   if not option_fn then
     api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'WinScrolled' }, {
