@@ -1,6 +1,6 @@
 local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config
-local util = require('lspsaga.util')
+local act = require('lspsaga.codeaction')
 local lb = {}
 
 local function get_hl_group()
@@ -13,29 +13,6 @@ function lb:init_sign()
     fn.sign_define(self.name, { text = config.ui.code_action, texthl = self.name })
     self.defined_sign = true
   end
-end
-
-local function check_server_support_codeaction(bufnr)
-  local clients = lsp.get_active_clients({ bufnr = bufnr })
-  for _, client in ipairs(clients) do
-    if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
-      for _, fts in ipairs(config.server_filetype_map) do
-        if util.has_value(fts, vim.bo[bufnr].filetype) then
-          client.config.filetypes = fts
-          break
-        end
-      end
-    end
-
-    if
-      client.supports_method('textDocument/codeAction')
-      and util.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
-    then
-      return true
-    end
-  end
-
-  return false
 end
 
 local function _update_virtual_text(bufnr, line)
@@ -104,11 +81,13 @@ local send_request = coroutine.create(function()
   vim.w.lightbulb_line = vim.w.lightbulb_line or 0
 
   while true do
+    current_buf = api.nvim_get_current_buf()
     local diagnostics = lsp.diagnostic.get_line_diagnostics(current_buf)
     local context = { diagnostics = diagnostics }
     local params = lsp.util.make_range_params()
     params.context = context
     local line = params.range.start.line
+
     lsp.buf_request_all(current_buf, 'textDocument/codeAction', params, function(results)
       local has_actions = false
       for _, res in pairs(results or {}) do
@@ -125,8 +104,8 @@ local send_request = coroutine.create(function()
 end)
 
 local render_bulb = function(bufnr)
-  local has_code_action = check_server_support_codeaction(bufnr)
-  if not has_code_action then
+  local ok = act:check_server_support_codeaction(bufnr)
+  if not ok then
     return
   end
   coroutine.resume(send_request, bufnr)
@@ -134,6 +113,7 @@ end
 
 function lb.lb_autocmd()
   lb:init_sign()
+
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('SagaLightBulb', { clear = true }),
     callback = function(opt)

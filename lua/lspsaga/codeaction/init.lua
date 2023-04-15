@@ -3,6 +3,7 @@ local config = require('lspsaga').config
 local window = require('lspsaga.window')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local preview = require('lspsaga.codeaction.preview')
+local util = require('lspsaga.util')
 
 local act = {}
 local ctx = {}
@@ -23,6 +24,29 @@ local function clean_msg(msg)
     return msg:gsub('%(.+%)%S$', '')
   end
   return msg
+end
+
+function act:check_server_support_codeaction(bufnr)
+  local clients = lsp.get_active_clients({ bufnr = bufnr })
+  for _, client in ipairs(clients) do
+    if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
+      for _, fts in ipairs(config.server_filetype_map) do
+        if util.has_value(fts, vim.bo[bufnr].filetype) then
+          client.config.filetypes = fts
+          break
+        end
+      end
+    end
+
+    if
+      client.supports_method('textDocument/codeAction')
+      and util.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
+    then
+      return true
+    end
+  end
+
+  return false
 end
 
 function act:action_callback()
@@ -69,7 +93,7 @@ function act:action_callback()
   opt.width = max_len + 10 < max_width and max_len + 5 or max_width
   opt.no_size_override = true
 
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+  if config.ui.title then
     opt.title = {
       { config.ui.code_action .. ' CodeActions', 'TitleString' },
     }
@@ -144,12 +168,9 @@ local function range_from_selection(bufnr, mode)
 end
 
 function act:send_request(main_buf, options, callback)
-  local diagnostics = lsp.diagnostic.get_line_diagnostics(main_buf)
   self.bufnr = main_buf
-  local ctx_diags = { diagnostics = diagnostics }
   local params
   local mode = api.nvim_get_mode().mode
-  options = options or {}
   if options.range then
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
@@ -161,10 +182,9 @@ function act:send_request(main_buf, options, callback)
   else
     params = lsp.util.make_range_params()
   end
-  params.context = ctx_diags
-  if not self.enriched_ctx then
-    self.enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
-  end
+  params.context = options.context
+
+  self.enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
 
   lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)
     self.pending_request = false
@@ -247,8 +267,7 @@ local function apply_action(action, client, enriched_ctx)
 end
 
 local function do_code_action(action, client, enriched_ctx)
-  local curbuf = api.nvim_get_current_buf()
-  act:close_action_window(curbuf)
+  act:close_action_window()
   if
     not action.edit
     and client
@@ -312,22 +331,22 @@ function act:code_action(options)
   end
   self.pending_request = true
   options = options or {}
+  if not options.context then
+    options.context = {
+      diagnostics = require('lspsaga.diagnostic'):get_cursor_diagnostic(),
+    }
+  end
 
   self:send_request(api.nvim_get_current_buf(), options, function()
     self:action_callback()
   end)
 end
 
-function act:close_action_window(bufnr)
+function act:close_action_window()
   if self.action_winid and api.nvim_win_is_valid(self.action_winid) then
     api.nvim_win_close(self.action_winid, true)
   end
-
-  if config.code_action.num_shortcut and self.action_tuples and #self.action_tuples > 1 then
-    for i = 1, #self.action_tuples do
-      pcall(api.nvim_buf_del_keymap, bufnr, 'n', tostring(i))
-    end
-  end
+  preview.preview_win_close()
 end
 
 function act:clean_context()

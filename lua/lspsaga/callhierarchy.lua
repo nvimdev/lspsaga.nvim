@@ -360,7 +360,7 @@ function ch:render_win()
     no_size_override = true,
   }
 
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+  if config.ui.title then
     local icon = self.method == 'callHierarchy/incomingCalls' and ui.incoming or ui.outgoing
     opt.title = {
       { icon, 'ArrowIcon' },
@@ -510,7 +510,8 @@ function ch:preview()
   end
 
   api.nvim_win_set_buf(self.preview_winid, data.bufnr)
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+
+  if config.ui.title then
     local path = vim.split(api.nvim_buf_get_name(data.bufnr), util.path_sep, { trimempty = true })
     local icon = util.icon_from_devicon(vim.bo[self.main_buf].filetype)
     api.nvim_win_set_config(self.preview_winid, {

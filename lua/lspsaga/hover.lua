@@ -109,7 +109,7 @@ function hover:open_floating_preview(res, option_fn)
     zindex = 80,
   }
 
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+  if config.ui.title then
     float_option.title = {
       { config.ui.hover, 'Exception' },
       { ' Hover', 'TitleString' },
@@ -138,14 +138,8 @@ function hover:open_floating_preview(res, option_fn)
   vim.wo[self.preview_winid].conceallevel = 2
   vim.wo[self.preview_winid].concealcursor = 'niv'
   vim.wo[self.preview_winid].showbreak = 'NONE'
-  if fn.has('nvim-0.9') == 1 then
-    api.nvim_set_option_value(
-      'fillchars',
-      'lastline: ',
-      { scope = 'local', win = self.preview_winid }
-    )
-    vim.treesitter.start(self.preview_bufnr, 'markdown')
-  end
+
+  vim.treesitter.start(self.preview_bufnr, 'markdown')
 
   vim.keymap.set('n', 'q', function()
     if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then

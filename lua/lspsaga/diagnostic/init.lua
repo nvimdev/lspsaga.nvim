@@ -206,7 +206,8 @@ function diag:code_action_cb(hi_name)
   })
 end
 
-local function cursor_diagnostic()
+---get original lsp diagnostic
+function diag:get_cursor_diagnostic()
   local diags = diag:get_diagnostic({ cursor = true })
   local res = {}
   for _, entry in ipairs(diags) do
@@ -332,9 +333,8 @@ function diag:render_diagnostic_window(entry, option)
   local hi_name = 'Diagnostic' .. diag_type
 
   if diag_conf.show_code_action and util.get_client_by_cap('codeActionProvider') then
-    local cursor_diags = cursor_diagnostic()
     act:send_request(self.main_buf, {
-      context = { diagnostics = cursor_diags },
+      context = { diagnostics = self:get_cursor_diagnostic() },
       range = {
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },

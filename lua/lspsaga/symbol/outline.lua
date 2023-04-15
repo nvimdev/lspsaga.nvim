@@ -49,13 +49,10 @@ local function set_local()
     spell = false,
     cursorcolumn = false,
     cursorline = false,
+    stc = '',
   }
   for opt, val in pairs(local_options) do
     vim.opt_local[opt] = val
-  end
-  ---@diagnostic disable-next-line: undefined-field
-  if fn.has('nvim-0.9') == 1 and #vim.opt_local.stc:get() > 0 then
-    vim.opt_local.stc = ''
   end
 end
 
@@ -386,15 +383,10 @@ function ot:auto_preview(symbol_data)
   }
 
   self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
-  if fn.has('nvim-0.9') == 1 then
-    local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.render_buf].filetype)
-    vim.treesitter.start(self.preview_bufnr, lang)
-  else
-    -- this is will trigger filetype event
-    -- when 0.9 release use vim.treesitter.start would be better
-    vim.bo[self.preview_bufnr].filetype = vim.bo[self.render_buf].filetype
-    api.nvim_win_set_var(self.preview_winid, 'disable_winbar', true)
-  end
+
+  local lang = vim.treesitter.language.get_lang(vim.bo[self.render_buf].filetype)
+  vim.treesitter.start(self.preview_bufnr, lang)
+
   local events = { 'CursorMoved', 'BufLeave' }
   vim.defer_fn(function()
     util.close_preview_autocmd(self.bufnr, self.preview_winid, events)

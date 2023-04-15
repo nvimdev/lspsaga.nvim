@@ -181,8 +181,8 @@ local function create_window(node)
       normal = 'DefinitionNormal',
     },
   }
-  --@deprecated when 0.9 release
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+
+  if config.ui.title then
     opt.title = title_text(vim.uri_to_fname(node.uri))
   end
 

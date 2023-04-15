@@ -132,7 +132,7 @@ function rename:lsp_rename(arg)
     width = 30,
   }
 
-  if vim.fn.has('nvim-0.9') == 1 and config.ui.title then
+  if config.ui.title then
     opts.title = {
       { 'Rename', 'TitleString' },
     }
@@ -326,7 +326,7 @@ function rename:p_preview()
   opt.height = #lines
   opt.no_size_override = true
 
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+  if config.ui.title then
     opt.title = {
       { 'Preview', 'TitleString' },
     }
@@ -350,7 +350,7 @@ function rename:popup_win(lines)
   opt.height = max_height > #context and max_height or #context
   opt.no_size_override = true
 
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
+  if config.ui.title then
     opt.title = {
       { 'Files', 'TitleString' },
     }

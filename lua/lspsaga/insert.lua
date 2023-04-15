@@ -135,9 +135,6 @@ local function on_insert()
           create_window(content, (bufnr and api.nvim_buf_is_valid(bufnr)) and bufnr or nil)
         vim.bo[bufnr].modifiable = true
         vim.wo[winid].wrap = true
-        if fn.has('nvim-0.9') == 1 then
-          api.nvim_set_option_value('fillchars', 'lastline: ', { scope = 'local', win = winid })
-        end
       end
       set_lines(content)
       if bufnr and api.nvim_buf_is_loaded(bufnr) then
