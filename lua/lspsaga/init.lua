@@ -55,8 +55,8 @@ local default_config = {
   },
   lightbulb = {
     enable = true,
-    enable_in_insert = true,
     sign = true,
+    debounce = 10,
     sign_priority = 40,
     virtual_text = true,
   },

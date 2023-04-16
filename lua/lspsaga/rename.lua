@@ -71,12 +71,15 @@ function rename:find_reference()
       return
     end
 
-    for _, v in pairs(result) do
+    for _, v in ipairs(result) do
       if v.range then
+        local buf = vim.uri_to_bufnr(v.uri)
         local line = v.range.start.line
         local start_char = v.range.start.character
         local end_char = v.range['end'].character
-        api.nvim_buf_add_highlight(bufnr, ns, 'RenameMatch', line, start_char, end_char)
+        if buf == bufnr then
+          api.nvim_buf_add_highlight(bufnr, ns, 'RenameMatch', line, start_char, end_char)
+        end
       end
     end
   end, bufnr)

@@ -1,149 +1,118 @@
 local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local config = require('lspsaga').config
-local act = require('lspsaga.codeaction')
-local lb = {}
+local nvim_buf_set_extmark = api.nvim_buf_set_extmark
+local inrender_row = -1
 
-local function get_hl_group()
+local function get_name()
   return 'SagaLightBulb'
 end
 
-function lb:init_sign()
-  self.name = get_hl_group()
-  if not self.defined_sign then
-    fn.sign_define(self.name, { text = config.ui.code_action, texthl = self.name })
-    self.defined_sign = true
-  end
+local namespace = api.nvim_create_namespace(get_name())
+local defined = false
+
+if not defined then
+  fn.sign_define(get_name(), { text = config.ui.code_action, texthl = get_name() })
+  defined = true
 end
 
-local function _update_virtual_text(bufnr, line)
-  local namespace = api.nvim_create_namespace('sagalightbulb')
+local function update_lightbulb(bufnr, row)
   api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+  local name = get_name()
 
-  if line then
-    local icon_with_indent = '  ' .. config.ui.code_action
-    pcall(api.nvim_buf_set_extmark, bufnr, namespace, line, -1, {
-      virt_text = { { icon_with_indent, 'SagaLightBulb' } },
-      virt_text_pos = 'overlay',
-      hl_mode = 'combine',
-    })
-  end
-end
-
-local function generate_sign(bufnr, line)
-  vim.fn.sign_place(
-    line,
-    lb.name,
-    lb.name,
-    bufnr,
-    { lnum = line + 1, priority = config.lightbulb.sign_priority }
-  )
-end
-
-local function _update_sign(bufnr, line)
-  if vim.w.lightbulb_line == 0 then
-    vim.w.lightbulb_line = 1
-  end
-  if vim.w.lightbulb_line ~= 0 then
-    fn.sign_unplace(lb.name, { id = vim.w.lightbulb_line, buffer = bufnr })
+  if inrender_row > 0 then
+    fn.sign_unplace(name, { id = inrender_row, buffer = bufnr })
   end
 
-  if line then
-    generate_sign(bufnr, line)
-    vim.w.lightbulb_line = line
-  end
-end
-
-local function render_action_virtual_text(bufnr, line, has_actions)
-  if not api.nvim_buf_is_valid(bufnr) then
-    return
-  end
-  if not has_actions then
-    if config.lightbulb.virtual_text then
-      _update_virtual_text(bufnr, nil)
-    end
-    if config.lightbulb.sign then
-      _update_sign(bufnr, nil)
-    end
+  if not row then
     return
   end
 
   if config.lightbulb.sign then
-    _update_sign(bufnr, line)
+    fn.sign_place(
+      row,
+      name,
+      name,
+      bufnr,
+      { lnum = row + 1, priority = config.lightbulb.sign_priority }
+    )
   end
 
   if config.lightbulb.virtual_text then
-    _update_virtual_text(bufnr, line)
+    nvim_buf_set_extmark(bufnr, namespace, row, -1, {
+      virt_text = { { config.ui.code_action, name } },
+      virt_text_pos = 'overlay',
+      hl_mode = 'combine',
+    })
   end
+
+  inrender_row = row
 end
 
-local send_request = coroutine.create(function()
-  local current_buf = api.nvim_get_current_buf()
-  vim.w.lightbulb_line = vim.w.lightbulb_line or 0
+local function render(bufnr)
+  local row = api.nvim_win_get_cursor(0)[1] - 1
+  local params = lsp.util.make_range_params()
+  params.context = {
+    diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr),
+  }
 
-  while true do
-    current_buf = api.nvim_get_current_buf()
-    local diagnostics = lsp.diagnostic.get_line_diagnostics(current_buf)
-    local context = { diagnostics = diagnostics }
-    local params = lsp.util.make_range_params()
-    params.context = context
-    local line = params.range.start.line
-
-    lsp.buf_request_all(current_buf, 'textDocument/codeAction', params, function(results)
-      local has_actions = false
-      for _, res in pairs(results or {}) do
-        if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
-          has_actions = true
-          break
-        end
+  lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(results)
+    local has_actions = false
+    for _, res in ipairs(results or {}) do
+      if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
+        has_actions = true
+        break
       end
+    end
 
-      render_action_virtual_text(current_buf, line, has_actions)
-    end)
-    current_buf = coroutine.yield()
-  end
-end)
+    if not has_actions then
+      update_lightbulb(bufnr, nil)
+      return
+    end
 
-local render_bulb = function(bufnr)
-  local ok = act:check_server_support_codeaction(bufnr)
-  if not ok then
-    return
-  end
-  coroutine.resume(send_request, bufnr)
+    update_lightbulb(bufnr, row)
+  end)
 end
 
-function lb.lb_autocmd()
-  lb:init_sign()
+local timer = vim.loop.new_timer()
 
+local function update(buf)
+  timer:stop()
+  timer:start(config.lightbulb.debounce, 0, function()
+    timer:stop()
+    vim.schedule(function()
+      render(buf)
+    end)
+  end)
+end
+
+local function lb_autocmd()
+  local name = 'SagaLightBulb'
   api.nvim_create_autocmd('LspAttach', {
-    group = api.nvim_create_augroup('SagaLightBulb', { clear = true }),
+    group = api.nvim_create_augroup(name, { clear = true }),
     callback = function(opt)
       local buf = opt.buf
-      local group = api.nvim_create_augroup(lb.name .. tostring(buf), {})
-      api.nvim_create_autocmd('CursorHold', {
+      local group = api.nvim_create_augroup(name .. tostring(buf), {})
+      api.nvim_create_autocmd('CursorMoved', {
         group = group,
         buffer = buf,
         callback = function()
-          render_bulb(buf)
+          update(buf)
         end,
       })
 
-      if not config.lightbulb.enable_in_insert then
-        api.nvim_create_autocmd('InsertEnter', {
-          group = group,
-          buffer = buf,
-          callback = function()
-            _update_sign(buf, nil)
-            _update_virtual_text(buf, nil)
-          end,
-        })
-      end
+      api.nvim_create_autocmd('InsertEnter', {
+        group = group,
+        buffer = buf,
+        callback = function()
+          update_lightbulb(buf, nil)
+        end,
+      })
 
       api.nvim_create_autocmd('BufLeave', {
         group = group,
         buffer = buf,
         callback = function()
-          _update_sign(buf, nil)
-          _update_virtual_text(buf, nil)
+          update_lightbulb(buf, nil)
         end,
       })
 
@@ -158,4 +127,6 @@ function lb.lb_autocmd()
   })
 end
 
-return lb
+return {
+  lb_autocmd = lb_autocmd,
+}

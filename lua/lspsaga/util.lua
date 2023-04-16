@@ -3,7 +3,7 @@ local saga_conf = require('lspsaga').config
 local util = {}
 local saga_augroup = require('lspsaga').saga_augroup
 
-util.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
+util.iswin = vim.loop.os_uname().sysname:match('Windows')
 util.ismac = vim.loop.os_uname().sysname == 'Darwin'
 
 util.path_sep = util.iswin and '\\' or '/'
