@@ -76,7 +76,6 @@ end
 local timer = vim.loop.new_timer()
 
 local function update(buf)
-  timer:stop()
   timer:start(config.lightbulb.debounce, 0, function()
     timer:stop()
     vim.schedule(function()
