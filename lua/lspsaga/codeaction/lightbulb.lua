@@ -18,10 +18,7 @@ end
 local function update_lightbulb(bufnr, row)
   api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
   local name = get_name()
-
-  if inrender_row > 0 then
-    fn.sign_unplace(name, { id = inrender_row, buffer = bufnr })
-  end
+  pcall(fn.sign_unplace, name, { id = inrender_row, buffer = bufnr })
 
   if not row then
     return
@@ -29,7 +26,7 @@ local function update_lightbulb(bufnr, row)
 
   if config.lightbulb.sign then
     fn.sign_place(
-      row,
+      row + 1,
       name,
       name,
       bufnr,
@@ -45,7 +42,7 @@ local function update_lightbulb(bufnr, row)
     })
   end
 
-  inrender_row = row
+  inrender_row = row + 1
 end
 
 local function render(bufnr)
