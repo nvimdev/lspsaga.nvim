@@ -403,11 +403,9 @@ function finder:create_finder_win(width)
 
   local winline = fn.winline()
   if vim.o.lines - 6 - opt.height - winline <= 0 then
-    api.nvim_win_call(self.main_win, function()
-      vim.cmd('normal! zz')
-      local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
-      api.nvim_feedkeys(keycode, 'x', false)
-    end)
+    vim.cmd('normal! zz')
+    local keycode = api.nvim_replace_termcodes('6<C-e>', true, false, true)
+    api.nvim_feedkeys(keycode, 'x', false)
   end
   winline = fn.winline()
   opt.row = winline + 1
