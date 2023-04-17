@@ -1,4 +1,4 @@
-local api, fn, lsp = vim.api, vim.fn, vim.lsp
+local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
@@ -197,7 +197,7 @@ function act:send_request(main_buf, options, callback)
     end
 
     if config.code_action.extend_gitsigns then
-      local res = self:extend_gitsing(params)
+      local res = self:extend_gitsign(params)
       if res then
         for _, action in pairs(res) do
           self.action_tuples[#self.action_tuples + 1] = { 'gitsigns', action }
@@ -267,7 +267,6 @@ local function apply_action(action, client, enriched_ctx)
 end
 
 local function do_code_action(action, client, enriched_ctx)
-  act:close_action_window()
   if
     not action.edit
     and client
@@ -295,7 +294,8 @@ function act:apply_action_keys()
     end
     local action = vim.deepcopy(self.action_tuples[num][2])
     local client = lsp.get_client_by_id(self.action_tuples[num][1])
-    self:do_code_action(action, client)
+    self:close_action_window()
+    do_code_action(action, client)
   end, { buffer = self.action_bufnr })
 
   map_keys('n', config.code_action.keys.quit, function()
@@ -315,6 +315,7 @@ function act:num_shortcut(bufnr)
         end
         local action = vim.deepcopy(self.action_tuples[num][2])
         local client = lsp.get_client_by_id(self.action_tuples[num][1])
+        self:close_action_window()
         do_code_action(action, client)
       end,
     })
@@ -353,7 +354,7 @@ function act:clean_context()
   clean_ctx()
 end
 
-function act:extend_gitsing(params)
+function act:extend_gitsign(params)
   local ok, gitsigns = pcall(require, 'gitsigns')
   if not ok then
     return
