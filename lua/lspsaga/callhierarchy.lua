@@ -450,35 +450,35 @@ function ch:get_node_at_cursor()
 end
 
 local function load_jdt_preview(bufnr, uri)
-    vim.bo[bufnr].modifiable = true
-    vim.bo[bufnr].swapfile = false
-    vim.bo[bufnr].buftype = 'nofile'
+  vim.bo[bufnr].modifiable = true
+  vim.bo[bufnr].swapfile = false
+  vim.bo[bufnr].buftype = 'nofile'
 
-    -- This triggers FileType event which should fire up the lsp client if not already running.
-    vim.bo[bufnr].filetype = 'java'
+  -- This triggers FileType event which should fire up the lsp client if not already running.
+  vim.bo[bufnr].filetype = 'java'
 
-    vim.wait(config.request_timeout, function()
-      return next(lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})) ~= nil
-    end)
-    local client = lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})[1]
-    assert(client, 'Must have a `jdtls` client to load class file or jdt uri')
+  vim.wait(config.request_timeout, function()
+    return next(lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})) ~= nil
+  end)
+  local client = lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})[1]
+  assert(client, 'Must have a `jdtls` client to load class file or jdt uri')
 
-    local content
-    local function handler(err, result)
-      assert(not err, vim.inspect(err))
-      content = result
-      api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result, "\n", { plain = true }))
-      vim.bo[bufnr].modifiable = false
-    end
+  local content
+  local function handler(err, result)
+    assert(not err, vim.inspect(err))
+    content = result
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result, "\n", { plain = true }))
+    vim.bo[bufnr].modifiable = false
+  end
 
-    local params = {
-      uri = uri
-    }
+  local params = {
+    uri = uri
+  }
 
-    client.request("java/classFileContents", params, handler, bufnr)
-    -- Need to block. Otherwise logic could run that sets the cursor to a position
-    -- that's still missing.
-    vim.wait(config.request_timeout, function() return content ~= nil end)
+  client.request("java/classFileContents", params, handler, bufnr)
+  -- Need to block. Otherwise logic could run that sets the cursor to a position
+  -- that's still missing.
+  vim.wait(config.request_timeout, function() return content ~= nil end)
 end
 
 local function get_preview_data(node)
