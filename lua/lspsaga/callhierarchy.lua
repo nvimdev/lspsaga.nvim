@@ -478,8 +478,8 @@ local function load_jdt_preview(bufnr, uri)
   client.request('java/classFileContents', params, handler, bufnr)
   -- Need to block. Otherwise logic could run that sets the cursor to a position
   -- that's still missing.
-  vim.wait(config.request_timeout, function() 
-    return content ~= nil 
+  vim.wait(config.request_timeout, function()
+    return content ~= nil
   end)
 end
 
