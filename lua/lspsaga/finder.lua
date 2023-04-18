@@ -193,7 +193,7 @@ end
 
 local get_text = function(fname,rows)
   local data = get_file_lines(fname)()
-  local lines = {} -- rows we need to retrieve
+  local lines = {}
   local need = 0 -- keep track of how many unique rows we need
   for _, row in pairs(rows) do
     if not lines[row] then
@@ -457,6 +457,62 @@ function finder:render_finder()
   -- self:create_finder_win()
 end
 
+function finder:cursormoved_callback()
+  local curline = api.nvim_win_get_cursor(self.winid)[1]
+  local ns_select = api.nvim_create_namespace('FinderSelect')
+  api.nvim_buf_clear_namespace(self.bufnr, ns_select, 0, -1)
+  local col = 5
+  local buf_lines = api.nvim_buf_line_count(self.bufnr)
+  local text = api.nvim_get_current_line()
+  local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+  local node
+
+  if curline == 1 or curline > buf_lines - 1 then
+    curline = 3
+    start = 2
+    node = self:get_node({ lnum = 3 })
+  elseif curline == 2 and curline < before then
+    curline = buf_lines - 1
+    node = self:get_node({ lnum = curline })
+    start = node.start
+  elseif text:find('%sDef') or text:find('%sRef') or text:find('%sImp') or #text == 0 then
+    local increase = curline > before and 1 or -1
+    for _, v in ipairs({
+      curline,
+      curline + increase,
+      curline + increase * 2,
+      curline + increase * 3,
+    }) do
+    node = self:get_node({ lnum = v })
+    if node then
+      curline = node.winline
+      start = node.start
+    end
+  end
+elseif not in_fname then
+  node = self:get_node({ lnum = curline })
+  start = node.start
+end
+
+col = in_fname and 7 or col
+before = curline
+api.nvim_win_set_cursor(self.winid, { curline, col })
+api.nvim_buf_add_highlight(
+self.bufnr,
+ns_select,
+'FinderStart',
+start - 1,
+#ui.collapse + 2,
+-1
+)
+api.nvim_buf_add_highlight(self.bufnr, ns_select, 'FinderSelection', curline - 1, 5, -1)
+
+if node then
+  self:open_preview(node)
+end
+    end
+
+
 function finder:create_finder_win()
   print("saga_treesitter done: ",(vim.loop.now()-treesitter_start))
 
@@ -522,62 +578,11 @@ function finder:create_finder_win()
   })
 
   local before, start = 0, 0
-  local ns_select = api.nvim_create_namespace('FinderSelect')
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
-      local curline = api.nvim_win_get_cursor(self.winid)[1]
-      api.nvim_buf_clear_namespace(self.bufnr, ns_select, 0, -1)
-      local col = 5
-      local buf_lines = api.nvim_buf_line_count(self.bufnr)
-      local text = api.nvim_get_current_line()
-      local in_fname = text:find(ui.expand) or text:find(ui.collapse)
-      local node
-
-      if curline == 1 or curline > buf_lines - 1 then
-        curline = 3
-        start = 2
-        node = self:get_node({ lnum = 3 })
-      elseif curline == 2 and curline < before then
-        curline = buf_lines - 1
-        node = self:get_node({ lnum = curline })
-        start = node.start
-      elseif text:find('%sDef') or text:find('%sRef') or text:find('%sImp') or #text == 0 then
-        local increase = curline > before and 1 or -1
-        for _, v in ipairs({
-          curline,
-          curline + increase,
-          curline + increase * 2,
-          curline + increase * 3,
-        }) do
-          node = self:get_node({ lnum = v })
-          if node then
-            curline = node.winline
-            start = node.start
-          end
-        end
-      elseif not in_fname then
-        node = self:get_node({ lnum = curline })
-        start = node.start
-      end
-
-      col = in_fname and 7 or col
-      before = curline
-      api.nvim_win_set_cursor(self.winid, { curline, col })
-      api.nvim_buf_add_highlight(
-        self.bufnr,
-        ns_select,
-        'FinderStart',
-        start - 1,
-        #ui.collapse + 2,
-        -1
-      )
-      api.nvim_buf_add_highlight(self.bufnr, ns_select, 'FinderSelection', curline - 1, 5, -1)
-
-      if node then
-        self:open_preview(node)
-      end
-    end,
+      self:cursormoved_callback()
+    end
   })
 end
 
@@ -648,8 +653,8 @@ function finder:apply_map()
       self.search_ns = api.nvim_create_namespace('sagasearch')
     end
 
-    -- local prefix = '   '
-    local prefix = ' Search >> '
+    local prefix = '   '
+    -- local prefix = ' Search >> '
     api.nvim_buf_set_option(self.search_buf, "buftype", "prompt")
     vim.fn.prompt_setprompt(self.search_buf,prefix)
     vim.api.nvim_buf_add_highlight(
@@ -669,12 +674,16 @@ function finder:apply_map()
         local line = api.nvim_buf_get_text(self.search_buf, 0, 0, -1, -1, {})[1]
         line = line:sub(#prefix+1,#line)
         line = vim.trim(line)
+        line = line:gsub('@','')
         local pattern = line:gsub(' ','.*')
         self.matched_lines = {}
-        for i, _line in ipairs(api.nvim_buf_get_lines(self.bufnr, 0, -1, false)) do
-          local in_fname = _line:find(ui.expand) or _line:find(ui.collapse)
-          if not in_fname then
-            if #vim.fn.matchstr(_line,pattern)>0 then
+        for i, _ in ipairs(api.nvim_buf_get_lines(self.bufnr, 0, -1, false)) do
+          local node = self:get_node({ lnum = i })
+          if node then
+            local res = treesitter_job:retrieve(node.full_fname,{ node.row, node.col })
+            local ts,is_def = res[1],res[2]
+            is_def = is_def and '#write' or '#read'
+            if #vim.fn.matchstr(ts .. ' ' .. is_def .. node.word, pattern)>0 then
               table.insert(self.matched_lines,i)
             end
           end
@@ -697,7 +706,7 @@ function finder:apply_map()
             vim.api.nvim_buf_call(self.bufnr,function ()
               api.nvim_win_set_cursor(0, {self.matched_lines[1], 5})
               vim.cmd [[ normal! zz ]]
-              vim.cmd.doautocmd('CursorMoved')
+              self:cursormoved_callback()
               self.matched_id = 1
             end)
           end
@@ -726,7 +735,7 @@ function finder:apply_map()
             return
           end
           vim.cmd [[ normal! zz ]]
-          vim.cmd.doautocmd('CursorMoved')
+          self:cursormoved_callback()
         end)
       end)
     end, 
@@ -758,7 +767,7 @@ function finder:apply_map()
             return
           end
           vim.cmd [[ normal! zz ]]
-          vim.cmd.doautocmd('CursorMoved')
+          self:cursormoved_callback()
         end)
       end)
     end, 
@@ -1005,7 +1014,7 @@ function finder:open_preview(node)
   api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
   highlight_word()
 
-  local ts = treesitter_job:retrieve(node.full_fname,{ node.row, node.col })
+  local ts = treesitter_job:retrieve(node.full_fname,{ node.row, node.col })[1]
   api.nvim_set_option_value('winbar', ts, {
     scope = 'local',
     win = self.peek_winid,

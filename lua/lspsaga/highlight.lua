@@ -30,7 +30,7 @@ local function hi_define()
     CodeActionText = { link = '@variable' },
     CodeActionNumber = { link = 'DiffAdd' },
     -- finder
-    FinderSelection = { link = 'String' },
+    FinderSelection = { link = 'Visual' },
     FinderFName = {},
     FinderCode = { link = 'Comment' },
     FinderCount = { link = 'Constant' },
