@@ -457,8 +457,7 @@ local function load_jdt_preview(bufnr, uri)
     -- This triggers FileType event which should fire up the lsp client if not already running.
     vim.bo[bufnr].filetype = 'java'
 
-    local timeout_ms = 5000
-    vim.wait(timeout_ms, function()
+    vim.wait(config.request_timeout, function()
       return next(lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})) ~= nil
     end)
     local client = lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})[1]
@@ -479,7 +478,7 @@ local function load_jdt_preview(bufnr, uri)
     client.request("java/classFileContents", params, handler, bufnr)
     -- Need to block. Otherwise logic could run that sets the cursor to a position
     -- that's still missing.
-    vim.wait(timeout_ms, function() return content ~= nil end)
+    vim.wait(config.request_timeout, function() return content ~= nil end)
 end
 
 local function get_preview_data(node)
