@@ -528,11 +528,15 @@ function ch:preview()
     { scope = 'local', win = self.preview_winid }
   )
 
-  api.nvim_win_set_cursor(
-    self.preview_winid,
-    { data.range.start.line + 1, data.range.start.character }
-  )
-  vim.bo[data.bufnr].filetype = vim.bo[self.main_buf].filetype
+  -- Check if the cursor position is within the buffer's valid range.
+  local buf_line_count = api.nvim_buf_line_count(data.bufnr)
+  local cursor_row = data.range.start.line + 1
+  local cursor_column = data.range.start.character
+
+  if cursor_row >= 1 and cursor_row <= buf_line_count then
+    api.nvim_win_set_cursor(self.preview_winid, { cursor_row, cursor_column })
+    vim.bo[data.bufnr].filetype = vim.bo[self.main_buf].filetype
+  end
   api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.preview_winid })
 end
 
