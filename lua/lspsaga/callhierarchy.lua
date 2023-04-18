@@ -449,6 +449,39 @@ function ch:get_node_at_cursor()
   return node
 end
 
+local function load_jdt_preview(bufnr, uri)
+    vim.bo[bufnr].modifiable = true
+    vim.bo[bufnr].swapfile = false
+    vim.bo[bufnr].buftype = 'nofile'
+
+    -- This triggers FileType event which should fire up the lsp client if not already running.
+    vim.bo[bufnr].filetype = 'java'
+
+    local timeout_ms = 5000
+    vim.wait(timeout_ms, function()
+      return next(lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})) ~= nil
+    end)
+    local client = lsp.get_active_clients({ name = "jdtls", bufnr = bufnr})[1]
+    assert(client, 'Must have a `jdtls` client to load class file or jdt uri')
+
+    local content
+    local function handler(err, result)
+      assert(not err, vim.inspect(err))
+      content = result
+      api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(result, "\n", { plain = true }))
+      vim.bo[bufnr].modifiable = false
+    end
+
+    local params = {
+      uri = uri
+    }
+
+    client.request("java/classFileContents", params, handler, bufnr)
+    -- Need to block. Otherwise logic could run that sets the cursor to a position
+    -- that's still missing.
+    vim.wait(timeout_ms, function() return content ~= nil end)
+end
+
 local function get_preview_data(node)
   if not node or vim.tbl_count(node) == 0 then
     return
@@ -457,6 +490,10 @@ local function get_preview_data(node)
   local uri = node.target.uri
   local range = node.target.range
   local bufnr = vim.uri_to_bufnr(uri)
+
+  if string.sub(uri, 1, 4) == "jdt:" then
+    load_jdt_preview(bufnr, uri)
+  end
 
   if not api.nvim_buf_is_loaded(bufnr) then
     fn.bufload(bufnr)
