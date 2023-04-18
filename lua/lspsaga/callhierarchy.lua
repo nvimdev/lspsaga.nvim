@@ -458,9 +458,9 @@ local function load_jdt_preview(bufnr, uri)
   vim.bo[bufnr].filetype = 'java'
 
   vim.wait(config.request_timeout, function()
-    return next(lsp.get_active_clients({ name = 'jdtls', bufnr = bufnr})) ~= nil
+    return next(lsp.get_active_clients({ name = 'jdtls', bufnr = bufnr })) ~= nil
   end)
-  local client = lsp.get_active_clients({ name = 'jdtls', bufnr = bufnr})[1]
+  local client = lsp.get_active_clients({ name = 'jdtls', bufnr = bufnr })[1]
   assert(client, 'Must have a `jdtls` client to load class file or jdt uri')
 
   local content
