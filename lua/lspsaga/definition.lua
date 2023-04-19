@@ -282,6 +282,14 @@ function def:peek_definition(method)
             background = color.bakcground or nil,
           })
           api.nvim_del_autocmd(opt.id)
+
+          for _, item in pairs(ctx) do
+            if type(item) == 'table' then
+              vim.tbl_map(function(k)
+                pcall(api.nvim_buf_del_keymap, item.bufnr, 'n', k)
+              end, config.definition)
+            end
+          end
         end
       end,
     })
