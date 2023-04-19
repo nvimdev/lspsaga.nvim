@@ -86,6 +86,10 @@ local function lb_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup(name, { clear = true }),
     callback = function(opt)
+      if not require('lspsaga.codeaction'):check_server_support_codeaction() then
+        return
+      end
+
       local buf = opt.buf
       local group = api.nvim_create_augroup(name .. tostring(buf), {})
       api.nvim_create_autocmd('CursorMoved', {
