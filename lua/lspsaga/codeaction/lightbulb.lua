@@ -53,6 +53,10 @@ local function render(bufnr)
   }
 
   lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(results)
+    if api.nvim_get_current_buf() ~= bufnr then
+      return
+    end
+
     local has_actions = false
     for _, res in ipairs(results or {}) do
       if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
