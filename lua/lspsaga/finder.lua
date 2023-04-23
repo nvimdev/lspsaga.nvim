@@ -787,7 +787,7 @@ function finder:apply_map()
     })
 
     vim.keymap.set('i','<CR>',function ()
-      -- vim.cmd [[stopinsert]]
+      vim.cmd [[stopinsert]]
       layout:remove_win(self.search_win)
       vim.api.nvim_buf_call(self.bufnr,function ()
         local curline = api.nvim_win_get_cursor(self.winid)[1]
