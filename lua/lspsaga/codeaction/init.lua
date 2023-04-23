@@ -286,6 +286,10 @@ local function do_code_action(action, client, enriched_ctx)
   end
 end
 
+function act:do_code_action(action, client, enriched_ctx)
+  do_code_action(action, client, enriched_ctx)
+end
+
 function act:apply_action_keys()
   map_keys('n', config.code_action.keys.exec, function()
     local num = get_num()

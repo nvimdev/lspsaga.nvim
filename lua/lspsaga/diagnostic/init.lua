@@ -138,7 +138,9 @@ function diag:code_action_cb(hi_name)
         noremap = true,
         nowait = true,
         callback = function()
-          act:do_code_action(nil, self.action_tuples[num], self.enriched_ctx)
+          local action = self.action_tuples[num][2]
+          local client = vim.lsp.get_client_by_id(self.action_tuples[num][1])
+          act:do_code_action(action, client, self.enriched_ctx)
         end,
       })
     end
