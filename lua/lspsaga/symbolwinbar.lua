@@ -143,6 +143,11 @@ function symbar.node_is_keyword(buf, node)
   if not node.selectionRange then
     return false
   end
+
+  if not vim.treesitter.get_captures_at_pos then
+    return false
+  end
+
   local captures = vim.treesitter.get_captures_at_pos(
     buf,
     node.selectionRange.start.line,
