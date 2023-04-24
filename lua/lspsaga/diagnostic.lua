@@ -32,7 +32,7 @@ function diag:get_diagnostic_sign(severity)
   local prefix = 'DiagnosticSign'
   local sign_conf = fn.sign_getdefined(prefix .. type)
   if not sign_conf or vim.tbl_isempty(sign_conf) then
-    return
+    return type:gsub(1, 1)
   end
   local icon = (sign_conf[1] and sign_conf[1].text) and sign_conf[1].text or type:gsub(1, 1)
   return icon
