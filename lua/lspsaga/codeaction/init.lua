@@ -299,7 +299,7 @@ function act:apply_action_keys()
     local action = vim.deepcopy(self.action_tuples[num][2])
     local client = lsp.get_client_by_id(self.action_tuples[num][1])
     self:close_action_window()
-    do_code_action(action, client)
+    do_code_action(action, client, self.enriched_ctx)
   end, { buffer = self.action_bufnr })
 
   map_keys('n', config.code_action.keys.quit, function()
@@ -320,7 +320,7 @@ function act:num_shortcut(bufnr)
         local action = vim.deepcopy(self.action_tuples[num][2])
         local client = lsp.get_client_by_id(self.action_tuples[num][1])
         self:close_action_window()
-        do_code_action(action, client)
+        do_code_action(action, client, self.enriched_ctx)
       end,
     })
   end
