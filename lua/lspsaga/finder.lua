@@ -273,7 +273,7 @@ function finder:create_finder_data(result, method)
       start_col = node.col - 10
     end
     node.word = api.nvim_buf_get_text(node.bufnr, node.row, start_col, node.row, node.ecol, {})[1]
-    if node.word:find('^%s') then
+    if node.word:find('%S') then
       node.word = node.word:sub(node.word:find('%S'), #node.word)
     end
 
