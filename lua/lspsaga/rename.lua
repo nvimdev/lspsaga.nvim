@@ -33,9 +33,11 @@ function rename:apply_action_keys()
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in pairs(modes) do
-    vim.keymap.set(mode, config.rename.quit, function()
-      self:close_rename_win()
-    end, { buffer = self.bufnr })
+    if string.lower(config.name.quit) ~= '<esc>' or mode == 'n' then
+      vim.keymap.set(mode, config.rename.quit, function()
+        self:close_rename_win()
+      end, { buffer = self.bufnr })
+    end
 
     if i ~= 3 then
       vim.keymap.set(mode, config.rename.exec, function()
