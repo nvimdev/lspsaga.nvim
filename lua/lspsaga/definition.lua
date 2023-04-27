@@ -274,6 +274,7 @@ function def:peek_definition(method)
 
     api.nvim_create_autocmd('WinClosed', {
       once = true,
+      buffer = node.bufnr,
       callback = function(opt)
         local curwin = api.nvim_get_current_win()
         if curwin == self.winid then
