@@ -230,6 +230,7 @@ function hover:do_request(args)
   local params = util.make_position_params()
   local count, total = support_clients()
   if count == 0 and should_error(args) then
+    self.pending_request = false
     vim.notify('[Lspsaga] all server of buffer not support hover request')
     return
   end
