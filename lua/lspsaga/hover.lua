@@ -32,6 +32,10 @@ local function open_link()
       end
     end
 
+    if path:find('#') then
+      vim.fn.escape(path, '#')
+    end
+
     local cmd
     if libs.iswin then
       cmd = '!start cmd /cstart /b '
