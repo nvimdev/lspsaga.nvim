@@ -254,6 +254,15 @@ function def:peek_definition(method)
       { scope = 'local', win = self.winid }
     )
     api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.winid })
+    require('scratch.once_keymap').once_map('<CR>',function()
+      local curr_pos = api.nvim_win_get_cursor(self.winid)
+      api.nvim_win_set_buf(cur_winid, node.bufnr)
+      api.nvim_win_set_cursor(cur_winid, curr_pos)
+      vim.schedule(function()
+        api.nvim_win_close(self.winid,true)
+        vim.cmd('normal! zz')
+      end)
+    end,true)
 
     if node.wipe then
       api.nvim_set_option_value('bufhidden', 'wipe', { buf = node.bufnr })
