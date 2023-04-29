@@ -24,9 +24,9 @@ function symbol:do_request(buf, callback)
 
   local client = util.get_client_by_cap('documentSymbolProvider')
   if not client then
-    vim.notify('[lspsaga.nvim] no servers support documentsymbl request in this buffer')
     return
   end
+
   if not self[buf] then
     self[buf] = {}
   end
