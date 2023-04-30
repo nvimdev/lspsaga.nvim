@@ -49,6 +49,7 @@ local function set_local()
     spell = false,
     cursorcolumn = false,
     cursorline = false,
+    winfixwidth = true,
     stc = '',
   }
   for opt, val in pairs(local_options) do
@@ -72,62 +73,6 @@ local function find_node(data, line)
   end
 end
 
-local function parse_symbols(buf, symbols)
-  local res = {}
-
-  local tmp_node = function(node)
-    local tmp = {}
-    tmp.winline = -1
-    for k, v in pairs(node) do
-      if k ~= 'children' then
-        tmp[k] = v
-      end
-    end
-    return tmp
-  end
-
-  local function recursive_parse(tbl)
-    for _, v in ipairs(tbl) do
-      if not res[v.kind] then
-        res[v.kind] = {
-          expand = true,
-          data = {},
-        }
-      end
-      if not symbol:node_is_keyword(buf, v) then
-        local tmp = tmp_node(v)
-        table.insert(res[v.kind].data, tmp)
-      end
-      if v.children then
-        recursive_parse(v.children)
-      end
-    end
-  end
-  recursive_parse(symbols)
-  local keys = vim.tbl_keys(res)
-  table.sort(keys, outline_conf.custom_sort)
-  local new = {}
-  for _, v in ipairs(keys) do
-    new[v] = res[v]
-  end
-
-  -- remove unnecessary data reduce memory usage
-  for k, v in pairs(new) do
-    if #v.data == 0 then
-      new[k] = nil
-    else
-      for _, item in ipairs(v.data) do
-        if item.selectionRange then
-          item.pos = { item.selectionRange.start.line, item.selectionRange.start.character }
-          item.selectionRange = nil
-        end
-      end
-    end
-  end
-
-  return new
-end
-
 ---@private
 local function create_outline_window()
   if #outline_conf.win_with > 0 then
@@ -143,9 +88,10 @@ local function create_outline_window()
 
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
   vim.cmd(pos .. ' vnew')
-  vim.cmd('vertical resize ' .. outline_conf.win_width)
+  local winid, bufnr = api.nvim_get_current_win(), api.nvim_get_current_buf()
   set_local()
-  return api.nvim_get_current_win(), api.nvim_get_current_buf()
+  api.nvim_win_set_width(winid, config.outline.win_width)
+  return winid, bufnr
 end
 
 function ot:apply_map(symbol_data)
@@ -420,7 +366,8 @@ function ot:render_outline(buf, symbols)
     self.winid, self.bufnr = create_outline_window()
   end
 
-  local res = parse_symbols(buf, symbols)
+  local res = outline_conf.layout == 'category' and symbol:category(buf, symbols)
+    or symbol:classic(buf, symbols)
 
   local lines = {}
   local kind = get_kind() or {}

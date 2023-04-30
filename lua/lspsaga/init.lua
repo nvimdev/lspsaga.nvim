@@ -114,10 +114,11 @@ local default_config = {
     win_position = 'right',
     win_with = '',
     win_width = 30,
+    --category
+    layout = 'category',
     auto_preview = true,
     auto_refresh = true,
     auto_close = true,
-    custom_sort = nil,
     preview_width = 0.4,
     close_after_jump = false,
     keys = {

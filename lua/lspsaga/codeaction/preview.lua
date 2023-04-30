@@ -2,7 +2,7 @@ local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
 
-local function get_action_diff(num, main_buf, tuple)
+local function get_action_diff(main_buf, tuple)
   local action = tuple[2]
   if not action then
     return
@@ -21,7 +21,7 @@ local function get_action_diff(num, main_buf, tuple)
     if not action then
       return
     end
-    tuple[num][2] = action
+    tuple[2] = action
   end
 
   if not action.edit then
@@ -114,13 +114,7 @@ end
 ---@boder_hi    string border highlight name
 ---@tuple       list   client actions tuple
 local function action_preview(main_winid, main_buf, border_hi, tuple)
-  local line = api.nvim_get_current_line()
-  local num = line:match('%[(%d+)%]')
-  if not num then
-    return
-  end
-
-  local tbl = get_action_diff(tonumber(num), main_buf, tuple)
+  local tbl = get_action_diff(main_buf, tuple)
   if not tbl or #tbl == 0 then
     if preview_winid and api.nvim_win_is_valid(preview_winid) then
       api.nvim_win_close(preview_winid, true)

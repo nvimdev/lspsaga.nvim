@@ -49,8 +49,9 @@ function act:check_server_support_codeaction(bufnr)
   return false
 end
 
-function act:action_callback()
+function act:action_callback(tuples)
   local contents = {}
+  self.action_tuples = tuples
 
   for index, client_with_actions in pairs(self.action_tuples) do
     local action_title = ''
@@ -188,11 +189,11 @@ function act:send_request(main_buf, options, callback)
 
   lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)
     self.pending_request = false
-    self.action_tuples = {}
+    local action_tuples = {}
 
     for client_id, result in pairs(results) do
       for _, action in pairs(result.result or {}) do
-        self.action_tuples[#self.action_tuples + 1] = { client_id, action }
+        action_tuples[#action_tuples + 1] = { client_id, action }
       end
     end
 
@@ -200,18 +201,18 @@ function act:send_request(main_buf, options, callback)
       local res = self:extend_gitsign(params)
       if res then
         for _, action in pairs(res) do
-          self.action_tuples[#self.action_tuples + 1] = { 'gitsigns', action }
+          action_tuples[#action_tuples + 1] = { 'gitsigns', action }
         end
       end
     end
 
-    if #self.action_tuples == 0 then
+    if #action_tuples == 0 then
       vim.notify('No code actions available', vim.log.levels.INFO)
       return
     end
 
     if callback then
-      callback(vim.deepcopy(self.action_tuples), vim.deepcopy(self.enriched_ctx))
+      callback(action_tuples, vim.deepcopy(self.enriched_ctx))
     end
   end)
 end
@@ -342,8 +343,8 @@ function act:code_action(options)
     }
   end
 
-  self:send_request(api.nvim_get_current_buf(), options, function()
-    self:action_callback()
+  self:send_request(api.nvim_get_current_buf(), options, function(tuples)
+    self:action_callback(tuples)
   end)
 end
 
