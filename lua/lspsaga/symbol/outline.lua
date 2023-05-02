@@ -50,6 +50,7 @@ local function set_local()
     cursorcolumn = false,
     cursorline = false,
     winfixwidth = true,
+    winhl = 'Normal:OutlineNormal',
     stc = '',
   }
   for opt, val in pairs(local_options) do
