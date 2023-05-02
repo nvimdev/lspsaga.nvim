@@ -52,6 +52,8 @@ local function set_local()
     spell = false,
     cursorcolumn = false,
     cursorline = false,
+    winfixwidth = true,
+    winhl = 'Normal:OutlineNormal',
   }
   for opt, val in pairs(local_options) do
     vim.opt_local[opt] = val
@@ -149,9 +151,10 @@ local function create_outline_window()
 
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
   vim.cmd(pos .. ' vnew')
-  vim.cmd('vertical resize ' .. outline_conf.win_width)
+  local winid, bufnr = api.nvim_get_current_win(), api.nvim_get_current_buf()
+  api.nvim_win_set_width(winid, outline_conf.win_width)
   set_local()
-  return api.nvim_get_current_win(), api.nvim_get_current_buf()
+  return winid, bufnr
 end
 
 function ot:apply_map()
