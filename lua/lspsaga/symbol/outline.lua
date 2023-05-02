@@ -367,8 +367,7 @@ function ot:render_outline(buf, symbols)
     self.winid, self.bufnr = create_outline_window()
   end
 
-  local res = outline_conf.layout == 'category' and symbol:category(buf, symbols)
-    or symbol:classic(buf, symbols)
+  local res = symbol:category(buf, symbols)
 
   local lines = {}
   local kind = get_kind() or {}
