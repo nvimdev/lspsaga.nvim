@@ -138,6 +138,9 @@ end
 
 ---@private
 local function create_outline_window()
+  local curwin = api.nvim_get_current_win()
+  vim.wo[curwin].winhl = 'WinSeparator:OutlineWinSeparator'
+
   if #outline_conf.win_with > 0 then
     local ok, sp_buf = libs.find_buffer_by_filetype(outline_conf.win_with)
 

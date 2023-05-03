@@ -78,6 +78,7 @@ local function hi_define()
     OutlineIndent = { fg = '#806d9e' },
     OutlinePreviewBorder = { link = 'SagaNormal' },
     OutlinePreviewNormal = { link = 'SagaBorder' },
+    OutlineWinSeparator = { link = 'WinSeparator' },
     -- Float term
     TerminalBorder = { link = 'SagaBorder' },
     TerminalNormal = { link = 'SagaNormal' },
