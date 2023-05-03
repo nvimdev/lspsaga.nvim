@@ -29,7 +29,7 @@ end
 
 local function get_kind()
   local kind = {
-    [1] = { 'File', ' ', 'Tag' },
+    [1] = { 'File', ' ', 'Tag' },
     [2] = { 'Module', ' ', 'Exception' },
     [3] = { 'Namespace', ' ', 'Include' },
     [4] = { 'Package', ' ', 'Label' },
@@ -40,15 +40,15 @@ local function get_kind()
     [9] = { 'Constructor', ' ', '@constructor' },
     [10] = { 'Enum', ' ', '@number' },
     [11] = { 'Interface', ' ', 'Type' },
-    [12] = { 'Function', ' ', 'Function' },
+    [12] = { 'Function', '󰊕', 'Function' },
     [13] = { 'Variable', ' ', '@variable' },
     [14] = { 'Constant', ' ', 'Constant' },
     [15] = { 'String', '󰅳 ', 'String' },
-    [16] = { 'Number', ' ', 'Number' },
+    [16] = { 'Number', '󰎠 ', 'Number' },
     [17] = { 'Boolean', ' ', 'Boolean' },
     [18] = { 'Array', '󰅨 ', 'Type' },
-    [19] = { 'Object', ' ', 'Type' },
-    [20] = { 'Key', ' ', '' },
+    [19] = { 'Object', ' ', 'Type' },
+    [20] = { 'Key', ' ', 'Constant' },
     [21] = { 'Null', '󰟢 ', 'Constant' },
     [22] = { 'EnumMember', ' ', 'Number' },
     [23] = { 'Struct', ' ', 'Type' },
@@ -61,10 +61,10 @@ local function get_kind()
     [254] = { 'StaticMethod', ' ', 'Function' },
     [255] = { 'Macro', ' ', 'Macro' },
     -- for completion sb microsoft!!!
-    [300] = { 'Text', ' ', 'String' },
+    [300] = { 'Text', '󰭷 ', 'String' },
     [301] = { 'Snippet', ' ', '@variable' },
     [302] = { 'Folder', ' ', 'Title' },
-    [303] = { 'Unit', ' ', 'Number' },
+    [303] = { 'Unit', '󰊱 ', 'Number' },
     [304] = { 'Value', ' ', '@variable' },
   }
 
