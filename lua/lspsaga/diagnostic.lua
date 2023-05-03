@@ -56,6 +56,10 @@ function diag:code_action_cb(hi_name)
     return
   end
 
+  if not self.action_tuples or next(self.action_tuples) == nil then
+    return
+  end
+
   local win_conf = api.nvim_win_get_config(self.winid)
   local contents = {
     libs.gen_truncate_line(win_conf.width),
