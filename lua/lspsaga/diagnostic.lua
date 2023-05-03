@@ -311,6 +311,7 @@ function diag:render_diagnostic_window(entry, option)
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
       },
+      silent = true,
     }, function(action_tuples, enriched_ctx)
       self.action_tuples = action_tuples
       self.enriched_ctx = enriched_ctx

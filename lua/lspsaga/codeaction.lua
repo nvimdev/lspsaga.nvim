@@ -194,7 +194,7 @@ function act:send_code_action_request(main_buf, options, cb)
       end
     end
 
-    if #self.action_tuples == 0 then
+    if #self.action_tuples == 0 and not options.silent then
       vim.notify('No code actions available', vim.log.levels.INFO)
       return
     end
