@@ -359,7 +359,7 @@ default options
 you can use `open_link` key to open a http link or a file link in hover doc window. the
 `open_browser` is `chrome` in default you need config it to your browser
 
-You need install the [treesitter](https://github.com/nvim-treesitter/nvim-treesitter) markdown and markdown_line parser.
+You need install the [treesitter](https://github.com/nvim-treesitter/nvim-treesitter) markdown and markdown_inline parser.
 Lspsaga can use it to render the hover window.
 You can press the keyboard shortcut for `:Lspsaga hover_doc` twice to enter the hover window.
 
