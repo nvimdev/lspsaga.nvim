@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*           For Nvim 0.8.0           Last change: 2023 May 03
+*lspsaga.nvim.txt*           For Nvim 0.8.0           Last change: 2023 May 05
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -405,9 +405,10 @@ window. the `open_browser` is `chrome` in default you need config it to your
 browser
 
 You need install the treesitter
-<https://github.com/nvim-treesitter/nvim-treesitter> markdown and markdown_line
-parser. Lspsaga can use it to render the hover window. You can press the
-keyboard shortcut for `:Lspsaga hover_doc` twice to enter the hover window.
+<https://github.com/nvim-treesitter/nvim-treesitter> markdown and
+markdown_inline parser. Lspsaga can use it to render the hover window. You can
+press the keyboard shortcut for `:Lspsaga hover_doc` twice to enter the hover
+window.
 
 if you got something wrong in hover please run `:checkhealth`
 
