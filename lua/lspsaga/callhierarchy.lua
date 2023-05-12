@@ -123,16 +123,25 @@ function ch:call_hierarchy(item, parent)
         local expand_collapse = '  ' .. ui.expand
         local icon = kind[target.kind][2]
 
-        local projectClassPattern = '.+/([^/]+)[.]java'
-        local jdtClassPattern = '/([^/?=]+)[.]class'
-        local projectClass = target.uri:match(projectClassPattern)
-        local jdtClass = target.uri:match(jdtClassPattern)
-        local className = projectClass or jdtClass
-        className = className and className or ''
+        -- Variable can be used to append name of class to the respective method in the outgoing preview popup.
+        local classNamePart = ''
+
+        -- Class name resolution for Java
+        -- 
+        if vim.bo[api.nvim_get_current_buf()].filetype == 'java' then
+          local projectClassPattern = '.+/([^/]+)[.]java'
+          local jdtClassPattern = '/([^/?=]+)[.]class'
+          local projectClass = target.uri:match(projectClassPattern)
+          local jdtClass = target.uri:match(jdtClassPattern)
+          local className = projectClass or jdtClass
+          if className ~= nil then
+            classNamePart = ' @ ' .. (className and className or '')
+          end
+        end
 
         self.data[#self.data + 1] = {
           target = target,
-          name = expand_collapse .. icon .. target.name .. ' @ ' .. className,
+          name = expand_collapse .. icon .. target.name .. classNamePart,
           highlights = {
             ['SagaCollapse'] = { 0, #expand_collapse },
             ['SagaWinbar' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
