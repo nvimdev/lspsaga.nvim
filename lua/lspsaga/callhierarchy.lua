@@ -122,9 +122,11 @@ function ch:call_hierarchy(item, parent)
         icons[#icons + 1] = kind[target.kind]
         local expand_collapse = '  ' .. ui.expand
         local icon = kind[target.kind][2]
+        local className = target.uri:match('.+/(.+)[.]class[?]')
+        className = className and className or ''
         self.data[#self.data + 1] = {
           target = target,
-          name = expand_collapse .. icon .. target.name,
+          name = expand_collapse .. icon .. target.name .. ' @ ' .. className,
           highlights = {
             ['SagaCollapse'] = { 0, #expand_collapse },
             ['SagaWinbar' .. kind[target.kind][1]] = { #expand_collapse, #expand_collapse + #icon },
