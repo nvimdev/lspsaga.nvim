@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*           For Nvim 0.8.0           Last change: 2023 May 05
+*lspsaga.nvim.txt*           For Nvim 0.8.0           Last change: 2023 May 12
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -44,8 +44,13 @@ Neovim lsp enhance plugin.
 
 <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 
-
-1. |lspsaga.nvim-install|2. |lspsaga.nvim-example-configuration|3. |lspsaga.nvim-using-lspsaga|4. |lspsaga.nvim-customizing-lspsaga’s-appearance|5. |lspsaga.nvim-backers|6. |lspsaga.nvim-donate|7. |lspsaga.nvim-license|
+1. |lspsaga.nvim-install|
+2. |lspsaga.nvim-example-configuration|
+3. |lspsaga.nvim-using-lspsaga|
+4. |lspsaga.nvim-customizing-lspsaga’s-appearance|
+5. |lspsaga.nvim-backers|
+6. |lspsaga.nvim-donate|
+7. |lspsaga.nvim-license|
 
 
 INSTALL                                                 *lspsaga.nvim-install*
@@ -53,7 +58,6 @@ INSTALL                                                 *lspsaga.nvim-install*
 You can use plugin managers like `lazy.nvim` and `packer.nvim` to install
 `lspsaga` and lazy load `lspsaga` using the plugin manager’s keyword for lazy
 loading (`lazy` for `lazy.nvim` and `opt` for `packer.nvim`).
-
 
 - `cmd` - Load `lspsaga` only when a `lspsaga` command is called.
 - `ft` - `lazy.nvim` and `packer.nvim` both provide lazy loading by filetype.
@@ -86,7 +90,6 @@ loading (`lazy` for `lazy.nvim` and `opt` for `packer.nvim`).
         }
     }, opt)
 <
-
 
 - Packer <https://github.com/wbthomason/packer.nvim>
 
@@ -293,7 +296,6 @@ Default options:
       },
 <
 
-
 - `max_height` of the finder window.
 - `force_max_height` force window height to max_height
 - `keys.jump_to` finder peek window.
@@ -325,7 +327,6 @@ peek_definition showcase ~
 
 The steps demonstrated in this showcase are:
 
-
 - Pressing `gp` to run `:Lspsaga peek_definition`
 - Editing a comment and using `:w` to save
 - Pressing `<C-c>o` to jump to the file in the floating window
@@ -354,14 +355,12 @@ Default options:
       },
 <
 
-
 - `num_shortcut` - It is `true` by default so you can quickly run a code action by pressing its corresponding number.
 - `extend_gitsigns` show gitsings in code action.
 
 code_action showcase ~
 
 The steps demonstrated in this showcase are:
-
 
 - Pressing `ga` to run `:Lspsaga code_action`
 - Pressing `j` to move within the code action preview window
@@ -416,7 +415,6 @@ hover_docshow case ~
 
 The steps demonstrated in this showcase are:
 
-
 - Pressing `K` once to run `:Lspsaga hover_doc`
 - Pressing `K` again to enter the hover window
 - Pressing `q` to quit
@@ -455,7 +453,6 @@ Default options:
       },
 <
 
-
 - `jump_num_shortcut` - The default is `true`. After jumping, Lspasga will automatically bind code actions to a number. Afterwards, you can press the number to execute the code action. After the floating window is closed, these numbers will no longer be tied to the same code actions.
 - `show_codeaction` default is true it will show available actions in the diagnsotic jump window
 - `show_source` default is true extend `source` into the diagnostic message
@@ -488,11 +485,9 @@ showcase ~
 
 The steps demonstrated in this showcase are:
 
-
 - Pressing `[e` to jump to the next diagnostic position, which shows the beacon highlight and the code actions in a diagnostic window
 - Use `scroll_in_preview` keys to show action preview.
 - Pressing the number `2` to execute the code action without needing to enter the floating window
-
 
 
 
@@ -536,7 +531,6 @@ Default options:
       },
 <
 
-
 - `mark` is used for the `++project` argument. It is used to mark the files which you want to rename the hovered word in.
 - `confirm` - After you have marked the files, press this key to execute the rename.
 
@@ -544,14 +538,12 @@ rename showcase ~
 
 The steps demonstrated in this showcase are:
 
-
 - Pressing `gr` to run `:Lspsaga rename`
 - Typing `stesdd` and then pressing `<CR>` to execute the rename
 
 
 
 The steps demonstrated in this showcase are:
-
 
 - Pressing `gR` to run `:Lspsaga rename ++project`
 - Pressing `x` to mark the file
@@ -583,7 +575,6 @@ Default options:
 outline showcase ~
 
 The steps demonstrated in this showcase are:
-
 
 - Pressing `<Leader>o` run `:Lspsaga outline`
 
@@ -630,7 +621,6 @@ Default options:
         color_mode = true,
       },
 <
-
 
 - `hide_keyword` - The default value is `true`. Lspsaga will hide some keywords and temporary variables to make the symbols look cleaner.
 - `folder_level` only works when `show_file` is `true`.
