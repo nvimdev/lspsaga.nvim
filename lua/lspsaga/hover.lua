@@ -95,6 +95,9 @@ function hover:open_floating_preview(res, option_fn)
     if line:find('```') then
       in_codeblock = in_codeblock and false or true
     end
+    if line:find('&emsp;') then
+      line = line:gsub('&emsp;', ' ')
+    end
     if #line > 0 then
       new[#new + 1] = line
     end
