@@ -122,8 +122,14 @@ function ch:call_hierarchy(item, parent)
         icons[#icons + 1] = kind[target.kind]
         local expand_collapse = '  ' .. ui.expand
         local icon = kind[target.kind][2]
-        local className = target.uri:match('.+/(.+)[.]class[?]')
+
+        local projectClassPattern = '.+/([^/]+)[.]java'
+        local jdtClassPattern = '/([^/?=]+)[.]class'
+        local projectClass = target.uri:match(projectClassPattern)
+        local jdtClass = target.uri:match(jdtClassPattern)
+        local className = projectClass or jdtClass
         className = className and className or ''
+
         self.data[#self.data + 1] = {
           target = target,
           name = expand_collapse .. icon .. target.name .. ' @ ' .. className,
