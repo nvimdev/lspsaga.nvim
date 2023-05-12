@@ -96,7 +96,7 @@ function hover:open_floating_preview(res, option_fn)
       in_codeblock = in_codeblock and false or true
     end
     if line:find('&emsp;') then
-      line = line:gsub('&emsp;', ' ')
+      line = line:gsub('&emsp;', vim.bo.filetype == 'yaml' and '' or ' ')
     end
     if #line > 0 then
       new[#new + 1] = line
