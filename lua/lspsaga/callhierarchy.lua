@@ -127,7 +127,6 @@ function ch:call_hierarchy(item, parent)
         local classNamePart = ''
 
         -- Class name resolution for Java
-        -- 
         if vim.bo[api.nvim_get_current_buf()].filetype == 'java' then
           local projectClassPattern = '.+/([^/]+)[.]java'
           local jdtClassPattern = '/([^/?=]+)[.]class'
