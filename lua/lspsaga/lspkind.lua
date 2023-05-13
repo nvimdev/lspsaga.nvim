@@ -40,7 +40,7 @@ local function get_kind()
     [9] = { 'Constructor', ' ', '@constructor' },
     [10] = { 'Enum', ' ', '@number' },
     [11] = { 'Interface', ' ', 'Type' },
-    [12] = { 'Function', '󰊕', 'Function' },
+    [12] = { 'Function', '󰊕 ', 'Function' },
     [13] = { 'Variable', ' ', '@variable' },
     [14] = { 'Constant', ' ', 'Constant' },
     [15] = { 'String', '󰅳 ', 'String' },
