@@ -267,7 +267,11 @@ function hover:do_request(args)
     if type(result.contents) == 'string' then -- MarkedString
       value = result.contents
     elseif result.contents.language then -- MarkedString
-      value = result.contents.value
+      if result.contents.language == 'css' then
+        value = '```css\n' .. result.contents.value .. '\n```'
+      else
+        value = result.contents.value
+      end
     elseif vim.tbl_islist(result.contents) then -- MarkedString[]
       if vim.tbl_isempty(result.contents) and should_error(args) then
         vim.notify('No information available')
