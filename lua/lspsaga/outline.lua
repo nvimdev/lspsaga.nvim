@@ -491,7 +491,12 @@ function ot:render_outline(buf, symbols)
 
   for k, v in pairs(res) do
     local scope = {}
-    local indent_with_icon = '  ' .. config.ui.collapse
+    local indent_with_icon = '  ' .. config.ui.collapse 
+    if outline_conf.hide_kind ~= nil then
+      if vim.tbl_contains(outline_conf.hide_kind,kind[k][1]) then
+        goto continue
+      end
+    end 
     lines[#lines + 1] = indent_with_icon .. ' ' .. kind[k][1] .. ':' .. #v.data
     scope['SagaCount'] = { #indent_with_icon + #kind[k][1] + 1, -1 }
     scope['SagaCollapse'] = { 0, #indent_with_icon }
@@ -510,6 +515,7 @@ function ot:render_outline(buf, symbols)
     end
     lines[#lines + 1] = ''
     hi[#hi + 1] = {}
+   ::continue::
   end
 
   api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
