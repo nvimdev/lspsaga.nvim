@@ -152,6 +152,17 @@ function hover:open_floating_preview(res, option_fn)
       { scope = 'local', win = self.preview_winid }
     )
     vim.treesitter.start(self.preview_bufnr, 'markdown')
+    vim.treesitter.query.set(
+      'markdown',
+      'highlights',
+      [[
+      ([
+        (info_string)
+        (fenced_code_block_delimiter)
+      ] @conceal
+      (#set! conceal ""))
+    ]]
+    )
   end
 
   vim.keymap.set('n', 'q', function()
