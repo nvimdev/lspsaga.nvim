@@ -141,7 +141,17 @@ function hover:open_floating_preview(res, option_fn)
   vim.wo[self.preview_winid].showbreak = 'NONE'
 
   vim.treesitter.start(self.preview_bufnr, 'markdown')
-
+  vim.treesitter.query.set(
+    'markdown',
+    'highlights',
+    [[
+      ([
+        (info_string)
+        (fenced_code_block_delimiter)
+      ] @conceal
+      (#set! conceal ""))
+    ]]
+  )
   nvim_buf_set_keymap(self.preview_bufnr, 'n', 'q', '', {
     noremap = true,
     nowait = true,
