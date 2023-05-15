@@ -6,7 +6,9 @@ local saga_augroup = require('lspsaga').saga_augroup
 libs.iswin = vim.loop.os_uname().sysname == 'Windows_NT'
 libs.ismac = vim.loop.os_uname().sysname == 'Darwin'
 
-libs.path_sep = libs.iswin and '\\' or '/'
+local shellslash = vim.fn.exists('+shellslash') == 1 and vim.opt.shellslash or nil
+
+libs.path_sep = libs.iswin and not shellslash and '\\' or '/'
 
 function libs.get_path_info(buf, level)
   level = level or 1
