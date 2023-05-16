@@ -108,7 +108,9 @@ function def:apply_aciton_keys(buf, main_buf)
         if node.bufnr == main_buf and vim.bo[node.bufnr].modified then
           vim.cmd('write!')
         end
-        vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
+        if buf ~= main_buf then
+          vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
+        end
         if not node.wipe then
           self.restore_opts.restore()
         end
