@@ -117,6 +117,7 @@ local default_config = {
     auto_preview = true,
     auto_refresh = true,
     auto_close = true,
+    auto_resize = false,
     custom_sort = nil,
     preview_width = 0.4,
     close_after_jump = false,

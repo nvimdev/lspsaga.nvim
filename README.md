@@ -525,6 +525,7 @@ Default options:
     auto_preview = true,
     auto_refresh = true,
     auto_close = true,
+    auto_resize = false,
     custom_sort = nil,
     keys = {
       expand_or_jump = 'o',
