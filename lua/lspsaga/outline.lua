@@ -512,6 +512,18 @@ function ot:render_outline(buf, symbols)
     hi[#hi + 1] = {}
   end
 
+  if config.outline.auto_resize then
+    local max_width = config.outline.win_width
+    for _, line in ipairs(lines) do
+      local width = vim.api.nvim_strwidth(line)
+      if width > max_width then
+        max_width = width
+      end
+    end
+    config.outline.win_width = max_width
+    api.nvim_win_set_width(self.winid, outline_conf.win_width)
+  end
+
   api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
   vim.bo[self.bufnr].modifiable = false
   api.nvim_buf_add_highlight(self.bufnr, 0, data[2], 0, 0, 4)
