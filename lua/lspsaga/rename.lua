@@ -3,6 +3,7 @@ local ns = api.nvim_create_namespace('LspsagaRename')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config
+local utils = require('lspsaga.utils')
 local rename = {}
 local context = {}
 
@@ -31,20 +32,15 @@ end
 
 function rename:apply_action_keys()
   local modes = { 'i', 'n', 'v' }
+  local opts = { buffer = self.bufnr }
 
-  for i, mode in pairs(modes) do
-    if string.lower(config.rename.quit) ~= '<esc>' or mode == 'n' then
-      vim.keymap.set(mode, config.rename.quit, function()
-        self:close_rename_win()
-      end, { buffer = self.bufnr })
-    end
+  utils.map_keys(modes, config.rename.quit, function()
+    self:close_rename_win()
+  end, opts)
 
-    if i ~= 3 then
-      vim.keymap.set(mode, config.rename.exec, function()
-        self:do_rename()
-      end, { buffer = self.bufnr })
-    end
-  end
+  utils.map_keys(modes, config.rename.exec, function()
+    self:do_rename()
+  end, opts)
 end
 
 function rename:set_local_options()
@@ -376,7 +372,8 @@ function rename:popup_win(lines)
       end, 10)
     end,
   })
-  vim.keymap.set('n', config.rename.mark, function()
+
+  utils.map_keys('n', config.rename.mark, function()
     if not self.confirmed then
       self.confirmed = {}
     end
@@ -399,7 +396,7 @@ function rename:popup_win(lines)
     end
   end, { buffer = self.p_bufnr, nowait = true })
 
-  vim.keymap.set('n', config.rename.confirm, function()
+  utils.map_keys('n', config.rename.confirm, function()
     for _, item in pairs(self.confirmed or {}) do
       for _, match in pairs(item.data.submatches) do
         api.nvim_buf_set_text(

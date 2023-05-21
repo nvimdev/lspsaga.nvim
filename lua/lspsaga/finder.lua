@@ -1,10 +1,10 @@
 local api, lsp, fn, uv = vim.api, vim.lsp, vim.fn, vim.loop
 local config = require('lspsaga').config
-local ui = config.ui
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
+local utils = require('lspsaga.utils')
+local ui = config.ui
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns_id = api.nvim_create_namespace('lspsagafinder')
 local co = coroutine
 
@@ -518,7 +518,7 @@ end
 local function unpack_map()
   local map = {}
   for k, v in pairs(config.finder.keys) do
-    if k ~= 'jump_to' and k ~= 'close_in_preview' and k ~= 'expand_or_jump' then
+    if k ~= 'jump_to' and k ~= 'close_in_preview' and k ~= 'expand_or_jump' and k ~= 'quit' then
       map[k] = v
     end
   end
@@ -531,39 +531,29 @@ function finder:apply_map()
     nowait = true,
     silent = true,
   }
-  local unpacked = unpack_map()
 
-  for action, map in pairs(unpacked) do
-    if type(map) == 'string' then
-      map = { map }
-    end
-    for _, key in pairs(map) do
-      if key ~= 'quit' then
-        vim.keymap.set('n', key, function()
-          local curline = api.nvim_win_get_cursor(self.winid)[1]
-          local node = self:get_node({ lnum = curline })
-          if not node then
-            return
-          end
-          self:do_action(node, action)
-        end, opts)
+  for action, keys in pairs(unpack_map()) do
+    utils.map_keys('n', keys, function()
+      local curline = api.nvim_win_get_cursor(self.winid)[1]
+      local node = self:get_node({ lnum = curline })
+      if not node then
+        return
       end
-    end
-  end
-
-  for _, key in pairs(config.finder.keys.quit) do
-    vim.keymap.set('n', key, function()
-      local ok, buf = pcall(api.nvim_win_get_buf, self.peek_winid)
-      if ok then
-        pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
-      end
-      window.nvim_close_valid_window({ self.winid, self.peek_winid })
-      self:clean_data()
-      clean_ctx()
+      self:do_action(node, action)
     end, opts)
   end
 
-  vim.keymap.set('n', config.finder.keys.jump_to, function()
+  utils.map_keys('n', config.finder.keys.quit, function()
+    local ok, buf = pcall(api.nvim_win_get_buf, self.peek_winid)
+    if ok then
+      pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
+    end
+    window.nvim_close_valid_window({ self.winid, self.peek_winid })
+    self:clean_data()
+    clean_ctx()
+  end, opts)
+
+  utils.map_keys('n', config.finder.keys.jump_to, function()
     if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
       api.nvim_set_current_win(self.peek_winid)
     end
@@ -625,24 +615,20 @@ function finder:apply_map()
     vim.bo[self.bufnr].modifiable = false
   end
 
-  nvim_buf_set_keymap(self.bufnr, 'n', config.finder.keys.expand_or_jump, '', {
-    noremap = true,
-    nowait = true,
-    callback = function()
-      local curline = api.nvim_win_get_cursor(self.winid)[1]
-      local text = api.nvim_get_current_line()
-      local in_fname = text:find(ui.expand) or text:find(ui.collapse)
-      if in_fname then
-        expand_or_collapse(text, curline)
-        return
-      end
-      local node = self:get_node({ lnum = curline })
-      if not node then
-        return
-      end
-      self:do_action(node, 'edit')
-    end,
-  })
+  utils.map_keys('n', config.finder.keys.expand_or_jump, function()
+    local curline = api.nvim_win_get_cursor(self.winid)[1]
+    local text = api.nvim_get_current_line()
+    local in_fname = text:find(ui.expand) or text:find(ui.collapse)
+    if in_fname then
+      expand_or_collapse(text, curline)
+      return
+    end
+    local node = self:get_node({ lnum = curline })
+    if not node then
+      return
+    end
+    self:do_action(node, 'edit')
+  end, opts)
 end
 
 function finder:find_nodes_by_fname(fname)

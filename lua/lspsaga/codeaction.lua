@@ -1,7 +1,9 @@
 local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
+local utils = require('lspsaga.utils')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+
 local act = {}
 local ctx = {}
 
@@ -99,15 +101,6 @@ function act:action_callback()
   end
 end
 
-local function map_keys(mode, keys, action, options)
-  if type(keys) == 'string' then
-    keys = { keys }
-  end
-  for _, key in ipairs(keys) do
-    vim.keymap.set(mode, key, action, options)
-  end
-end
-
 ---@private
 ---@param bufnr integer
 ---@param mode "v"|"V"
@@ -142,11 +135,11 @@ local function range_from_selection(bufnr, mode)
 end
 
 function act:apply_action_keys()
-  map_keys('n', config.code_action.keys.exec, function()
+  utils.map_keys('n', config.code_action.keys.exec, function()
     self:do_code_action()
   end, { buffer = self.action_bufnr })
 
-  map_keys('n', config.code_action.keys.quit, function()
+  utils.map_keys('n', config.code_action.keys.quit, function()
     self:close_action_window()
     clean_ctx()
   end, { buffer = self.action_bufnr })
