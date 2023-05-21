@@ -51,17 +51,13 @@ local function open_link()
 end
 
 function hover:open_floating_preview(res, option_fn)
-  vim.validate({
-    res = { res, 't' },
-  })
-
   local bufnr = api.nvim_get_current_buf()
   self.preview_bufnr = api.nvim_create_buf(false, true)
 
   local content = vim.split(res.value, '\n', { trimempty = true })
   local new = {}
   local in_codeblock = false
-  for _, line in pairs(content) do
+  for _, line in ipairs(content) do
     if line:find('\\') then
       line = line:gsub('\\(?![tn])', '')
     end
