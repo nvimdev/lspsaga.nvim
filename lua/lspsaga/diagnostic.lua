@@ -234,13 +234,15 @@ function diag:clean_data()
 end
 
 function diag:apply_map()
-  utils.map_keys('n', diag_conf.keys.exec_action, function()
-    self:do_code_action()
-  end, { buffer = self.bufnr, nowait = true })
+  local opts = { nowait = true }
 
-  utils.map_keys('n', diag_conf.keys.quit, function()
+  utils.map_keys(self.bufnr, 'n', diag_conf.keys.exec_action, function()
+    self:do_code_action()
+  end, opts)
+
+  utils.map_keys(self.bufnr, 'n', diag_conf.keys.quit, function()
     self:clean_data()
-  end, { buffer = self.bufnr, nowait = true })
+  end, opts)
 end
 
 function diag:get_diag_counts(entrys)

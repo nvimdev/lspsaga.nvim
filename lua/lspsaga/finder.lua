@@ -527,13 +527,12 @@ end
 
 function finder:apply_map()
   local opts = {
-    buffer = self.bufnr,
     nowait = true,
     silent = true,
   }
 
   for action, keys in pairs(unpack_map()) do
-    utils.map_keys('n', keys, function()
+    utils.map_keys(self.bufnr, 'n', keys, function()
       local curline = api.nvim_win_get_cursor(self.winid)[1]
       local node = self:get_node({ lnum = curline })
       if not node then
@@ -543,7 +542,7 @@ function finder:apply_map()
     end, opts)
   end
 
-  utils.map_keys('n', config.finder.keys.quit, function()
+  utils.map_keys(self.bufnr, 'n', config.finder.keys.quit, function()
     local ok, buf = pcall(api.nvim_win_get_buf, self.peek_winid)
     if ok then
       pcall(api.nvim_buf_clear_namespace, buf, self.preview_hl_ns, 0, -1)
@@ -553,7 +552,7 @@ function finder:apply_map()
     clean_ctx()
   end, opts)
 
-  utils.map_keys('n', config.finder.keys.jump_to, function()
+  utils.map_keys(self.bufnr, 'n', config.finder.keys.jump_to, function()
     if self.peek_winid and api.nvim_win_is_valid(self.peek_winid) then
       api.nvim_set_current_win(self.peek_winid)
     end
@@ -615,7 +614,7 @@ function finder:apply_map()
     vim.bo[self.bufnr].modifiable = false
   end
 
-  utils.map_keys('n', config.finder.keys.expand_or_jump, function()
+  utils.map_keys(self.bufnr, 'n', config.finder.keys.expand_or_jump, function()
     local curline = api.nvim_win_get_cursor(self.winid)[1]
     local text = api.nvim_get_current_line()
     local in_fname = text:find(ui.expand) or text:find(ui.collapse)

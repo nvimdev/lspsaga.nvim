@@ -32,15 +32,14 @@ end
 
 function rename:apply_action_keys()
   local modes = { 'i', 'n', 'v' }
-  local opts = { buffer = self.bufnr }
 
-  utils.map_keys(modes, config.rename.quit, function()
+  utils.map_keys(self.bufnr, modes, config.rename.quit, function()
     self:close_rename_win()
-  end, opts)
+  end)
 
-  utils.map_keys(modes, config.rename.exec, function()
+  utils.map_keys(self.bufnr, modes, config.rename.exec, function()
     self:do_rename()
-  end, opts)
+  end)
 end
 
 function rename:set_local_options()
@@ -373,7 +372,7 @@ function rename:popup_win(lines)
     end,
   })
 
-  utils.map_keys('n', config.rename.mark, function()
+  utils.map_keys(self.bufnr, 'n', config.rename.mark, function()
     if not self.confirmed then
       self.confirmed = {}
     end
@@ -396,7 +395,7 @@ function rename:popup_win(lines)
     end
   end, { buffer = self.p_bufnr, nowait = true })
 
-  utils.map_keys('n', config.rename.confirm, function()
+  utils.map_keys(self.bufnr, 'n', config.rename.confirm, function()
     for _, item in pairs(self.confirmed or {}) do
       for _, match in pairs(item.data.submatches) do
         api.nvim_buf_set_text(

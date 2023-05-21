@@ -74,8 +74,8 @@ function def:has_peek_win()
   return false
 end
 
-function def:apply_action_keys(buf, main_buf)
-  local opts = { buffer = buf, nowait = true }
+function def:apply_action_keys(bufnr, main_bufnr)
+  local opts = { nowait = true }
 
   local function find_node_index()
     local curbuf = api.nvim_get_current_buf()
@@ -97,7 +97,7 @@ function def:apply_action_keys(buf, main_buf)
   end
 
   for action, keys in pairs(unpack_map()) do
-    utils.map_keys('n', keys, function()
+    utils.map_keys(bufnr, 'n', keys, function()
       local index = find_node_index()
       if not index then
         return
@@ -106,10 +106,10 @@ function def:apply_action_keys(buf, main_buf)
       local node = ctx[index]
       api.nvim_win_close(self.winid, true)
       -- if buffer same as normal buffer write it first
-      if node.bufnr == main_buf and vim.bo[node.bufnr].modified then
+      if node.bufnr == main_bufnr and vim.bo[node.bufnr].modified then
         vim.cmd('write!')
       end
-      if buf == main_buf then
+      if bufnr == main_bufnr then
         if action ~= 'edit' then
           vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
         end
@@ -144,7 +144,7 @@ function def:apply_action_keys(buf, main_buf)
     clean_ctx()
   end
 
-  utils.map_keys('n', config.definition.quit, quit_fn, opts)
+  utils.map_keys(bufnr, 'n', config.definition.quit, quit_fn, opts)
 end
 
 local function get_method(index)

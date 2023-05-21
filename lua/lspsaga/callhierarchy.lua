@@ -276,9 +276,9 @@ function ch:expand_collapse()
 end
 
 function ch:apply_map()
-  local opts = { buffer = true, nowait = true }
+  local opts = { nowait = true }
 
-  utils.map_keys('n', call_conf.keys.quit, function()
+  utils.map_keys(self.bufnr, 'n', call_conf.keys.quit, function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
       api.nvim_win_close(self.winid, true)
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
@@ -288,11 +288,11 @@ function ch:apply_map()
     end
   end, opts)
 
-  utils.map_keys('n', call_conf.keys.expand_collapse, function()
+  utils.map_keys(self.bufnr, 'n', call_conf.keys.expand_collapse, function()
     self:expand_collapse()
   end, opts)
 
-  utils.map_keys('n', call_conf.keys.jump, function()
+  utils.map_keys(self.bufnr, 'n', call_conf.keys.jump, function()
     if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
       local node = self:get_node_at_cursor()
       if not node then
@@ -312,7 +312,7 @@ function ch:apply_map()
     split = call_conf.keys.split,
     tabe = call_conf.keys.tabe,
   }) do
-    utils.map_keys('n', keys, function()
+    utils.map_keys(self.bufnr, 'n', keys, function()
       local node = self:get_node_at_cursor()
       if not node then
         return

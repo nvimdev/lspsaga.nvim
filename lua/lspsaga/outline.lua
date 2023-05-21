@@ -163,9 +163,9 @@ end
 
 function ot:apply_map()
   local maps = outline_conf.keys
-  local opts = { buffer = self.bufnr, nowait = true }
+  local opts = { nowait = true }
 
-  utils.map_keys('n', maps.quit, function()
+  utils.map_keys(self.bufnr, 'n', maps.quit, function()
     if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
       api.nvim_buf_delete(self.bufnr, { force = true })
     end
@@ -204,7 +204,7 @@ function ot:apply_map()
     end
   end
 
-  utils.map_keys('n', maps.expand_or_jump, function()
+  utils.map_keys(self.bufnr, 'n', maps.expand_or_jump, function()
     local text = api.nvim_get_current_line()
     if text:find(config.ui.expand) or text:find(config.ui.collapse) then
       self:expand_collapse()

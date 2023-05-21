@@ -135,14 +135,14 @@ local function range_from_selection(bufnr, mode)
 end
 
 function act:apply_action_keys()
-  utils.map_keys('n', config.code_action.keys.exec, function()
+  utils.map_keys(self.action_bufnr, 'n', config.code_action.keys.exec, function()
     self:do_code_action()
-  end, { buffer = self.action_bufnr })
+  end)
 
-  utils.map_keys('n', config.code_action.keys.quit, function()
+  utils.map_keys(self.action_bufnr, 'n', config.code_action.keys.quit, function()
     self:close_action_window()
     clean_ctx()
-  end, { buffer = self.action_bufnr })
+  end)
 end
 
 function act:send_code_action_request(main_buf, options, cb)
