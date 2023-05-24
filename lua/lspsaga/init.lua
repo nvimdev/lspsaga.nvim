@@ -98,7 +98,7 @@ local default_config = {
     exec = '<CR>',
     mark = 'x',
     confirm = '<CR>',
-    in_select = true,
+    initial_mode = 's'
   },
   symbol_in_winbar = {
     enable = true,

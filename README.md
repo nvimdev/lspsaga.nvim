@@ -485,7 +485,7 @@ Default options:
     exec = "<CR>",
     mark = "x",
     confirm = "<CR>",
-    in_select = true,
+    initial_mode = "s"
   },
 ```
 

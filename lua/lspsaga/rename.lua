@@ -33,11 +33,9 @@ function rename:apply_action_keys()
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in pairs(modes) do
-    if string.lower(config.rename.quit) ~= '<esc>' or mode == 'n' then
-      vim.keymap.set(mode, config.rename.quit, function()
-        self:close_rename_win()
-      end, { buffer = self.bufnr })
-    end
+    vim.keymap.set(mode, config.rename.quit, function()
+      self:close_rename_win()
+    end, { buffer = self.bufnr })
 
     if i ~= 3 then
       vim.keymap.set(mode, config.rename.exec, function()
@@ -156,9 +154,11 @@ function rename:lsp_rename(arg)
   self:set_local_options()
   api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { cword })
 
-  if config.rename.in_select then
+  if config.rename.initial_mode == 's' then
     vim.cmd([[normal! V]])
     feedkeys('<C-g>', 'n')
+  elseif config.rename.initial_mode == 'i' then
+    vim.cmd([[startinsert!]])
   end
 
   local quit_id, close_unfocus
