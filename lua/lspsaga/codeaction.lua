@@ -411,7 +411,11 @@ function act:action_preview(main_winid, main_buf, border_hi, tuple)
     opt.row = win_conf.row[false] + win_conf.height + 2
     max_height = winheight - opt.row
   end
+  
   opt.height = #tbl > max_height and max_height or #tbl
+  if opt.height <= 0 then
+    return
+  end
 
   if fn.has('nvim-0.9') == 1 and config.ui.title then
     opt.title = { { 'Action Preview', 'ActionPreviewTitle' } }
