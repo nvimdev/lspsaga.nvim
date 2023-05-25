@@ -1,5 +1,6 @@
 local config = require('lspsaga').config
 local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
+local log = require('lspsaga.logger')
 local util = require('lspsaga.util')
 local window = require('lspsaga.window')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
@@ -223,6 +224,7 @@ function def:peek_definition(method)
       )
       return
     end
+    log:new(results):write()
 
     local result
     for _, res in pairs(results) do

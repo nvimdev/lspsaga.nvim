@@ -8,6 +8,10 @@ util.ismac = vim.loop.os_uname().sysname == 'Darwin'
 
 util.path_sep = util.iswin and '\\' or '/'
 
+function util.path_join(...)
+  return table.concat({ ... }, util.path_sep)
+end
+
 function util.get_path_info(buf, level)
   level = level or 1
   local fname = api.nvim_buf_get_name(buf)

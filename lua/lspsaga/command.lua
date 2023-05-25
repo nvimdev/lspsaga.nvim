@@ -55,6 +55,9 @@ local subcommands = {
   term_toggle = function(cmd)
     require('lspsaga.floaterm'):open_float_terminal(cmd)
   end,
+  open_log = function()
+    require('lspsaga.logger'):open()
+  end,
 }
 
 function command.command_list()
