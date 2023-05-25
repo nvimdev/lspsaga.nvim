@@ -157,9 +157,17 @@ function rename:lsp_rename(arg)
   self:set_local_options()
   api.nvim_buf_set_lines(self.bufnr, -2, -1, false, { cword })
 
-  if config.rename.in_select then
+  if config.rename.in_select and not self.arg then
     vim.cmd([[normal! V]])
     feedkeys('<C-g>', 'n')
+  elseif self.arg then
+    local mode = vim.split(self.arg, '=')[2]
+    if mode == 'i' then
+      vim.cmd.startinsert()
+    elseif mode == 's' then
+      vim.cmd([[normal! V]])
+      feedkeys('<C-g>', 'n')
+    end
   end
 
   local quit_id, close_unfocus
