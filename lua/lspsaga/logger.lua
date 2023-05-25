@@ -8,7 +8,7 @@ local function log_path()
 end
 
 local function header()
-  local time = os.date('%m-%d %H:%M:%S')
+  local time = os.date('%m-%d-%H:%M:%S')
   return '[Lspsaga] [' .. time .. ']'
 end
 

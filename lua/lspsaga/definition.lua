@@ -217,6 +217,7 @@ function def:peek_definition(method)
 
   lsp.buf_request_all(current_buf, method_name, params, function(results)
     in_process = 0
+    print(vim.inspect(results))
     if not results or next(results) == nil then
       vim.notify(
         '[Lspsaga] response of request method ' .. method_name .. ' is nil',
@@ -224,7 +225,7 @@ function def:peek_definition(method)
       )
       return
     end
-    log:new(results):write()
+    log:new(method_name, results):write()
 
     local result
     for _, res in pairs(results) do
