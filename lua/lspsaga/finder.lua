@@ -484,6 +484,7 @@ function finder:create_finder_win(width)
           if node then
             curline = node.winline
             start = node.start
+            break
           end
         end
       elseif not in_fname then
