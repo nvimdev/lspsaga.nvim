@@ -2,9 +2,10 @@ local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
+local util = require('lspsaga.util')
 local diag_conf = config.diagnostic
 local diagnostic = vim.diagnostic
-local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
+local api, fn = vim.api, vim.fn
 local ns = api.nvim_create_namespace('DiagnosticJump')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local nvim_buf_del_keymap = api.nvim_buf_del_keymap
@@ -233,13 +234,15 @@ function diag:clean_data()
 end
 
 function diag:apply_map()
-  keymap('n', diag_conf.keys.exec_action, function()
-    self:do_code_action()
-  end, { buffer = self.bufnr, nowait = true })
+  local opts = { nowait = true }
 
-  keymap('n', diag_conf.keys.quit, function()
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.exec_action, function()
+    self:do_code_action()
+  end, opts)
+
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.quit, function()
     self:clean_data()
-  end, { buffer = self.bufnr, nowait = true })
+  end, opts)
 end
 
 function diag:get_diag_counts(entrys)

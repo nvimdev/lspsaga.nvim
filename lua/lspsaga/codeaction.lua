@@ -1,7 +1,9 @@
-local api, util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
+local api, lsp_util, fn, lsp = vim.api, vim.lsp.util, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local window = require('lspsaga.window')
+local util = require('lspsaga.util')
 local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+
 local act = {}
 local ctx = {}
 
@@ -99,15 +101,6 @@ function act:action_callback()
   end
 end
 
-local function map_keys(mode, keys, action, options)
-  if type(keys) == 'string' then
-    keys = { keys }
-  end
-  for _, key in ipairs(keys) do
-    vim.keymap.set(mode, key, action, options)
-  end
-end
-
 ---@private
 ---@param bufnr integer
 ---@param mode "v"|"V"
@@ -142,14 +135,14 @@ local function range_from_selection(bufnr, mode)
 end
 
 function act:apply_action_keys()
-  map_keys('n', config.code_action.keys.exec, function()
+  util.map_keys(self.action_bufnr, 'n', config.code_action.keys.exec, function()
     self:do_code_action()
-  end, { buffer = self.action_bufnr })
+  end)
 
-  map_keys('n', config.code_action.keys.quit, function()
+  util.map_keys(self.action_bufnr, 'n', config.code_action.keys.quit, function()
     self:close_action_window()
     clean_ctx()
-  end, { buffer = self.action_bufnr })
+  end)
 end
 
 function act:send_code_action_request(main_buf, options, cb)
@@ -163,12 +156,12 @@ function act:send_code_action_request(main_buf, options, cb)
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
     local end_ = assert(options.range['end'], 'range must have an `end` property')
-    params = util.make_given_range_params(start, end_)
+    params = lsp_util.make_given_range_params(start, end_)
   elseif mode == 'v' or mode == 'V' then
     local range = range_from_selection(0, mode)
-    params = util.make_given_range_params(range.start, range['end'])
+    params = lsp_util.make_given_range_params(range.start, range['end'])
   else
-    params = util.make_range_params()
+    params = lsp_util.make_range_params()
   end
   params.context = ctx_diags
   if not self.enriched_ctx then
@@ -247,7 +240,7 @@ end
 
 function act:apply_action(action, client, enriched_ctx)
   if action.edit then
-    util.apply_workspace_edit(action.edit, client.offset_encoding)
+    lsp_util.apply_workspace_edit(action.edit, client.offset_encoding)
   end
   if action.command then
     local command = type(action.command) == 'table' and action.command or action
@@ -364,7 +357,7 @@ function act:get_action_diff(num, main_buf, tuple)
   api.nvim_buf_set_lines(tmp_buf, 0, -1, false, lines)
 
   for _, changes in pairs(all_changes) do
-    util.apply_text_edits(changes, tmp_buf, client.offset_encoding)
+    lsp_util.apply_text_edits(changes, tmp_buf, client.offset_encoding)
   end
   local data = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
   api.nvim_buf_delete(tmp_buf, { force = true })

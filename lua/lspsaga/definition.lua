@@ -1,8 +1,9 @@
 local config = require('lspsaga').config
-local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
+local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local libs = require('lspsaga.libs')
 local window = require('lspsaga.window')
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+local util = require('lspsaga.util')
+
 local def = {}
 
 -- a double linked list for store the node infor
@@ -73,8 +74,9 @@ function def:has_peek_win()
   return false
 end
 
-function def:apply_aciton_keys(buf, main_buf)
-  local opt = { buffer = buf, nowait = true }
+function def:apply_action_keys(bufnr, main_bufnr)
+  local opts = { nowait = true }
+
   local function find_node_index()
     local curbuf = api.nvim_get_current_buf()
     local index = find_node(curbuf)
@@ -87,43 +89,41 @@ function def:apply_aciton_keys(buf, main_buf)
   local function unpack_map()
     local map = {}
     for k, v in pairs(config.definition) do
-      if k ~= 'width' and k ~= 'height' then
+      if k ~= 'width' and k ~= 'height' and k ~= 'quit' then
         map[k] = v
       end
     end
     return map
   end
 
-  for action, key in pairs(unpack_map()) do
-    if action ~= 'quit' then
-      keymap.set('n', key, function()
-        local index = find_node_index()
-        if not index then
-          return
-        end
+  for action, keys in pairs(unpack_map()) do
+    util.map_keys(bufnr, 'n', keys, function()
+      local index = find_node_index()
+      if not index then
+        return
+      end
 
-        local node = ctx[index]
-        api.nvim_win_close(self.winid, true)
-        -- if buffer same as normal buffer write it first
-        if node.bufnr == main_buf and vim.bo[node.bufnr].modified then
-          vim.cmd('write!')
-        end
-        if buf == main_buf then
-          if action ~= 'edit' then
-            vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
-          end
-        else
+      local node = ctx[index]
+      api.nvim_win_close(self.winid, true)
+      -- if buffer same as normal buffer write it first
+      if node.bufnr == main_bufnr and vim.bo[node.bufnr].modified then
+        vim.cmd('write!')
+      end
+      if bufnr == main_bufnr then
+        if action ~= 'edit' then
           vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
         end
-        if not node.wipe then
-          self.restore_opts.restore()
-        end
-        api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
-        local width = #api.nvim_get_current_line()
-        libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
-        clean_ctx()
-      end, opt)
-    end
+      else
+        vim.cmd(action .. ' ' .. vim.uri_to_fname(node.uri))
+      end
+      if not node.wipe then
+        self.restore_opts.restore()
+      end
+      api.nvim_win_set_cursor(0, { node.pos[1] + 1, node.pos[2] })
+      local width = #api.nvim_get_current_line()
+      libs.jump_beacon({ node.pos[1], node.pos[2] }, width)
+      clean_ctx()
+    end, opts)
   end
 
   local function quit_fn()
@@ -144,16 +144,7 @@ function def:apply_aciton_keys(buf, main_buf)
     clean_ctx()
   end
 
-  local quit = {}
-  quit = type(config.definition.quit) == 'string' and { config.definition.quit }
-    or config.definition.quit
-  for _, v in ipairs(quit) do
-    nvim_buf_set_keymap(buf, 'n', v, '', {
-      noremap = true,
-      nowait = true,
-      callback = quit_fn,
-    })
-  end
+  util.map_keys(bufnr, 'n', config.definition.quit, quit_fn, opts)
 end
 
 local function get_method(index)
@@ -271,7 +262,7 @@ function def:peek_definition(method)
     vim.cmd('normal! zt')
     push(node)
 
-    self:apply_aciton_keys(node.bufnr, current_buf)
+    self:apply_action_keys(node.bufnr, current_buf)
 
     api.nvim_create_autocmd('WinClosed', {
       once = true,
