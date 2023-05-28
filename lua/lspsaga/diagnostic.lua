@@ -2,7 +2,7 @@ local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
-local utils = require('lspsaga.utils')
+local util = require('lspsaga.util')
 local diag_conf = config.diagnostic
 local diagnostic = vim.diagnostic
 local api, fn = vim.api, vim.fn
@@ -236,11 +236,11 @@ end
 function diag:apply_map()
   local opts = { nowait = true }
 
-  utils.map_keys(self.bufnr, 'n', diag_conf.keys.exec_action, function()
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.exec_action, function()
     self:do_code_action()
   end, opts)
 
-  utils.map_keys(self.bufnr, 'n', diag_conf.keys.quit, function()
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.quit, function()
     self:clean_data()
   end, opts)
 end

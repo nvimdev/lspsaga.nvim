@@ -2,7 +2,7 @@ local config = require('lspsaga').config
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local libs = require('lspsaga.libs')
 local window = require('lspsaga.window')
-local utils = require('lspsaga.utils')
+local util = require('lspsaga.util')
 
 local def = {}
 
@@ -97,7 +97,7 @@ function def:apply_action_keys(bufnr, main_bufnr)
   end
 
   for action, keys in pairs(unpack_map()) do
-    utils.map_keys(bufnr, 'n', keys, function()
+    util.map_keys(bufnr, 'n', keys, function()
       local index = find_node_index()
       if not index then
         return
@@ -144,7 +144,7 @@ function def:apply_action_keys(bufnr, main_bufnr)
     clean_ctx()
   end
 
-  utils.map_keys(bufnr, 'n', config.definition.quit, quit_fn, opts)
+  util.map_keys(bufnr, 'n', config.definition.quit, quit_fn, opts)
 end
 
 local function get_method(index)

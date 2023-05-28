@@ -4,7 +4,7 @@ local config = require('lspsaga').config
 local libs = require('lspsaga.libs')
 local symbar = require('lspsaga.symbolwinbar')
 local window = require('lspsaga.window')
-local utils = require('lspsaga.utils')
+local util = require('lspsaga.util')
 local outline_conf = config.outline
 local ctx = {}
 
@@ -165,7 +165,7 @@ function ot:apply_map()
   local maps = outline_conf.keys
   local opts = { nowait = true }
 
-  utils.map_keys(self.bufnr, 'n', maps.quit, function()
+  util.map_keys(self.bufnr, 'n', maps.quit, function()
     if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
       api.nvim_buf_delete(self.bufnr, { force = true })
     end
@@ -204,7 +204,7 @@ function ot:apply_map()
     end
   end
 
-  utils.map_keys(self.bufnr, 'n', maps.expand_or_jump, function()
+  util.map_keys(self.bufnr, 'n', maps.expand_or_jump, function()
     local text = api.nvim_get_current_line()
     if text:find(config.ui.expand) or text:find(config.ui.collapse) then
       self:expand_collapse()

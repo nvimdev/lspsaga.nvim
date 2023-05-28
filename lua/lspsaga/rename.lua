@@ -1,9 +1,9 @@
-local api, util, lsp, uv, fn = vim.api, vim.lsp.util, vim.lsp, vim.loop, vim.fn
+local api, lsp_util, lsp, uv, fn = vim.api, vim.lsp.util, vim.lsp, vim.loop, vim.fn
 local ns = api.nvim_create_namespace('LspsagaRename')
 local window = require('lspsaga.window')
 local libs = require('lspsaga.libs')
 local config = require('lspsaga').config
-local utils = require('lspsaga.utils')
+local util = require('lspsaga.util')
 local rename = {}
 local context = {}
 
@@ -33,11 +33,11 @@ end
 function rename:apply_action_keys()
   local modes = { 'i', 'n', 'v' }
 
-  utils.map_keys(self.bufnr, modes, config.rename.quit, function()
+  util.map_keys(self.bufnr, modes, config.rename.quit, function()
     self:close_rename_win()
   end)
 
-  utils.map_keys(self.bufnr, modes, config.rename.exec, function()
+  util.map_keys(self.bufnr, modes, config.rename.exec, function()
     self:do_rename()
   end)
 end
@@ -56,7 +56,7 @@ end
 
 function rename:find_reference()
   local bufnr = api.nvim_get_current_buf()
-  local params = util.make_position_params()
+  local params = lsp_util.make_position_params()
   params.context = { includeDeclaration = true }
   local client = libs.get_client_by_cap('referencesProvider')
   if client == nil then
@@ -372,7 +372,7 @@ function rename:popup_win(lines)
     end,
   })
 
-  utils.map_keys(self.bufnr, 'n', config.rename.mark, function()
+  util.map_keys(self.bufnr, 'n', config.rename.mark, function()
     if not self.confirmed then
       self.confirmed = {}
     end
@@ -395,7 +395,7 @@ function rename:popup_win(lines)
     end
   end, { buffer = self.p_bufnr, nowait = true })
 
-  utils.map_keys(self.bufnr, 'n', config.rename.confirm, function()
+  util.map_keys(self.bufnr, 'n', config.rename.confirm, function()
     for _, item in pairs(self.confirmed or {}) do
       for _, match in pairs(item.data.submatches) do
         api.nvim_buf_set_text(
