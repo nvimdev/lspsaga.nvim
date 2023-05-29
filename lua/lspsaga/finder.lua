@@ -343,6 +343,8 @@ function finder:render_finder()
             meth_data.start = start
           end
           v.start = start
+          v.idx = k
+          v.count = #item.nodes
           text = indent .. v.word
           api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
           width[#width + 1] = #text
@@ -791,16 +793,25 @@ function finder:open_preview(node)
     api.nvim_buf_add_highlight(node.bufnr, ns_id, 'FinderPreview', node.row, node.col, node.ecol)
   end
 
+  local function apply_node_count_virtual_text()
+    local opts = {
+      virt_text = { { '<--' .. node.idx .. '/' .. node.count, 'IncSearch' } },
+    }
+    api.nvim_buf_set_extmark(node.bufnr, ns_id, node.row, node.col, opts)
+  end
+
   local buf_in_peek = api.nvim_win_get_buf(self.peek_winid)
   if buf_in_peek == node.bufnr then
     api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
     highlight_word()
+    apply_node_count_virtual_text()
     return
   end
 
   api.nvim_win_set_buf(self.peek_winid, node.bufnr)
   api.nvim_win_set_cursor(self.peek_winid, { node.row + 1, node.col })
   highlight_word()
+  apply_node_count_virtual_text()
 
   api.nvim_set_option_value('winbar', '', {
     scope = 'local',
