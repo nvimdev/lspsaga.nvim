@@ -81,6 +81,8 @@ local function hi_define()
     -- Float term
     TerminalBorder = { link = 'SagaBorder' },
     TerminalNormal = { link = 'SagaNormal' },
+    -- Implement
+    SagaImpIcon = { link = 'KeyWord' },
   }
 end
 

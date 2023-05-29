@@ -17,6 +17,7 @@ local default_config = {
     theme = 'arrow',
     lines = { '┗', '┣', '┃', '━' },
     kind = {},
+    imp_sign = '󰳛 ',
   },
   hover = {
     max_width = 0.6,
@@ -103,7 +104,7 @@ local default_config = {
   symbol_in_winbar = {
     enable = true,
     ignore_patterns = {},
-    separator = ' ◆ ',
+    separator = ' ❖ ',
     hide_keyword = true,
     show_file = true,
     folder_level = 2,
@@ -138,6 +139,13 @@ local default_config = {
       expand_collapse = 'u',
     },
   },
+  implement = {
+    enable = true,
+    sign = true,
+    virtual_text = true,
+    parser = 'treesitter', --lsp
+    priority = 100,
+  },
   beacon = {
     enable = true,
     frequency = 7,
@@ -161,6 +169,10 @@ function saga.setup(opts)
 
   if saga.config.diagnostic.on_insert then
     require('lspsaga.diagnostic.insert').on_insert()
+  end
+
+  if saga.config.implement.enable then
+    require('lspsaga.implement'):start()
   end
 end
 
