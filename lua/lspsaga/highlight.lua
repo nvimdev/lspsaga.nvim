@@ -82,7 +82,7 @@ local function hi_define()
     TerminalBorder = { link = 'SagaBorder' },
     TerminalNormal = { link = 'SagaNormal' },
     -- Implement
-    SagaImpIcon = { link = 'KeyWord' },
+    SagaImpIcon = { link = 'PreProc' },
   }
 end
 

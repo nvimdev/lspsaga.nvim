@@ -172,7 +172,11 @@ function saga.setup(opts)
   end
 
   if saga.config.implement.enable then
-    require('lspsaga.implement'):start()
+    if not saga.config.symbol_in_winbar then
+      vim.notify('[Lspsaga] implement need symbols in winbar enable', vim.log.levels.WARN)
+      return
+    end
+    require('lspsaga.implement').start()
   end
 end
 

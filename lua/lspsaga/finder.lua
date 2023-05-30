@@ -25,7 +25,6 @@ end
 local function get_titles(index)
   local t = {
     '● Definition',
-    '● Implements',
     '● References',
   }
   return t[index]
@@ -34,22 +33,10 @@ end
 local function methods(index)
   local t = {
     'textDocument/definition',
-    'textDocument/implementation',
     'textDocument/references',
   }
 
   return index and t[index] or t
-end
-
-local function supports_implement(buf)
-  local support = false
-  for _, client in ipairs(lsp.get_active_clients({ bufnr = buf })) do
-    if client.supports_method('textDocument/implementation') then
-      support = true
-      break
-    end
-  end
-  return support
 end
 
 function finder:lsp_finder()
@@ -65,13 +52,7 @@ function finder:lsp_finder()
   self.lspdata = {}
 
   local params = lsp.util.make_position_params()
-  ---@diagnostic disable-next-line: param-type-mismatch
   local meths = methods()
-  if not supports_implement(self.main_buf) then
-    self.request_status[meths[2]] = true
-    ---@diagnostic disable-next-line: param-type-mismatch
-    table.remove(meths, 2)
-  end
   ---@diagnostic disable-next-line: param-type-mismatch
   for _, method in ipairs(meths) do
     self:do_request(params, method)
@@ -468,7 +449,7 @@ function finder:create_finder_win(width)
         curline = buf_lines - 1
         node = self:get_node({ lnum = curline })
         start = node.start
-      elseif text:find('%sDef') or text:find('%sRef') or text:find('%sImp') or #text == 0 then
+      elseif text:find('%sDef') or text:find('%sRef') or #text == 0 then
         local increase = curline > before and 1 or -1
         for _, v in ipairs({
           curline,
