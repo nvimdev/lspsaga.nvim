@@ -48,16 +48,17 @@ local function try_render(bufnr, range)
       timer:close()
       vim.schedule(function()
         client.request('textDocument/implementation', params, function(err, result)
-          if err or not result or vim.tbl_isempty(result) then
+          if err then
             return
           end
-          if config.sign then
+          if config.sign and #result > 0 then
             render_sign(bufnr, range.line)
           end
 
           if config.virtual_text then
+            local word = #result > 1 and 'implementations' or 'implementation'
             api.nvim_buf_set_extmark(bufnr, ns, range.line, 0, {
-              virt_lines = { { { ' ' .. #result .. ' implements', 'Comment' } } },
+              virt_lines = { { { ' ' .. #result .. ' ' .. word, 'Comment' } } },
               virt_lines_above = true,
             })
           end
@@ -67,9 +68,17 @@ local function try_render(bufnr, range)
   end)
 end
 
+local function langmap(bufnr)
+  local tbl = {
+    ['rust'] = { 10, 11 },
+  }
+  return tbl[vim.bo[bufnr].filetype] or { 11 }
+end
+
 local function render(bufnr, symbols)
+  local kinds = langmap(bufnr)
   for _, item in ipairs(symbols) do
-    if item.kind == 11 then
+    if vim.tbl_contains(kinds, item.kind) then
       try_render(bufnr, item.selectionRange.start)
     end
     if item.children then
