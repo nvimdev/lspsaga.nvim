@@ -1,8 +1,7 @@
-local api, fn = vim.api, vim.fn
+local api, fn, uv = vim.api, vim.fn, vim.loop
 local config = require('lspsaga').config.implement
 local ui = require('lspsaga').config.ui
 local ns = api.nvim_create_namespace('SagaImp')
-
 local defined = false
 local name = 'SagaImpIcon'
 
@@ -42,21 +41,30 @@ local function try_render(bufnr, range)
     },
   }
 
-  client.request('textDocument/implementation', params, function(err, result)
-    if err or not result or vim.tbl_isempty(result) then
-      return
-    end
-    if config.sign then
-      render_sign(bufnr, range.line)
-    end
+  local timer = uv.new_timer()
+  timer:start(100, 10, function()
+    if next(client.messages.progress) == nil and not timer:is_closing() then
+      timer:stop()
+      timer:close()
+      vim.schedule(function()
+        client.request('textDocument/implementation', params, function(err, result)
+          if err or not result or vim.tbl_isempty(result) then
+            return
+          end
+          if config.sign then
+            render_sign(bufnr, range.line)
+          end
 
-    if config.virtual_text then
-      api.nvim_buf_set_extmark(bufnr, ns, range.line, 0, {
-        virt_lines = { { { ' ' .. #result .. ' implements', 'Comment' } } },
-        virt_lines_above = true,
-      })
+          if config.virtual_text then
+            api.nvim_buf_set_extmark(bufnr, ns, range.line, 0, {
+              virt_lines = { { { ' ' .. #result .. ' implements', 'Comment' } } },
+              virt_lines_above = true,
+            })
+          end
+        end, bufnr)
+      end)
     end
-  end, bufnr)
+  end)
 end
 
 local function render(bufnr, symbols)
@@ -79,7 +87,6 @@ local function start()
       local top = fn.line('w0')
       local bot = fn.line('w$')
       api.nvim_buf_clear_namespace(opt.buf, ns, top, bot)
-      print('here', api.nvim_get_current_line())
       if not symbols or next(symbols) == nil then
         return
       end
