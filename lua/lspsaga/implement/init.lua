@@ -77,6 +77,8 @@ end
 
 local function render(bufnr, symbols)
   local kinds = langmap(bufnr)
+  --TODO: Does there will have perofrmance issue when file is big enough ?
+  --Use binary search and line('w0') to render screen visiable area first ?
   for _, item in ipairs(symbols) do
     if vim.tbl_contains(kinds, item.kind) then
       try_render(bufnr, item.selectionRange.start)
