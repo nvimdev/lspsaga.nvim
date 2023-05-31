@@ -264,6 +264,14 @@ function def:peek_definition(method)
 
     self:apply_action_keys(node.bufnr, current_buf)
 
+    api.nvim_create_autocmd({ 'WinLeave' }, {
+      buffer = self.bufnr,
+      callback = function(opt)
+        window.nvim_close_valid_window(self.winid)
+        api.nvim_del_autocmd(opt.id)
+      end,
+    })
+
     api.nvim_create_autocmd('WinClosed', {
       once = true,
       buffer = node.bufnr,

@@ -249,7 +249,7 @@ function finder:create_finder_data(result, method)
       winline = -1,
     }
 
-    if not api.nvim_buf_is_loaded(bufnr) then
+    if not api.nvim_buf_is_loaded(bufnr) or not vim.treesitter.highlighter.active[bufnr] then
       node.wipe = true
       --ignore the FileType event avoid trigger the lsp
       vim.opt.eventignore:append({ 'FileType' })
@@ -823,6 +823,15 @@ function finder:open_preview(node)
     'Normal:finderNormal,FloatBorder:finderPreviewBorder',
     { scope = 'local', win = self.peek_winid }
   )
+
+  api.nvim_create_autocmd({ 'WinLeave' }, {
+    buffer = self.bufnr,
+    callback = function(opt)
+      window.nvim_close_valid_window(self.winid)
+      self:close_auto_preview_win()
+      api.nvim_del_autocmd(opt.id)
+    end,
+  })
 
   if fn.has('nvim-0.9') == 1 and node.wipe then
     local lang = require('nvim-treesitter.parsers').ft_to_lang(vim.bo[self.main_buf].filetype)
