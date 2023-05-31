@@ -48,12 +48,6 @@ function symbol:do_request(buf, callback)
 
     self[ctx.bufnr].symbols = result
 
-    api.nvim_exec_autocmds('User', {
-      pattern = 'SagaSymbolUpdate',
-      modeline = false,
-      data = { symbols = result },
-    })
-
     api.nvim_buf_attach(buf, false, {
       on_detach = function()
         clean_buf_cache(buf)
