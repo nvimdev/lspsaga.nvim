@@ -71,8 +71,17 @@ local function try_render(client, bufnr, pos, data)
             return
           end
           local word = #result > 1 and 'implementations' or 'implementation'
+          local indent
+          if vim.bo[bufnr].expandtab then
+            local level = vim.fn.indent(pos.line + 1) / vim.bo[bufnr].sw
+            indent = (' '):rep(level * vim.bo[bufnr].sw)
+          else
+            local level = vim.fn.indent(pos.line + 1) / vim.bo[bufnr].tabstop
+            indent = ('\t'):rep(level)
+          end
+
           local id = api.nvim_buf_set_extmark(bufnr, ns, pos.line, 0, {
-            virt_lines = { { { #result .. ' ' .. word, 'Comment' } } },
+            virt_lines = { { { indent .. #result .. ' ' .. word, 'Comment' } } },
             virt_lines_above = true,
           })
           data.virt_id = id
@@ -89,7 +98,7 @@ end
 
 local function langmap(bufnr)
   local tbl = {
-    ['rust'] = { 10, 23, 11 },
+    ['rust'] = { 10, 11 },
   }
   return tbl[vim.bo[bufnr].filetype] or { 11 }
 end
@@ -195,21 +204,22 @@ local function start()
       end
       symbol_request(client, opt.buf)
       api.nvim_buf_attach(opt.buf, false, {
-        on_lines = function(_, b, _, first_line, last_line, last_in_range)
+        on_lines = function(_, b)
           if not buffers_cache[tostring(b)] then
             return
           end
-          local changed = { first_line, last_line, last_in_range }
-          for _, data in pairs(buffers_cache[tostring(b)]) do
-            local range = data.range
-            if
-              vim.tbl_contains(changed, range.start.line)
-              or (first_line >= range.start.line and first_line <= range['end'].line)
-            then
-              symbol_request(client, b)
-              break
-            end
-          end
+          symbol_request(client, b)
+          -- local changed = { first_line, last_line, last_in_range }
+          -- for _, data in pairs(buffers_cache[tostring(b)]) do
+          --   local range = data.range
+          --   if
+          --     vim.tbl_contains(changed, range.start.line)
+          --     or (first_line >= range.start.line and first_line <= range['end'].line)
+          --   then
+          --     symbol_request(client, b)
+          --     break
+          --   end
+          -- end
         end,
       })
     end,
