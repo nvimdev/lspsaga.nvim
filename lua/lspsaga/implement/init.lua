@@ -1,5 +1,6 @@
 local api, fn, uv, lsp = vim.api, vim.fn, vim.loop, vim.lsp
 local config = require('lspsaga').config.implement
+local util = require('lspsaga.util')
 local ui = require('lspsaga').config.ui
 local ns = api.nvim_create_namespace('SagaImp')
 local defined = false
@@ -58,7 +59,6 @@ local function try_render(client, bufnr, pos, data)
               return
             else
               pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
-              print('here')
               api.nvim_buf_del_extmark(bufnr, ns, data.virt_id)
             end
           end
@@ -108,40 +108,67 @@ local function range_compare(r1, r2)
   end
 end
 
+local function clean(buf)
+  for k, data in pairs(buffers_cache[tostring(buf)]) do
+    pcall(api.nvim_buf_del_extmark, buf, ns, data.virt_id)
+    pcall(fn.sign_unplace, name, { buffer = buf, id = data.sign_id })
+    buffers_cache[k] = nil
+  end
+end
+
 local function render(client, bufnr, symbols)
   local kinds = langmap(bufnr)
-  --TODO: Does there will have perofrmance issue when file is big enough ?
-  --Use binary search and line('w0') to render screen visiable area first ?
-  for _, item in ipairs(symbols) do
-    if vim.tbl_contains(kinds, item.kind) then
-      local bufkey = tostring(bufnr)
-      local srow = item.selectionRange.start.line
-      local scol = item.selectionRange.start.character
-      local erow = item.selectionRange['end'].line
-      local ecol = item.selectionRange['end'].character
+  local bufkey = tostring(bufnr)
+  local exists = buffers_cache[bufkey] and vim.tbl_keys(buffers_cache[bufkey]) or {}
 
-      local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
-      if not buffers_cache[bufkey] then
-        buffers_cache[bufkey] = {}
-      end
+  local function parse_symbol(nodes)
+    for _, item in ipairs(nodes) do
+      if vim.tbl_contains(kinds, item.kind) then
+        local srow = item.selectionRange.start.line
+        local scol = item.selectionRange.start.character
+        local erow = item.selectionRange['end'].line
+        local ecol = item.selectionRange['end'].character
 
-      -- need update before data
-      if buffers_cache[bufkey][word] then
-        if range_compare(buffers_cache[bufkey][word].range, item.range) then
-          buffers_cache[bufkey][word].range = item.range
+        local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
+        if #exists > 0 and vim.tbl_contains(exists, word) then
+          local idx = util.tbl_index(exists, word)
+          table.remove(exists, idx)
         end
-      else
-        buffers_cache[bufkey][word] = {
-          range = item.range,
-        }
-      end
-      print(vim.inspect(buffers_cache[bufkey][word]), vim.inspect(item.range))
 
-      try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
+        if not buffers_cache[bufkey] then
+          buffers_cache[bufkey] = {}
+        end
+
+        -- need update before data
+        if buffers_cache[bufkey][word] then
+          if range_compare(buffers_cache[bufkey][word].range, item.range) then
+            buffers_cache[bufkey][word].range = item.range
+          end
+        else
+          buffers_cache[bufkey][word] = {
+            range = item.range,
+          }
+        end
+
+        try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
+      end
+      if item.children then
+        parse_symbol(item.children)
+      end
     end
-    if item.children then
-      render(client, bufnr, item.children)
-    end
+  end
+
+  parse_symbol(symbols)
+
+  if next(exists) == nil then
+    return
+  end
+
+  for _, word in ipairs(exists) do
+    local data = buffers_cache[bufkey][word]
+    api.nvim_buf_del_extmark(bufnr, ns, data.virt_id)
+    pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
+    buffers_cache[bufkey][word] = nil
   end
 end
 
@@ -149,6 +176,10 @@ local function symbol_request(client, buf)
   local params = { textDocument = lsp.util.make_text_document_params() }
   client.request('textDocument/documentSymbol', params, function(_, result)
     if api.nvim_get_current_buf() ~= buf or not result or next(result) == nil then
+      return
+    end
+    if not result or next(result) == nil then
+      clean(buf)
       return
     end
     render(client, buf, result)

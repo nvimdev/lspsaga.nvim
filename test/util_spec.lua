@@ -1,3 +1,4 @@
+local helper = require('test.helper')
 local api = vim.api
 local util = require('lspsaga.util')
 local eq = assert.equal
