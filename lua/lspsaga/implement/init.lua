@@ -11,11 +11,12 @@ if not defined then
   defined = true
 end
 
-local function render_sign(bufnr, row)
+local function render_sign(bufnr, row, data)
   if not config.sign then
     return
   end
   fn.sign_place(row + 1, name, name, bufnr, { lnum = row + 1, priority = config.priority })
+  data.sign_id = row + 1
 end
 
 local function find_client(buf)
@@ -26,7 +27,7 @@ local function find_client(buf)
   end
 end
 
-local function try_render(client, bufnr, pos, range)
+local function try_render(client, bufnr, pos, data)
   local params = {
     position = {
       character = pos.character,
@@ -52,30 +53,18 @@ local function try_render(client, bufnr, pos, range)
             result = {}
           end
 
-          local linekey = tostring(pos.line)
-          local bufkey = tostring(bufnr)
-
-          local refresh = false
-          if buffers_cache[bufkey] and buffers_cache[bufkey][linekey] then
-            local data = buffers_cache[bufkey][linekey]
-            if data[2] ~= #result then
-              api.nvim_buf_del_extmark(bufnr, ns, data[1])
-              refresh = true
-            end
-          else
-            refresh = true
-          end
-
-          if config.sign then
-            if refresh then
-              pcall(fn.sign_unplace, name, { bufnr = bufnr })
-            end
-            if #result > 0 then
-              render_sign(bufnr, pos.line)
+          if data.res_count then
+            if data.res_count == #result then
+              return
+            else
+              pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
+              print('here')
+              api.nvim_buf_del_extmark(bufnr, ns, data.virt_id)
             end
           end
-          if not refresh then
-            return
+
+          if config.sign and #result > 0 then
+            render_sign(bufnr, pos.line, data)
           end
 
           if not config.virtual_text then
@@ -86,10 +75,8 @@ local function try_render(client, bufnr, pos, range)
             virt_lines = { { { #result .. ' ' .. word, 'Comment' } } },
             virt_lines_above = true,
           })
-          if not buffers_cache[bufkey] then
-            buffers_cache[bufkey] = {}
-          end
-          buffers_cache[bufkey][linekey] = { id, #result, range }
+          data.virt_id = id
+          data.res_count = #result
         end, bufnr)
       end)
     end
@@ -107,13 +94,50 @@ local function langmap(bufnr)
   return tbl[vim.bo[bufnr].filetype] or { 11 }
 end
 
+local function range_compare(r1, r2)
+  for k, v in pairs(r1.start) do
+    if r2.start[k] ~= v then
+      return true
+    end
+  end
+
+  for k, v in pairs(r1['end']) do
+    if r2['end'][k] ~= v then
+      return true
+    end
+  end
+end
+
 local function render(client, bufnr, symbols)
   local kinds = langmap(bufnr)
   --TODO: Does there will have perofrmance issue when file is big enough ?
   --Use binary search and line('w0') to render screen visiable area first ?
   for _, item in ipairs(symbols) do
     if vim.tbl_contains(kinds, item.kind) then
-      try_render(client, bufnr, item.selectionRange.start, item.range)
+      local bufkey = tostring(bufnr)
+      local srow = item.selectionRange.start.line
+      local scol = item.selectionRange.start.character
+      local erow = item.selectionRange['end'].line
+      local ecol = item.selectionRange['end'].character
+
+      local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
+      if not buffers_cache[bufkey] then
+        buffers_cache[bufkey] = {}
+      end
+
+      -- need update before data
+      if buffers_cache[bufkey][word] then
+        if range_compare(buffers_cache[bufkey][word].range, item.range) then
+          buffers_cache[bufkey][word].range = item.range
+        end
+      else
+        buffers_cache[bufkey][word] = {
+          range = item.range,
+        }
+      end
+      print(vim.inspect(buffers_cache[bufkey][word]), vim.inspect(item.range))
+
+      try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
     end
     if item.children then
       render(client, bufnr, item.children)
@@ -144,14 +168,15 @@ local function start()
           if not buffers_cache[tostring(b)] then
             return
           end
-          -- print(first_line, last_line, last_in_range)
-          for _, item in pairs(buffers_cache[tostring(b)]) do
-            local range = item[3]
+          local changed = { first_line, last_line, last_in_range }
+          for _, data in pairs(buffers_cache[tostring(b)]) do
+            local range = data.range
             if
-              first_line == range.start.line
-              or first_line > range.start.line and first_line <= range['end'].line
+              vim.tbl_contains(changed, range.start.line)
+              or (first_line >= range.start.line and first_line <= range['end'].line)
             then
               symbol_request(client, b)
+              break
             end
           end
         end,
