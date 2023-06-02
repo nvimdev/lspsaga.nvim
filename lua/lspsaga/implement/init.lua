@@ -98,9 +98,12 @@ end
 
 local function langmap(bufnr)
   local tbl = {
-    ['rust'] = { 10, 11 },
+    ['rust'] = {
+      kinds = { 10, 11 },
+      children = true,
+    },
   }
-  return tbl[vim.bo[bufnr].filetype] or { 11 }
+  return tbl[vim.bo[bufnr].filetype] or { kinds = { 11 }, children = false }
 end
 
 local function range_compare(r1, r2)
@@ -126,13 +129,13 @@ local function clean(buf)
 end
 
 local function render(client, bufnr, symbols)
-  local kinds = langmap(bufnr)
+  local langdata = langmap(bufnr)
   local bufkey = tostring(bufnr)
   local exists = buffers_cache[bufkey] and vim.tbl_keys(buffers_cache[bufkey]) or {}
 
   local function parse_symbol(nodes)
     for _, item in ipairs(nodes) do
-      if vim.tbl_contains(kinds, item.kind) then
+      if vim.tbl_contains(langdata.kinds, item.kind) then
         local srow = item.selectionRange.start.line
         local scol = item.selectionRange.start.character
         local erow = item.selectionRange['end'].line
@@ -161,7 +164,7 @@ local function render(client, bufnr, symbols)
 
         try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
       end
-      if item.children then
+      if item.children and langdata.children then
         parse_symbol(item.children)
       end
     end
@@ -209,17 +212,6 @@ local function start()
             return
           end
           symbol_request(client, b)
-          -- local changed = { first_line, last_line, last_in_range }
-          -- for _, data in pairs(buffers_cache[tostring(b)]) do
-          --   local range = data.range
-          --   if
-          --     vim.tbl_contains(changed, range.start.line)
-          --     or (first_line >= range.start.line and first_line <= range['end'].line)
-          --   then
-          --     symbol_request(client, b)
-          --     break
-          --   end
-          -- end
         end,
       })
     end,
