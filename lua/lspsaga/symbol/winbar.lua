@@ -281,7 +281,7 @@ local function register_events(buf)
     desc = 'Lspsaga symbols render and request',
   })
 
-  api.nvim_create_autocmd({ 'TextChanged' }, {
+  api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
     group = augroup,
     buffer = buf,
     callback = function()

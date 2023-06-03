@@ -32,28 +32,30 @@ function symbol:do_request(buf, callback)
   end
 
   self[buf].pending_request = true
-  client.request('textDocument/documentSymbol', params, function(_, result, ctx)
-    if api.nvim_get_current_buf() ~= buf then
+  client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+    if err then
       return
     end
 
     self[ctx.bufnr].pending_request = false
-    if not result then
-      return
-    end
+    api.nvim_exec_autocmds('User', {
+      pattern = 'SagaSymbolUpdate',
+      modeline = false,
+      data = { symbols = result },
+    })
 
-    if callback then
+    if result and callback then
       callback(buf, result)
     end
 
     self[ctx.bufnr].symbols = result
-
-    api.nvim_buf_attach(buf, false, {
-      on_detach = function()
-        clean_buf_cache(buf)
-      end,
-    })
   end, buf)
+
+  api.nvim_buf_attach(buf, false, {
+    on_detach = function()
+      clean_buf_cache(buf)
+    end,
+  })
 end
 
 function symbol:get_buf_symbols(buf)
@@ -98,8 +100,6 @@ end
 function symbol:outline()
   require('lspsaga.symbol.outline'):outline()
 end
-
-function symbol:linear(symbols) end
 
 --@return table
 function symbol:category(buf, symbols)

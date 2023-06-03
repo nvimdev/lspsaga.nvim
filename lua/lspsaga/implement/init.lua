@@ -1,4 +1,4 @@
-local api, fn, uv, lsp = vim.api, vim.fn, vim.loop, vim.lsp
+local api, fn = vim.api, vim.fn
 local config = require('lspsaga').config.implement
 local util = require('lspsaga.util')
 local ui = require('lspsaga').config.ui
@@ -6,6 +6,7 @@ local ns = api.nvim_create_namespace('SagaImp')
 local defined = false
 local name = 'SagaImpIcon'
 local buffers_cache = {}
+local uv = fn.has('nvim-0.10') == 1 and vim.uv or vim.loop
 
 if not defined then
   fn.sign_define(name, { text = ui.imp_sign, texthl = name })
@@ -178,42 +179,31 @@ local function render(client, bufnr, symbols)
 
   for _, word in ipairs(exists) do
     local data = buffers_cache[bufkey][word]
-    api.nvim_buf_del_extmark(bufnr, ns, data.virt_id)
+    pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
     pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
     buffers_cache[bufkey][word] = nil
   end
 end
 
-local function symbol_request(client, buf)
-  local params = { textDocument = lsp.util.make_text_document_params() }
-  client.request('textDocument/documentSymbol', params, function(_, result)
-    if api.nvim_get_current_buf() ~= buf or not result or next(result) == nil then
-      return
-    end
-    if not result or next(result) == nil then
-      clean(buf)
-      return
-    end
-    render(client, buf, result)
-  end)
+local function in_event(client, buf, symbols)
+  if not symbols or next(symbols) == nil then
+    return
+  end
+  render(client, buf, symbols)
 end
 
 local function start()
-  api.nvim_create_autocmd('LspAttach', {
+  api.nvim_create_autocmd('User', {
+    pattern = 'SagaSymbolUpdate',
     callback = function(opt)
       local client = find_client(opt.buf)
-      if not client then
+      if not client or api.nvim_get_mode().mode == 'i' then
         return
       end
-      symbol_request(client, opt.buf)
-      api.nvim_buf_attach(opt.buf, false, {
-        on_lines = function(_, b)
-          if not buffers_cache[tostring(b)] then
-            return
-          end
-          symbol_request(client, b)
-        end,
-      })
+      if next(opt.data.symbols) == nil then
+        clean(opt.buf)
+      end
+      in_event(client, opt.buf, opt.data.symbols)
     end,
   })
 end
