@@ -84,6 +84,7 @@ local function try_render(client, bufnr, pos, data)
           local id = api.nvim_buf_set_extmark(bufnr, ns, pos.line, 0, {
             virt_lines = { { { indent .. #result .. ' ' .. word, 'Comment' } } },
             virt_lines_above = true,
+            hl_mode = 'combine',
           })
           data.virt_id = id
           data.res_count = #result
@@ -121,11 +122,12 @@ local function range_compare(r1, r2)
   end
 end
 
-local function is_rename(data, range)
+local function is_rename(data, range, word)
   for before, item in pairs(data) do
     if
       item.range.start.line == range.start.line
       and item.range.start.character == range.start.character
+      and word ~= before
     then
       return before
     end
@@ -156,7 +158,7 @@ local function render(client, bufnr, symbols, need_clean)
 
         local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
         new[#new + 1] = word
-        local before = is_rename(buffers_cache[bufkey], item.range)
+        local before = is_rename(buffers_cache[bufkey], item.range, word)
         if before then
           buffers_cache[bufkey][before].range = item.range
           buffers_cache[bufkey][word] = vim.deepcopy(buffers_cache[bufkey][before])
@@ -193,7 +195,7 @@ local function render(client, bufnr, symbols, need_clean)
     return not vim.tbl_contains(new, item)
   end, vim.tbl_keys(buffers_cache[bufkey]) or {})
 
-  if next(non_exists) == nil then
+  if #non_exists == 0 then
     return
   end
 
