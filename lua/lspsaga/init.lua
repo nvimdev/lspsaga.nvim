@@ -141,6 +141,8 @@ local default_config = {
   },
   implement = {
     enable = true,
+    interval = 100,
+    timeout = 100,
     sign = true,
     virtual_text = true,
     parser = 'treesitter', --lsp

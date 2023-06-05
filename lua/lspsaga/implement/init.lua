@@ -1,6 +1,6 @@
 local api, fn = vim.api, vim.fn
 local config = require('lspsaga').config.implement
-local util = require('lspsaga.util')
+local symbol = require('lspsaga.symbol')
 local ui = require('lspsaga').config.ui
 local ns = api.nvim_create_namespace('SagaImp')
 local defined = false
@@ -121,18 +121,29 @@ local function range_compare(r1, r2)
   end
 end
 
+local function is_rename(data, range)
+  for before, item in pairs(data) do
+    if
+      item.range.start.line == range.start.line
+      and item.range.start.character == range.start.character
+    then
+      return before
+    end
+  end
+end
+
 local function clean(buf)
-  for k, data in pairs(buffers_cache[tostring(buf)]) do
+  for k, data in pairs(buffers_cache[tostring(buf)] or {}) do
     pcall(api.nvim_buf_del_extmark, buf, ns, data.virt_id)
     pcall(fn.sign_unplace, name, { buffer = buf, id = data.sign_id })
     buffers_cache[k] = nil
   end
 end
 
-local function render(client, bufnr, symbols)
+local function render(client, bufnr, symbols, need_clean)
   local langdata = langmap(bufnr)
   local bufkey = tostring(bufnr)
-  local exists = buffers_cache[bufkey] and vim.tbl_keys(buffers_cache[bufkey]) or {}
+  local new = {}
 
   local function parse_symbol(nodes)
     for _, item in ipairs(nodes) do
@@ -143,17 +154,12 @@ local function render(client, bufnr, symbols)
         local ecol = item.selectionRange['end'].character
 
         local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
-        if #exists > 0 and vim.tbl_contains(exists, word) then
-          local idx = util.tbl_index(exists, word)
-          table.remove(exists, idx)
-        end
-
-        if not buffers_cache[bufkey] then
-          buffers_cache[bufkey] = {}
-        end
-
-        -- need update before data
-        if buffers_cache[bufkey][word] then
+        local before = is_rename(buffers_cache[bufkey], item.range)
+        if before then
+          buffers_cache[bufkey][before].range = item.range
+          buffers_cache[bufkey][word] = vim.deepcopy(buffers_cache[bufkey][before])
+          buffers_cache[bufkey][before] = nil
+        elseif buffers_cache[bufkey][word] then
           if range_compare(buffers_cache[bufkey][word].range, item.range) then
             buffers_cache[bufkey][word].range = item.range
           end
@@ -161,6 +167,7 @@ local function render(client, bufnr, symbols)
           buffers_cache[bufkey][word] = {
             range = item.range,
           }
+          new[#new + 1] = word
         end
 
         try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
@@ -172,12 +179,21 @@ local function render(client, bufnr, symbols)
   end
 
   parse_symbol(symbols)
-
-  if next(exists) == nil then
+  if not need_clean then
     return
   end
 
-  for _, word in ipairs(exists) do
+  local non_exists = vim.tbl_filter(function(item)
+    return #vim.tbl_map(function(word)
+      return item == word
+    end, new) > 0
+  end, vim.tbl_keys(buffers_cache[bufkey]) or {})
+
+  if next(non_exists) == nil then
+    return
+  end
+
+  for _, word in ipairs(non_exists) do
     local data = buffers_cache[bufkey][word]
     pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
     pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
@@ -185,25 +201,57 @@ local function render(client, bufnr, symbols)
   end
 end
 
-local function in_event(client, buf, symbols)
-  if not symbols or next(symbols) == nil then
-    return
-  end
-  render(client, buf, symbols)
-end
-
 local function start()
   api.nvim_create_autocmd('User', {
     pattern = 'SagaSymbolUpdate',
     callback = function(opt)
       local client = find_client(opt.buf)
-      if not client or api.nvim_get_mode().mode == 'i' then
+      if not client then
         return
       end
+      local bufkey = tostring(opt.buf)
+      if buffers_cache[bufkey] then
+        return
+      end
+
+      buffers_cache[bufkey] = {}
       if next(opt.data.symbols) == nil then
         clean(opt.buf)
+        return
       end
-      in_event(client, opt.buf, opt.data.symbols)
+      render(client, opt.buf, opt.data.symbols, false)
+
+      --sync data and render
+      --TODO: Does this is better way ?
+      --if do quick delete in nomral mode
+      --then do change in insert mode what's behavior of these code ?
+      --or use winsaveview() pass view to lsp request callback. then
+      --check current view with it if same do set virtual text
+      --IDK which is best way.
+      api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
+        buffer = opt.buf,
+        callback = function()
+          local timer = uv.new_timer()
+          timer:start(config.timeout, config.interval, function()
+            local res = symbol:get_buf_symbols(opt.buf)
+            if vim.tbl_isempty(res) then
+              return
+            end
+
+            if not res.pending_request and not timer:is_closing() then
+              timer:stop()
+              timer:close()
+              if vim.tbl_isempty(res.symbols) or not res.symbols then
+                return
+              end
+              vim.schedule(function()
+                render(client, opt.buf, res.symbols, true)
+              end)
+            end
+          end)
+        end,
+        desc = '[Lspsaga] Implement show',
+      })
     end,
   })
 end

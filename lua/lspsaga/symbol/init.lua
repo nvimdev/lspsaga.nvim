@@ -33,22 +33,19 @@ function symbol:do_request(buf, callback)
 
   self[buf].pending_request = true
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+    self[ctx.bufnr].pending_request = false
     if err then
       return
     end
-
-    self[ctx.bufnr].pending_request = false
+    self[ctx.bufnr].symbols = result
+    if result and callback then
+      callback(buf, result)
+    end
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
       data = { symbols = result },
     })
-
-    if result and callback then
-      callback(buf, result)
-    end
-
-    self[ctx.bufnr].symbols = result
   end, buf)
 
   api.nvim_buf_attach(buf, false, {
