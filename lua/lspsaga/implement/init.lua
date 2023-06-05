@@ -133,10 +133,11 @@ local function is_rename(data, range)
 end
 
 local function clean(buf)
-  for k, data in pairs(buffers_cache[tostring(buf)] or {}) do
+  local bufkey = tostring(buf)
+  for k, data in pairs(buffers_cache[bufkey] or {}) do
     pcall(api.nvim_buf_del_extmark, buf, ns, data.virt_id)
     pcall(fn.sign_unplace, name, { buffer = buf, id = data.sign_id })
-    buffers_cache[k] = nil
+    buffers_cache[bufkey][k] = nil
   end
 end
 
@@ -154,6 +155,7 @@ local function render(client, bufnr, symbols, need_clean)
         local ecol = item.selectionRange['end'].character
 
         local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
+        new[#new + 1] = word
         local before = is_rename(buffers_cache[bufkey], item.range)
         if before then
           buffers_cache[bufkey][before].range = item.range
@@ -167,7 +169,6 @@ local function render(client, bufnr, symbols, need_clean)
           buffers_cache[bufkey][word] = {
             range = item.range,
           }
-          new[#new + 1] = word
         end
 
         try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
@@ -183,10 +184,13 @@ local function render(client, bufnr, symbols, need_clean)
     return
   end
 
+  if #new == 0 then
+    clean(bufnr)
+    return
+  end
+
   local non_exists = vim.tbl_filter(function(item)
-    return #vim.tbl_map(function(word)
-      return item == word
-    end, new) > 0
+    return not vim.tbl_contains(new, item)
   end, vim.tbl_keys(buffers_cache[bufkey]) or {})
 
   if next(non_exists) == nil then
