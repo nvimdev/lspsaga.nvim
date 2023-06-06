@@ -140,7 +140,7 @@ local default_config = {
     },
   },
   implement = {
-    enable = false,
+    enable = true,
     interval = 100,
     timeout = 100,
     sign = true,

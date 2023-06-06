@@ -6,6 +6,7 @@ local ns = api.nvim_create_namespace('SagaImp')
 local defined = false
 local name = 'SagaImpIcon'
 local buffers_cache = {}
+---@diagnostic disable-next-line: deprecated
 local uv = fn.has('nvim-0.10') == 1 and vim.uv or vim.loop
 
 if not defined then
@@ -227,14 +228,11 @@ local function start()
       end
       render(client, opt.buf, opt.data.symbols, false)
 
-      --sync data and render
-      --TODO: Does this is better way ?
-      --if do quick delete in nomral mode
-      --then do change in insert mode what's behavior of these code ?
-      --or use winsaveview() pass view to lsp request callback. then
-      --check current view with it if same do set virtual text
-      --IDK which is best way.
-      api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
+      if vim.opt.updatetime > 100 then
+        vim.notify('[lspsaga] for better experience config update time to 100')
+      end
+
+      api.nvim_create_autocmd('CursorHold', {
         buffer = opt.buf,
         callback = function()
           local timer = uv.new_timer()

@@ -22,17 +22,6 @@ local function clean_ctx()
   end
 end
 
-local function get_symbols(buf)
-  local res = symbol:get_buf_symbols(buf)
-  if vim.tbl_isempty(res) or res.pending_request then
-    return
-  end
-
-  if not res.pending_request and res.symbols then
-    return res.symbols
-  end
-end
-
 ---@private
 local function set_local()
   local local_options = {
@@ -467,16 +456,19 @@ function ot:outline(buf, non_close)
     return
   end
 
-  local symbols = get_symbols(buf)
-  self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
-  if not symbols then
-    self.pending_request = true
+  local res = symbol:get_buf_symbols(buf)
+  if not res then
+    return
+  end
 
-    symbol:do_request(buf, function(bufnr, result)
-      self:render_outline(bufnr, result)
+  self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
+  if res.pending_request then
+    symbol:push_cb_queue(function(bufnr, symbols)
+      self.pending_request = false
+      self:render_outline(bufnr, symbols)
     end)
   else
-    self:render_outline(buf, symbols)
+    self:render_outline(buf, res.symbols)
   end
 end
 

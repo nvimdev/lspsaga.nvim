@@ -19,6 +19,20 @@ local function clean_buf_cache(buf)
   end
 end
 
+function symbol:buf_watcher(buf, callback)
+  api.nvim_buf_attach(buf, false, {
+    on_lines = function(_, b)
+      if b ~= buf then
+        return
+      end
+      self:do_request(b, callback and callback or nil)
+    end,
+    on_detach = function()
+      clean_buf_cache(buf)
+    end,
+  })
+end
+
 function symbol:do_request(buf, callback)
   local params = { textDocument = lsp.util.make_text_document_params() }
 
@@ -27,8 +41,10 @@ function symbol:do_request(buf, callback)
     return
   end
 
+  local register_watcher = false
   if not self[buf] then
     self[buf] = {}
+    register_watcher = true
   end
 
   self[buf].pending_request = true
@@ -38,21 +54,28 @@ function symbol:do_request(buf, callback)
       return
     end
     self[ctx.bufnr].symbols = result
-    if result and callback then
-      callback(buf, result)
+    if result then
+      if callback then
+        callback(buf, result)
+      end
+
+      if self.queue and #self.queue > 0 then
+        for _, fn in ipairs(self.queue) do
+          fn(buf, result)
+        end
+        self.queue = {}
+      end
     end
+
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
       data = { symbols = result },
     })
   end, buf)
-
-  api.nvim_buf_attach(buf, false, {
-    on_detach = function()
-      clean_buf_cache(buf)
-    end,
-  })
+  if register_watcher then
+    self:buf_watcher(buf, callback)
+  end
 end
 
 function symbol:get_buf_symbols(buf)
@@ -60,7 +83,7 @@ function symbol:get_buf_symbols(buf)
   local res = {}
 
   if not self[buf] then
-    return res
+    return
   end
 
   if self[buf].pending_request then
@@ -71,6 +94,13 @@ function symbol:get_buf_symbols(buf)
   res.symbols = self[buf].symbols
   res.pending_request = self[buf].pending_request
   return res
+end
+
+function symbol:push_cb_queue(fn)
+  if not self.queue then
+    self.queue = {}
+  end
+  self.queue[#self.queue + 1] = fn
 end
 
 function symbol:node_is_keyword(buf, node)

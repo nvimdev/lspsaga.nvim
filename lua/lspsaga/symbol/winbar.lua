@@ -195,7 +195,7 @@ local function find_in_node(buf, tbl, line, elements)
 end
 
 --@private
-local render_symbol_winbar = function(buf, symbols)
+local function render_symbol_winbar(buf, symbols)
   local cur_buf = api.nvim_get_current_buf()
   if cur_buf ~= buf then
     return
@@ -249,49 +249,26 @@ local render_symbol_winbar = function(buf, symbols)
   return winbar_str
 end
 
-local function init_buf_symbols(buf, render_fn)
-  local res = symbol:get_buf_symbols(buf)
-  if res.pending_request then
-    return
-  end
-
-  if not res.symbols or (next(res.symbols) == nil and not res.pending_request) then
-    symbol:do_request(buf, render_fn)
-  else
-    render_fn(buf, res.symbols)
-  end
-end
-
 local function register_events(buf)
-  local augroup = api.nvim_create_augroup('LspsagaSymbol' .. tostring(buf), { clear = true })
-  api.nvim_create_autocmd('BufDelete', {
-    group = augroup,
+  local id = api.nvim_create_autocmd({ 'CursorMoved' }, {
     buffer = buf,
     callback = function()
-      pcall(api.nvim_del_augroup_by_id, augroup)
-    end,
-  })
-
-  api.nvim_create_autocmd('CursorMoved', {
-    group = augroup,
-    buffer = buf,
-    callback = function()
-      init_buf_symbols(buf, render_symbol_winbar)
+      local res = symbol:get_buf_symbols(buf)
+      if not res then
+        symbol:do_request(buf, render_symbol_winbar)
+      elseif res.symbols then
+        render_symbol_winbar(buf, res.symbols)
+      end
     end,
     desc = 'Lspsaga symbols render and request',
   })
 
-  api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
-    group = augroup,
+  api.nvim_create_autocmd('BufDelete', {
     buffer = buf,
-    callback = function()
-      if config.enable then
-        symbol:do_request(buf, render_symbol_winbar)
-      else
-        symbol:do_request(buf)
-      end
+    callback = function(opt)
+      api.nvim_del_autocmd(id)
+      api.nvim_del_autocmd(opt.id)
     end,
-    desc = 'Lspsaga update symbols',
   })
 end
 
@@ -342,35 +319,13 @@ local function symbol_autocmd()
         return
       end
 
-      init_buf_symbols(opt.buf, render_symbol_winbar)
+      symbol:do_request(opt.buf, render_symbol_winbar)
       register_events(opt.buf)
     end,
     desc = 'Lspsaga get and show symbols',
   })
 end
 
----Get buffer symbols
----@return  string | nil
-local function get_winbar()
-  local buf = api.nvim_get_current_buf()
-  local res = symbol:get_buf_symbols(buf)
-  if vim.tbl_isempty(res) or not res.symbols then
-    init_buf_symbols(buf, render_symbol_winbar)
-    return
-  end
-
-  if res.pending_request then
-    return
-  end
-
-  register_events(buf)
-
-  if res.symbols then
-    return render_symbol_winbar(buf, res.symbols)
-  end
-end
-
 return {
   symbol_autocmd = symbol_autocmd,
-  get_winbar = get_winbar,
 }
