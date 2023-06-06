@@ -786,6 +786,21 @@ function finder:open_preview(node)
     if not self.peek_winid then
       return
     end
+    api.nvim_create_autocmd('WinClosed', {
+      callback = function(opt)
+        local curwin = api.nvim_get_current_win()
+        if curwin == self.peek_winid then
+          local curbuf
+          api.nvim_win_call(curwin, function()
+            curbuf = api.nvim_get_current_buf()
+          end)
+          if curbuf then
+            clear_preview_ns(ns_id, curbuf)
+            pcall(api.nvim_del_autocmd, opt.id)
+          end
+        end
+      end,
+    })
     api.nvim_win_set_hl_ns(self.peek_winid, ns_id)
   end
 
@@ -824,12 +839,17 @@ function finder:open_preview(node)
     { scope = 'local', win = self.peek_winid }
   )
 
-  api.nvim_create_autocmd({ 'WinLeave' }, {
+  api.nvim_create_autocmd({ 'WinEnter' }, {
     buffer = self.bufnr,
     callback = function(opt)
+      local curwin = api.nvim_get_current_win()
+      if curwin == self.peek_winid or curwin == self.winid then
+        return
+      end
       window.nvim_close_valid_window(self.winid)
       self:close_auto_preview_win()
       api.nvim_del_autocmd(opt.id)
+      clean_ctx()
     end,
   })
 
