@@ -106,8 +106,7 @@ local function binary_search(tbl, line)
 
   while true do
     mid = bit.rshift(left + right, 1)
-
-    if mid == 0 then
+    if not tbl[mid] then
       return nil
     end
 
@@ -172,21 +171,6 @@ local function find_in_node(buf, tbl, line, elements)
 
   local node = tbl[mid]
 
-  local range = get_node_range(tbl[mid]) or {}
-
-  if mid > 1 then
-    for i = 1, mid - 1 do
-      local prev_range = get_node_range(tbl[i]) or {}
-      if -- not sure there should be 6 or other kind can be used in here
-        tbl[i].kind == 6
-        and range.start.line > prev_range.start.line
-        and range['end'].line <= prev_range['end'].line
-      then
-        insert_elements(buf, tbl[i], elements)
-      end
-    end
-  end
-
   insert_elements(buf, tbl[mid], elements)
 
   if node.children ~= nil and next(node.children) ~= nil then
@@ -196,8 +180,7 @@ end
 
 --@private
 local function render_symbol_winbar(buf, symbols)
-  local cur_buf = api.nvim_get_current_buf()
-  if cur_buf ~= buf then
+  if api.nvim_get_current_buf() ~= buf then
     return
   end
 
@@ -292,11 +275,6 @@ local function symbol_autocmd()
 
       local winid = api.nvim_get_current_win()
       if api.nvim_get_current_buf() ~= opt.buf then
-        return
-      end
-
-      local ok, _ = pcall(api.nvim_win_get_var, winid, 'disable_winbar')
-      if ok then
         return
       end
 

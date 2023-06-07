@@ -1,4 +1,4 @@
-local lsp, api = vim.lsp, vim.api
+local api = vim.api
 local util = require('lspsaga.util')
 local symbol = {}
 
@@ -24,17 +24,16 @@ local buf_changedtick = {}
 function symbol:buf_watcher(buf, callback)
   local function spawn_request()
     vim.defer_fn(function()
-      vim.schedule(function()
-        self:do_request(buf, function(_, symbols)
-          self[buf].pending_request = false
-          if callback then
-            callback(buf, symbols)
-          end
-          local tick_now = api.nvim_buf_get_changedtick(buf)
-          if tick_now ~= buf_changedtick[buf] then
-            spawn_request()
-          end
-        end)
+      self[buf].pending_request = true
+      self:do_request(buf, function(_, symbols)
+        self[buf].pending_request = false
+        if callback then
+          callback(buf, symbols)
+        end
+        local tick_now = api.nvim_buf_get_changedtick(buf)
+        if tick_now ~= buf_changedtick[buf] then
+          spawn_request()
+        end
       end)
     end, 500)
   end
@@ -56,7 +55,9 @@ function symbol:buf_watcher(buf, callback)
 end
 
 function symbol:do_request(buf, callback)
-  local params = { textDocument = lsp.util.make_text_document_params() }
+  local params = { textDocument = {
+    uri = vim.uri_from_bufnr(buf),
+  } }
 
   local client = util.get_client_by_cap('documentSymbolProvider')
   if not client then
@@ -104,7 +105,6 @@ end
 function symbol:get_buf_symbols(buf)
   buf = buf or api.nvim_get_current_buf()
   local res = {}
-
   if not self[buf] then
     return
   end
