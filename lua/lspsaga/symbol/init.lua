@@ -1,5 +1,6 @@
-local api = vim.api
+local api, lsp = vim.api, vim.lsp
 local util = require('lspsaga.util')
+local config = require('lspsaga').config
 local symbol = {}
 
 local cache = {}
@@ -21,11 +22,11 @@ end
 
 local buf_changedtick = {}
 
-function symbol:buf_watcher(buf)
+function symbol:buf_watcher(buf, client)
   local function spawn_request(changedtick)
     vim.defer_fn(function()
       self[buf].pending_request = true
-      self:do_request(buf, function()
+      self:do_request(buf, client, function()
         self[buf].pending_request = false
         if changedtick ~= buf_changedtick[buf] then
           changedtick = api.nvim_buf_get_changedtick(buf)
@@ -51,15 +52,10 @@ function symbol:buf_watcher(buf)
   })
 end
 
-function symbol:do_request(buf, callback)
+function symbol:do_request(buf, client, callback)
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
-
-  local client = util.get_client_by_cap('documentSymbolProvider')
-  if not client then
-    return
-  end
 
   local register = false
   if not self[buf] then
@@ -89,7 +85,7 @@ function symbol:do_request(buf, callback)
     })
   end, buf)
   if register then
-    self:buf_watcher(buf)
+    self:buf_watcher(buf, client)
   end
 end
 
@@ -131,12 +127,23 @@ function symbol:winbar()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
     callback = function(args)
+      local client = lsp.get_client_by_id(args.data.client_id)
+      if not client.supports_method('textDocument/documentSymbol') then
+        return
+      end
+
       util.server_ready(args.buf, function()
         vim.schedule(function()
-          self:do_request(args.buf)
+          self:do_request(args.buf, client, function()
+            require('lspsaga.symbol.winbar').init_winbar(args.buf)
+            if
+              config.implement.enable and client.supports_method('textDocument/implementation')
+            then
+              require('lspsaga.implement').start(args.buf, client)
+            end
+          end)
         end)
       end)
-      require('lspsaga.symbol.winbar').init_winbar(args.buf)
     end,
   })
 end

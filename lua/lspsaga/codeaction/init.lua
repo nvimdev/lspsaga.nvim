@@ -26,29 +26,6 @@ local function clean_msg(msg)
   return msg
 end
 
-function act:check_server_support_codeaction(bufnr)
-  local clients = lsp.get_active_clients({ bufnr = bufnr })
-  for _, client in ipairs(clients) do
-    if not client.config.filetypes and next(config.server_filetype_map) ~= nil then
-      for _, fts in ipairs(config.server_filetype_map) do
-        if util.has_value(fts, vim.bo[bufnr].filetype) then
-          client.config.filetypes = fts
-          break
-        end
-      end
-    end
-
-    if
-      client.supports_method('textDocument/codeAction')
-      and util.has_value(client.config.filetypes, vim.bo[bufnr].filetype)
-    then
-      return true
-    end
-  end
-
-  return false
-end
-
 function act:action_callback(tuples)
   local contents = {}
   self.action_tuples = tuples

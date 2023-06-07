@@ -90,7 +90,8 @@ local function lb_autocmd()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup(name, { clear = true }),
     callback = function(opt)
-      if not require('lspsaga.codeaction'):check_server_support_codeaction(opt.buf) then
+      local client = lsp.get_client_by_id(opt.data.client_id)
+      if not client.supports_method('textDocument/codeAction') then
         return
       end
 
