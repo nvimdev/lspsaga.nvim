@@ -104,12 +104,13 @@ local default_config = {
   symbol_in_winbar = {
     enable = true,
     ignore_patterns = {},
-    separator = ' ❖ ',
+    separator = ' › ',
     hide_keyword = true,
     show_file = true,
     folder_level = 2,
     respect_root = false,
     color_mode = true,
+    dely = 300,
   },
   outline = {
     win_position = 'right',

@@ -443,6 +443,11 @@ function ot:close_and_clean()
 end
 
 function ot:outline(buf, non_close)
+  if not config.symbol_in_winbar.enable then
+    vim.notify('[Lspsaga] please enable symbol_in_winbar', vim.log.levels.ERROR)
+    return
+  end
+
   non_close = non_close or false
   if self.winid and api.nvim_win_is_valid(self.winid) and not non_close then
     self:close_and_clean()

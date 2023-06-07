@@ -228,7 +228,7 @@ local function start()
       end
       render(client, opt.buf, opt.data.symbols, false)
 
-      if vim.opt.updatetime > 100 then
+      if vim.opt.updatetime:get() > 100 then
         vim.notify('[lspsaga] for better experience config update time to 100')
       end
 

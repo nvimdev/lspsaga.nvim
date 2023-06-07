@@ -19,13 +19,35 @@ local function clean_buf_cache(buf)
   end
 end
 
+local buf_changedtick = {}
+
 function symbol:buf_watcher(buf, callback)
+  local function spawn_request()
+    vim.defer_fn(function()
+      vim.schedule(function()
+        self:do_request(buf, function(_, symbols)
+          self[buf].pending_request = false
+          if callback then
+            callback(buf, symbols)
+          end
+          local tick_now = api.nvim_buf_get_changedtick(buf)
+          if tick_now ~= buf_changedtick[buf] then
+            spawn_request()
+          end
+        end)
+      end)
+    end, 500)
+  end
+
   api.nvim_buf_attach(buf, false, {
-    on_lines = function(_, b)
+    on_lines = function(_, b, changedtick)
       if b ~= buf then
         return
       end
-      self:do_request(b, callback and callback or nil)
+      buf_changedtick[buf] = changedtick
+      if not self[buf].pending_request then
+        spawn_request()
+      end
     end,
     on_detach = function()
       clean_buf_cache(buf)
@@ -73,6 +95,7 @@ function symbol:do_request(buf, callback)
       data = { symbols = result },
     })
   end, buf)
+
   if register_watcher then
     self:buf_watcher(buf, callback)
   end
