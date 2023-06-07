@@ -1,5 +1,4 @@
 local api, lsp = vim.api, vim.lsp
-local util = require('lspsaga.util')
 local config = require('lspsaga').config
 local symbol = {}
 
@@ -28,7 +27,7 @@ function symbol:buf_watcher(buf, client)
       self[buf].pending_request = true
       self:do_request(buf, client, function()
         self[buf].pending_request = false
-        if changedtick ~= buf_changedtick[buf] then
+        if changedtick < buf_changedtick[buf] then
           changedtick = api.nvim_buf_get_changedtick(buf)
           spawn_request(changedtick)
         end
@@ -75,6 +74,9 @@ function symbol:do_request(buf, client, callback)
 
     if callback then
       callback()
+    end
+    if not result then
+      result = {}
     end
 
     self[ctx.bufnr].symbols = result
@@ -131,20 +133,20 @@ function symbol:winbar()
       if not client.supports_method('textDocument/documentSymbol') then
         return
       end
+      local winbar = require('lspsaga.symbol.winbar')
+      winbar.file_bar(args.buf)
 
-      util.server_ready(args.buf, function()
-        vim.schedule(function()
-          self:do_request(args.buf, client, function()
-            require('lspsaga.symbol.winbar').init_winbar(args.buf)
-            if
-              config.implement.enable and client.supports_method('textDocument/implementation')
-            then
-              require('lspsaga.implement').start(args.buf, client)
-            end
-          end)
-        end)
+      -- util.server_ready(args.buf, function()
+      --   vim.schedule(function()
+      self:do_request(args.buf, client, function()
+        winbar.init_winbar(args.buf)
+        if config.implement.enable and client.supports_method('textDocument/implementation') then
+          require('lspsaga.implement').start(args.buf, client)
+        end
       end)
     end,
+    --   end)
+    -- end,
   })
 end
 
