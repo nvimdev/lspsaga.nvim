@@ -237,4 +237,22 @@ function util.gen_truncate_line(width)
   return char:rep(math.floor(width / api.nvim_strwidth(char)))
 end
 
+function util.server_ready(buf, callback)
+  local timer = vim.loop.new_timer()
+  timer:start(100, 10, function()
+    local clients = vim.lsp.get_active_clients({ bufnr = buf })
+    local ready = true
+    for _, client in ipairs(clients) do
+      if next(client.messages.progress) ~= nil then
+        ready = false
+      end
+    end
+    if ready and not timer:is_closing() then
+      timer:stop()
+      timer:close()
+      callback()
+    end
+  end)
+end
+
 return util

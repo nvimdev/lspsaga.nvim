@@ -21,21 +21,18 @@ end
 
 local buf_changedtick = {}
 
-function symbol:buf_watcher(buf, callback)
-  local function spawn_request()
+function symbol:buf_watcher(buf)
+  local function spawn_request(changedtick)
     vim.defer_fn(function()
       self[buf].pending_request = true
-      self:do_request(buf, function(_, symbols)
+      self:do_request(buf, function()
         self[buf].pending_request = false
-        if callback then
-          callback(buf, symbols)
-        end
-        local tick_now = api.nvim_buf_get_changedtick(buf)
-        if tick_now ~= buf_changedtick[buf] then
-          spawn_request()
+        if changedtick ~= buf_changedtick[buf] then
+          changedtick = api.nvim_buf_get_changedtick(buf)
+          spawn_request(changedtick)
         end
       end)
-    end, 500)
+    end, 1000)
   end
 
   api.nvim_buf_attach(buf, false, {
@@ -45,7 +42,7 @@ function symbol:buf_watcher(buf, callback)
       end
       buf_changedtick[buf] = changedtick
       if not self[buf].pending_request then
-        spawn_request()
+        spawn_request(changedtick)
       end
     end,
     on_detach = function()
@@ -64,41 +61,35 @@ function symbol:do_request(buf, callback)
     return
   end
 
-  local register_watcher = false
+  local register = false
   if not self[buf] then
     self[buf] = {}
-    register_watcher = true
+    register = true
   end
 
   self[buf].pending_request = true
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
     self[ctx.bufnr].pending_request = false
     if err then
+      if callback then
+        callback()
+      end
       return
     end
-    self[ctx.bufnr].symbols = result
-    if result then
-      if callback then
-        callback(buf, result)
-      end
 
-      if self.queue and #self.queue > 0 then
-        for _, fn in ipairs(self.queue) do
-          fn(buf, result)
-        end
-        self.queue = {}
-      end
+    if callback then
+      callback()
     end
 
+    self[ctx.bufnr].symbols = result
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
       data = { symbols = result },
     })
   end, buf)
-
-  if register_watcher then
-    self:buf_watcher(buf, callback)
+  if register then
+    self:buf_watcher(buf)
   end
 end
 
@@ -119,13 +110,6 @@ function symbol:get_buf_symbols(buf)
   return res
 end
 
-function symbol:push_cb_queue(fn)
-  if not self.queue then
-    self.queue = {}
-  end
-  self.queue[#self.queue + 1] = fn
-end
-
 function symbol:node_is_keyword(buf, node)
   if not node.selectionRange then
     return false
@@ -144,7 +128,17 @@ function symbol:node_is_keyword(buf, node)
 end
 
 function symbol:winbar()
-  require('lspsaga.symbol.winbar').symbol_autocmd()
+  api.nvim_create_autocmd('LspAttach', {
+    group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
+    callback = function(args)
+      util.server_ready(args.buf, function()
+        vim.schedule(function()
+          self:do_request(args.buf)
+        end)
+      end)
+      require('lspsaga.symbol.winbar').init_winbar(args.buf)
+    end,
+  })
 end
 
 function symbol:outline()

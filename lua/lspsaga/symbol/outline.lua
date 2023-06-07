@@ -468,10 +468,7 @@ function ot:outline(buf, non_close)
 
   self.group = api.nvim_create_augroup('LspsagaOutline', { clear = false })
   if res.pending_request then
-    symbol:push_cb_queue(function(bufnr, symbols)
-      self.pending_request = false
-      self:render_outline(bufnr, symbols)
-    end)
+    vim.notify('[Lspsaga] symbol request pending please try later', vim.log.levels.WARN)
   else
     self:render_outline(buf, res.symbols)
   end

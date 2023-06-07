@@ -232,29 +232,6 @@ local function render_symbol_winbar(buf, symbols)
   return winbar_str
 end
 
-local function register_events(buf)
-  local id = api.nvim_create_autocmd({ 'CursorMoved' }, {
-    buffer = buf,
-    callback = function()
-      local res = symbol:get_buf_symbols(buf)
-      if not res then
-        symbol:do_request(buf, render_symbol_winbar)
-      elseif res.symbols then
-        render_symbol_winbar(buf, res.symbols)
-      end
-    end,
-    desc = 'Lspsaga symbols render and request',
-  })
-
-  api.nvim_create_autocmd('BufDelete', {
-    buffer = buf,
-    callback = function(opt)
-      api.nvim_del_autocmd(id)
-      api.nvim_del_autocmd(opt.id)
-    end,
-  })
-end
-
 local function match_ignore(buf)
   local fname = api.nvim_buf_get_name(buf)
   for _, pattern in pairs(config.ignore_patterns) do
@@ -265,31 +242,30 @@ local function match_ignore(buf)
   return false
 end
 
-local function symbol_autocmd()
-  api.nvim_create_autocmd('LspAttach', {
-    group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
+local function file_bar(buf)
+  local winid = api.nvim_get_current_win()
+  if config.show_file then
+    api.nvim_set_option_value('winbar', bar_file_name(buf), { scope = 'local', win = winid })
+  else
+    api.nvim_set_option_value(
+      'winbar',
+      bar_prefix().prefix .. ' #',
+      { scope = 'local', win = winid }
+    )
+  end
+end
+
+local function init_winbar(buf)
+  file_bar(buf)
+  api.nvim_create_autocmd('User', {
+    pattern = 'SagaSymbolUpdate',
     callback = function(opt)
       if vim.bo[opt.buf].buftype == 'nofile' then
         return
       end
 
-      local winid = api.nvim_get_current_win()
       if api.nvim_get_current_buf() ~= opt.buf then
         return
-      end
-
-      if config.show_file then
-        api.nvim_set_option_value(
-          'winbar',
-          bar_file_name(opt.buf),
-          { scope = 'local', win = winid }
-        )
-      else
-        api.nvim_set_option_value(
-          'winbar',
-          bar_prefix().prefix .. ' #',
-          { scope = 'local', win = winid }
-        )
       end
 
       --ignored after folder file prefix set
@@ -297,13 +273,29 @@ local function symbol_autocmd()
         return
       end
 
-      symbol:do_request(opt.buf, render_symbol_winbar)
-      register_events(opt.buf)
+      if #opt.data.symbols == 0 then
+        return
+      end
+      render_symbol_winbar(opt.buf, opt.data.symbols)
     end,
     desc = 'Lspsaga get and show symbols',
+  })
+
+  api.nvim_create_autocmd({ 'CursorMoved' }, {
+    buffer = buf,
+    callback = function()
+      local res = symbol:get_buf_symbols(buf)
+      if not res then
+        return
+      end
+      if res.symbols then
+        render_symbol_winbar(buf, res.symbols)
+      end
+    end,
+    desc = 'Lspsaga symbols render and request',
   })
 end
 
 return {
-  symbol_autocmd = symbol_autocmd,
+  init_winbar = init_winbar,
 }
