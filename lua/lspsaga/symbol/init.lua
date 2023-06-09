@@ -22,14 +22,14 @@ end
 local buf_changedtick = {}
 
 function symbol:buf_watcher(buf, client)
-  local function spawn_request(changedtick)
+  local function defer_request(changedtick)
     vim.defer_fn(function()
       self[buf].pending_request = true
       self:do_request(buf, client, function()
         self[buf].pending_request = false
         if changedtick < buf_changedtick[buf] then
           changedtick = api.nvim_buf_get_changedtick(buf)
-          spawn_request(changedtick)
+          defer_request(changedtick)
         end
       end)
     end, 1000)
@@ -42,7 +42,7 @@ function symbol:buf_watcher(buf, client)
       end
       buf_changedtick[buf] = changedtick
       if not self[buf].pending_request then
-        spawn_request(changedtick)
+        defer_request(changedtick)
       end
     end,
     on_detach = function()
