@@ -1,5 +1,5 @@
 local config = require('lspsaga').config
-local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymap
+local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymapdef
 local log = require('lspsaga.logger')
 local util = require('lspsaga.util')
 local window = require('lspsaga.window')
@@ -224,7 +224,6 @@ function def:peek_definition(method)
       )
       return
     end
-    log:new(method_name, results):write()
 
     local result
     for _, res in pairs(results) do
@@ -247,7 +246,13 @@ function def:peek_definition(method)
     end
 
     if not self.winid or not api.nvim_win_is_valid(self.winid) then
-      _, self.winid = create_window(node)
+      local ok, res = pcall(create_window, node)
+      if not ok then
+        log:new(method_name, params, results):write()
+        api.nvim_err_writeln(tostring(res))
+        return
+      end
+      self.winid = res
     end
     api.nvim_win_set_buf(self.winid, node.bufnr)
     api.nvim_set_option_value(

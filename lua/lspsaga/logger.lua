@@ -21,9 +21,9 @@ function log:new(method, params, result)
   self.content = header()
     .. ' ['
     .. method
-    .. '] [param]:'
+    .. '] [param] '
     .. tbl_to_string(params)
-    .. ' result:'
+    .. ' [result] '
     .. tbl_to_string(result)
   return self
 end
