@@ -12,24 +12,31 @@ local function header()
   return '[Lspsaga] [' .. time .. ']'
 end
 
-local function fmt(method, result)
-  local data = vim.json.encode(result)
-  return header() .. ' [' .. method .. '] ' .. data
+local function tbl_to_string(tbl)
+  return vim.json.encode(tbl)
 end
 
-function log:new(method, result)
-  self.content = fmt(method, result)
+function log:new(method, params, result)
   self.logfile = log_path()
+  self.content = header()
+    .. ' ['
+    .. method
+    .. '] [param]:'
+    .. tbl_to_string(params)
+    .. ' result:'
+    .. tbl_to_string(result)
   return self
 end
 
 function log:write()
-  local fd = assert(uv.fs_open(self.logfile, 'w', 438))
-  uv.fs_write(fd, self.content, function(err, result)
+  local fd = assert(uv.fs_open(self.logfile, 'a+', 438))
+  uv.fs_write(fd, self.content, function(err, bytes)
     if err then
       error('[Lspsaga] write to log failed')
     end
-    print(result)
+    if bytes == 0 then
+      print('[Lspsaga] write to log file failed bytes: ' .. bytes)
+    end
   end)
 end
 

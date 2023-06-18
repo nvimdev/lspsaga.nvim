@@ -217,7 +217,6 @@ function def:peek_definition(method)
 
   lsp.buf_request_all(current_buf, method_name, params, function(results)
     in_process = 0
-    print(vim.inspect(results))
     if not results or next(results) == nil then
       vim.notify(
         '[Lspsaga] response of request method ' .. method_name .. ' is nil',
@@ -339,7 +338,7 @@ def = setmetatable(def, {
   __newindex = function(_, k, v)
     ctx[k] = v
   end,
-  __index = function(_, k, _)
+  __index = function(_, k)
     return ctx[k]
   end,
 })

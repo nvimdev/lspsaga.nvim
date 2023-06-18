@@ -26,6 +26,9 @@ function symbol:buf_watcher(buf, client)
     vim.defer_fn(function()
       self[buf].pending_request = true
       self:do_request(buf, client, function()
+        if not api.nvim_buf_is_valid(buf) then
+          return
+        end
         self[buf].pending_request = false
         if changedtick < buf_changedtick[buf] then
           changedtick = api.nvim_buf_get_changedtick(buf)
@@ -45,7 +48,11 @@ function symbol:buf_watcher(buf, client)
         defer_request(changedtick)
       end
     end,
-    on_detach = function()
+  })
+
+  api.nvim_create_autocmd('BufDelete', {
+    buffer = buf,
+    callback = function()
       clean_buf_cache(buf)
     end,
   })
@@ -64,7 +71,10 @@ function symbol:do_request(buf, client, callback)
 
   self[buf].pending_request = true
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
-    self[ctx.bufnr].pending_request = false
+    if api.nvim_get_current_buf() ~= buf or ctx.bufnr ~= buf then
+      return
+    end
+    self[buf].pending_request = false
     if err then
       if callback then
         callback()
