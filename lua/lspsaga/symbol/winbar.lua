@@ -1,7 +1,9 @@
-local lsp, api = vim.lsp, vim.api
+local api = vim.api
 local config = require('lspsaga').config.symbol_in_winbar
+local ui = require('lspsaga').config.ui
 local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
+local kind = require('lspsaga.lspkind').kind
 
 local function bar_prefix()
   return {
@@ -10,81 +12,33 @@ local function bar_prefix()
   }
 end
 
-local function get_kind_icon(type, index)
-  local kind = require('lspsaga.lspkind').get_kind()
-  return kind[type][index]
-end
-
-local function respect_lsp_root(buf)
-  local clients = lsp.get_active_clients({ bufnr = buf })
-  if #clients == 0 then
-    return
-  end
-  local root_dir = clients[1].config.root_dir
-  local bufname = api.nvim_buf_get_name(buf)
-  local bufname_parts = vim.split(bufname, util.path_sep, { trimempty = true })
-  if not root_dir then
-    return { #bufname_parts }
-  end
-  local parts = vim.split(root_dir, util.path_sep, { trimempty = true })
-  return { unpack(bufname_parts, #parts + 1) }
-end
-
-local function bar_file_name(buf)
-  local res
-  if config.respect_root then
-    res = respect_lsp_root(buf)
+local function path_in_bar(buf)
+  local ft = vim.bo[buf].filetype
+  local icon, hl
+  if ui.devicon then
+    icon, hl = util.icon_from_devicon(ft)
   end
 
-  --fallback to config.folder_level
-  if not res then
-    res = util.get_path_info(buf, config.folder_level)
-  end
-
-  if not res or #res == 0 then
-    return
-  end
-  local data = util.icon_from_devicon(vim.bo[buf].filetype, true)
   local bar = bar_prefix()
   local items = {}
-  for i, v in pairs(res) do
-    if i == #res then
-      if #data > 0 then
-        items[#items + 1] = '%#SagaWinbarFileIcon#' .. data[1] .. '%*'
+  local folder = kind[302][2] .. '%*'
 
-        local ok, conf = pcall(api.nvim_get_hl_by_name, 'SagaWinbarFileIcon', true)
-        if not ok then
-          conf = {}
-        end
-        for k, _ in pairs(conf) do
-          if type(k) ~= 'string' then
-            conf[k] = nil
-          end
-        end
+  for item in util.path_itera(buf) do
+    item = #items == 0
+        and '%#' .. hl .. '#' .. (icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
+      or bar.prefix .. 'Folder#' .. folder .. bar.prefix .. 'FolderName#' .. item .. '%*'
+    items[#items + 1] = item
 
-        api.nvim_set_hl(
-          0,
-          'SagaWinbarFileIcon',
-          vim.tbl_extend('force', conf, {
-            foreground = data[2],
-          })
-        )
-      end
-      items[#items + 1] = bar.prefix .. 'FileName#' .. v .. '%*'
-    else
-      items[#items + 1] = bar.prefix
-        .. 'Folder#'
-        .. get_kind_icon(302, 2)
-        .. '%*'
-        .. bar.prefix
-        .. 'FolderName'
-        .. '#'
-        .. v
-        .. '%*'
-        .. bar.sep
+    if #items > config.folder_level then
+      break
     end
   end
-  return table.concat(items, '')
+
+  local barstr = ''
+  for i = #items, 1, -1 do
+    barstr = barstr .. items[i] .. (i > 1 and bar.sep or '')
+  end
+  return barstr
 end
 
 local function get_node_range(node)
@@ -104,7 +58,7 @@ local function binary_search(tbl, line)
   local right = #tbl
   local mid = 0
 
-  while true do
+  while left < right do
     mid = bit.rshift(left + right, 1)
     if not tbl[mid] then
       return nil
@@ -119,14 +73,8 @@ local function binary_search(tbl, line)
       return mid
     elseif line < range.start.line then
       right = mid - 1
-      if left > right then
-        return nil
-      end
     else
       left = mid + 1
-      if left > right then
-        return nil
-      end
     end
   end
 end
@@ -139,8 +87,8 @@ local function insert_elements(buf, node, elements)
   if config.hide_keyword and symbol:node_is_keyword(buf, node) then
     return
   end
-  local type = get_kind_icon(node.kind, 1)
-  local icon = get_kind_icon(node.kind, 2)
+  local type = kind[node.kind][1]
+  local icon = kind[node.kind][2]
   local bar = bar_prefix()
   if node.name:find('%%') then
     node.name = stl_escape(node.name)
@@ -192,7 +140,7 @@ local function render_symbol_winbar(buf, symbols)
   end
 
   local current_line = api.nvim_win_get_cursor(cur_win)[1]
-  local winbar_str = config.show_file and bar_file_name(buf) or ''
+  local winbar_str = config.show_file and path_in_bar(buf) or ''
 
   local winbar_elements = {}
 
@@ -245,7 +193,7 @@ end
 local function file_bar(buf)
   local winid = api.nvim_get_current_win()
   if config.show_file then
-    api.nvim_set_option_value('winbar', bar_file_name(buf), { scope = 'local', win = winid })
+    api.nvim_set_option_value('winbar', path_in_bar(buf), { scope = 'local', win = winid })
   else
     api.nvim_set_option_value(
       'winbar',

@@ -1,23 +1,15 @@
 local api = vim.api
-
-local function theme_normal()
-  local conf = api.nvim_get_hl_by_name('Normal', true)
-  if conf.background then
-    return conf.background
-  end
-  return 'NONE'
-end
+local kind = require('lspsaga.lspkind').kind
 
 local function hi_define()
-  local bg = theme_normal()
   return {
     -- general
     TitleString = { link = 'Title' },
     TitleIcon = { link = 'Repeat' },
     SagaBorder = { link = 'FloatBorder' },
-    SagaNormal = { bg = bg },
-    SagaExpand = { fg = '#475164' },
-    SagaCollapse = { fg = '#475164' },
+    SagaNormal = { link = 'NormalFloat' },
+    SagaExpand = { link = 'Comment' },
+    SagaCollapse = { link = 'Comment' },
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
     -- code action
@@ -83,12 +75,20 @@ local function hi_define()
     TerminalNormal = { link = 'SagaNormal' },
     -- Implement
     SagaImpIcon = { link = 'PreProc' },
+    --Winbar
+    SagaWinbarSep = { link = 'Operatro' },
+    SagaWinbarFileName = { link = 'Comment' },
+    SagaWinbarFolderName = { link = 'Comment' },
   }
 end
 
 local function init_highlight()
   for group, conf in pairs(hi_define()) do
     api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
+  end
+
+  for _, item in pairs(kind) do
+    api.nvim_set_hl(0, 'SagaWinbar' .. item[1], { link = item[3] })
   end
 end
 

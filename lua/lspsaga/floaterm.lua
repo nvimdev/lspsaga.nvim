@@ -8,11 +8,7 @@ function term:open_float_terminal(command)
   local cur_buf = api.nvim_get_current_buf()
   if not vim.tbl_isempty(ctx) and ctx.term_bufnr == cur_buf then
     api.nvim_win_close(ctx.term_winid, true)
-    if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
-      api.nvim_win_close(ctx.shadow_winid, true)
-    end
     ctx.term_winid = nil
-    ctx.shadow_winid = nil
     if ctx.cur_win and ctx.pos then
       api.nvim_set_current_win(ctx.cur_win)
       api.nvim_win_set_cursor(0, ctx.pos)
@@ -61,7 +57,7 @@ function term:open_float_terminal(command)
   ctx.pos = api.nvim_win_get_cursor(0)
 
   ctx.term_bufnr, ctx.term_winid, ctx.shadow_bufnr, ctx.shadow_winid =
-    window.open_shadow_float_win(content_opts, opts)
+    window.create_win_with_border(content_opts, opts)
 
   if spawn_new then
     vim.fn.termopen(cmd, {

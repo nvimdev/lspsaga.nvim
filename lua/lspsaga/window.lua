@@ -1,102 +1,6 @@
 local vim, api, lsp = vim, vim.api, vim.lsp
 local M = {}
 
-function M.border_chars()
-  return {
-    lefttop = {
-      ['single'] = '┌',
-      ['double'] = '╔',
-      ['rounded'] = '╭',
-      ['solid'] = ' ',
-      ['shadow'] = '',
-    },
-
-    top = {
-      ['single'] = '─',
-      ['double'] = '═',
-      ['rounded'] = '─',
-      ['solid'] = ' ',
-      ['shadow'] = '',
-    },
-    righttop = {
-      ['single'] = '┐',
-      ['double'] = '╗',
-      ['rounded'] = '╮',
-      ['solid'] = ' ',
-      ['shadow'] = ' ',
-    },
-    right = {
-      ['single'] = '│',
-      ['double'] = '║',
-      ['rounded'] = '│',
-      ['solid'] = ' ',
-      ['shadow'] = ' ',
-    },
-    rightbottom = {
-      ['single'] = '┘',
-      ['double'] = '╝',
-      ['rounded'] = '╯',
-      ['solid'] = ' ',
-      ['shadow'] = ' ',
-    },
-    bottom = {
-      ['single'] = '─',
-      ['double'] = '═',
-      ['rounded'] = '─',
-      ['solid'] = ' ',
-      ['shadow'] = ' ',
-    },
-    leftbottom = {
-      ['single'] = '└',
-      ['double'] = '╚',
-      ['rounded'] = '╰',
-      ['solid'] = ' ',
-      ['shadow'] = ' ',
-    },
-    left = {
-      ['single'] = '│',
-      ['double'] = '║',
-      ['rounded'] = '│',
-      ['solid'] = ' ',
-      ['shadow'] = '',
-    },
-  }
-end
-
-function M.combine_char()
-  return {
-    ['top'] = {
-      ['single'] = '┬',
-      ['rounded'] = '┬',
-      ['double'] = '╦',
-      ['solid'] = ' ',
-    },
-    ['bottom'] = {
-      ['single'] = '┴',
-      ['rounded'] = '┴',
-      ['double'] = '╩',
-      ['solid'] = ' ',
-    },
-  }
-end
-
-function M.combine_border(style, side, hi)
-  local border_chars = M.border_chars()
-  local order =
-    { 'lefttop', 'top', 'righttop', 'right', 'rightbottom', 'bottom', 'leftbottom', 'left' }
-
-  local res = {}
-
-  for _, pos in ipairs(order) do
-    if not vim.tbl_isempty(side) and vim.tbl_contains(vim.tbl_keys(side), pos) then
-      res[#res + 1] = { side[pos], hi }
-    else
-      res[#res + 1] = { border_chars[pos][style], hi }
-    end
-  end
-  return res
-end
-
 local function make_floating_popup_options(width, height, opts)
   vim.validate({
     opts = { opts, 't', true },
@@ -175,46 +79,18 @@ local function generate_win_opts(contents, opts)
   return opts
 end
 
-local function get_shadow_config()
-  local opts = {
-    relative = 'editor',
-    style = 'minimal',
-    width = vim.o.columns,
-    height = vim.o.lines,
-    row = 0,
-    col = 0,
-  }
-  return opts
-end
-
-local function open_shadow_win()
-  local opts = get_shadow_config()
-  local shadow_winhl = 'Normal:SagaShadow'
-  local shadow_bufnr = api.nvim_create_buf(false, false)
-  local shadow_winid = api.nvim_open_win(shadow_bufnr, true, opts)
-  api.nvim_set_option_value('winhl', shadow_winhl, { scope = 'local', win = shadow_winid })
-  api.nvim_set_option_value('winblend', 70, { scope = 'local', win = shadow_winid })
-  api.nvim_set_option_value('bufhidden', 'wipe', { buf = shadow_bufnr })
-  return shadow_bufnr, shadow_winid
-end
-
--- content_opts a table with filed
--- contents table type
--- filetype string type
--- enter boolean into window or not
--- highlight border highlight string type
-function M.create_win_with_border(content_opts, opts)
+function M.create_win_with_border(content_opts, float_opt)
   local config = require('lspsaga').config
   vim.validate({
     content_opts = { content_opts, 't' },
     contents = { content_opts.content, 't', true },
-    opts = { opts, 't', true },
+    float_opt = { float_opt, 't', true },
   })
 
   local contents, filetype = content_opts.contents, content_opts.filetype
   local enter = content_opts.enter or false
-  opts = opts or {}
-  opts = generate_win_opts(contents, opts)
+  float_opt = float_opt or {}
+  float_opt = generate_win_opts(contents, float_opt)
 
   local highlight = content_opts.highlight or {}
 
@@ -222,9 +98,9 @@ function M.create_win_with_border(content_opts, opts)
   local border_hl = highlight.border or 'LspBorder'
 
   if content_opts.noborder then
-    opts.border = 'none'
+    float_opt.border = 'none'
   else
-    opts.border = content_opts.border_side
+    float_opt.border = content_opts.border_side
         and M.combine_border(config.ui.border, content_opts.border_side, border_hl)
       or config.ui.border
   end
@@ -257,7 +133,7 @@ function M.create_win_with_border(content_opts, opts)
     api.nvim_set_option_value('buftype', content_opts.buftype or 'nofile', { buf = bufnr })
   end
 
-  local winid = api.nvim_open_win(bufnr, enter, opts)
+  local winid = api.nvim_open_win(bufnr, enter, float_opt)
   api.nvim_set_option_value(
     'winblend',
     content_opts.winblend or config.ui.winblend,
@@ -275,34 +151,9 @@ function M.create_win_with_border(content_opts, opts)
   return bufnr, winid
 end
 
-function M.open_shadow_float_win(content_opts, opts)
-  local shadow_bufnr, shadow_winid = open_shadow_win()
-  local contents_bufnr, contents_winid = M.create_win_with_border(content_opts, opts)
-  return contents_bufnr, contents_winid, shadow_bufnr, shadow_winid
-end
-
 function M.get_max_float_width(percent)
   percent = percent or 0.6
   return math.floor(vim.o.columns * percent)
-end
-
-function M.get_max_content_length(contents)
-  vim.validate({
-    contents = { contents, 't' },
-  })
-  local cells = {}
-  for _, v in pairs(contents) do
-    if v:find('\n.') then
-      local tbl = vim.split(v, '\n')
-      vim.tbl_map(function(s)
-        table.insert(cells, #s)
-      end, tbl)
-    else
-      table.insert(cells, #v)
-    end
-  end
-  table.sort(cells)
-  return cells[#cells]
 end
 
 function M.nvim_close_valid_window(winid)

@@ -5,6 +5,7 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 local default_config = {
   ui = {
     border = 'single',
+    devicon = true,
     title = true,
     winblend = 0,
     expand = '',
@@ -107,8 +108,7 @@ local default_config = {
     separator = ' › ',
     hide_keyword = true,
     show_file = true,
-    folder_level = 2,
-    respect_root = false,
+    folder_level = 1,
     color_mode = true,
     dely = 300,
   },
@@ -160,7 +160,6 @@ function saga.setup(opts)
   saga.config = vim.tbl_deep_extend('force', default_config, opts)
 
   require('lspsaga.highlight'):init_highlight()
-  require('lspsaga.lspkind').init_kind_hl()
   if saga.config.lightbulb.enable then
     require('lspsaga.codeaction.lightbulb').lb_autocmd()
   end

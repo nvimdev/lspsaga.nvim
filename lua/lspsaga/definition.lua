@@ -273,25 +273,6 @@ function def:peek_definition(method)
     push(node)
 
     self:apply_aciton_keys(node.bufnr, current_buf)
-
-    local color = api.nvim_get_hl_by_name('NormalFloat', true)
-    api.nvim_set_hl(0, 'NormalFloat', {
-      link = 'Normal',
-    })
-
-    api.nvim_create_autocmd('WinClosed', {
-      once = true,
-      callback = function(opt)
-        local curwin = api.nvim_get_current_win()
-        if curwin == self.winid then
-          api.nvim_set_hl(0, 'NormalFloat', {
-            foreground = color.foreground or nil,
-            background = color.bakcground or nil,
-          })
-          api.nvim_del_autocmd(opt.id)
-        end
-      end,
-    })
   end)
 end
 
