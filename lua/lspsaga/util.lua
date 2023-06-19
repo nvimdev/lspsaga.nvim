@@ -41,12 +41,6 @@ function M.tbl_index(tbl, val)
   end
 end
 
-function M.merge_table(t1, t2)
-  for _, v in pairs(t2) do
-    table.insert(t1, v)
-  end
-end
-
 function M.close_preview_autocmd(bufnr, winids, events, callback)
   api.nvim_create_autocmd(events, {
     group = saga_augroup,
@@ -111,8 +105,8 @@ end
 
 function M.delete_scroll_map(bufnr)
   local config = require('lspsaga').config
-  pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_down)
-  pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_up)
+  api.nvim_buf_del_keymap(bufnr, 'n', config.scroll_preview.scroll_down)
+  api.nvim_buf_del_keymap(bufnr, 'n', config.scroll_preview.scroll_up)
 end
 
 function M.gen_truncate_line(width)

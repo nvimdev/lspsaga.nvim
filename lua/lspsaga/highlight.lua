@@ -88,7 +88,7 @@ local function init_highlight()
   end
 
   for _, item in pairs(kind) do
-    api.nvim_set_hl(0, 'SagaWinbar' .. item[1], { link = item[3] })
+    api.nvim_set_hl(0, 'SagaWinbar' .. item[1], { link = item[3], default = true })
   end
 end
 
