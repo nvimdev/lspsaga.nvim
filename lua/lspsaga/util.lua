@@ -1,5 +1,4 @@
 local api, lsp = vim.api, vim.lsp
-local saga_conf = require('lspsaga').config
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local M = {}
@@ -42,21 +41,6 @@ function M.tbl_index(tbl, val)
   end
 end
 
-function M.has_value(filetypes, val)
-  if type(filetypes) == 'table' then
-    for _, v in pairs(filetypes) do
-      if v == val then
-        return true
-      end
-    end
-  elseif type(filetypes) == 'string' then
-    if filetypes == val then
-      return true
-    end
-  end
-  return false
-end
-
 function M.merge_table(t1, t2)
   for _, v in pairs(t2) do
     table.insert(t1, v)
@@ -78,64 +62,23 @@ function M.close_preview_autocmd(bufnr, winids, events, callback)
   })
 end
 
-function M.find_buffer_by_filetype(ft)
-  local all_bufs = vim.fn.getbufinfo()
-  local filetype = ''
-  for _, bufinfo in pairs(all_bufs) do
-    filetype = api.nvim_buf_get_option(bufinfo['bufnr'], 'filetype')
-
-    if type(ft) == 'table' and M.has_value(ft, filetype) then
-      return true, bufinfo['bufnr']
-    end
-
-    if filetype == ft then
-      return true, bufinfo['bufnr']
-    end
-  end
-
-  return false, nil
-end
-
-function M.add_client_filetypes(client, fts)
-  if not client.config.filetypes then
-    client.config.filetypes = fts
-  end
-end
-
--- get client by capabilities
-function M.get_client_by_cap(caps)
-  local client_caps = {
-    ['string'] = function(instance)
-      M.add_client_filetypes(instance, { vim.bo.filetype })
-      if
-        instance.server_capabilities[caps]
-        and M.has_value(instance.config.filetypes, vim.bo.filetype)
-      then
-        return instance
-      end
-      return nil
-    end,
-    ['table'] = function(instance)
-      M.add_client_filetypes(instance, { vim.bo.filetype })
-      if
-        vim.tbl_get(instance.server_capabilities, unpack(caps))
-        and M.has_value(instance.config.filetypes, vim.bo.filetype)
-      then
-        return instance
-      end
-      return nil
-    end,
-  }
-
+-- get client by methods
+function M.get_client_by_method(methods)
+  methods = type(methods) == 'string' and { methods } or methods
   local clients = lsp.get_active_clients({ bufnr = 0 })
-  local client
-  for _, instance in pairs(clients) do
-    client = client_caps[type(caps)](instance)
-    if client ~= nil then
-      break
+  for _, client in ipairs(clients or {}) do
+    local support = true
+    for _, method in ipairs(methods) do
+      if not client.supports_method(method) then
+        support = false
+        break
+      end
+    end
+
+    if support then
+      return client
     end
   end
-  return client
 end
 
 local function feedkeys(key)
@@ -143,25 +86,26 @@ local function feedkeys(key)
   api.nvim_feedkeys(k, 'x', false)
 end
 
-function M.scroll_in_preview(bufnr, preview_winid)
+function M.scroll_in_peek(bufnr, winid)
   local config = require('lspsaga').config
-  if preview_winid and api.nvim_win_is_valid(preview_winid) then
-    for i, map in ipairs({ config.scroll_preview.scroll_down, config.scroll_preview.scroll_up }) do
-      api.nvim_buf_set_keymap(bufnr, 'n', map, '', {
-        noremap = true,
-        nowait = true,
-        callback = function()
-          if api.nvim_win_is_valid(preview_winid) then
-            api.nvim_win_call(preview_winid, function()
-              local key = i == 1 and '<C-d>' or '<C-u>'
-              feedkeys(key)
-            end)
-            return
-          end
-          M.delete_scroll_map(bufnr)
-        end,
-      })
-    end
+  if not api.nvim_win_is_valid(winid) then
+    return
+  end
+  for i, map in ipairs({ config.scroll_preview.scroll_down, config.scroll_preview.scroll_up }) do
+    api.nvim_buf_set_keymap(bufnr, 'n', map, '', {
+      noremap = true,
+      nowait = true,
+      callback = function()
+        if api.nvim_win_is_valid(winid) then
+          api.nvim_win_call(winid, function()
+            local key = i == 1 and '<C-d>' or '<C-u>'
+            feedkeys(key)
+          end)
+          return
+        end
+        M.delete_scroll_map(bufnr)
+      end,
+    })
   end
 end
 
@@ -171,81 +115,9 @@ function M.delete_scroll_map(bufnr)
   pcall(api.nvim_buf_del_keymap, bufnr, 'n', config.scroll_preview.scroll_up)
 end
 
-function M.jump_beacon(bufpos, width)
-  if not saga_conf.beacon.enable then
-    return
-  end
-
-  if width == 0 or not width then
-    return
-  end
-
-  local opts = {
-    relative = 'win',
-    bufpos = bufpos,
-    height = 1,
-    width = width,
-    row = 0,
-    col = 0,
-    anchor = 'NW',
-    focusable = false,
-    no_size_override = true,
-    noautocmd = true,
-  }
-
-  local window = require('lspsaga.window')
-  local _, winid = window.create_win_with_border({
-    contents = { '' },
-    noborder = true,
-    winblend = 0,
-    highlight = {
-      normal = 'SagaBeacon',
-    },
-  }, opts)
-
-  local timer = vim.loop.new_timer()
-  timer:start(
-    0,
-    60,
-    vim.schedule_wrap(function()
-      if not api.nvim_win_is_valid(winid) then
-        return
-      end
-      local blend = vim.wo[winid].winblend + saga_conf.beacon.frequency
-      if blend > 100 then
-        blend = 100
-      end
-      vim.wo[winid].winblend = blend
-      if vim.wo[winid].winblend == 100 and not timer:is_closing() then
-        timer:stop()
-        timer:close()
-        api.nvim_win_close(winid, true)
-      end
-    end)
-  )
-end
-
 function M.gen_truncate_line(width)
   local char = '─'
   return char:rep(math.floor(width / api.nvim_strwidth(char)))
-end
-
-function M.server_ready(buf, callback)
-  local timer = vim.loop.new_timer()
-  timer:start(100, 10, function()
-    local clients = vim.lsp.get_active_clients({ bufnr = buf })
-    local ready = true
-    for _, client in ipairs(clients) do
-      if next(client.messages.progress) ~= nil then
-        ready = false
-      end
-    end
-    if ready and not timer:is_closing() then
-      timer:stop()
-      timer:close()
-      callback()
-    end
-  end)
 end
 
 function M.get_max_content_length(contents)
@@ -265,6 +137,15 @@ function M.get_max_content_length(contents)
   end
   table.sort(cells)
   return cells[#cells]
+end
+
+function M.close_win(winid)
+  winid = type(winid) == 'table' and { winid } or winid
+  for _, id in ipairs(winid) do
+    if api.nvim_win_is_valid(id) then
+      api.nvim_win_close(id, true)
+    end
+  end
 end
 
 return M

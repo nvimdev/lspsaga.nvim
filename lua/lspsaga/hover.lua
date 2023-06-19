@@ -211,48 +211,30 @@ function hover:open_floating_preview(res, option_fn)
   end
 end
 
-local function should_error(args)
-  -- Never error if we have ++quiet
-  if args and has_arg(args, '++quiet') then
-    return false
+local function ignore_error(args)
+  if args and has_arg(args, '++silent') then
+    return true
   end
-  return true
-end
-
-local function support_clients()
-  local count = 0
-  local clients = lsp.get_active_clients({ bufnr = 0 })
-  for _, client in ipairs(clients) do
-    if client.supports_method('textDocument/hover') then
-      count = count + 1
-      break
-    end
-  end
-  return count, #clients
 end
 
 function hover:do_request(args)
   local params = lsp.util.make_position_params()
-  local count, total = support_clients()
-  if count == 0 and should_error(args) then
+  local client = util.get_client_by_method('textDocument/hover')
+  if not client then
     self.pending_request = false
     vim.notify('[Lspsaga] all server of buffer not support hover request')
     return
   end
-  count = 0
 
-  local failed = 0
-  lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
+  client.request('textDocument/hover', params, function(_, result, ctx)
     self.pending_request = false
-    count = count + 1
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
 
     if not result or not result.contents then
-      failed = failed + 1
-      if count == total and failed == total and should_error(args) then
+      if ignore_error(args) then
         vim.notify('No information available')
       end
       return
@@ -267,7 +249,7 @@ function hover:do_request(args)
     elseif result.contents.language then -- MarkedString
       value = result.contents.value
     elseif vim.tbl_islist(result.contents) then -- MarkedString[]
-      if vim.tbl_isempty(result.contents) and should_error(args) then
+      if vim.tbl_isempty(result.contents) and ignore_error(args) then
         vim.notify('No information available')
         return
       end
@@ -282,7 +264,7 @@ function hover:do_request(args)
     end
 
     if not value or #value == 0 then
-      if should_error(args) then
+      if ignore_error(args) then
         vim.notify('No information available')
       end
       return
@@ -305,7 +287,7 @@ function hover:do_request(args)
     end
 
     self:open_floating_preview(result.contents, option_fn)
-  end)
+  end, api.nvim_get_current_buf())
 end
 
 function hover:remove_data()
@@ -319,7 +301,7 @@ end
 local function check_parser()
   local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
   local has_parser = true
-  for _, p in pairs(parsers) do
+  for _, p in ipairs(parsers) do
     if #api.nvim_get_runtime_file(p, true) == 0 then
       has_parser = false
       break
@@ -348,11 +330,6 @@ function hover:render_hover_doc(args)
       self.preview_bufnr = nil
       return
     end
-  end
-
-  if vim.bo.filetype == 'help' then
-    api.nvim_feedkeys('K', 'ni', true)
-    return
   end
 
   if self.pending_request then

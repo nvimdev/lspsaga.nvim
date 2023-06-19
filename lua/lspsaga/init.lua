@@ -114,7 +114,6 @@ local default_config = {
   },
   outline = {
     win_position = 'right',
-    win_with = '',
     win_width = 30,
     --category
     layout = 'category',
@@ -152,7 +151,6 @@ local default_config = {
     enable = true,
     frequency = 7,
   },
-  server_filetype_map = {},
 }
 
 function saga.setup(opts)

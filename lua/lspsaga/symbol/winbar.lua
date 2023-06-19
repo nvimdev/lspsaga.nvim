@@ -25,7 +25,7 @@ local function path_in_bar(buf)
 
   for item in util.path_itera(buf) do
     item = #items == 0
-        and '%#' .. hl .. '#' .. (icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
+        and '%#' .. (hl or 'SagaWinbarFileIcon') .. '#' .. (icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
       or bar.prefix .. 'Folder#' .. folder .. bar.prefix .. 'FolderName#' .. item .. '%*'
     items[#items + 1] = item
 
@@ -41,17 +41,6 @@ local function path_in_bar(buf)
   return barstr
 end
 
-local function get_node_range(node)
-  if node.location then
-    return node.location.range
-  end
-
-  if node.range then
-    return node.range
-  end
-  return nil
-end
-
 --@private
 local function binary_search(tbl, line)
   local left = 1
@@ -61,12 +50,12 @@ local function binary_search(tbl, line)
   while left < right do
     mid = bit.rshift(left + right, 1)
     if not tbl[mid] then
-      return nil
+      return
     end
 
-    local range = get_node_range(tbl[mid])
+    local range = tbl[mid].range or tbl[mid].location.range
     if not range then
-      return nil
+      return
     end
 
     if line >= range.start.line and line <= range['end'].line then

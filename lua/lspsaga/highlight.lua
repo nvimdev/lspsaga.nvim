@@ -76,7 +76,7 @@ local function hi_define()
     -- Implement
     SagaImpIcon = { link = 'PreProc' },
     --Winbar
-    SagaWinbarSep = { link = 'Operatro' },
+    SagaWinbarSep = { link = 'Operator' },
     SagaWinbarFileName = { link = 'Comment' },
     SagaWinbarFolderName = { link = 'Comment' },
   }

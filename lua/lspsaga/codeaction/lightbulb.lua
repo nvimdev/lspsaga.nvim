@@ -45,42 +45,34 @@ local function update_lightbulb(bufnr, row)
   inrender_row = row + 1
 end
 
-local function render(bufnr)
+local function render(client, bufnr)
   local row = api.nvim_win_get_cursor(0)[1] - 1
   local params = lsp.util.make_range_params()
   params.context = {
     diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr),
   }
 
-  lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(results)
+  client.request('textDocument/codeAction', params, function(_, result, _)
     if api.nvim_get_current_buf() ~= bufnr then
       return
     end
 
-    local has_actions = false
-    for _, res in ipairs(results or {}) do
-      if res.result and type(res.result) == 'table' and next(res.result) ~= nil then
-        has_actions = true
-        break
-      end
-    end
-
-    if not has_actions then
+    if result and #result > 0 then
+      update_lightbulb(bufnr, row)
+    else
       update_lightbulb(bufnr, nil)
-      return
     end
-
-    update_lightbulb(bufnr, row)
-  end)
+  end, bufnr)
 end
 
-local timer = vim.loop.new_timer()
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
+local timer = uv.new_timer()
 
-local function update(buf)
+local function update(client, buf)
   timer:start(config.lightbulb.debounce, 0, function()
     timer:stop()
     vim.schedule(function()
-      render(buf)
+      render(client, buf)
     end)
   end)
 end
@@ -101,7 +93,7 @@ local function lb_autocmd()
         group = group,
         buffer = buf,
         callback = function()
-          update(buf)
+          update(client, buf)
         end,
       })
 
@@ -118,14 +110,6 @@ local function lb_autocmd()
         buffer = buf,
         callback = function()
           update_lightbulb(buf, nil)
-        end,
-      })
-
-      api.nvim_create_autocmd('BufDelete', {
-        buffer = buf,
-        once = true,
-        callback = function()
-          pcall(api.nvim_del_augroup_by_id, group)
         end,
       })
     end,
