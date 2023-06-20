@@ -65,17 +65,6 @@ end
 
 ---@private
 local function create_outline_window()
-  if #outline_conf.win_with > 0 then
-    local ok, sp_buf = util.find_buffer_by_filetype(outline_conf.win_with)
-
-    if ok then
-      local winid = fn.win_findbuf(sp_buf)[1]
-      api.nvim_set_current_win(winid)
-      vim.cmd('sp vnew')
-      return
-    end
-  end
-
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
   vim.cmd(pos .. ' vnew')
   local winid, bufnr = api.nvim_get_current_win(), api.nvim_get_current_buf()

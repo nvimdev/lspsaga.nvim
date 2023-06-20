@@ -1,8 +1,7 @@
 local api, fn, lsp = vim.api, vim.fn, vim.lsp
 local config = require('lspsaga').config
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 local util = require('lspsaga.util')
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local hover = {}
 
 local function has_arg(args, arg)
@@ -51,9 +50,6 @@ local function open_link()
 end
 
 function hover:open_floating_preview(res, option_fn)
-  local bufnr = api.nvim_get_current_buf()
-  self.preview_bufnr = api.nvim_create_buf(false, true)
-
   local content = vim.split(res.value, '\n', { trimempty = true })
   local new = {}
   local in_codeblock = false
@@ -92,19 +88,21 @@ function hover:open_floating_preview(res, option_fn)
       new[#new + 1] = line
     end
   end
-  content = new
 
   local max_float_width = math.floor(vim.o.columns * config.hover.max_width)
-  local max_content_len = window.get_max_content_length(content)
-  local increase = window.win_height_increase(content)
-  local max_height = math.floor(vim.o.lines * 0.8)
+  local max_content_len = util.get_max_content_length(content)
+  local increase = util.win_height_increase(content)
+  local max_height = math.floor(vim.o.lines * config.hover.max_height)
 
   local float_option = {
-    width = max_content_len < max_float_width and max_content_len or max_float_width,
-    height = #content + increase > max_height and max_height or #content + increase,
-    no_size_override = true,
+    width = math.min(max_content_len, max_float_width),
+    height = math.min(#content + increase, max_height),
     zindex = 80,
   }
+
+  if option_fn then
+    float_option = vim.tbl_extend('keep', float_option, option_fn(float_option.width))
+  end
 
   if config.ui.title then
     float_option.title = {
@@ -113,30 +111,22 @@ function hover:open_floating_preview(res, option_fn)
     }
   end
 
-  if option_fn then
-    local new_opt = option_fn(float_option.width)
-    float_option = vim.tbl_extend('keep', float_option, new_opt)
-  end
+  local curbuf = api.nvim_get_current_buf()
 
-  local contents_opt = {
-    contents = content,
-    filetype = res.kind or 'markdown',
-    buftype = 'nofile',
-    wrap = true,
-    highlight = {
-      normal = 'HoverNormal',
-      border = 'HoverBorder',
-    },
-    bufnr = self.preview_bufnr,
-  }
-  _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
-  vim.bo[self.preview_bufnr].modifiable = false
+  self.bufnr, self.winid = win
+    :new_float(float_option)
+    :setlines(content)
+    :bufopt('filetype', (res.kind or 'markdown'))
+    :bufopt('modifiable', false)
+    :winopt('winhl', 'NormalFloat:HoverNormal,Border:HoverBorder')
+    :winopt('conceallevel', 2)
+    :winopt('concealcursor', 'niv')
+    :winopt('showbreak', 'NONE')
+    :wininfo()
 
-  vim.wo[self.preview_winid].conceallevel = 2
-  vim.wo[self.preview_winid].concealcursor = 'niv'
-  vim.wo[self.preview_winid].showbreak = 'NONE'
+  api.nvim_buf_set_name(self.bufnr, 'lspaga_hover')
 
-  vim.treesitter.start(self.preview_bufnr, 'markdown')
+  vim.treesitter.start(self.bufnr, 'markdown')
   vim.treesitter.query.set(
     'markdown',
     'highlights',
@@ -148,28 +138,27 @@ function hover:open_floating_preview(res, option_fn)
       (#set! conceal ""))
     ]]
   )
-  nvim_buf_set_keymap(self.preview_bufnr, 'n', 'q', '', {
-    noremap = true,
-    nowait = true,
-    callback = function()
-      if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-        api.nvim_win_close(self.preview_winid, true)
-        self:remove_data()
-      end
-    end,
-  })
+
+  util.scroll_in_float(curbuf, self.winid)
+
+  util.map_keys(self.bufnr, 'n', 'q', function()
+    if self.winid and api.nvim_win_is_valid(self.winid) then
+      api.nvim_win_close(self.winid, true)
+      self:remove_data()
+    end
+  end)
 
   if not option_fn then
     api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'WinScrolled' }, {
-      buffer = bufnr,
+      buffer = curbuf,
       callback = function(opt)
-        if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
-          util.delete_scroll_map(bufnr)
-          api.nvim_buf_delete(self.preview_bufnr, { force = true })
+        if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
+          util.delete_scroll_map(curbuf)
+          api.nvim_buf_delete(self.bufnr, { force = true })
         end
 
-        if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-          api.nvim_win_close(self.preview_winid, true)
+        if self.winid and api.nvim_win_is_valid(self.winid) then
+          api.nvim_win_close(self.winid, true)
           self:remove_data()
         end
 
@@ -183,12 +172,8 @@ function hover:open_floating_preview(res, option_fn)
 
     self.enter_leave_id = api.nvim_create_autocmd('BufEnter', {
       callback = function(opt)
-        if
-          opt.buf ~= self.preview_bufnr
-          and self.preview_winid
-          and api.nvim_win_is_valid(self.preview_winid)
-        then
-          api.nvim_win_close(self.preview_winid, true)
+        if opt.buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
+          api.nvim_win_close(self.winid, true)
           if self.enter_leave_id then
             pcall(api.nvim_del_autocmd, self.enter_leave_id)
           end
@@ -198,17 +183,9 @@ function hover:open_floating_preview(res, option_fn)
     })
   end
 
-  api.nvim_buf_set_keymap(self.preview_bufnr, 'n', config.hover.open_link, '', {
-    nowait = true,
-    noremap = true,
-    callback = function()
-      open_link()
-    end,
-  })
-
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    util.scroll_in_preview(bufnr, self.preview_winid)
-  end
+  util.map_keys(self.bufnr, 'n', config.hover.open_link, function()
+    open_link()
+  end)
 end
 
 local function ignore_error(args)
@@ -219,14 +196,15 @@ end
 
 function hover:do_request(args)
   local params = lsp.util.make_position_params()
-  local client = util.get_client_by_method('textDocument/hover')
+  local method = 'textDocument/hover'
+  local client = util.get_client_by_method(method)
   if not client then
     self.pending_request = false
     vim.notify('[Lspsaga] all server of buffer not support hover request')
     return
   end
 
-  client.request('textDocument/hover', params, function(_, result, ctx)
+  client.request(method, params, function(_, result, ctx)
     self.pending_request = false
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
@@ -319,33 +297,25 @@ function hover:render_hover_doc(args)
     return
   end
 
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    if (args and not has_arg(args, '++keep')) or not args then
-      api.nvim_set_current_win(self.preview_winid)
-      return
-    elseif args and has_arg(args, '++keep') then
-      util.delete_scroll_map(api.nvim_get_current_buf())
-      api.nvim_win_close(self.preview_winid, true)
-      self.preview_winid = nil
-      self.preview_bufnr = nil
-      return
-    end
-  end
-
   if self.pending_request then
     print('[Lspsaga] There is already a hover request, please wait for the response.')
     return
   end
 
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    if (args and not has_arg(args, '++keep')) or not args then
+      api.nvim_set_current_win(self.winid)
+      return
+    elseif args and has_arg(args, '++keep') then
+      util.delete_scroll_map(api.nvim_get_current_buf())
+      api.nvim_win_close(self.winid, true)
+      self:remove_data()
+      return
+    end
+  end
+
   self.pending_request = true
   self:do_request(args)
-end
-
-function hover:has_hover()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    return true
-  end
-  return false
 end
 
 return hover

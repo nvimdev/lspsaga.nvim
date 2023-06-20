@@ -47,7 +47,7 @@ local function binary_search(tbl, line)
   local right = #tbl
   local mid = 0
 
-  while left < right do
+  while true do
     mid = bit.rshift(left + right, 1)
     if not tbl[mid] then
       return
@@ -62,8 +62,14 @@ local function binary_search(tbl, line)
       return mid
     elseif line < range.start.line then
       right = mid - 1
+      if left > right then
+        return
+      end
     else
       left = mid + 1
+      if left > right then
+        return
+      end
     end
   end
 end
@@ -108,9 +114,9 @@ local function find_in_node(buf, tbl, line, elements)
 
   local node = tbl[mid]
 
-  insert_elements(buf, tbl[mid], elements)
+  insert_elements(buf, node, elements)
 
-  if node.children ~= nil and next(node.children) ~= nil then
+  if node.children then
     find_in_node(buf, node.children, line, elements)
   end
 end
@@ -169,16 +175,6 @@ local function render_symbol_winbar(buf, symbols)
   return winbar_str
 end
 
-local function match_ignore(buf)
-  local fname = api.nvim_buf_get_name(buf)
-  for _, pattern in pairs(config.ignore_patterns) do
-    if fname:find(pattern) then
-      return true
-    end
-  end
-  return false
-end
-
 local function file_bar(buf)
   local winid = api.nvim_get_current_win()
   if config.show_file then
@@ -192,40 +188,24 @@ local function file_bar(buf)
   end
 end
 
-local function init_winbar(buf)
-  api.nvim_create_autocmd('User', {
-    pattern = 'SagaSymbolUpdate',
-    callback = function(opt)
-      if vim.bo[opt.buf].buftype == 'nofile' then
-        return
-      end
-
-      if api.nvim_get_current_buf() ~= opt.buf then
-        return
-      end
-
-      --ignored after folder file prefix set
-      if match_ignore(opt.buf) then
-        return
-      end
-
-      if #opt.data.symbols == 0 then
-        return
-      end
-      render_symbol_winbar(opt.buf, opt.data.symbols)
-    end,
-    desc = 'Lspsaga get and show symbols',
-  })
+local function init_winbar(buf, symbols)
+  render_symbol_winbar(buf, symbols)
 
   api.nvim_create_autocmd({ 'CursorMoved' }, {
     buffer = buf,
     callback = function()
       local res = symbol:get_buf_symbols(buf)
       if not res then
+        vim.notify(
+          ('[Lspsaga] buffer %s not register in symbol module'):format(buf),
+          vim.log.levels.WARN
+        )
         return
       end
+
       if res.symbols then
         render_symbol_winbar(buf, res.symbols)
+        return
       end
     end,
     desc = 'Lspsaga symbols render and request',

@@ -32,7 +32,7 @@ local function try_render(client, bufnr, pos, data)
   }
 
   client.request('textDocument/implementation', params, function(err, result)
-    if err then
+    if err or api.nvim_get_current_buf() ~= bufnr then
       return
     end
 

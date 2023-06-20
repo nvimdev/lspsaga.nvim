@@ -21,7 +21,7 @@ local function make_floating_popup_options(opts)
 
   if lines_above < lines_below then
     anchor = anchor .. 'N'
-    opts.height = math.min(lines_below, opts.sheight)
+    opts.height = math.min(lines_below, opts.height)
     row = 1
   else
     anchor = anchor .. 'S'
@@ -64,48 +64,51 @@ local function make_floating_popup_options(opts)
   }
 end
 
-function win:new_float(float_opt)
+local function default()
+  return {
+    style = 'minimal',
+    border = ui.border,
+    noautocmd = false,
+  }
+end
+
+local obj = {}
+obj.__index = obj
+
+function obj:bufopt(name, value)
+  api.nvim_set_option_value(name, value, { buf = self.bufnr })
+  return self
+end
+
+function obj:winopt(name, value)
+  api.nvim_set_option_value(name, value, { scope = 'local', win = self.winid })
+  return self
+end
+
+function obj:wininfo()
+  return self.bufnr, self.winid
+end
+
+function obj:setlines(lines)
+  api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
+  return self
+end
+
+function win:new_float(float_opt, force)
   vim.validate({
     float_opt = { float_opt, 't', true },
   })
 
   local enter = float_opt.enter or false
-  local bufnr = float_opt.bufnr or api.nvim_create_buf(false, false)
-  float_opt = make_floating_popup_options(float_opt)
+  self.bufnr = float_opt.bufnr or api.nvim_create_buf(false, false)
+  float_opt = not force and make_floating_popup_options(float_opt)
+    or vim.tbl_extend('force', default(), float_opt)
 
-  local winid = api.nvim_open_win(bufnr, enter, float_opt)
-  return bufnr, winid
+  self.winid = api.nvim_open_win(self.bufnr, enter, float_opt)
+  return setmetatable(win, obj)
 end
 
-function win.get_max_float_width(percent)
-  percent = percent or 0.6
-  return math.floor(vim.o.columns * percent)
-end
-
-function M.win_height_increase(content, percent)
-  local increase = 0
-  local max_width = M.get_max_float_width(percent)
-  local max_len = M.get_max_content_length(content)
-  local new = {}
-  for _, v in pairs(content) do
-    if v:find('\n.') then
-      vim.list_extend(new, vim.split(v, '\n'))
-    else
-      new[#new + 1] = v
-    end
-  end
-  if max_len > max_width then
-    vim.tbl_map(function(s)
-      local cols = vim.fn.strdisplaywidth(s)
-      if cols > max_width then
-        increase = increase + math.floor(cols / max_width)
-      end
-    end, new)
-  end
-  return increase
-end
-
-function M.restore_option()
+function obj:restore_option()
   local minimal_opts = {
     ['number'] = vim.opt.number,
     ['relativenumber'] = vim.opt.relativenumber,
@@ -131,4 +134,4 @@ function M.restore_option()
   return minimal_opts
 end
 
-return M
+return win

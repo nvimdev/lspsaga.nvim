@@ -22,6 +22,7 @@ local default_config = {
   },
   hover = {
     max_width = 0.6,
+    max_height = 0.8,
     open_link = 'gx',
     open_browser = '!chrome',
   },
@@ -104,7 +105,6 @@ local default_config = {
   },
   symbol_in_winbar = {
     enable = true,
-    ignore_patterns = {},
     separator = ' › ',
     hide_keyword = true,
     show_file = true,
@@ -163,7 +163,7 @@ function saga.setup(opts)
   end
 
   if saga.config.symbol_in_winbar.enable then
-    require('lspsaga.symbol'):winbar()
+    require('lspsaga.symbol'):register_module()
   end
 
   if saga.config.diagnostic.on_insert then

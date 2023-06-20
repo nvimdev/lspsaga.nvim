@@ -1,6 +1,6 @@
 local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 
 local function get_action_diff(main_buf, tuple)
   local action = tuple[2]
@@ -73,7 +73,6 @@ local function create_preview_win(content, main_winid, border_hi)
     relative = win_conf.relative,
     win = win_conf.win,
     width = win_conf.width,
-    no_size_override = true,
     col = win_conf.col[false],
     anchor = win_conf.anchor,
     focusable = false,
@@ -87,24 +86,22 @@ local function create_preview_win(content, main_winid, border_hi)
     opt.row = win_conf.row[false] + win_conf.height + 2
     max_height = winheight - opt.row
   end
-  opt.height = #content > max_height and max_height or #content
+
+  opt.height = math.min(max_height, #content)
 
   if config.ui.title then
     opt.title = { { 'Action Preview', 'ActionPreviewTitle' } }
+    opt.title_pos = 'center'
   end
 
-  local content_opts = {
-    contents = content,
-    filetype = 'diff',
-    bufhidden = 'wipe',
-    highlight = {
-      normal = 'ActionPreviewNormal',
-      border = border_hi or 'ActionPreviewBorder',
-    },
-  }
+  preview_buf, preview_winid = win
+    :new_float(opt, true)
+    :setlines(content)
+    :bufopt('filetype', 'diff')
+    :bufopt('bufhidden', 'wipe')
+    :winopt('winhl', 'NormalFloat:ActionPreviewNormal,Border:' .. border_hi)
+    :wininfo()
 
-  preview_buf, preview_winid = window.create_win_with_border(content_opts, opt)
-  vim.bo[preview_buf].syntax = 'on'
   return max_height
 end
 

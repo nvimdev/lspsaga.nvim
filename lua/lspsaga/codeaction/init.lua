@@ -1,7 +1,6 @@
 local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
-local window = require('lspsaga.window')
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+local win = require('lspsaga.window')
 local preview = require('lspsaga.codeaction.preview')
 local util = require('lspsaga.util')
 
@@ -27,10 +26,10 @@ local function clean_msg(msg)
 end
 
 function act:action_callback(tuples)
-  local contents = {}
+  local content = {}
   self.action_tuples = tuples
 
-  for index, client_with_actions in pairs(self.action_tuples) do
+  for index, client_with_actions in ipairs(self.action_tuples) do
     local action_title = ''
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
@@ -49,37 +48,28 @@ function act:action_callback(tuples)
           .. ')'
       end
     end
-    contents[#contents + 1] = action_title
+    content[#content + 1] = action_title
   end
 
-  local content_opts = {
-    contents = contents,
-    filetype = 'sagacodeaction',
-    buftype = 'nofile',
+  local float_opt = {
+    height = #content,
     enter = true,
-    highlight = {
-      normal = 'CodeActionNormal',
-      border = 'CodeActionBorder',
-    },
+    width = util.get_max_content_length(content),
   }
 
-  local opt = {}
-  local max_height = math.floor(vim.o.lines * 0.5)
-  opt.height = max_height < #contents and max_height or #contents
-  local max_width = math.floor(vim.o.columns * 0.7)
-  local max_len = window.get_max_content_length(contents)
-  opt.width = max_len + 10 < max_width and max_len + 5 or max_width
-  opt.no_size_override = true
-
   if config.ui.title then
-    opt.title = {
-      { config.ui.code_action .. ' CodeActions', 'TitleString' },
+    float_opt.title = {
+      { config.ui.code_action .. ' CodeActions', 'Title' },
     }
   end
 
-  self.action_bufnr, self.action_winid = window.create_win_with_border(content_opts, opt)
-  vim.wo[self.action_winid].conceallevel = 2
-  vim.wo[self.action_winid].concealcursor = 'niv'
+  self.action_bufnr, self.action_winid = win
+    :new_float(float_opt)
+    :setlines(content)
+    :winopt('conceallevel', 2)
+    :winopt('concealcursor', 'niv')
+    :wininfo()
+
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
 
@@ -90,9 +80,9 @@ function act:action_callback(tuples)
     end,
   })
 
-  for i = 1, #contents, 1 do
+  for i = 1, #content, 1 do
     local row = i - 1
-    local col = contents[i]:find('%]')
+    local col = content[i]:find('%]')
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
   end
@@ -288,19 +278,15 @@ end
 
 function act:num_shortcut(bufnr)
   for num, _ in pairs(self.action_tuples or {}) do
-    nvim_buf_set_keymap(bufnr, 'n', tostring(num), '', {
-      noremap = true,
-      nowait = true,
-      callback = function()
-        if not self.action_tuples or not self.action_tuples[num] then
-          return
-        end
-        local action = vim.deepcopy(self.action_tuples[num][2])
-        local client = lsp.get_client_by_id(self.action_tuples[num][1])
-        self:close_action_window()
-        do_code_action(action, client, self.enriched_ctx)
-      end,
-    })
+    util.map_keys(bufnr, 'n', tostring(num), function()
+      if not self.action_tuples or not self.action_tuples[num] then
+        return
+      end
+      local action = vim.deepcopy(self.action_tuples[num][2])
+      local client = lsp.get_client_by_id(self.action_tuples[num][1])
+      self:close_action_window()
+      do_code_action(action, client, self.enriched_ctx)
+    end)
   end
 end
 
@@ -312,6 +298,7 @@ function act:code_action(options)
     )
     return
   end
+
   self.pending_request = true
   options = options or {}
   if not options.context then

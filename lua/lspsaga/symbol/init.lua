@@ -71,31 +71,18 @@ function symbol:do_request(buf, client, callback)
 
   self[buf].pending_request = true
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
-    if api.nvim_get_current_buf() ~= buf or ctx.bufnr ~= buf then
-      return
-    end
     self[buf].pending_request = false
     if err then
-      if callback then
-        callback()
-      end
+      vim.notify('[lspsaga] symbols callback error:' .. err)
       return
-    end
-
-    if callback then
-      callback()
-    end
-    if not result then
-      result = {}
     end
 
     self[ctx.bufnr].symbols = result
-    api.nvim_exec_autocmds('User', {
-      pattern = 'SagaSymbolUpdate',
-      modeline = false,
-      data = { symbols = result },
-    })
+    if callback then
+      callback(result)
+    end
   end, buf)
+
   if register then
     self:buf_watcher(buf, client)
   end
@@ -135,7 +122,7 @@ function symbol:node_is_keyword(buf, node)
   return false
 end
 
-function symbol:winbar()
+function symbol:register_module()
   api.nvim_create_autocmd('LspAttach', {
     group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
     callback = function(args)
@@ -146,17 +133,13 @@ function symbol:winbar()
       local winbar = require('lspsaga.symbol.winbar')
       winbar.file_bar(args.buf)
 
-      -- util.server_ready(args.buf, function()
-      --   vim.schedule(function()
-      self:do_request(args.buf, client, function()
-        winbar.init_winbar(args.buf)
+      self:do_request(args.buf, client, function(result)
+        winbar.init_winbar(args.buf, result)
         if config.implement.enable and client.supports_method('textDocument/implementation') then
           require('lspsaga.implement').start(args.buf, client)
         end
       end)
     end,
-    --   end)
-    -- end,
   })
 end
 
