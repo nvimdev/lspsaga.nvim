@@ -72,17 +72,21 @@ function symbol:do_request(buf, client, callback)
   self[buf].pending_request = true
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
     self[buf].pending_request = false
+    if callback then
+      callback()
+    end
+
     if err then
-      vim.notify('[lspsaga] symbols callback error:' .. err)
       return
     end
 
     self[ctx.bufnr].symbols = result
-    if callback then
-      callback(result)
-    end
+    api.nvim_exec_autocmds('User', {
+      pattern = 'SagaSymbolUpdate',
+      modeline = false,
+      data = { symbols = result },
+    })
   end, buf)
-
   if register then
     self:buf_watcher(buf, client)
   end
@@ -133,8 +137,8 @@ function symbol:register_module()
       local winbar = require('lspsaga.symbol.winbar')
       winbar.file_bar(args.buf)
 
-      self:do_request(args.buf, client, function(result)
-        winbar.init_winbar(args.buf, result)
+      self:do_request(args.buf, client, function()
+        winbar.init_winbar(args.buf)
         if config.implement.enable and client.supports_method('textDocument/implementation') then
           require('lspsaga.implement').start(args.buf, client)
         end

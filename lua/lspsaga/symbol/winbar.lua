@@ -63,13 +63,13 @@ local function binary_search(tbl, line)
     elseif line < range.start.line then
       right = mid - 1
       if left > right then
-        return
+        return nil
       end
     else
-      left = mid + 1
       if left > right then
-        return
+        return nil
       end
+      left = mid + 1
     end
   end
 end
@@ -108,15 +108,15 @@ end
 --@private
 local function find_in_node(buf, tbl, line, elements)
   local mid = binary_search(tbl, line)
-  if mid == nil then
+  if not mid then
     return
   end
 
   local node = tbl[mid]
 
-  insert_elements(buf, node, elements)
+  insert_elements(buf, tbl[mid], elements)
 
-  if node.children then
+  if node.children ~= nil and next(node.children) ~= nil then
     find_in_node(buf, node.children, line, elements)
   end
 end
@@ -188,24 +188,29 @@ local function file_bar(buf)
   end
 end
 
-local function init_winbar(buf, symbols)
-  render_symbol_winbar(buf, symbols)
+local function init_winbar(buf)
+  api.nvim_create_autocmd('User', {
+    pattern = 'SagaSymbolUpdate',
+    callback = function(opt)
+      if
+        vim.bo[opt.buf].buftype == 'nofile'
+        or vim.api.nvim_get_current_buf() ~= opt.buf
+        or #opt.data.symbosl == 0
+      then
+        return
+      end
+
+      render_symbol_winbar(opt.buf, opt.data.symbols)
+    end,
+    desc = 'Lspsaga get and show symbols',
+  })
 
   api.nvim_create_autocmd({ 'CursorMoved' }, {
     buffer = buf,
     callback = function()
       local res = symbol:get_buf_symbols(buf)
-      if not res then
-        vim.notify(
-          ('[Lspsaga] buffer %s not register in symbol module'):format(buf),
-          vim.log.levels.WARN
-        )
-        return
-      end
-
       if res.symbols then
         render_symbol_winbar(buf, res.symbols)
-        return
       end
     end,
     desc = 'Lspsaga symbols render and request',
