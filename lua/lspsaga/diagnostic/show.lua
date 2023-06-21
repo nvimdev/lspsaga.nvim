@@ -1,5 +1,5 @@
 local api, fn = vim.api, vim.fn
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 local diag = require('lspsaga.diagnostic')
 local config = require('lspsaga').config
@@ -33,8 +33,8 @@ end
 
 function sd:create_win(opt, content)
   local curbuf = api.nvim_get_current_buf()
-  local increase = window.win_height_increase(content)
-  local max_len = window.get_max_content_length(content)
+  local increase = util.win_height_increase(content)
+  local max_len = util.get_max_content_length(content)
   local max_height = math.floor(vim.o.lines * diag_conf.max_show_height)
   local max_width = math.floor(vim.o.columns * diag_conf.max_show_width)
   local float_opt = {
@@ -91,13 +91,15 @@ function sd:create_win(opt, content)
     })
   end
 
-  _, self.winid = window.create_win_with_border(content_opt, float_opt)
-  vim.wo[self.winid].conceallevel = 2
-  vim.wo[self.winid].concealcursor = 'niv'
-  vim.wo[self.winid].showbreak = ui.lines[3]
-  vim.wo[self.winid].breakindent = true
-  vim.wo[self.winid].breakindentopt = 'shift:2,sbr'
-  vim.wo[self.winid].linebreak = true
+  _, self.winid = win:new_float(float_opt):setlines(content):winopt({
+    ['conceallevel'] = 2,
+    ['concealcursor'] = 'niv',
+    ['showbreak'] = ui.lines[3],
+    ['breakindent'] = true,
+    ['breakindentopt'] = 'shift:2,sbr',
+    ['linebreak'] = true,
+    ['winhl'] = 'NormalFloat:DiagnsoticShowNormal,Border:DiagnosticShowBorder',
+  })
 
   api.nvim_win_set_cursor(self.winid, { 2, 3 })
   for _, key in ipairs(diag_conf.keys.quit_in_show) do

@@ -61,7 +61,7 @@ local function get_action_diff(main_buf, tuple)
       srow = srow == 0 and item.range.start.line or srow
       erow = erow == 0 and item.range['end'].line or erow
       srow = math.min(srow, item.range.start.line)
-      erow = math.min(erow, item.range['end'].line)
+      erow = math.max(erow, item.range['end'].line)
     end, changes)
   end
 

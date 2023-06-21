@@ -39,7 +39,9 @@ local function make_floating_popup_options(opts)
     col = 1
   end
 
-  local title = (opts.border and opts.title) and opts.title or nil
+  local border = opts.border or ui.border
+
+  local title = (border and border ~= 'none' and opts.title) and opts.title or nil
   local title_pos
 
   if title then
@@ -56,7 +58,7 @@ local function make_floating_popup_options(opts)
     row = row + (opts.offset_y or 0),
     style = 'minimal',
     width = opts.width,
-    border = opts.border or ui.border,
+    border = border,
     zindex = opts.zindex or 50,
     title = title,
     title_pos = title_pos,
@@ -117,6 +119,11 @@ function win:new_float(float_opt, force)
     or vim.tbl_extend('force', default(), float_opt)
 
   self.winid = api.nvim_open_win(self.bufnr, enter, float_opt)
+  return setmetatable(win, obj)
+end
+
+function win:new_normal(direct)
+  vim.cmd(direct)
   return setmetatable(win, obj)
 end
 

@@ -62,22 +62,6 @@ function diag:get_diagnostic(opt)
   return vim.diagnostic.get()
 end
 
-function diag:get_diagnostic_sign(severity)
-  local type = self:get_diag_type(severity)
-  local prefix = 'DiagnosticSign'
-  local sign_conf = fn.sign_getdefined(prefix .. type)
-  if not sign_conf or vim.tbl_isempty(sign_conf) then
-    return
-  end
-  local icon = (sign_conf[1] and sign_conf[1].text) and sign_conf[1].text or type:gsub(1, 1)
-  return icon
-end
-
-function diag:get_diag_type(severity)
-  local type = { 'Error', 'Warn', 'Info', 'Hint' }
-  return type[severity]
-end
-
 local function clean_msg(msg)
   local pattern = '%(.+%)%S$'
   if msg:find(pattern) then
@@ -248,37 +232,11 @@ function diag:get_diag_counts(entrys)
   return counts
 end
 
-local function source_clean(source)
-  if source == 'typescript' then
-    return 'ts'
-  end
-  return source
-end
-
 function diag:render_diagnostic_window(entry, option)
   option = option or {}
   self.main_buf = api.nvim_get_current_buf()
-  local diag_type = self:get_diag_type(entry.severity)
-  local sign = self:get_diagnostic_sign(entry.severity)
-
-  local source = ''
-
-  if entry.source then
-    source = source .. source_clean(entry.source)
-  end
-
-  if entry.code then
-    source = source .. '(' .. entry.code .. ')'
-  end
-
-  local content = {}
-  content = vim.split(entry.message, '\n', { trimempty = true })
-  content[1] = sign .. ' ' .. content[1]
-  local source_col
-  if #source > 0 then
-    source_col = #content[1] + 1
-    content[1] = content[1] .. ' ' .. source
-  end
+  local hi_name = 'Diagnostic' .. vim.diagnostic.severity[entry.severity]
+  local content = vim.split(entry.message, '\n', { trimempty = true })
 
   if diag_conf.extend_relatedInformation then
     if entry.user_data.lsp.relatedInformation and #entry.user_data.lsp.relatedInformation > 0 then
@@ -300,8 +258,6 @@ function diag:render_diagnostic_window(entry, option)
     end
   end
 
-  local hi_name = 'Diagnostic' .. diag_type
-
   if diag_conf.show_code_action then
     act:send_request(self.main_buf, {
       context = { diagnostics = self:get_cursor_diagnostic() },
@@ -313,23 +269,33 @@ function diag:render_diagnostic_window(entry, option)
       self:code_action_cb(action_tuples, enriched_ctx)
     end)
   end
+
+  local virt = {}
+  if entry.source then
+    virt[#virt + 1] = { entry.source, 'Comment' }
+  end
+  if entry.code then
+    virt[#virt + 1] = { ' ' .. entry.code, 'Comment' }
+  end
+
   local max_width = math.floor(vim.o.columns * diag_conf.max_width)
   local max_len = util.get_max_content_length(content)
-
-  if max_len < max_width then
-    max_width = max_len
-  elseif max_width - max_len > 15 then
-    max_width = max_len + 10
-  end
+    + (entry.source and #entry.source or 0)
+    + (entry.code and #tostring(entry.code) or 0)
+    + 2
 
   local increase = util.win_height_increase(content, diag_conf.max_width)
 
   local float_opt = {
     relative = 'cursor',
-    width = max_width,
+    width = math.min(max_width, max_len),
     height = #content + increase,
     focusable = true,
   }
+
+  if config.ui.title then
+    float_opt.title = { { vim.diagnostic.severity[entry.severity], hi_name } }
+  end
 
   self.bufnr, self.winid = win
     :new_float(float_opt)
@@ -347,25 +313,21 @@ function diag:render_diagnostic_window(entry, option)
     })
     :wininfo()
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, 0, 0, #sign)
+  api.nvim_buf_set_extmark(self.bufnr, ns, #content - 1, 0, {
+    virt_text = virt,
+    hl_mode = 'combine',
+  })
 
   for i, _ in ipairs(content) do
-    local start = i == 1 and #sign or 3
     api.nvim_buf_add_highlight(
       self.bufnr,
       0,
       diag_conf.text_hl_follow and hi_name or 'DiagnosticText',
       i - 1,
-      start,
+      0,
       -1
     )
   end
-
-  if source_col then
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'DiagnosticSource', 0, source_col, -1)
-  end
-
-  local current_buffer = api.nvim_get_current_buf()
 
   api.nvim_create_autocmd('BufLeave', {
     buffer = self.bufnr,
@@ -376,13 +338,13 @@ function diag:render_diagnostic_window(entry, option)
   })
 
   api.nvim_create_autocmd('BufLeave', {
-    buffer = current_buffer,
+    buffer = self.main_buf,
     once = true,
     callback = function()
       vim.defer_fn(function()
         local cur = api.nvim_get_current_buf()
         if
-          cur ~= current_buffer
+          cur ~= self.main_buf
           and cur ~= self.bufnr
           and self.bufnr
           and api.nvim_buf_is_loaded(self.bufnr)
@@ -399,9 +361,10 @@ function diag:render_diagnostic_window(entry, option)
   end)
 
   local close_autocmds = { 'CursorMoved', 'InsertEnter' }
+  ---TODO: bug here
   vim.defer_fn(function()
     api.nvim_create_autocmd(close_autocmds, {
-      buffer = current_buffer,
+      buffer = self.main_buf,
       once = true,
       callback = function()
         preview_win_close()

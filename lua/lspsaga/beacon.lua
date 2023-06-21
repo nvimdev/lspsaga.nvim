@@ -25,7 +25,8 @@ local function jump_beacon(bufpos, width)
     border = 'none',
   }
 
-  local _, winid = win:new_float(float_opt, true):wininfo()
+  local _, winid =
+    win:new_float(float_opt, true):winopt('winhl', 'NormalFloat:SagaBeacon'):wininfo()
 
   local timer = uv.new_timer()
   timer:start(

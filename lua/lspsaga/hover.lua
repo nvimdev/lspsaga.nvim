@@ -95,8 +95,8 @@ function hover:open_floating_preview(res, option_fn)
   local max_height = math.floor(vim.o.lines * config.hover.max_height)
 
   local float_option = {
-    width = math.min(max_content_len, max_float_width),
-    height = math.min(#content + increase, max_height),
+    width = math.min(max_float_width, max_content_len),
+    height = math.min(max_height, #content + increase),
     zindex = 80,
   }
 
