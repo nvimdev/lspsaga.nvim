@@ -116,12 +116,16 @@ function hover:open_floating_preview(res, option_fn)
   self.bufnr, self.winid = win
     :new_float(float_option)
     :setlines(content)
-    :bufopt('filetype', (res.kind or 'markdown'))
-    :bufopt('modifiable', false)
-    :winopt('winhl', 'NormalFloat:HoverNormal,Border:HoverBorder')
-    :winopt('conceallevel', 2)
-    :winopt('concealcursor', 'niv')
-    :winopt('showbreak', 'NONE')
+    :bufopt({
+      ['filetype'] = (res.kind or 'markdown'),
+      ['modifiable'] = false,
+    })
+    :winopt({
+      ['winhl'] = 'NormalFloat:HoverNormal,Border:HoverBorder',
+      ['conceallevel'] = 2,
+      ['concealcursor'] = 'niv',
+      ['showbreak'] = 'NONE',
+    })
     :wininfo()
 
   api.nvim_buf_set_name(self.bufnr, 'lspaga_hover')

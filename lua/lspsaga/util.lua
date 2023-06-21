@@ -119,7 +119,7 @@ function M.get_max_content_length(contents)
 end
 
 function M.close_win(winid)
-  winid = type(winid) == 'table' and { winid } or winid
+  winid = type(winid) == 'number' and { winid } or winid
   for _, id in ipairs(winid) do
     if api.nvim_win_is_valid(id) then
       api.nvim_win_close(id, true)

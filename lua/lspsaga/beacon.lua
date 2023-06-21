@@ -12,7 +12,7 @@ local function jump_beacon(bufpos, width)
     return
   end
 
-  local opts = {
+  local float_opt = {
     relative = 'win',
     bufpos = bufpos,
     height = 1,
@@ -25,7 +25,7 @@ local function jump_beacon(bufpos, width)
     border = 'none',
   }
 
-  local _, winid = win.open_float_win({})
+  local _, winid = win:new_float(float_opt, true):wininfo()
 
   local timer = uv.new_timer()
   timer:start(

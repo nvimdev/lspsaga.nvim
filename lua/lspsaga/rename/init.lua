@@ -147,7 +147,7 @@ function rename:lsp_rename(arg)
 end
 
 local function auto_save()
-  vim.lsp.handlers['textDocument/rename'] = function(err, result, ctx)
+  lsp.handlers['textDocument/rename'] = function(err, result, ctx)
     if err then
       vim.notify(
         '[Lspsaga] rename failed err in callback' .. table.concat(err),

@@ -65,8 +65,10 @@ function act:action_callback(tuples, enriched_ctx)
   self.action_bufnr, self.action_winid = win
     :new_float(float_opt)
     :setlines(content)
-    :winopt('conceallevel', 2)
-    :winopt('concealcursor', 'niv')
+    :winopt({
+      ['conceallevel'] = 2,
+      ['concealcursor'] = 'niv',
+    })
     :wininfo()
 
   -- initial position in code action window
@@ -208,7 +210,7 @@ function act:set_cursor(action_tuples)
     return
   end
   local tuple = action_tuples[num]
-  preview.action_preview(self.action_winid, self.bufnr, 'CodeActionBorder', tuple)
+  preview.action_preview(self.action_winid, self.bufnr, tuple)
 end
 
 local function apply_action(action, client, enriched_ctx)

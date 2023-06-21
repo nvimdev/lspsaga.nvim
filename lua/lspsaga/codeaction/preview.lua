@@ -90,7 +90,7 @@ local preview_buf, preview_winid
 
 ---create a preview window according given window
 ---default is under the given window
-local function create_preview_win(content, main_winid, border_hi)
+local function create_preview_win(content, main_winid)
   local win_conf = api.nvim_win_get_config(main_winid)
   local max_height
   local opt = {
@@ -123,13 +123,13 @@ local function create_preview_win(content, main_winid, border_hi)
     :setlines(content)
     :bufopt('filetype', 'diff')
     :bufopt('bufhidden', 'wipe')
-    :winopt('winhl', 'NormalFloat:ActionPreviewNormal,Border:' .. border_hi)
+    :winopt('winhl', 'NormalFloat:ActionPreviewNormal,Border:ActionPreviewBorder')
     :wininfo()
 end
 
-local function action_preview(main_winid, main_buf, border_hi, tuple)
+local function action_preview(main_winid, main_buf, tuple)
   local tbl = get_action_diff(main_buf, tuple)
-  if #tbl == 0 or not tbl then
+  if not tbl or #tbl == 0 then
     if preview_winid and api.nvim_win_is_valid(preview_winid) then
       api.nvim_win_close(preview_winid, true)
       preview_buf = nil
@@ -139,7 +139,7 @@ local function action_preview(main_winid, main_buf, border_hi, tuple)
   end
 
   if not preview_winid or not api.nvim_win_is_valid(preview_winid) then
-    create_preview_win(tbl, main_winid, border_hi)
+    create_preview_win(tbl, main_winid)
   else
     --reuse before window
     vim.bo[preview_buf].modifiable = true

@@ -1,12 +1,12 @@
-local api, fn, keymap = vim.api, vim.fn, vim.keymap.set
+local api, fn = vim.api, vim.fn
 local config = require('lspsaga').config
 local act = require('lspsaga.codeaction')
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 local diag_conf = config.diagnostic
 local diagnostic = vim.diagnostic
 local ns = api.nvim_create_namespace('DiagnosticJump')
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+local jump_beacon = require('lspsaga.beacon').jump_beacon
 local nvim_buf_del_keymap = api.nvim_buf_del_keymap
 local action_preview = require('lspsaga.codeaction.preview').action_preview
 local preview_win_close = require('lspsaga.codeaction.preview').preview_win_close
@@ -31,11 +31,7 @@ end
 
 local function get_num()
   local line = api.nvim_get_current_line()
-  local num = line:match('%[(%d+)%]')
-  if num then
-    num = tonumber(num)
-  end
-  return num
+  return line:match('%[(%d+)%]')
 end
 
 ---get the line or cursor diagnostics
@@ -90,7 +86,7 @@ local function clean_msg(msg)
   return msg
 end
 
-function diag:code_action_cb(hi_name)
+function diag:code_action_cb(action_tuples, enriched_ctx)
   if not self.bufnr or not api.nvim_buf_is_loaded(self.bufnr) then
     return
   end
@@ -101,7 +97,7 @@ function diag:code_action_cb(hi_name)
     config.ui.actionfix .. 'Actions',
   }
 
-  for index, client_with_actions in pairs(self.action_tuples) do
+  for index, client_with_actions in pairs(action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
       return
@@ -113,7 +109,7 @@ function diag:code_action_cb(hi_name)
     end
   end
 
-  local increase = window.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
+  local increase = util.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
 
   local start_line = api.nvim_buf_line_count(self.bufnr) + 1
   api.nvim_win_set_config(self.winid, { height = win_conf.height + increase + #contents })
@@ -122,7 +118,7 @@ function diag:code_action_cb(hi_name)
   api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
   api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
-  api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, start_line - 1, 0, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', start_line - 1, 0, -1)
   api.nvim_buf_add_highlight(self.bufnr, 0, 'ActionFix', start_line, 0, #config.ui.actionfix)
 
   api.nvim_buf_add_highlight(self.bufnr, 0, 'TitleString', start_line, #config.ui.actionfix, -1)
@@ -133,16 +129,12 @@ function diag:code_action_cb(hi_name)
   end
 
   if diag_conf.jump_num_shortcut then
-    for num, _ in pairs(self.action_tuples or {}) do
-      nvim_buf_set_keymap(self.main_buf, 'n', tostring(num), '', {
-        noremap = true,
-        nowait = true,
-        callback = function()
-          local action = self.action_tuples[num][2]
-          local client = vim.lsp.get_client_by_id(self.action_tuples[num][1])
-          act:do_code_action(action, client, self.enriched_ctx)
-        end,
-      })
+    for num, _ in pairs(action_tuples or {}) do
+      util.map_keys(self.main_buf, 'n', tostring(num), function()
+        local action = action_tuples[num][2]
+        local client = vim.lsp.get_client_by_id(action_tuples[num][1])
+        act:do_code_action(action, client, enriched_ctx)
+      end)
     end
   end
 
@@ -150,13 +142,9 @@ function diag:code_action_cb(hi_name)
     buffer = self.bufnr,
     callback = function()
       local curline = api.nvim_win_get_cursor(self.winid)[1]
-      if curline > 3 then
-        local num = get_num()
-        if not num then
-          return
-        end
-        local tuple = vim.deepcopy(self.action_tuples[num])
-        action_preview(self.winid, self.main_buf, hi_name, tuple)
+      if curline > 4 then
+        local tuple = action_tuples[tonumber(get_num())]
+        action_preview(self.winid, self.main_buf, tuple)
       end
     end,
     desc = 'Lspsaga show code action preview in diagnostic window',
@@ -167,45 +155,36 @@ function diag:code_action_cb(hi_name)
       local curlnum = api.nvim_win_get_cursor(self.winid)[1]
       local lines = api.nvim_buf_line_count(self.bufnr)
       local col = 6
-      if curlnum < 4 then
-        curlnum = 4
-      elseif curlnum >= 4 then
-        curlnum = curlnum + direction > lines and 4 or curlnum + direction
+      if curlnum < 5 then
+        curlnum = 5
+      elseif curlnum >= 5 then
+        curlnum = curlnum + direction > lines and 5 or curlnum + direction
       end
       api.nvim_win_set_cursor(self.winid, { curlnum, col })
       api.nvim_buf_clear_namespace(self.bufnr, ns, 0, -1)
-      if curlnum > 3 then
+      if curlnum > 4 then
         api.nvim_buf_add_highlight(self.bufnr, ns, 'FinderSelection', curlnum - 1, 6, -1)
       end
 
-      local num = get_num()
-      if not num then
-        return
-      end
-
-      local tuple = vim.deepcopy(self.action_tuples[num])
-
+      local tuple = action_tuples[tonumber(get_num())]
       if tuple then
-        action_preview(self.winid, self.main_buf, hi_name, tuple)
+        action_preview(self.winid, self.main_buf, tuple)
       end
     end)
   end
 
-  nvim_buf_set_keymap(self.main_buf, 'n', config.scroll_preview.scroll_down, '', {
-    noremap = true,
-    nowait = true,
-    callback = function()
-      scroll_with_preview(1)
-    end,
-  })
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.exec_action, function()
+    self:close_win()
+    self:do_code_action(action_tuples, enriched_ctx)
+  end)
 
-  nvim_buf_set_keymap(self.main_buf, 'n', config.scroll_preview.scroll_up, '', {
-    noremap = true,
-    nowait = true,
-    callback = function()
-      scroll_with_preview(-1)
-    end,
-  })
+  util.map_keys(self.main_buf, 'n', config.scroll_preview.scroll_down, function()
+    scroll_with_preview(1)
+  end)
+
+  util.map_keys(self.main_buf, 'n', config.scroll_preview.scroll_up, function()
+    scroll_with_preview(-1)
+  end)
 end
 
 ---get original lsp diagnostic
@@ -236,37 +215,26 @@ function diag:get_cursor_diagnostic()
   return res
 end
 
-function diag:do_code_action()
+function diag:do_code_action(action_tuples, enriched_ctx)
   local num = get_num()
   if not num then
     return
   end
 
-  if self.action_tuples[num] then
-    act:do_code_action(num, vim.deepcopy(self.action_tuples[num]), self.enriched_ctx)
+  if action_tuples[num] then
+    act:do_code_action(num, action_tuples[num], enriched_ctx)
     self:close_win()
   end
   self:clean_data()
 end
 
 function diag:clean_data()
-  window.nvim_close_valid_window(self.winid)
-  util.delete_scroll_map(self.main_buf)
+  util.close_win(self.winid)
+  pcall(util.delete_scroll_map, self.main_buf)
   for num, _ in pairs(self.action_tuples or {}) do
-    pcall(nvim_buf_del_keymap, self.main_buf, 'n', tostring(num))
+    nvim_buf_del_keymap(self.main_buf, 'n', tostring(num))
   end
   clean_ctx()
-end
-
-function diag:apply_map()
-  keymap('n', diag_conf.keys.exec_action, function()
-    self:do_code_action()
-    self:close_win()
-  end, { buffer = self.bufnr, nowait = true })
-
-  keymap('n', diag_conf.keys.quit, function()
-    self:clean_data()
-  end, { buffer = self.bufnr, nowait = true })
 end
 
 function diag:get_diag_counts(entrys)
@@ -334,7 +302,7 @@ function diag:render_diagnostic_window(entry, option)
 
   local hi_name = 'Diagnostic' .. diag_type
 
-  if diag_conf.show_code_action and util.get_client_by_cap('codeActionProvider') then
+  if diag_conf.show_code_action then
     act:send_request(self.main_buf, {
       context = { diagnostics = self:get_cursor_diagnostic() },
       range = {
@@ -342,14 +310,11 @@ function diag:render_diagnostic_window(entry, option)
         ['end'] = { entry.lnum + 1, entry.col },
       },
     }, function(action_tuples, enriched_ctx)
-      self.action_tuples = action_tuples
-      self.enriched_ctx = enriched_ctx
-      act:clean_context()
-      self:code_action_cb(hi_name)
+      self:code_action_cb(action_tuples, enriched_ctx)
     end)
   end
   local max_width = math.floor(vim.o.columns * diag_conf.max_width)
-  local max_len = window.get_max_content_length(content)
+  local max_len = util.get_max_content_length(content)
 
   if max_len < max_width then
     max_width = max_len
@@ -357,34 +322,30 @@ function diag:render_diagnostic_window(entry, option)
     max_width = max_len + 10
   end
 
-  local increase = window.win_height_increase(content, diag_conf.max_width)
+  local increase = util.win_height_increase(content, diag_conf.max_width)
 
-  local content_opts = {
-    contents = content,
-    filetype = 'markdown',
-    wrap = true,
-    highlight = {
-      border = diag_conf.border_follow and hi_name or 'DiagnosticBorder',
-      normal = 'DiagnosticNormal',
-    },
-  }
-
-  local opts = {
+  local float_opt = {
     relative = 'cursor',
-    style = 'minimal',
     width = max_width,
     height = #content + increase,
-    no_size_override = true,
     focusable = true,
   }
 
-  self.bufnr, self.winid = window.create_win_with_border(content_opts, opts)
-  vim.wo[self.winid].conceallevel = 2
-  vim.wo[self.winid].concealcursor = 'niv'
-  vim.wo[self.winid].showbreak = 'NONE'
-  vim.wo[self.winid].breakindent = true
-  vim.wo[self.winid].breakindentopt = 'shift:0'
-  vim.wo[self.winid].linebreak = false
+  self.bufnr, self.winid = win
+    :new_float(float_opt)
+    :setlines(content)
+    :bufopt('filetype', 'markdown')
+    :winopt({
+      ['conceallevel'] = 2,
+      ['concealcursor'] = 'niv',
+      ['showbreak'] = 'NONE',
+      ['breakindent'] = true,
+      ['breakindentopt'] = 'shift:0',
+      ['linebreak'] = false,
+      ['winhl'] = 'NormalFloat:DiagnosticNormal,Border:'
+        .. (diag_conf.border_follow and hi_name or 'DiagnosticBorder'),
+    })
+    :wininfo()
 
   api.nvim_buf_add_highlight(self.bufnr, 0, hi_name, 0, 0, #sign)
 
@@ -433,22 +394,32 @@ function diag:render_diagnostic_window(entry, option)
     end,
   })
 
-  self:apply_map()
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.quit, function()
+    self:clean_data()
+  end)
 
   local close_autocmds = { 'CursorMoved', 'InsertEnter' }
-  local winid = self.winid
   vim.defer_fn(function()
-    util.close_preview_autocmd(current_buffer, { self.winid }, close_autocmds, function()
-      preview_win_close()
-      if winid == self.winid then
-        self:clean_data()
-      end
-    end)
+    api.nvim_create_autocmd(close_autocmds, {
+      buffer = current_buffer,
+      once = true,
+      callback = function()
+        preview_win_close()
+        if self.before_winid then
+          api.nvim_win_close(self.before_winid, true)
+        else
+          self:clean_data()
+        end
+      end,
+    })
   end, 0)
 end
 
 function diag:move_cursor(entry)
   local current_winid = api.nvim_get_current_win()
+  if self.winid then
+    self.before_winid = self.winid
+  end
 
   api.nvim_win_call(current_winid, function()
     -- Save position in the window's jumplist
@@ -466,7 +437,7 @@ function diag:move_cursor(entry)
     if width <= 0 then
       width = #api.nvim_get_current_line()
     end
-    util.jump_beacon({ entry.lnum, entry.col }, width)
+    jump_beacon({ entry.lnum, entry.col }, width)
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
