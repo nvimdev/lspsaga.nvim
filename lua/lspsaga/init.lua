@@ -97,11 +97,10 @@ local default_config = {
     quit = 'q',
   },
   rename = {
-    quit = '<C-c>',
+    quit = '<Esc>',
     exec = '<CR>',
-    mark = 'x',
-    confirm = '<CR>',
     in_select = true,
+    auto_save = true,
   },
   symbol_in_winbar = {
     enable = true,

@@ -25,11 +25,10 @@ local function clean_msg(msg)
   return msg
 end
 
-function act:action_callback(tuples)
+function act:action_callback(tuples, enriched_ctx)
   local content = {}
-  self.action_tuples = tuples
 
-  for index, client_with_actions in ipairs(self.action_tuples) do
+  for index, client_with_actions in ipairs(tuples) do
     local action_title = ''
     if #client_with_actions ~= 2 then
       vim.notify('There is something wrong in aciton_tuples')
@@ -76,7 +75,7 @@ function act:action_callback(tuples)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.action_bufnr,
     callback = function()
-      self:set_cursor()
+      self:set_cursor(tuples)
     end,
   })
 
@@ -87,9 +86,9 @@ function act:action_callback(tuples)
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
   end
 
-  self:apply_action_keys()
+  self:apply_action_keys(tuples, enriched_ctx)
   if config.code_action.num_shortcut then
-    self:num_shortcut(self.action_bufnr)
+    self:num_shortcut(self.action_bufnr, enriched_ctx)
   end
 end
 
@@ -152,7 +151,7 @@ function act:send_request(main_buf, options, callback)
   end
   params.context = options.context
 
-  self.enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
+  local enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
 
   lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)
     self.pending_request = false
@@ -179,7 +178,7 @@ function act:send_request(main_buf, options, callback)
     end
 
     if callback then
-      callback(action_tuples, vim.deepcopy(self.enriched_ctx))
+      callback(action_tuples, enriched_ctx)
     end
   end)
 end
@@ -194,21 +193,21 @@ local function get_num()
   return num
 end
 
-function act:set_cursor()
+function act:set_cursor(action_tuples)
   local col = 1
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
 
-  if current_line == #self.action_tuples + 1 then
+  if current_line == #action_tuples + 1 then
     api.nvim_win_set_cursor(self.action_winid, { 1, col })
   else
     api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
 
   local num = get_num()
-  if not num or not self.action_tuples[num] then
+  if not num or not action_tuples[num] then
     return
   end
-  local tuple = self.action_tuples[num]
+  local tuple = action_tuples[num]
   preview.action_preview(self.action_winid, self.bufnr, 'CodeActionBorder', tuple)
 end
 
@@ -234,7 +233,7 @@ local function apply_action(action, client, enriched_ctx)
   clean_ctx()
 end
 
-local function do_code_action(action, client, enriched_ctx)
+function act:do_code_action(action, client, enriched_ctx)
   if
     not action.edit
     and client
@@ -254,20 +253,16 @@ local function do_code_action(action, client, enriched_ctx)
   end
 end
 
-function act:do_code_action(action, client, enriched_ctx)
-  do_code_action(action, client, enriched_ctx)
-end
-
-function act:apply_action_keys()
+function act:apply_action_keys(action_tuples, enriched_ctx)
   map_keys('n', config.code_action.keys.exec, function()
     local num = get_num()
     if not num then
       return
     end
-    local action = vim.deepcopy(self.action_tuples[num][2])
-    local client = lsp.get_client_by_id(self.action_tuples[num][1])
+    local action = action_tuples[num][2]
+    local client = lsp.get_client_by_id(action_tuples[num][1])
     self:close_action_window()
-    do_code_action(action, client, self.enriched_ctx)
+    self:do_code_action(action, client, enriched_ctx)
   end, { buffer = self.action_bufnr })
 
   map_keys('n', config.code_action.keys.quit, function()
@@ -276,16 +271,16 @@ function act:apply_action_keys()
   end, { buffer = self.action_bufnr })
 end
 
-function act:num_shortcut(bufnr)
+function act:num_shortcut(bufnr, action_tuples)
   for num, _ in pairs(self.action_tuples or {}) do
     util.map_keys(bufnr, 'n', tostring(num), function()
       if not self.action_tuples or not self.action_tuples[num] then
         return
       end
-      local action = vim.deepcopy(self.action_tuples[num][2])
+      local action = action_tuples[num][2]
       local client = lsp.get_client_by_id(self.action_tuples[num][1])
       self:close_action_window()
-      do_code_action(action, client, self.enriched_ctx)
+      self:do_code_action(action, client, self.enriched_ctx)
     end)
   end
 end

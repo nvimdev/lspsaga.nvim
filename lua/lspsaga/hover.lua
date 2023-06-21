@@ -170,13 +170,11 @@ function hover:open_floating_preview(res, option_fn)
       desc = '[Lspsaga] Auto close hover window',
     })
 
-    self.enter_leave_id = api.nvim_create_autocmd('BufEnter', {
+    api.nvim_create_autocmd('BufEnter', {
       callback = function(opt)
         if opt.buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
           api.nvim_win_close(self.winid, true)
-          if self.enter_leave_id then
-            pcall(api.nvim_del_autocmd, self.enter_leave_id)
-          end
+          pcall(api.nvim_del_autocmd, opt.id)
           self:remove_data()
         end
       end,

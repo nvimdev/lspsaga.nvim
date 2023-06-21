@@ -53,12 +53,36 @@ local function get_action_diff(main_buf, tuple)
   local lines = api.nvim_buf_get_lines(main_buf, 0, -1, false)
   api.nvim_buf_set_lines(tmp_buf, 0, -1, false, lines)
 
+  local srow = 0
+  local erow = 0
   for _, changes in pairs(all_changes) do
     lsp.util.apply_text_edits(changes, tmp_buf, client.offset_encoding)
+    vim.tbl_map(function(item)
+      srow = srow == 0 and item.range.start.line or srow
+      erow = erow == 0 and item.range['end'].line or erow
+      srow = math.min(srow, item.range.start.line)
+      erow = math.min(erow, item.range['end'].line)
+    end, changes)
   end
-  local data = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
+
+  local data = api.nvim_buf_get_lines(tmp_buf, srow - 1, erow, false)
+  data = vim.tbl_map(function(line)
+    return line .. '\n'
+  end, data)
+
+  lines = vim.list_slice(lines, srow, erow + 1)
+  lines = vim.tbl_map(function(line)
+    return line .. '\n'
+  end, lines)
+
   api.nvim_buf_delete(tmp_buf, { force = true })
-  local diff = vim.diff(table.concat(lines, '\n') .. '\n', table.concat(data, '\n') .. '\n')
+  local diff = vim.diff(table.concat(lines), table.concat(data), {
+    algorithm = 'minimal',
+    ctxlen = 0,
+  })
+  diff = vim.tbl_filter(function(item)
+    return not item:find('@@%s')
+  end, vim.split(diff, '\n'))
   return diff
 end
 
@@ -101,18 +125,11 @@ local function create_preview_win(content, main_winid, border_hi)
     :bufopt('bufhidden', 'wipe')
     :winopt('winhl', 'NormalFloat:ActionPreviewNormal,Border:' .. border_hi)
     :wininfo()
-
-  return max_height
 end
 
----Get code action preview
----@main_winid  integer the main window id
----@main_buf    integer the main buffer id
----@boder_hi    string border highlight name
----@tuple       list   client actions tuple
 local function action_preview(main_winid, main_buf, border_hi, tuple)
   local tbl = get_action_diff(main_buf, tuple)
-  if not tbl or #tbl == 0 then
+  if #tbl == 0 or not tbl then
     if preview_winid and api.nvim_win_is_valid(preview_winid) then
       api.nvim_win_close(preview_winid, true)
       preview_buf = nil
@@ -121,8 +138,6 @@ local function action_preview(main_winid, main_buf, border_hi, tuple)
     return
   end
 
-  tbl = vim.split(tbl, '\n')
-  table.remove(tbl, 1)
   if not preview_winid or not api.nvim_win_is_valid(preview_winid) then
     create_preview_win(tbl, main_winid, border_hi)
   else

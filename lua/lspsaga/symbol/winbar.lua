@@ -195,7 +195,7 @@ local function init_winbar(buf)
       if
         vim.bo[opt.buf].buftype == 'nofile'
         or vim.api.nvim_get_current_buf() ~= opt.buf
-        or #opt.data.symbosl == 0
+        or #opt.data.symbols == 0
       then
         return
       end
