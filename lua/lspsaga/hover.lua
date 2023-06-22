@@ -125,6 +125,7 @@ function hover:open_floating_preview(res, option_fn)
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
       ['showbreak'] = 'NONE',
+      ['wrap'] = true,
     })
     :wininfo()
 

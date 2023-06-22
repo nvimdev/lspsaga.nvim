@@ -160,20 +160,25 @@ function sd:create_win(opt)
   end, 0)
 end
 
-function sd:write_line(line_count, message, severity, virt_line, srow, erow)
+function sd:write_line(message, severity, virt_line, srow, erow)
   local indent = (' '):rep(3)
   srow = srow or -1
   erow = erow or -1
+  if message:find('\n') then
+    message = vim.split(message, '\n')
+    message = table.concat(message)
+  end
+
   nvim_buf_set_lines(self.bufnr, srow, erow, false, { indent .. message })
   nvim_buf_add_highlight(
     self.bufnr,
     0,
     'Diagnostic' .. vim.diagnostic.severity[severity],
-    line_count,
+    srow,
     0,
     -1
   )
-  nvim_buf_set_extmark(self.bufnr, ns, line_count, 0, {
+  nvim_buf_set_extmark(self.bufnr, ns, srow, 0, {
     virt_text = {
       { virt_line, 'SagaVirtLine' },
       { ui.lines[4], 'SagaVirtLine' },
@@ -212,9 +217,9 @@ function sd:toggle_expand(entrys_list)
     return
   end
 
-  api.nvim_buf_clear_namespace(self.bufnr, ns, lnum - 1, lnum)
   vim.bo[self.bufnr].modifiable = true
   if node.expand then
+    api.nvim_buf_clear_namespace(self.bufnr, ns, lnum - 1, lnum + #node.diags)
     nvim_buf_set_lines(self.bufnr, lnum, lnum + #node.diags, false, {})
     node.expand = false
     nvim_buf_set_extmark(self.bufnr, ns, lnum - 1, 0, {
@@ -232,7 +237,7 @@ function sd:toggle_expand(entrys_list)
     for i, item in ipairs(node.diags) do
       local mes = msg_fmt(item)
       local virt_start = i == #node.diags and ui.lines[1] or ui.lines[2]
-      self:write_line(lnum, mes, item.severity, virt_start, lnum, lnum)
+      self:write_line(mes, item.severity, virt_start, lnum, lnum)
       lnum = lnum + 1
     end
     node.expand = true
@@ -243,12 +248,11 @@ end
 
 function sd:show(opt)
   self.bufnr = api.nvim_create_buf(false, false)
-
   local curnode = opt.entrys_list
+  local count = 0
   while curnode do
     curnode.expand = true
     for i, entry in ipairs(curnode.diags) do
-      local line_count = api.nvim_buf_line_count(self.bufnr)
       local virt_start = i == #curnode.diags and ui.lines[1] or ui.lines[2]
       local mes = msg_fmt(entry)
 
@@ -257,21 +261,19 @@ function sd:show(opt)
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
         -- local counts = diag:get_diag_counts(curnode.diags)
         local text = '  ' .. fname .. ' ' .. entry.bufnr
-        nvim_buf_set_lines(self.bufnr, line_count - 1, -1, false, { text })
-        nvim_buf_set_extmark(self.bufnr, ns, 0, 0, {
+        nvim_buf_set_lines(self.bufnr, count, -1, false, { text })
+        nvim_buf_set_extmark(self.bufnr, ns, count, 0, {
           virt_text = {
             { ui.collapse, 'SagaCollapse' },
           },
           virt_text_pos = 'overlay',
           hl_mode = 'combine',
         })
-        self:write_line(line_count, mes, entry.severity, virt_start)
-        entry.showwinline = line_count + 1
-        curnode.lnum = line_count
-      else
-        self:write_line(line_count, mes, entry.severity, virt_start)
-        entry.showwinline = line_count + 1
+        count = count + 1
+        curnode.lnum = count
       end
+      self:write_line(mes, entry.severity, virt_start, count)
+      count = count + 1
     end
     curnode = curnode.next
   end
