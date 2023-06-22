@@ -129,8 +129,6 @@ function hover:open_floating_preview(res, option_fn)
     })
     :wininfo()
 
-  api.nvim_buf_set_name(self.bufnr, 'lspaga_hover')
-
   vim.treesitter.start(self.bufnr, 'markdown')
   vim.treesitter.query.set(
     'markdown',

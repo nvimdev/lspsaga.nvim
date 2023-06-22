@@ -1,9 +1,10 @@
 local ot = {}
 local api, lsp, fn, keymap = vim.api, vim.lsp, vim.fn, vim.keymap
+local kind = require('lspsaga.lspkind').kind
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 local outline_conf = config.outline
 local ctx = {}
 
@@ -22,37 +23,8 @@ local function clean_ctx()
   end
 end
 
----@private
-local function set_local()
-  local local_options = {
-    bufhidden = 'wipe',
-    number = false,
-    relativenumber = false,
-    filetype = 'lspsagaoutline',
-    buftype = 'nofile',
-    wrap = false,
-    signcolumn = 'no',
-    matchpairs = '',
-    buflisted = false,
-    list = false,
-    spell = false,
-    cursorcolumn = false,
-    cursorline = false,
-    winfixwidth = true,
-    winhl = 'Normal:OutlineNormal',
-    stc = '',
-  }
-  for opt, val in pairs(local_options) do
-    vim.opt_local[opt] = val
-  end
-end
-
 local function get_hi_prefix()
   return 'SagaWinbar'
-end
-
-local function get_kind()
-  return require('lspsaga.lspkind').get_kind()
 end
 
 local function find_node(data, line)
@@ -63,14 +35,33 @@ local function find_node(data, line)
   end
 end
 
----@private
 local function create_outline_window()
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
   vim.cmd(pos .. ' vnew')
   local winid, bufnr = api.nvim_get_current_win(), api.nvim_get_current_buf()
-  set_local()
   api.nvim_win_set_width(winid, config.outline.win_width)
-  return winid, bufnr
+
+  return win
+    :from_exist(bufnr, winid)
+    :bufopt({
+      ['filetype'] = 'sagaoutline',
+      ['bufhidden'] = 'wipe',
+      ['buflisted'] = false,
+    })
+    :winopt({
+      ['wrap'] = false,
+      ['number'] = false,
+      ['relativenumber'] = false,
+      ['signcolumn'] = 'no',
+      ['list'] = false,
+      ['spell'] = false,
+      ['cursorcolumn'] = false,
+      ['cursorline'] = false,
+      ['winfixwidth'] = true,
+      ['winhl'] = 'Normal:OutlineNormal',
+      ['stc'] = '',
+    })
+    :wininfo()
 end
 
 function ot:apply_map(symbol_data)
@@ -147,7 +138,6 @@ function ot:expand_collapse(symbol_data)
     return
   end
   local prefix = get_hi_prefix()
-  local kind = get_kind()
 
   local function increase_or_reduce(lnum, num)
     for k, v in pairs(symbol_data) do
@@ -307,7 +297,7 @@ function ot:auto_preview(symbol_data)
     },
   }
 
-  self.preview_bufnr, self.preview_winid = window.create_win_with_border(content_opts, opts)
+  self.preview_bufnr, self.preview_winid = win:new_float(content_opts, opts)
 
   local lang = vim.treesitter.language.get_lang(vim.bo[self.render_buf].filetype)
   vim.treesitter.start(self.preview_bufnr, lang)
@@ -348,7 +338,6 @@ function ot:render_outline(buf, symbols)
   local res = symbol:category(buf, symbols)
 
   local lines = {}
-  local kind = get_kind() or {}
   local fname = util.get_path_info(buf, 1)
   local data = util.icon_from_devicon(vim.bo[buf].filetype)
   lines[#lines + 1] = ' ' .. data[1] .. fname[1]

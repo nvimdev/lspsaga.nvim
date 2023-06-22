@@ -154,6 +154,10 @@ function symbol:outline()
   require('lspsaga.symbol.outline'):outline()
 end
 
+function symbol:range_to_list(symbols)
+  local list = {}
+end
+
 --@return table
 function symbol:category(buf, symbols)
   local res = {}

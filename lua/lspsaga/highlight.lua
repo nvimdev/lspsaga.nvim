@@ -12,7 +12,7 @@ local function hi_define()
     SagaCollapse = { link = 'Comment' },
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
-    SagaVirtLine = { link = 'Operator' },
+    SagaVirtLine = { link = 'Comment' },
     -- code action
     ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },

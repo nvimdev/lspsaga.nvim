@@ -255,9 +255,7 @@ function sd:show(opt)
     for i, entry in ipairs(curnode.diags) do
       local virt_start = i == #curnode.diags and ui.lines[1] or ui.lines[2]
       local mes = msg_fmt(entry)
-
       if i == 1 then
-        ---@diagnostic disable-next-line: param-type-mismatch
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
         -- local counts = diag:get_diag_counts(curnode.diags)
         local text = '  ' .. fname .. ' ' .. entry.bufnr
