@@ -5,10 +5,10 @@ local diag = require('lspsaga.diagnostic')
 local config = require('lspsaga').config
 local ui = config.ui
 local diag_conf = config.diagnostic
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
 local ns = api.nvim_create_namespace('SagaDiagnostic')
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local nvim_buf_add_highlight = api.nvim_buf_add_highlight
+local nvim_buf_set_lines = api.nvim_buf_set_lines
 local ctx = {}
 local sd = {}
 sd.__index = sd
@@ -24,13 +24,6 @@ local function clean_ctx()
   end
 end
 
----@private sort table by diagnsotic severity
-local function sort_by_severity(entrys)
-  table.sort(entrys, function(k1, k2)
-    return k1.severity < k2.severity
-  end)
-end
-
 function sd:create_win(opt)
   local curbuf = api.nvim_get_current_buf()
   local content = api.nvim_buf_get_lines(self.bufnr, 0, -1, false)
@@ -39,9 +32,8 @@ function sd:create_win(opt)
   local max_height = math.floor(vim.o.lines * diag_conf.max_show_height)
   local max_width = math.floor(vim.o.columns * diag_conf.max_show_width)
   local float_opt = {
-    width = max_len < max_width and max_len or max_width,
-    height = #content + increase > max_height and max_height or #content + increase,
-    no_size_override = true,
+    width = math.min(max_width, max_len),
+    height = math.min(max_height, #content + increase),
   }
 
   if config.ui.title then
@@ -80,258 +72,119 @@ function sd:create_win(opt)
     })
   end
 
-  _, self.winid = win:new_float(float_opt):setlines(content):winopt({
-    ['conceallevel'] = 2,
-    ['concealcursor'] = 'niv',
-    ['showbreak'] = ui.lines[3],
-    ['breakindent'] = true,
-    ['breakindentopt'] = 'shift:2,sbr',
-    ['linebreak'] = true,
-    ['winhl'] = 'NormalFloat:DiagnsoticShowNormal,Border:DiagnosticShowBorder',
-  })
+  self.bufnr, self.winid = win
+    :new_float(float_opt)
+    :setlines(content)
+    :bufopt({
+      ['filetype'] = 'markdown',
+      ['modifiable'] = false,
+    })
+    :winopt({
+      ['conceallevel'] = 2,
+      ['concealcursor'] = 'niv',
+      ['winhl'] = 'NormalFloat:DiagnosticShowNormal,Border:DiagnosticShowBorder',
+    })
+    :wininfo()
 
   api.nvim_win_set_cursor(self.winid, { 2, 3 })
   for _, key in ipairs(diag_conf.keys.quit_in_show) do
-    nvim_buf_set_keymap(self.bufnr, 'n', key, '', {
-      noremap = true,
-      nowait = true,
-      callback = function()
-        local curwin = api.nvim_get_current_win()
-        if curwin ~= self.winid then
-          return
-        end
-        if api.nvim_win_is_valid(curwin) then
-          api.nvim_win_close(curwin, true)
-          clean_ctx()
-        end
-      end,
-    })
+    util.map_keys(self.bufnr, 'n', key, function()
+      local curwin = api.nvim_get_current_win()
+      if curwin ~= self.winid then
+        return
+      end
+      if api.nvim_win_is_valid(curwin) then
+        api.nvim_win_close(curwin, true)
+        clean_ctx()
+      end
+    end)
   end
 
   vim.defer_fn(function()
-    util.close_preview_autocmd(curbuf, self.winid, close_autocmds)
+    api.nvim_create_autocmd(close_autocmds, {
+      buffer = curbuf,
+      once = true,
+      callback = function()
+        api.nvim_win_close(self.winid, true)
+      end,
+    })
   end, 0)
 end
 
-local function find_node_by_lnum(lnum, entrys)
-  for _, items in pairs(entrys) do
-    for _, item in ipairs(items.diags) do
-      if item.winline == lnum then
-        return item
-      end
-    end
-  end
-end
-
-local function change_winline(cond, direction, entrys)
-  for _, items in pairs(entrys) do
-    for _, item in ipairs(items.diags) do
-      if cond(item) then
-        item.winline = item.winline + direction
-      end
-    end
-  end
+---@private sort table by diagnsotic severity
+local function sort_by_severity(entrys)
+  return table.sort(entrys, function(k1, k2)
+    return k1.severity < k2.severity
+  end)
 end
 
 function sd:show(opt)
-  local indent = '   '
-  local line_count = 0
-  local content = {}
-  local curbuf = api.nvim_get_current_buf()
-  local icon_data = util.icon_from_devicon(vim.bo[curbuf].filetype)
+  local indent = (' '):rep(3)
   self.bufnr = api.nvim_create_buf(false, false)
-  vim.bo[self.bufnr].buftype = 'nofile'
 
-  local titlehi = {}
-  for bufnr, items in pairs(opt.entrys) do
-    ---@diagnostic disable-next-line: param-type-mismatch
-    local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(bufnr)), ':t')
-    local counts = diag:get_diag_counts(items.diags)
-    local text = ui.collapse .. ' ' .. icon_data[1] .. fname .. ' Bufnr[[' .. bufnr .. ']]'
-
-    local diaghi = {}
-    for i, v in ipairs(counts) do
-      local sign = diag:get_diagnostic_sign(i)
-      if v > 0 then
-        local start = #text
-        text = text .. ' ' .. sign .. v
-        diaghi[#diaghi + 1] = {
-          'Diagnostic' .. vim.diagnostic.severity[i],
-          start,
-          #text,
-        }
-      end
-    end
-
-    content[#content + 1] = text
-    api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-    line_count = line_count + 1
-    titlehi[tostring(line_count - 1)] = {
-      { 'SagaCollapse', 0, #ui.collapse },
-      icon_data[2] and {
-        icon_data[2],
-        #ui.collapse + 1,
-        #ui.collapse + 1 + #icon_data[1],
-      } or nil,
-      {
-        'DiagnosticFname',
-        #ui.collapse + 1 + (icon_data[2] and #icon_data[1] or 0),
-        #ui.collapse + 1 + (icon_data[2] and #icon_data[1] or 0) + #fname,
-      },
-      {
-        'DiagnosticBufnr',
-        #ui.collapse + 2 + (icon_data[2] and #icon_data[1] or 0) + #fname,
-        #ui.collapse + 14 + (icon_data[2] and #icon_data[1] or 0) + #fname,
-      },
-      unpack(diaghi),
-    }
-
-    for _, v in ipairs(titlehi[tostring(line_count - 1)]) do
-      nvim_buf_add_highlight(self.bufnr, 0, v[1], line_count - 1, v[2], v[3])
-    end
-
-    items.expand = true
-    for i, item in ipairs(items.diags) do
-      if item.message:find('\n') then
-        item.message = item.message:gsub('\n', '')
-      end
-      text = indent .. item.message
-      api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { text })
-      line_count = line_count + 1
-      nvim_buf_add_highlight(
-        self.bufnr,
-        0,
-        diag_conf.text_hl_follow and 'Diagnostic' .. vim.diagnostic.severity[item.severity]
-          or 'DiagnosticText',
-        line_count - 1,
-        3,
-        -1
-      )
-      item.winline = line_count
-      content[#content + 1] = text
-      nvim_buf_set_extmark(self.bufnr, ns, line_count - 1, 0, {
-        virt_text = {
-          { i == #items.diags and ui.lines[1] or ui.lines[2], 'FinderLines' },
-          { ui.lines[4]:rep(2), 'FinderLines' },
-        },
-        virt_text_pos = 'overlay',
-      })
-    end
-    api.nvim_buf_set_lines(self.bufnr, line_count, line_count + 1, false, { '' })
-    line_count = line_count + 1
-  end
-
-  vim.bo[self.bufnr].modifiable = false
-
-  local nontext = api.nvim_get_hl_by_name('NonText', true)
-  api.nvim_set_hl(ns, 'NonText', {
-    link = 'FinderLines',
-  })
-
-  local function expand_or_collapse(text)
-    local change = text:find(ui.expand) and { ui.expand, ui.collapse } or { ui.collapse, ui.expand }
-    text = text:gsub(change[1], change[2])
-    local curline = api.nvim_win_get_cursor(self.winid)[1]
-    vim.bo[self.bufnr].modifiable = true
-    local bufnr = text:match('%[%[(.+)%]%]')
-    local data = opt.entrys[tostring(bufnr)]
-    local hi = titlehi[tostring(curline - 1)]
-    if data.expand then
-      api.nvim_buf_clear_namespace(self.bufnr, ns, curline - 1, curline + #data.diags)
-      api.nvim_buf_set_lines(self.bufnr, curline - 1, curline + #data.diags, false, { text })
-      for _, v in ipairs(hi) do
-        nvim_buf_add_highlight(self.bufnr, 0, v[1], curline - 1, v[2], v[3])
-      end
-      for _, v in ipairs(data.diags) do
-        v.winline = -1
-      end
-      change_winline(function(item)
-        return item.winline > curline + #data.diags
-      end, -#data.diags, opt.entrys)
-      data.expand = false
-    else
-      local lines = {}
-      vim.tbl_map(function(k)
-        lines[#lines + 1] = indent .. k.message
-      end, data.diags)
-      api.nvim_buf_set_lines(self.bufnr, curline - 1, curline, false, { text, unpack(lines) })
-      for _, v in ipairs(hi) do
-        nvim_buf_add_highlight(self.bufnr, 0, v[1], curline - 1, v[2], v[3])
-      end
-
-      for i, v in ipairs(data.diags) do
-        v.winline = curline + i
-        nvim_buf_add_highlight(
-          self.bufnr,
-          0,
-          diag_conf.text_hl_follow and 'Diagnostic' .. vim.diagnostic.severity[v.severity]
-            or 'DiagnosticText',
-          v.winline - 1,
-          3,
-          -1
-        )
-        nvim_buf_set_extmark(self.bufnr, ns, curline + i - 1, 0, {
+  local curnode = opt.entrys_list
+  while curnode do
+    curnode.expand = true
+    for i, entry in ipairs(curnode.diags) do
+      local line_count = api.nvim_buf_line_count(self.bufnr)
+      if i == 1 then
+        ---@diagnostic disable-next-line: param-type-mismatch
+        local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
+        -- local counts = diag:get_diag_counts(curnode.diags)
+        local text = '  ' .. fname .. ' ' .. entry.bufnr
+        nvim_buf_set_lines(self.bufnr, line_count - 1, -1, false, { text })
+        nvim_buf_set_extmark(self.bufnr, ns, 0, 0, {
           virt_text = {
-            { i == #data.diags and ui.lines[1] or ui.lines[2], 'FinderLines' },
-            { ui.lines[4]:rep(2), 'FinderLines' },
+            { config.ui.collapse, 'SagaCollapse' },
           },
           virt_text_pos = 'overlay',
+          hl_mode = 'combine',
         })
-      end
-      data.expand = true
-    end
-    vim.bo[self.bufnr].modifiable = false
-  end
-
-  nvim_buf_set_keymap(self.bufnr, 'n', diag_conf.keys.expand_or_jump, '', {
-    nowait = true,
-    silent = true,
-    callback = function()
-      local text = api.nvim_get_current_line()
-      if text:find(ui.expand) or text:find(ui.collapse) then
-        expand_or_collapse(text)
-        return
-      end
-      local winline = api.nvim_win_get_cursor(self.winid)[1]
-      api.nvim_set_hl(0, 'NonText', {
-        foreground = nontext.foreground,
-        background = nontext.background,
-      })
-
-      local entry = find_node_by_lnum(winline, opt.entrys)
-
-      if entry then
-        api.nvim_win_close(self.winid, true)
-        clean_ctx()
-        local winid = fn.bufwinid(entry.bufnr)
-        if winid == -1 then
-          winid = api.nvim_get_current_win()
+      else
+        nvim_buf_set_lines(self.bufnr, -1, -1, false, { indent .. entry.message })
+        for j = 0, 2 do
+          nvim_buf_set_extmark(self.bufnr, ns, 0, j, {
+            virt_text = {
+              { i == #curnode.diags and config.ui.lines[1] or config.ui.lines[2] },
+              { config.ui.lines[4], 'SagaVirtLine' },
+            },
+            virt_text_pos = 'overlay',
+            hl_mode = 'combine',
+          })
         end
-        api.nvim_set_current_win(winid)
-        api.nvim_win_set_cursor(winid, { entry.lnum + 1, entry.col })
-        local width = #api.nvim_get_current_line()
-        util.jump_beacon({ entry.lnum, entry.col }, width)
       end
-    end,
-  })
-
+    end
+    curnode = curnode.next
+  end
   self:create_win(opt)
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.expand_or_jump, function() end)
 end
 
----migreate diagnostic to a table that
----use in show function
-local function migrate_diagnostics(entrys)
-  local tbl = {}
+local function new_node()
+  return {
+    next = nil,
+    diags = {},
+    expand = false,
+  }
+end
+
+---single linked list
+local function generate_list(entrys)
+  local list = new_node()
+
+  local curnode
   for _, item in ipairs(entrys) do
-    local key = tostring(item.bufnr)
-    if not tbl[key] then
-      tbl[key] = {
-        diags = {},
-      }
+    if #list.diags == 0 then
+      curnode = list
+    elseif item.bufnr ~= curnode.diags[#curnode.diags].bufnr then
+      if not curnode.next then
+        curnode.next = new_node()
+      end
+      curnode = curnode.next
     end
-    tbl[key].diags[#tbl[key].diags + 1] = item
+    curnode.diags[#curnode.diags + 1] = item
   end
-  return tbl
+  return list
 end
 
 function sd:show_diagnostics(opt)
@@ -339,8 +192,7 @@ function sd:show_diagnostics(opt)
   if next(entrys) == nil then
     return
   end
-  sort_by_severity(entrys)
-  opt.entrys = migrate_diagnostics(entrys)
+  opt.entrys_list = generate_list(entrys)
   self:show(opt)
 end
 

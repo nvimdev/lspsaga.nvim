@@ -12,6 +12,7 @@ local function hi_define()
     SagaCollapse = { link = 'Comment' },
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
+    SagaVirtLine = { link = 'Operator' },
     -- code action
     ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
@@ -33,7 +34,6 @@ local function hi_define()
     FinderSpinnerTitle = { link = 'Statement' },
     FinderSpinner = { link = 'Statement' },
     FinderPreview = { link = 'Search' },
-    FinderLines = { link = 'Operator' },
     FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },

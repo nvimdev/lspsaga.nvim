@@ -369,7 +369,7 @@ function diag:render_diagnostic_window(entry, option)
         if self.before_winid then
           api.nvim_win_close(self.before_winid, true)
           self.before_winid = nil
-        else
+        elseif self.winid then
           self:clean_data()
         end
       end,
