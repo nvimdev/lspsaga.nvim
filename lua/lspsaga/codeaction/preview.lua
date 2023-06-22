@@ -119,7 +119,7 @@ local function create_preview_win(content, main_winid)
   end
 
   preview_buf, preview_winid = win
-    :new_float(opt, true)
+    :new_float(opt, false, true)
     :setlines(content)
     :bufopt('filetype', 'diff')
     :bufopt('bufhidden', 'wipe')

@@ -1,5 +1,5 @@
 local api = vim.api
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 local term = {}
 
 local ctx = {}
@@ -29,7 +29,7 @@ function term:open_float_terminal(command)
   local col = math.ceil((vim.o.columns - win_width) * 0.5)
 
   -- set some options
-  local opts = {
+  local float_opt = {
     style = 'minimal',
     relative = 'editor',
     width = win_width,
@@ -38,26 +38,20 @@ function term:open_float_terminal(command)
     col = col,
   }
 
-  local content_opts = {
-    contents = {},
-    enter = true,
-    bufhidden = 'hide',
-    highlight = {
-      normal = 'TerminalNormal',
-      border = 'TerminalBorder',
-    },
-  }
   local spawn_new = vim.tbl_isempty(ctx) and true or false
 
   if not spawn_new then
-    content_opts.bufnr = ctx.term_bufnr
+    float_opt.bufnr = ctx.term_bufnr
     api.nvim_buf_set_option(ctx.term_bufnr, 'modified', false)
   end
   ctx.cur_win = api.nvim_get_current_win()
   ctx.pos = api.nvim_win_get_cursor(0)
 
-  ctx.term_bufnr, ctx.term_winid, ctx.shadow_bufnr, ctx.shadow_winid =
-    window.create_win_with_border(content_opts, opts)
+  ctx.term_bufnr, ctx.term_winid = win
+    :new_float(float_opt, true, true)
+    :bufopt('bufhidden', 'hide')
+    :winopt('winhl', 'NormalFloat:TerminalNormal,Border:TerminalBorder')
+    :wininfo()
 
   if spawn_new then
     vim.fn.termopen(cmd, {

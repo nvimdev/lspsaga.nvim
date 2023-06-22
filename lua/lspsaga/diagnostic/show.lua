@@ -80,8 +80,8 @@ function sd:create_win(opt)
     width = math.min(max_width, max_len),
     height = math.min(max_height, #content + increase),
     bufnr = self.bufnr,
-    enter = true,
   }
+  local enter = true
 
   if ui.title then
     if opt.buffer then
@@ -101,7 +101,7 @@ function sd:create_win(opt)
   if opt.arg and opt.arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
-    float_opt.enter = false
+    enter = false
   else
     opt.focusable = true
     api.nvim_create_autocmd('BufEnter', {
@@ -120,7 +120,7 @@ function sd:create_win(opt)
   end
 
   self.bufnr, self.winid = win
-    :new_float(float_opt)
+    :new_float(float_opt, enter)
     :bufopt({
       ['filetype'] = 'markdown',
       ['modifiable'] = false,

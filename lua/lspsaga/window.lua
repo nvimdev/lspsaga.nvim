@@ -119,12 +119,12 @@ function obj:winsetconf(config)
   return self
 end
 
-function win:new_float(float_opt, force)
+function win:new_float(float_opt, enter, force)
   vim.validate({
     float_opt = { float_opt, 't', true },
   })
+  enter = enter or false
 
-  local enter = float_opt.enter or false
   self.bufnr = float_opt.bufnr or api.nvim_create_buf(false, false)
   float_opt = not force and make_floating_popup_options(float_opt)
     or vim.tbl_extend('force', default(), float_opt)

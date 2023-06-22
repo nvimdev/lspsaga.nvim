@@ -85,7 +85,6 @@ function rename:lsp_rename(arg)
   local float_opt = {
     height = 1,
     width = 30,
-    enter = true,
   }
 
   if config.ui.title then
@@ -97,7 +96,7 @@ function rename:lsp_rename(arg)
   self:find_reference()
 
   self.bufnr, self.winid = win
-    :new_float(float_opt)
+    :new_float(float_opt, true)
     :setlines({ cword })
     :winopt('scrolloff', 0)
     :winopt('winhl', 'NormalFloat:RenameNormal,Border:RenameBorder')

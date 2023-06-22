@@ -52,7 +52,6 @@ function act:action_callback(tuples, enriched_ctx)
 
   local float_opt = {
     height = #content,
-    enter = true,
     width = util.get_max_content_length(content),
   }
 
@@ -63,7 +62,7 @@ function act:action_callback(tuples, enriched_ctx)
   end
 
   self.action_bufnr, self.action_winid = win
-    :new_float(float_opt)
+    :new_float(float_opt, true)
     :setlines(content)
     :winopt({
       ['conceallevel'] = 2,
