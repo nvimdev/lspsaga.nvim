@@ -133,6 +133,7 @@ function win:new_float(float_opt, enter, force)
   return setmetatable(win, obj)
 end
 
+---`set splitbelow` option for new sp
 function win:new_normal(direct)
   vim.cmd(direct)
   return setmetatable(win, obj)

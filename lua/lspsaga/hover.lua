@@ -2,6 +2,7 @@ local api, fn, lsp = vim.api, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local win = require('lspsaga.window')
 local util = require('lspsaga.util')
+local treesitter = vim.treesitter
 local hover = {}
 
 local function has_arg(args, arg)
@@ -13,10 +14,9 @@ local function has_arg(args, arg)
 end
 
 local function open_link()
-  local ts_utils = require('nvim-treesitter.ts_utils')
-  local node = ts_utils.get_node_at_cursor()
-
-  if node ~= nil and node:type() ~= 'inline_link' then
+  local curbuf = api.nvim_get_current_buf()
+  local node = treesitter.get_node({ bufnr = curbuf })
+  if node and node:type() ~= 'inline_link' then
     node = node:parent()
   end
 
@@ -26,8 +26,7 @@ local function open_link()
     for i = 0, node:named_child_count() - 1, 1 do
       local child = node:named_child(i)
       if child:type() == 'link_destination' then
-        ---@diagnostic disable-next-line: undefined-field
-        path = vim.treesitter.get_node_text(child, 0)
+        path = treesitter.get_node_text(child, curbuf)
         break
       end
     end

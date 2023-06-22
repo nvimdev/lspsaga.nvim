@@ -192,9 +192,10 @@ local function init_winbar(buf)
   api.nvim_create_autocmd('User', {
     pattern = 'SagaSymbolUpdate',
     callback = function(opt)
+      local curbuf = api.nvim_get_current_buf()
       if
         vim.bo[opt.buf].buftype == 'nofile'
-        or vim.api.nvim_get_current_buf() ~= opt.buf
+        or curbuf ~= opt.data.bufnr
         or #opt.data.symbols == 0
       then
         return

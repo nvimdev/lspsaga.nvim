@@ -1,5 +1,6 @@
 local api = vim.api
 local helper = require('test.helper')
+require('lspsaga').setup({})
 
 local function create_root()
   local mod_file = helper.join_paths(helper.test_dir(), 'go.mod')
@@ -23,7 +24,6 @@ describe('implement moudle', function()
   end)
 
   it('work as expect', function()
-    require('lspsaga').setup({})
     api.nvim_buf_set_lines(bufnr, 0, -1, false, {
       'package main',
       'type Phone interface {',

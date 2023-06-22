@@ -36,7 +36,7 @@ local function treesitter_dep()
     highlight = { enable = true },
     parser_install_dir = parser_dir,
   })
-  if vim.fn.filereadable(join_paths(parser_dir, 'rust.so')) == 0 then
+  if vim.fn.filereadable(join_paths(parser_dir, 'lua.so')) == 0 then
     vim.cmd('TSInstallSync rust')
   end
 end
@@ -54,7 +54,7 @@ local function lspconfig_dep()
     })
   end
   local lspconfig = require('lspconfig')
-  lspconfig.gopls.setup({})
+  lspconfig.lua_ls.setup({})
 end
 
 return {

@@ -87,7 +87,7 @@ function symbol:do_request(buf, client, callback)
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
-      data = { symbols = result or {} },
+      data = { symbols = result or {}, bufnr = ctx.bufnr },
     })
   end, buf)
   if register then
@@ -154,8 +154,8 @@ function symbol:outline()
   require('lspsaga.symbol.outline'):outline()
 end
 
-function symbol:range_to_list(symbols)
-  local list = {}
+function symbol:liner(symbols)
+  local graph = {}
 end
 
 --@return table
