@@ -24,6 +24,51 @@ local function clean_ctx()
   end
 end
 
+local function new_node()
+  return {
+    next = nil,
+    diags = {},
+    expand = false,
+    lnum = 0,
+  }
+end
+
+---single linked list
+local function generate_list(entrys)
+  local list = new_node()
+
+  local curnode
+  for _, item in ipairs(entrys) do
+    if #list.diags == 0 then
+      curnode = list
+    elseif item.bufnr ~= curnode.diags[#curnode.diags].bufnr then
+      if not curnode.next then
+        curnode.next = new_node()
+      end
+      curnode = curnode.next
+    end
+    curnode.diags[#curnode.diags + 1] = item
+  end
+  return list
+end
+
+local function find_node(list, lnum)
+  local curnode = list
+  while curnode do
+    if curnode.lnum == lnum then
+      return curnode
+    end
+    curnode = curnode.next
+  end
+end
+
+local function range_node_winline(node, val)
+  while node do
+    node.lnum = node.lnum + val
+    node = node.next
+  end
+end
+
 function sd:create_win(opt)
   local curbuf = api.nvim_get_current_buf()
   local content = api.nvim_buf_get_lines(self.bufnr, 0, -1, false)
@@ -34,9 +79,11 @@ function sd:create_win(opt)
   local float_opt = {
     width = math.min(max_width, max_len),
     height = math.min(max_height, #content + increase),
+    bufnr = self.bufnr,
+    enter = true,
   }
 
-  if config.ui.title then
+  if ui.title then
     if opt.buffer then
       float_opt.title = 'Buffer'
     elseif opt.line then
@@ -74,7 +121,6 @@ function sd:create_win(opt)
 
   self.bufnr, self.winid = win
     :new_float(float_opt)
-    :setlines(content)
     :bufopt({
       ['filetype'] = 'markdown',
       ['modifiable'] = false,
@@ -104,22 +150,98 @@ function sd:create_win(opt)
     api.nvim_create_autocmd(close_autocmds, {
       buffer = curbuf,
       once = true,
-      callback = function()
-        api.nvim_win_close(self.winid, true)
+      callback = function(args)
+        if self.winid and api.nvim_win_is_valid(self.winid) then
+          api.nvim_win_close(self.winid, true)
+        end
+        api.nvim_del_autocmd(args.id)
       end,
     })
   end, 0)
 end
 
----@private sort table by diagnsotic severity
-local function sort_by_severity(entrys)
-  return table.sort(entrys, function(k1, k2)
-    return k1.severity < k2.severity
-  end)
+function sd:write_line(line_count, message, severity, virt_line, srow, erow)
+  local indent = (' '):rep(3)
+  srow = srow or -1
+  erow = erow or -1
+  nvim_buf_set_lines(self.bufnr, srow, erow, false, { indent .. message })
+  nvim_buf_add_highlight(
+    self.bufnr,
+    0,
+    'Diagnostic' .. vim.diagnostic.severity[severity],
+    line_count,
+    0,
+    -1
+  )
+  nvim_buf_set_extmark(self.bufnr, ns, line_count, 0, {
+    virt_text = {
+      { virt_line, 'SagaVirtLine' },
+      { ui.lines[4], 'SagaVirtLine' },
+      { ui.lines[4], 'SagaVirtLine' },
+    },
+    virt_text_pos = 'overlay',
+    hl_mode = 'combine',
+  })
+end
+
+local function msg_fmt(entry)
+  return entry.message
+    .. ' '
+    .. entry.lnum
+    .. ':'
+    .. entry.col
+    .. ':'
+    .. entry.bufnr
+    .. ' '
+    .. (entry.source and entry.source or '')
+    .. (entry.code and entry.code or '')
+end
+
+function sd:toggle_expand(entrys_list)
+  local lnum = api.nvim_win_get_cursor(0)[1]
+  local node = find_node(entrys_list, lnum)
+  if not node then
+    local line = api.nvim_get_current_line()
+    local info = line:match('%s(%d+:%d+:%d+)')
+    if not info then
+      return
+    end
+    local ln, col, bn = unpack(vim.split(info, ':'))
+    local wins = fn.win_findbuf(tonumber(bn))
+    api.nvim_win_set_cursor(wins[#wins], { tonumber(ln) + 1, tonumber(col) })
+    return
+  end
+
+  api.nvim_buf_clear_namespace(self.bufnr, ns, lnum - 1, lnum)
+  vim.bo[self.bufnr].modifiable = true
+  if node.expand then
+    nvim_buf_set_lines(self.bufnr, lnum, lnum + #node.diags, false, {})
+    node.expand = false
+    nvim_buf_set_extmark(self.bufnr, ns, lnum - 1, 0, {
+      virt_text = { { ui.expand, 'SagaExpand' } },
+      virt_text_pos = 'overlay',
+      hl_mode = 'combine',
+    })
+    range_node_winline(node.next, -#node.diags)
+  else
+    nvim_buf_set_extmark(self.bufnr, ns, lnum - 1, 0, {
+      virt_text = { { ui.collapse, 'SagaCollapse' } },
+      virt_text_pos = 'overlay',
+      hl_mode = 'combine',
+    })
+    for i, item in ipairs(node.diags) do
+      local mes = msg_fmt(item)
+      local virt_start = i == #node.diags and ui.lines[1] or ui.lines[2]
+      self:write_line(lnum, mes, item.severity, virt_start, lnum, lnum)
+      lnum = lnum + 1
+    end
+    node.expand = true
+    range_node_winline(node.next, #node.diags)
+  end
+  vim.bo[self.bufnr].modifiable = false
 end
 
 function sd:show(opt)
-  local indent = (' '):rep(3)
   self.bufnr = api.nvim_create_buf(false, false)
 
   local curnode = opt.entrys_list
@@ -127,6 +249,9 @@ function sd:show(opt)
     curnode.expand = true
     for i, entry in ipairs(curnode.diags) do
       local line_count = api.nvim_buf_line_count(self.bufnr)
+      local virt_start = i == #curnode.diags and ui.lines[1] or ui.lines[2]
+      local mes = msg_fmt(entry)
+
       if i == 1 then
         ---@diagnostic disable-next-line: param-type-mismatch
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
@@ -135,56 +260,26 @@ function sd:show(opt)
         nvim_buf_set_lines(self.bufnr, line_count - 1, -1, false, { text })
         nvim_buf_set_extmark(self.bufnr, ns, 0, 0, {
           virt_text = {
-            { config.ui.collapse, 'SagaCollapse' },
+            { ui.collapse, 'SagaCollapse' },
           },
           virt_text_pos = 'overlay',
           hl_mode = 'combine',
         })
+        self:write_line(line_count, mes, entry.severity, virt_start)
+        entry.showwinline = line_count + 1
+        curnode.lnum = line_count
       else
-        nvim_buf_set_lines(self.bufnr, -1, -1, false, { indent .. entry.message })
-        for j = 0, 2 do
-          nvim_buf_set_extmark(self.bufnr, ns, 0, j, {
-            virt_text = {
-              { i == #curnode.diags and config.ui.lines[1] or config.ui.lines[2] },
-              { config.ui.lines[4], 'SagaVirtLine' },
-            },
-            virt_text_pos = 'overlay',
-            hl_mode = 'combine',
-          })
-        end
+        self:write_line(line_count, mes, entry.severity, virt_start)
+        entry.showwinline = line_count + 1
       end
     end
     curnode = curnode.next
   end
+
   self:create_win(opt)
-  util.map_keys(self.bufnr, 'n', diag_conf.keys.expand_or_jump, function() end)
-end
-
-local function new_node()
-  return {
-    next = nil,
-    diags = {},
-    expand = false,
-  }
-end
-
----single linked list
-local function generate_list(entrys)
-  local list = new_node()
-
-  local curnode
-  for _, item in ipairs(entrys) do
-    if #list.diags == 0 then
-      curnode = list
-    elseif item.bufnr ~= curnode.diags[#curnode.diags].bufnr then
-      if not curnode.next then
-        curnode.next = new_node()
-      end
-      curnode = curnode.next
-    end
-    curnode.diags[#curnode.diags + 1] = item
-  end
-  return list
+  util.map_keys(self.bufnr, 'n', diag_conf.keys.toggle_or_jump, function()
+    self:toggle_expand(opt.entrys_list)
+  end)
 end
 
 function sd:show_diagnostics(opt)

@@ -364,7 +364,7 @@ function diag:render_diagnostic_window(entry, option)
     api.nvim_create_autocmd(close_autocmds, {
       buffer = self.main_buf,
       once = true,
-      callback = function()
+      callback = function(args)
         preview_win_close()
         if self.before_winid then
           api.nvim_win_close(self.before_winid, true)
@@ -372,6 +372,7 @@ function diag:render_diagnostic_window(entry, option)
         elseif self.winid then
           self:clean_data()
         end
+        api.nvim_del_autocmd(args.id)
       end,
     })
   end, 0)

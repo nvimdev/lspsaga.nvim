@@ -42,7 +42,6 @@ end
 
 -- get client by methods
 function M.get_client_by_method(methods)
-  methods = type(methods) == 'string' and { methods } or methods
   local clients = lsp.get_active_clients({ bufnr = 0 })
   clients = vim.tbl_filter(function(client)
     return client.name ~= 'null-ls'
@@ -50,7 +49,7 @@ function M.get_client_by_method(methods)
 
   for _, client in ipairs(clients or {}) do
     local support = true
-    for _, method in ipairs(methods) do
+    for _, method in ipairs(M.as_table(methods)) do
       if not client.supports_method(method) then
         support = false
         break
@@ -119,8 +118,7 @@ function M.get_max_content_length(contents)
 end
 
 function M.close_win(winid)
-  winid = type(winid) == 'number' and { winid } or winid
-  for _, id in ipairs(winid) do
+  for _, id in ipairs(M.as_table(winid)) do
     if api.nvim_win_is_valid(id) then
       api.nvim_win_close(id, true)
     end
@@ -156,7 +154,7 @@ function M.win_height_increase(content, percent)
 end
 
 function M.as_table(value)
-  return type(value) == 'string' and { value } or value
+  return type(value) ~= 'table' and { value } or value
 end
 
 --- Creates a buffer local mapping.
