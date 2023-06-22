@@ -1,4 +1,5 @@
 local vim, api = vim, vim.api
+local validate = vim.validate
 local ui = require('lspsaga').config.ui
 local win = {}
 
@@ -103,8 +104,18 @@ function obj:wininfo()
   return self.bufnr, self.winid
 end
 
-function obj:setlines(lines)
-  api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
+function obj:setlines(lines, row, erow)
+  row = row or 0
+  erow = erow or -1
+  api.nvim_buf_set_lines(self.bufnr, row, erow, false, lines)
+  return self
+end
+
+function obj:winsetconf(config)
+  validate({
+    config = { config, 't' },
+  })
+  api.nvim_win_set_config(self.winid, config)
   return self
 end
 
@@ -124,6 +135,12 @@ end
 
 function win:new_normal(direct)
   vim.cmd(direct)
+  return setmetatable(win, obj)
+end
+
+function win:from_exist(bufnr, winid)
+  self.bufnr = bufnr
+  self.winid = winid
   return setmetatable(win, obj)
 end
 

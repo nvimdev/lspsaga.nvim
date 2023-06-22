@@ -92,19 +92,18 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
       contents[#contents + 1] = action_title
     end
   end
-
   local increase = util.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
 
   local start_line = api.nvim_buf_line_count(self.bufnr) + 1
-  api.nvim_win_set_config(self.winid, { height = win_conf.height + increase + #contents })
-
-  api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
-  api.nvim_buf_set_lines(self.bufnr, -1, -1, false, contents)
-  api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
+  win
+    :from_exist(self.bufnr, self.winid)
+    :winsetconf({ height = win_conf.height + increase + #contents })
+    :bufopt('modifiable', true)
+    :setlines(contents, -1, -1)
+    :bufopt('modifiable', false)
 
   api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', start_line - 1, 0, -1)
   api.nvim_buf_add_highlight(self.bufnr, 0, 'ActionFix', start_line, 0, #config.ui.actionfix)
-
   api.nvim_buf_add_highlight(self.bufnr, 0, 'TitleString', start_line, #config.ui.actionfix, -1)
 
   for i = 3, #contents do
@@ -361,7 +360,6 @@ function diag:render_diagnostic_window(entry, option)
   end)
 
   local close_autocmds = { 'CursorMoved', 'InsertEnter' }
-  ---TODO: bug here
   vim.defer_fn(function()
     api.nvim_create_autocmd(close_autocmds, {
       buffer = self.main_buf,
@@ -370,6 +368,7 @@ function diag:render_diagnostic_window(entry, option)
         preview_win_close()
         if self.before_winid then
           api.nvim_win_close(self.before_winid, true)
+          self.before_winid = nil
         else
           self:clean_data()
         end

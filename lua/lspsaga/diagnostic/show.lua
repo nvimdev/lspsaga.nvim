@@ -31,8 +31,9 @@ local function sort_by_severity(entrys)
   end)
 end
 
-function sd:create_win(opt, content)
+function sd:create_win(opt)
   local curbuf = api.nvim_get_current_buf()
+  local content = api.nvim_buf_get_lines(self.bufnr, 0, -1, false)
   local increase = util.win_height_increase(content)
   local max_len = util.get_max_content_length(content)
   local max_height = math.floor(vim.o.lines * diag_conf.max_show_height)
@@ -56,24 +57,12 @@ function sd:create_win(opt, content)
     float_opt.title_pos = 'center'
   end
 
-  local content_opt = {
-    contents = {},
-    filetype = 'markdown',
-    enter = true,
-    bufnr = self.bufnr,
-    wrap = true,
-    highlight = {
-      normal = 'DiagnosticShowNormal',
-      border = 'DiagnosticShowBorder',
-    },
-  }
-
   local close_autocmds =
     { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScrolled' }
   if opt.arg and opt.arg == '++unfocus' then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
-    content_opt.enter = false
+    float_opt.enter = false
   else
     opt.focusable = true
     api.nvim_create_autocmd('BufEnter', {
@@ -167,7 +156,7 @@ function sd:show(opt)
         local start = #text
         text = text .. ' ' .. sign .. v
         diaghi[#diaghi + 1] = {
-          'Diagnostic' .. diag:get_diag_type(i),
+          'Diagnostic' .. vim.diagnostic.severity[i],
           start,
           #text,
         }
@@ -212,7 +201,7 @@ function sd:show(opt)
       nvim_buf_add_highlight(
         self.bufnr,
         0,
-        diag_conf.text_hl_follow and 'Diagnostic' .. diag:get_diag_type(item.severity)
+        diag_conf.text_hl_follow and 'Diagnostic' .. vim.diagnostic.severity[item.severity]
           or 'DiagnosticText',
         line_count - 1,
         3,
@@ -275,7 +264,7 @@ function sd:show(opt)
         nvim_buf_add_highlight(
           self.bufnr,
           0,
-          diag_conf.text_hl_follow and 'Diagnostic' .. diag:get_diag_type(v.severity)
+          diag_conf.text_hl_follow and 'Diagnostic' .. vim.diagnostic.severity[v.severity]
             or 'DiagnosticText',
           v.winline - 1,
           3,
@@ -326,7 +315,7 @@ function sd:show(opt)
     end,
   })
 
-  self:create_win(opt, content)
+  self:create_win(opt)
 end
 
 ---migreate diagnostic to a table that

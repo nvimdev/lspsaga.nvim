@@ -38,6 +38,7 @@ local default_config = {
     text_hl_follow = true,
     border_follow = true,
     extend_relatedInformation = true,
+    diagnostic_only_current = false,
     keys = {
       exec_action = 'o',
       quit = 'q',
@@ -163,8 +164,8 @@ function saga.setup(opts)
     require('lspsaga.symbol'):register_module()
   end
 
-  if saga.config.diagnostic.on_insert then
-    require('lspsaga.diagnostic.insert').on_insert()
+  if saga.config.diagnostic.diagnostic_only_current then
+    require('lspsaga.diagnostic.virt').diag_on_current()
   end
 end
 

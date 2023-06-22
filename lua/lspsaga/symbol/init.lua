@@ -24,6 +24,9 @@ local buf_changedtick = {}
 function symbol:buf_watcher(buf, client)
   local function defer_request(changedtick)
     vim.defer_fn(function()
+      if not self[buf] or not api.nvim_buf_is_valid(buf) then
+        return
+      end
       self[buf].pending_request = true
       self:do_request(buf, client, function()
         if not api.nvim_buf_is_valid(buf) then
