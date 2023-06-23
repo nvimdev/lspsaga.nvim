@@ -250,9 +250,8 @@ function diag:render_diagnostic_window(entry, option)
             .. ':'
             .. item.location.range.start.character
             .. '): '
-          item.message = fname and fname .. range .. item.message or range .. item.message
+          content[#content + 1] = fname and fname .. range .. item.message or range .. item.message
         end
-        content[#content + 1] = (' '):rep(3) .. item.message
       end, entry.user_data.lsp.relatedInformation)
     end
   end

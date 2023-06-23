@@ -113,10 +113,9 @@ local default_config = {
   outline = {
     win_position = 'right',
     win_width = 30,
-    --category
-    layout = 'category',
     auto_preview = true,
     auto_refresh = true,
+    detail = true,
     auto_close = true,
     preview_width = 0.4,
     close_after_jump = false,

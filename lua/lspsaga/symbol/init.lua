@@ -154,44 +154,4 @@ function symbol:outline()
   require('lspsaga.symbol.outline'):outline()
 end
 
-function symbol:liner(symbols)
-  local graph = {}
-end
-
---@return table
-function symbol:category(buf, symbols)
-  local res = {}
-
-  local tmp_node = function(node)
-    local tmp = {}
-    tmp.winline = -1
-    for k, v in pairs(node) do
-      if k ~= 'children' then
-        tmp[k] = v
-      end
-    end
-    return tmp
-  end
-
-  local function recursive_parse(tbl)
-    for _, v in ipairs(tbl) do
-      if not res[v.kind] then
-        res[v.kind] = {
-          expand = true,
-          data = {},
-        }
-      end
-      if not self:node_is_keyword(buf, v) then
-        local tmp = tmp_node(v)
-        res[v.kind].data[#res[v.kind].data + 1] = tmp
-      end
-      if v.children then
-        recursive_parse(v.children)
-      end
-    end
-  end
-  recursive_parse(symbols)
-  return res
-end
-
 return setmetatable(cache, symbol)
