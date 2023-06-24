@@ -56,6 +56,19 @@ end
 
 function ot:parse(symbols)
   local row = 0
+  local fname = api.nvim_buf_get_name(self.main_buf)
+  fname = fn.fnamemodify(fname, ':t')
+  buf_set_lines(self.bufnr, row, -1, false, { '  ' .. fname })
+  row = row + 1
+  if config.ui.devicon then
+    local icon, hl = util.icon_from_devicon(vim.bo[self.main_buf].filetype)
+    if icon and hl then
+      buf_set_extmark(self.bufnr, ns, 0, 0, {
+        virt_text = { { icon, hl } },
+        virt_text_pos = 'overlay',
+      })
+    end
+  end
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
@@ -71,7 +84,14 @@ function ot:parse(symbols)
         virt_text_pos = 'overlay',
       })
       local inlevel = 4 + 2 * level
-      if inlevel > 4 then
+      if inlevel == 4 and not node.children then
+        local virt =
+          { { config.ui.lines[2], 'SagaVirtLine' }, { config.ui.lines[4]:rep(2), 'SagaVirtLine' } }
+        buf_set_extmark(self.bufnr, ns, row - 1, 0, {
+          virt_text = virt,
+          virt_text_pos = 'overlay',
+        })
+      else
         for j = 1, inlevel - 4, 2 do
           local virt = {}
           if not node.children and j + 2 > inlevel - 4 then
