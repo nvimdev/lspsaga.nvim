@@ -299,6 +299,7 @@ function diag:render_diagnostic_window(entry, option)
     :new_float(float_opt)
     :setlines(content)
     :bufopt('filetype', 'markdown')
+    :bufopt('modifiable', false)
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',

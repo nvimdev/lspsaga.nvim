@@ -69,7 +69,27 @@ local function range_node_winline(node, val)
   end
 end
 
-function sd:create_win(opt)
+function sd:layout_normal()
+  local default = vim.opt.splitbelow
+  vim.opt.splitbelow = true
+  self.bufnr, self.winid = win
+    :new_normal('sp new', self.bufnr)
+    :bufopt({
+      ['modifiable'] = false,
+      ['filetype'] = 'sagadiagnostc',
+      ['expandtab'] = false,
+    })
+    :winopt({
+      ['number'] = false,
+      ['relativenumber'] = false,
+      ['stc'] = '',
+    })
+    :wininfo()
+  api.nvim_win_set_height(self.winid, 10)
+  vim.opt.splitbelow = default
+end
+
+function sd:layout_float(opt)
   local curbuf = api.nvim_get_current_buf()
   local content = api.nvim_buf_get_lines(self.bufnr, 0, -1, false)
   local increase = util.win_height_increase(content)
@@ -124,6 +144,7 @@ function sd:create_win(opt)
     :bufopt({
       ['filetype'] = 'markdown',
       ['modifiable'] = false,
+      ['buftype'] = 'nofile',
     })
     :winopt({
       ['conceallevel'] = 2,
@@ -258,7 +279,7 @@ function sd:show(opt)
       if i == 1 then
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
         -- local counts = diag:get_diag_counts(curnode.diags)
-        local text = '  ' .. fname .. ' ' .. entry.bufnr
+        local text = '  ' .. fname
         nvim_buf_set_lines(self.bufnr, count, -1, false, { text })
         nvim_buf_set_extmark(self.bufnr, ns, count, 0, {
           virt_text = {
@@ -276,7 +297,11 @@ function sd:show(opt)
     curnode = curnode.next
   end
 
-  self:create_win(opt)
+  if diag_conf.show_layout == 'float' then
+    self:layout_float(opt)
+  else
+    self:layout_normal()
+  end
   util.map_keys(self.bufnr, 'n', diag_conf.keys.toggle_or_jump, function()
     self:toggle_expand(opt.entrys_list)
   end)

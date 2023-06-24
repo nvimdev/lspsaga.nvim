@@ -10,6 +10,10 @@ local ns = vim.api.nvim_create_namespace('DiagnosticCurLine')
 ---})
 ---```
 local function diag_on_current()
+  vim.diagnostic.config({
+    virtual_text = false,
+  })
+
   api.nvim_create_autocmd('LspAttach', {
     callback = function(args)
       local group_name = 'DiagnosticVirtOn' .. args.buf
@@ -19,7 +23,7 @@ local function diag_on_current()
           group = api.nvim_create_augroup(group_name, { clear = false }),
           buffer = args.buf,
           callback = function()
-            if vim.opt.time <= 100 then
+            if vim.opt.updatetime > 100 then
               vim.notify(
                 '[Lspsaga] for better experience on diagnostic on current line please set vim.opt.updatime to 100',
                 vim.log.levels.WARN

@@ -118,6 +118,7 @@ function hover:open_floating_preview(res, option_fn)
     :bufopt({
       ['filetype'] = (res.kind or 'markdown'),
       ['modifiable'] = false,
+      ['buftype'] = 'nofile',
     })
     :winopt({
       ['winhl'] = 'NormalFloat:HoverNormal,Border:HoverBorder',

@@ -62,14 +62,11 @@ local function binary_search(tbl, line)
       return mid
     elseif line < range.start.line then
       right = mid - 1
-      if left > right then
-        return nil
-      end
     else
-      if left > right then
-        return nil
-      end
       left = mid + 1
+    end
+    if left > right then
+      return
     end
   end
 end

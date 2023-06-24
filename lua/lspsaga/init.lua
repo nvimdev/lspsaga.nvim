@@ -28,7 +28,7 @@ local default_config = {
   },
   diagnostic = {
     show_code_action = true,
-    show_layout = 'float',
+    show_layout = 'normal',
     show_normal_height = 10,
     jump_num_shortcut = true,
     max_width = 0.8,

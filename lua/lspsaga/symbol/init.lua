@@ -36,6 +36,8 @@ function symbol:buf_watcher(buf, client)
         if changedtick < buf_changedtick[buf] then
           changedtick = api.nvim_buf_get_changedtick(buf)
           defer_request(changedtick)
+        else
+          self[buf].changedtick = changedtick
         end
       end)
     end, 1000)

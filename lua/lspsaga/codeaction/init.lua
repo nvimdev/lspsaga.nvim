@@ -67,6 +67,7 @@ function act:action_callback(tuples, enriched_ctx)
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
+      ['modifiable'] = false,
     })
     :wininfo()
 

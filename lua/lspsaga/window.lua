@@ -133,9 +133,11 @@ function win:new_float(float_opt, enter, force)
   return setmetatable(win, obj)
 end
 
----`set splitbelow` option for new sp
-function win:new_normal(direct)
+function win:new_normal(direct, bufnr)
   vim.cmd(direct)
+  self.bufnr = bufnr or api.nvim_create_buf(false, false)
+  self.winid = api.nvim_get_current_win()
+  api.nvim_win_set_buf(self.winid, self.bufnr)
   return setmetatable(win, obj)
 end
 
