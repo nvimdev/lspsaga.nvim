@@ -11,6 +11,7 @@ local buf_set_lines = api.nvim_buf_set_lines
 local buf_set_extmark = api.nvim_buf_set_extmark
 local outline_conf = config.outline
 local ns = api.nvim_create_namespace('SagaOutline')
+local beacon = require('lspsaga.beacon').jump_beacon
 local ctx = {}
 
 function ot.__newindex(t, k, v)
@@ -290,6 +291,15 @@ function ot:expand_or_jump()
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
     return
   end
+  api.nvim_win_close(self.winid, true)
+  local wins = fn.win_findbuf(self.main_buf)
+  api.nvim_win_set_cursor(
+    wins[#wins],
+    { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
+  )
+  local width = #api.nvim_get_current_line()
+  beacon({ node.value.selectionRange.start.line, 0 }, width)
+  clean_ctx()
 end
 
 function ot:refresh()
