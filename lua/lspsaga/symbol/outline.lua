@@ -1,5 +1,7 @@
 local ot = {}
-local api, lsp, fn = vim.api, vim.lsp, vim.fn
+local api, fn = vim.api, vim.fn
+---@diagnostic disable-next-line: deprecated
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local kind = require('lspsaga.lspkind').kind
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
@@ -86,6 +88,7 @@ function ot:parse(symbols)
       })
     end
   end
+  self.list = { value = nil, next = nil }
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
@@ -131,9 +134,6 @@ function ot:parse(symbols)
         })
       end
 
-      if not self[self.main_buf] then
-        self[self.main_buf] = { value = nil, next = nil }
-      end
       local copy = vim.deepcopy(node)
       copy.children = nil
       copy.winline = row
@@ -141,14 +141,16 @@ function ot:parse(symbols)
 
       if node.children then
         copy.expand = true
-        copy.virtid = buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
+        copy.virtid = uv.hrtime()
+        buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
+          id = copy.virtid,
           virt_text = { { config.ui.collapse, 'SagaCollapse' } },
           virt_text_pos = 'overlay',
         })
-        tail_push(self[self.main_buf], copy)
+        tail_push(self.list, copy)
         recursive_parse(node.children, level + 1)
       else
-        tail_push(self[self.main_buf], copy)
+        tail_push(self.list, copy)
       end
     end
   end
@@ -245,11 +247,7 @@ end
 
 function ot:expand_or_jump()
   local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
-  local res = symbol:get_buf_symbols(self.main_buf)
-  if not res or not res.symbols then
-    return
-  end
-  local node = find_node(self[self.main_buf], curlnum)
+  local node = find_node(self.list, curlnum)
   if not node then
     return
   end
@@ -267,9 +265,9 @@ function ot:expand_or_jump()
       end
     end
     _end = _end or count
-    buf_set_lines(self.bufnr, curlnum, _end or count, false, {})
-    api.nvim_buf_del_extmark(self.bufnr, ns, node.value.virtid)
-    node.value.virtid = buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
+    buf_set_lines(self.bufnr, curlnum, _end, false, {})
+    buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
+      id = node.value.virtid,
       virt_text = { { config.ui.expand, 'SagaExpand' } },
       virt_text_pos = 'overlay',
     })
@@ -283,27 +281,141 @@ function ot:expand_or_jump()
   if node.value.expand == false then
     node.value.expand = true
     api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
-    api.nvim_buf_del_extmark(self.bufnr, ns, node.value.virtid)
-    node.value.virtid = buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
+    buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
+      id = node.value.virtid,
       virt_text = { { config.ui.collapse, 'SagaCollapse' } },
       virt_text_pos = 'overlay',
     })
     self:collapse(node, curlnum)
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
+    return
   end
 end
 
-function ot:outline()
-  self.main_buf = api.nvim_get_current_buf()
+function ot:refresh()
+  api.nvim_create_autocmd('User', {
+    pattern = 'SagaSymbolUpdate',
+    callback = function(args)
+      if
+        not self.bufnr
+        or not api.nvim_buf_is_valid(self.bufnr)
+        or api.nvim_get_current_buf() ~= args.data.bufnr
+      then
+        return
+      end
+      api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
+      self:parse(args.data.symbols)
+    end,
+  })
+end
+
+function ot:create_preview_win(lines)
+  local winid = fn.bufwinid(self.main_buf)
+  local origianl_win_height = api.nvim_win_get_height(winid)
+  local original_win_width = api.nvim_win_get_width(winid)
+  local max_height = bit.rshift(origianl_win_height, 2)
+  local max_width = bit.rshift(original_win_width, 2)
+
+  local float_opt = {
+    relative = 'editor',
+    style = 'minimal',
+    height = math.min(max_height, #lines),
+    width = math.min(max_width, util.get_max_content_length(lines)),
+    focusable = false,
+    noautocmd = true,
+  }
+
+  if outline_conf.win_position == 'right' then
+    float_opt.anchor = 'NE'
+    float_opt.col = vim.o.columns - outline_conf.win_width - 1
+    float_opt.row = fn.winline() + 2
+    float_opt.row = fn.winline()
+  else
+    float_opt.anchor = 'NW'
+    float_opt.col = outline_conf.win_width + 1
+    float_opt.row = fn.winline()
+  end
+  self.preview_bufnr, self.preview_winid = win
+    :new_float(float_opt, false, true)
+    :setlines(lines)
+    :bufopt({
+      ['bufhidden'] = 'wipe',
+      ['filetype'] = vim.bo[self.main_buf].filetype,
+      ['buftype'] = 'nofile',
+    })
+    :winopt({
+      ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+      ['sidescrolloff'] = 5,
+    })
+    :wininfo()
+end
+
+function ot:preview()
+  api.nvim_create_autocmd('CursorMoved', {
+    buffer = self.bufnr,
+    callback = function()
+      local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
+      local node = find_node(self.list, curlnum)
+      if not node then
+        if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+          api.nvim_win_close(self.preview_winid, true)
+          self.preview_winid = nil
+          self.preview_bufnr = nil
+        end
+        return
+      end
+      local range = node.value.range
+      local lines =
+        api.nvim_buf_get_lines(self.main_buf, range.start.line, range['end'].line + 1, false)
+      if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
+        self:create_preview_win(lines)
+        return
+      end
+
+      api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
+      local win_conf = api.nvim_win_get_config(self.preview_winid)
+      win_conf.row = fn.winline() - 1
+      api.nvim_win_set_config(self.preview_winid, win_conf)
+    end,
+  })
+
+  api.nvim_create_autocmd('BufLeave', {
+    buffer = self.bufnr,
+    callback = function()
+      if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
+        api.nvim_win_close(self.preview_winid, true)
+        self.preview_winid = nil
+        self.preview_bufnr = nil
+      end
+    end,
+  })
+end
+
+function ot:outline(buf)
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
+    clean_ctx()
+    return
+  end
+
+  self.main_buf = buf or api.nvim_get_current_buf()
   local res = symbol:get_buf_symbols(self.main_buf)
   if not res or not res.symbols or #res.symbols == 0 then
     return
   end
-  self.bufnr, self.winid = create_outline_window()
+  if not self.winid or not api.nvim_win_is_valid(self.winid) then
+    self.bufnr, self.winid = create_outline_window()
+  end
   self:parse(res.symbols)
   util.map_keys(self.bufnr, 'n', config.outline.keys.expand_or_jump, function()
     self:expand_or_jump()
   end)
+
+  self:refresh()
+
+  if config.outline.auto_preview then
+    self:preview()
+  end
 end
 
 return setmetatable(ctx, ot)
