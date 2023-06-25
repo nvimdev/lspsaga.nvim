@@ -116,7 +116,6 @@ local default_config = {
     auto_preview = true,
     detail = true,
     auto_close = true,
-    preview_width = 0.4,
     close_after_jump = false,
     keys = {
       expand_or_jump = 'o',

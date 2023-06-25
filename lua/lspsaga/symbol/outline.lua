@@ -302,23 +302,6 @@ function ot:expand_or_jump()
   clean_ctx()
 end
 
-function ot:refresh()
-  api.nvim_create_autocmd('User', {
-    pattern = 'SagaSymbolUpdate',
-    callback = function(args)
-      if
-        not self.bufnr
-        or not api.nvim_buf_is_valid(self.bufnr)
-        or api.nvim_get_current_buf() ~= args.data.bufnr
-      then
-        return
-      end
-      api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
-      self:parse(args.data.symbols)
-    end,
-  })
-end
-
 function ot:create_preview_win(lines)
   local winid = fn.bufwinid(self.main_buf)
   local origianl_win_height = api.nvim_win_get_height(winid)
@@ -360,8 +343,27 @@ function ot:create_preview_win(lines)
     :wininfo()
 end
 
-function ot:preview()
+function ot:refresh(group)
+  api.nvim_create_autocmd('User', {
+    group = group,
+    pattern = 'SagaSymbolUpdate',
+    callback = function(args)
+      if
+        not self.bufnr
+        or not api.nvim_buf_is_valid(self.bufnr)
+        or api.nvim_get_current_buf() ~= args.data.bufnr
+      then
+        return
+      end
+      api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
+      self:parse(args.data.symbols)
+    end,
+  })
+end
+
+function ot:preview(group)
   api.nvim_create_autocmd('CursorMoved', {
+    group = group,
     buffer = self.bufnr,
     callback = function()
       local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
@@ -401,6 +403,20 @@ function ot:preview()
   })
 end
 
+function ot:auto_close(group)
+  api.nvim_create_autocmd('WinEnter', {
+    group = group,
+    callback = function()
+      if api.nvim_get_current_win() == self.winid and #api.nvim_list_wins() == 1 then
+        api.nvim_win_set_buf(self.winid, api.nvim_create_buf(true, true))
+        api.nvim_del_augroup_by_id(group)
+        clean_ctx()
+      end
+    end,
+    desc = '[Lspsaga] auto close the outline window when is last',
+  })
+end
+
 function ot:outline(buf)
   if self.winid and api.nvim_win_is_valid(self.winid) then
     api.nvim_win_close(self.winid, true)
@@ -421,10 +437,15 @@ function ot:outline(buf)
     self:expand_or_jump()
   end)
 
-  self:refresh()
+  local group = api.nvim_create_augroup('outline', { clear = true })
+  self:refresh(group)
 
   if config.outline.auto_preview then
-    self:preview()
+    self:preview(group)
+  end
+
+  if outline_conf.auto_close then
+    self:auto_close(group)
   end
 end
 
