@@ -54,6 +54,23 @@ local function create_outline_window()
     :wininfo()
 end
 
+local function tail_push(list, node)
+  local tmp = list
+  if not tmp.value then
+    tmp.value = node
+    return
+  end
+
+  while true do
+    if not tmp.next then
+      break
+    else
+      tmp = tmp.next
+    end
+  end
+  tmp.next = { value = node }
+end
+
 function ot:parse(symbols)
   local row = 0
   local fname = api.nvim_buf_get_name(self.main_buf)
@@ -114,14 +131,24 @@ function ot:parse(symbols)
         })
       end
 
+      if not self[self.main_buf] then
+        self[self.main_buf] = { value = nil, next = nil }
+      end
+      local copy = vim.deepcopy(node)
+      copy.children = nil
+      copy.winline = row
+      copy.inlevel = #indent
+
       if node.children then
-        node.winline = row
-        node.expand = true
-        buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
+        copy.expand = true
+        copy.virtid = buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
           virt_text = { { config.ui.collapse, 'SagaCollapse' } },
           virt_text_pos = 'overlay',
         })
+        tail_push(self[self.main_buf], copy)
         recursive_parse(node.children, level + 1)
+      else
+        tail_push(self[self.main_buf], copy)
       end
     end
   end
@@ -130,120 +157,90 @@ function ot:parse(symbols)
   api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
 end
 
-local function find_idx_by_lnum(curlnum, symbols)
-  local winline
-  for i = curlnum, 0, -1 do
-    if fn.indent(i) == 4 then
-      winline = i
+local function find_node(list, curlnum)
+  local tmp = list
+  while tmp do
+    if tmp.value.winline == curlnum then
+      return tmp
+    end
+    tmp = tmp.next
+  end
+end
+
+local function update_winline(node, count)
+  node = node.next
+  local total = count < 0 and math.abs(count) or 0
+  while node do
+    print(count, node.value.name)
+    if total ~= 0 then
+      node.value.winline = -1
+      total = total - 1
+    else
+      node.value.winline = node.value.winline + count
+    end
+    node = node.next
+  end
+end
+
+function ot:collapse(node, curlnum)
+  local row = curlnum - 1
+  local inlevel = fn.indent(curlnum)
+  node = node.next
+  if not node then
+    return
+  end
+
+  while true do
+    local icon = kind[node.value.kind][2]
+    local level = node.value.inlevel
+    buf_set_lines(
+      self.bufnr,
+      row + 1,
+      row + 1,
+      false,
+      { (' '):rep(node.value.inlevel) .. node.value.name }
+    )
+    row = row + 1
+    node.value.winline = row + 1
+    buf_set_extmark(self.bufnr, ns, row, level - 2, {
+      virt_text = { { icon, 'SagaWinbar' .. kind[node.value.kind][1] } },
+      virt_text_pos = 'overlay',
+    })
+    local has_child = node.next and node.next.value.inlevel > level
+    if has_child then
+      buf_set_extmark(self.bufnr, ns, row, level - 4, {
+        virt_text = { { config.ui.collapse, 'SagaCollapse' } },
+        virt_text_pos = 'overlay',
+      })
+    end
+    local islast = not node.next or node.next.value.inlevel < level
+    for j = 1, level - 4, 2 do
+      local virt = {}
+      if j + 2 > level - 4 and not has_child then
+        virt[#virt + 1] = islast and { config.ui.lines[1], 'SagaVirtLine' }
+          or { config.ui.lines[2], 'SagaVirtLine' }
+        virt[#virt + 1] = { config.ui.lines[4]:rep(2), 'SagaVirtLine' }
+      else
+        virt = { { config.ui.lines[3], 'SagaVirtLine' } }
+      end
+
+      buf_set_extmark(self.bufnr, ns, row, j - 1, {
+        virt_text = virt,
+        virt_text_pos = 'overlay',
+      })
+    end
+
+    if config.outline.detail then
+      buf_set_extmark(self.bufnr, ns, row, 0, {
+        virt_text = { { node.value.detail, 'Comment' } },
+      })
+    end
+    update_winline(node, 1)
+    node = node.next
+    if not node or node.value.inlevel <= inlevel then
       break
     end
   end
-
-  local left = 1
-  local right = #symbols
-  local mid
-  while left <= right do
-    mid = bit.rshift(left + right, 1)
-    if symbols[mid].winline == winline then
-      return mid
-    elseif symbols[mid].winline > winline then
-      right = mid - 1
-    else
-      left = mid + 1
-    end
-  end
-end
-
-local function update_winline(idx, symbols, curlnum, val)
-  local node = symbols[idx]
-  local function update_children(tbl, change_state)
-    for _, item in ipairs(tbl) do
-      if item.winline and item.winline > curlnum then
-        item.expand = change_state and val < 0 and false or true
-        item.winline = item.winline + val
-      end
-      if item.children then
-        update_children(item.children, change_state)
-      end
-    end
-  end
-
-  update_children(node.children, true)
-
-  for i = idx + 1, #symbols do
-    if symbols[i].winline then
-      symbols[i].winline = symbols[i].winline + val
-    end
-
-    if symbols[i].children then
-      update_children(symbols[i].children, false)
-    end
-  end
-end
-
-local function find_in_children(node, curlnum)
-  for i in ipairs(node) do
-    if node[i].winline and node[i].winline == curlnum then
-      return node[i]
-    end
-    if node[i].children then
-      local res = find_in_children(node[i].children, curlnum)
-      if res then
-        return res
-      end
-    end
-  end
-end
-
-function ot:collapse(idx, symbols, node, curlnum)
-  if not node.children then
-    return
-  end
-  local row = curlnum - 1
-  local inlevel = fn.indent(curlnum)
-  local count = 0
-
-  local function write_line(tbl, level)
-    for i, item in ipairs(tbl) do
-      level = level or inlevel + 2
-      local icon = kind[item.kind][2]
-      buf_set_lines(self.bufnr, row + 1, row + 1, false, { (' '):rep(level) .. item.name })
-      count = count + 1
-      row = row + 1
-      buf_set_extmark(self.bufnr, ns, row, level - 2, {
-        virt_text = { { icon, 'SagaWinbar' .. kind[item.kind][3] } },
-        virt_text_pos = 'overlay',
-      })
-      if item.children then
-        write_line(item.children, level + 2)
-      end
-      if level > 4 then
-        for j = 1, level - 4, 2 do
-          local virt = {}
-          if not tbl.children and j + 2 > level - 4 then
-            virt[#virt + 1] = i == #tbl and { config.ui.lines[1], 'SagaVirtLine' }
-              or { config.ui.lines[2], 'SagaVirtLine' }
-            virt[#virt + 1] = { config.ui.lines[4]:rep(2), 'SagaVirtLine' }
-          else
-            virt = { { config.ui.lines[3], 'SagaVirtLine' } }
-          end
-          buf_set_extmark(self.bufnr, ns, row, j - 1, {
-            virt_text = virt,
-            virt_text_pos = 'overlay',
-          })
-        end
-      end
-
-      if config.outline.detail then
-        buf_set_extmark(self.bufnr, ns, row, 0, {
-          virt_text = { { item.detail, 'Comment' } },
-        })
-      end
-    end
-  end
-
-  write_line(node.children)
-  update_winline(idx, symbols, curlnum, count)
 end
 
 function ot:expand_or_jump()
@@ -252,21 +249,15 @@ function ot:expand_or_jump()
   if not res or not res.symbols then
     return
   end
-  local idx = find_idx_by_lnum(curlnum, res.symbols)
-  if not idx then
-    return
-  end
-  local node = res.symbols[idx]
-  if node.winline ~= curlnum then
-    node = find_in_children(node.children, curlnum)
-  end
+  local node = find_node(self[self.main_buf], curlnum)
   if not node then
     return
   end
+
   local count = api.nvim_buf_line_count(self.bufnr)
   local inlevel = fn.indent(curlnum)
 
-  if node.expand then
+  if node.value.expand then
     api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
     local _end
     for i = curlnum + 1, count do
@@ -275,24 +266,29 @@ function ot:expand_or_jump()
         break
       end
     end
+    _end = _end or count
     buf_set_lines(self.bufnr, curlnum, _end or count, false, {})
-    local col = fn.indent(curlnum) - 4
-    buf_set_extmark(self.bufnr, ns, curlnum - 1, col, {
+    api.nvim_buf_del_extmark(self.bufnr, ns, node.value.virtid)
+    node.value.virtid = buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
       virt_text = { { config.ui.expand, 'SagaExpand' } },
       virt_text_pos = 'overlay',
     })
-    if _end then
-      update_winline(idx, res.symbols, curlnum, -(_end - curlnum))
-    end
-    node.expand = false
+
+    update_winline(node, -(_end - curlnum))
+    node.value.expand = false
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
     return
   end
 
-  if node.expand == false then
-    node.expand = true
+  if node.value.expand == false then
+    node.value.expand = true
     api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
-    self:collapse(idx, res.symbols, node, curlnum)
+    api.nvim_buf_del_extmark(self.bufnr, ns, node.value.virtid)
+    node.value.virtid = buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
+      virt_text = { { config.ui.collapse, 'SagaCollapse' } },
+      virt_text_pos = 'overlay',
+    })
+    self:collapse(node, curlnum)
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
   end
 end
