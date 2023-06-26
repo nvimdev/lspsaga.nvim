@@ -118,7 +118,7 @@ function sd:layout_float(opt)
 
   local close_autocmds =
     { 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufDelete', 'WinScrolled' }
-  if opt.arg and opt.arg == '++unfocus' then
+  if vim.tbl_contains(opt.args, '++unfocus') then
     opt.focusable = false
     close_autocmds[#close_autocmds] = 'BufLeave'
     enter = false
@@ -223,6 +223,14 @@ local function msg_fmt(entry)
     .. (entry.code and entry.code or '')
 end
 
+local function argument_has_layout(args)
+  if vim.tbl_contains(args, '++float') then
+    return 'float'
+  elseif vim.tbl_contains(args, '++normal') then
+    return 'normal'
+  end
+end
+
 function sd:toggle_or_jump(entrys_list)
   local lnum = api.nvim_win_get_cursor(0)[1]
   local node = find_node(entrys_list, lnum)
@@ -300,11 +308,13 @@ function sd:show(opt)
     curnode = curnode.next
   end
 
-  if diag_conf.show_layout == 'float' then
+  local layout = argument_has_layout(opt.args)
+  if layout and layout == 'float' or (not layout and diag_conf.show_layout == 'float') then
     self:layout_float(opt)
-  else
+  elseif layout and layout == 'normal' or (not layout and diag_conf.show_layout == 'normal') then
     self:layout_normal()
   end
+
   api.nvim_win_set_cursor(self.winid, { 2, 3 })
   util.map_keys(self.bufnr, 'n', diag_conf.keys.toggle_or_jump, function()
     self:toggle_or_jump(opt.entrys_list)

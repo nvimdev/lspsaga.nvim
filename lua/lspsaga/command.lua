@@ -16,23 +16,23 @@ local subcommands = {
   goto_type_definition = function()
     require('lspsaga.definition'):goto_definition(2)
   end,
-  rename = function(arg)
-    require('lspsaga.rename'):lsp_rename(arg)
+  rename = function(args)
+    require('lspsaga.rename'):lsp_rename(args)
   end,
-  hover_doc = function(arg)
-    require('lspsaga.hover'):render_hover_doc(arg)
+  hover_doc = function(args)
+    require('lspsaga.hover'):render_hover_doc(args)
   end,
-  show_workspace_diagnostics = function(arg)
-    require('lspsaga.diagnostic.show'):show_diagnostics({ workspace = true, arg = arg })
+  show_workspace_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ workspace = true, args = args })
   end,
-  show_line_diagnostics = function(arg)
-    require('lspsaga.diagnostic.show'):show_diagnostics({ line = true, arg = arg })
+  show_line_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ line = true, args = args })
   end,
-  show_buf_diagnostics = function(arg)
-    require('lspsaga.diagnostic.show'):show_diagnostics({ buffer = true, arg = arg })
+  show_buf_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ buffer = true, args = args })
   end,
-  show_cursor_diagnostics = function(arg)
-    require('lspsaga.diagnostic.show'):show_diagnostics({ cursor = true, arg = arg })
+  show_cursor_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ cursor = true, args = args })
   end,
   diagnostic_jump_next = function()
     require('lspsaga.diagnostic'):goto_next()
@@ -52,8 +52,8 @@ local subcommands = {
   outgoing_calls = function()
     require('lspsaga.callhierarchy'):send_method(3)
   end,
-  term_toggle = function(cmd)
-    require('lspsaga.floaterm'):open_float_terminal(cmd)
+  term_toggle = function(args)
+    require('lspsaga.floaterm'):open_float_terminal(args)
   end,
   open_log = function()
     require('lspsaga.logger'):open()

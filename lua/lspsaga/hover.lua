@@ -5,16 +5,6 @@ local util = require('lspsaga.util')
 local treesitter = vim.treesitter
 local hover = {}
 
-local function has_arg(args, arg)
-  if not args then
-    return
-  end
-  local tbl = vim.split(args, '%s')
-  if vim.tbl_contains(tbl, arg) then
-    return true
-  end
-end
-
 function hover:open_link()
   if not self.bufnr or not api.nvim_buf_is_valid(self.bufnr) then
     return
@@ -189,7 +179,7 @@ function hover:open_floating_preview(content, option_fn)
 end
 
 local function ignore_error(args, can_through)
-  if has_arg(args, '++silent') and can_through then
+  if vim.tbl_contains(args, '++silent') and can_through then
     return true
   end
 end
@@ -251,9 +241,25 @@ function hover:do_request(args)
       end
       return
     end
+    local content = vim.split(value, '\n', { trimempty = true })
+
+    if
+      self.bufnr
+      and api.nvim_buf_is_valid(self.bufnr)
+      and self.winid
+      and api.nvim_win_is_valid(self.winid)
+    then
+      local win_conf = api.nvim_win_get_config(self.winid)
+      local truncate = util.gen_truncate_line(win_conf.width)
+      api.nvim_buf_set_lines(self.bufnr, -1, -1, false, { truncate })
+      api.nvim_buf_set_lines(self.bufnr, -1, -1, false, content)
+      win_conf.height = win_conf.height + #content + 1
+      api.nvim_win_set_config(self.winid, win_conf)
+      return
+    end
 
     local option_fn
-    if has_arg(args, '++keep') then
+    if vim.tbl_contains(args, '++keep') then
       option_fn = function(width)
         local opt = {}
         opt.relative = 'editor'
@@ -262,15 +268,10 @@ function hover:do_request(args)
         return opt
       end
     end
-    local content = vim.split(value, '\n', { trimempty = true })
 
     if not self.winid then
       self:open_floating_preview(content, option_fn)
       return
-    end
-
-    if self.bufnr and api.nvim_buf_is_valid(self.bufnr) then
-      api.nvim_buf_set_lines(self.bufnr, -1, -1, false, content)
     end
   end)
 end

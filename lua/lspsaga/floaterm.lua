@@ -4,7 +4,7 @@ local term = {}
 
 local ctx = {}
 
-function term:open_float_terminal(command)
+function term:open_float_terminal(args)
   local cur_buf = api.nvim_get_current_buf()
   if not vim.tbl_isempty(ctx) and ctx.term_bufnr == cur_buf then
     api.nvim_win_close(ctx.term_winid, true)
@@ -18,7 +18,7 @@ function term:open_float_terminal(command)
     return
   end
 
-  local cmd = command and command
+  local cmd = (#args == 1 and args[1]) and args[1]
     or (require('lspsaga.util').iswin and 'cmd.exe' or os.getenv('SHELL'))
   -- calculate our floating window size
   local win_height = math.ceil(vim.o.lines * 0.7)
