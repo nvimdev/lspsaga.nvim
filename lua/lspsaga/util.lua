@@ -46,20 +46,16 @@ function M.get_client_by_method(methods)
   clients = vim.tbl_filter(function(client)
     return client.name ~= 'null-ls'
   end, clients)
+  local supports = {}
 
   for _, client in ipairs(clients or {}) do
-    local support = true
     for _, method in ipairs(M.as_table(methods)) do
-      if not client.supports_method(method) then
-        support = false
-        break
+      if client.supports_method(method) then
+        supports[#supports + 1] = client
       end
     end
-
-    if support then
-      return client
-    end
   end
+  return supports
 end
 
 local function feedkeys(key)

@@ -45,14 +45,14 @@ local function update_lightbulb(bufnr, row)
   inrender_row = row + 1
 end
 
-local function render(client, bufnr)
+local function render(bufnr)
   local row = api.nvim_win_get_cursor(0)[1] - 1
   local params = lsp.util.make_range_params()
   params.context = {
     diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr),
   }
 
-  client.request('textDocument/codeAction', params, function(_, result, _)
+  lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(_, result, _)
     if api.nvim_get_current_buf() ~= bufnr then
       return
     end
@@ -62,17 +62,17 @@ local function render(client, bufnr)
     else
       update_lightbulb(bufnr, nil)
     end
-  end, bufnr)
+  end)
 end
 
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local timer = uv.new_timer()
 
-local function update(client, buf)
+local function update(buf)
   timer:start(config.lightbulb.debounce, 0, function()
     timer:stop()
     vim.schedule(function()
-      render(client, buf)
+      render(buf)
     end)
   end)
 end
@@ -88,12 +88,17 @@ local function lb_autocmd()
       end
 
       local buf = opt.buf
-      local group = api.nvim_create_augroup(name .. tostring(buf), {})
+      local group_name = name .. tostring(buf)
+      local ok = pcall(api.nvim_get_autocmds, { group = group_name })
+      if ok then
+        return
+      end
+      local group = api.nvim_create_augroup(group_name, { clear = true })
       api.nvim_create_autocmd('CursorMoved', {
         group = group,
         buffer = buf,
         callback = function()
-          update(client, buf)
+          update(buf)
         end,
       })
 

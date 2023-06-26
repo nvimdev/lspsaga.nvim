@@ -13,43 +13,39 @@ local function has_arg(args, arg)
   return false
 end
 
-local function open_link()
-  local curbuf = api.nvim_get_current_buf()
-  local node = treesitter.get_node({ bufnr = curbuf })
-  if node and node:type() ~= 'inline_link' then
-    node = node:parent()
+function hover:open_link()
+  if not self.bufnr or not api.nvim_buf_is_valid(self.bufnr) then
+    return
   end
 
-  if node ~= nil and node:type() == 'inline_link' then
-    local path
+  local node = treesitter.get_node()
+  if not node or node:type() ~= 'inline' then
+    return
+  end
+  local text = treesitter.get_node_text(node, self.bufnr)
+  local link = text:match('%((.*)%)')
+  print(link)
+  if not link then
+    return
+  end
 
-    for i = 0, node:named_child_count() - 1, 1 do
-      local child = node:named_child(i)
-      if child:type() == 'link_destination' then
-        path = treesitter.get_node_text(child, curbuf)
-        break
-      end
-    end
+  local cmd
+  if util.iswin then
+    cmd = '!start cmd /cstart /b '
+  elseif util.ismac then
+    cmd = 'silent !open '
+  else
+    cmd = config.hover.open_browser .. ' '
+  end
 
-    local cmd
-    if util.iswin then
-      cmd = '!start cmd /cstart /b '
-    elseif util.ismac then
-      cmd = 'silent !open '
-    else
-      cmd = config.hover.open_browser .. ' '
-    end
-
-    if path and path:find('file://') then
-      vim.cmd.edit(vim.uri_to_fname(path))
-    else
-      fn.execute(cmd .. '"' .. fn.escape(path, '#') .. '"')
-    end
+  if link:find('file://') then
+    vim.cmd.edit(vim.uri_to_fname(link))
+  else
+    fn.execute(cmd .. '"' .. fn.escape(link, '#') .. '"')
   end
 end
 
-function hover:open_floating_preview(res, option_fn)
-  local content = vim.split(res.value, '\n', { trimempty = true })
+function hover:open_floating_preview(content, option_fn)
   local new = {}
   local in_codeblock = false
   for _, line in ipairs(content) do
@@ -116,7 +112,7 @@ function hover:open_floating_preview(res, option_fn)
     :new_float(float_option)
     :setlines(content)
     :bufopt({
-      ['filetype'] = (res.kind or 'markdown'),
+      ['filetype'] = 'markdown',
       ['modifiable'] = false,
       ['buftype'] = 'nofile',
     })
@@ -185,12 +181,12 @@ function hover:open_floating_preview(res, option_fn)
   end
 
   util.map_keys(self.bufnr, 'n', config.hover.open_link, function()
-    open_link()
+    self:open_link()
   end)
 end
 
-local function ignore_error(args)
-  if args and has_arg(args, '++silent') then
+local function ignore_error(args, can_through)
+  if args and has_arg(args, '++silent') and can_through then
     return true
   end
 end
@@ -198,22 +194,26 @@ end
 function hover:do_request(args)
   local params = lsp.util.make_position_params()
   local method = 'textDocument/hover'
-  local client = util.get_client_by_method(method)
-  if not client then
+  local clients = util.get_client_by_method(method)
+  if not clients then
     self.pending_request = false
     vim.notify('[Lspsaga] all server of buffer not support hover request')
     return
   end
+  local count = 0
 
-  client.request(method, params, function(_, result, ctx)
-    self.pending_request = false
+  lsp.buf_request(api.nvim_get_current_buf(), method, params, function(_, result, ctx)
+    count = count + 1
+    if count == #clients then
+      self.pending_request = false
+    end
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
 
     if not result or not result.contents then
-      if ignore_error(args) then
+      if ignore_error(args, count == #clients) then
         vim.notify('No information available')
       end
       return
@@ -243,16 +243,11 @@ function hover:do_request(args)
     end
 
     if not value or #value == 0 then
-      if ignore_error(args) then
+      if ignore_error(args, count == #clients) then
         vim.notify('No information available')
       end
       return
     end
-
-    result.contents = {
-      kind = 'markdown',
-      value = value,
-    }
 
     local option_fn
     if args and has_arg(args, '++keep') then
@@ -264,9 +259,17 @@ function hover:do_request(args)
         return opt
       end
     end
+    local content = vim.split(value, '\n', { trimempty = true })
 
-    self:open_floating_preview(result.contents, option_fn)
-  end, api.nvim_get_current_buf())
+    if not self.winid then
+      self:open_floating_preview(content, option_fn)
+      return
+    end
+
+    if self.bufnr and api.nvim_buf_is_valid(self.bufnr) then
+      api.nvim_buf_set_lines(self.bufnr, -1, -1, false, content)
+    end
+  end)
 end
 
 function hover:remove_data()

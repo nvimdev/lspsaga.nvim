@@ -132,9 +132,13 @@ function symbol:node_is_keyword(buf, node)
 end
 
 function symbol:register_module()
+  local group = api.nvim_create_augroup('LspsagaSymbols', { clear = true })
   api.nvim_create_autocmd('LspAttach', {
-    group = api.nvim_create_augroup('LspsagaSymbols', { clear = false }),
+    group = group,
     callback = function(args)
+      if self[args.buf] then
+        return
+      end
       local client = lsp.get_client_by_id(args.data.client_id)
       if not client.supports_method('textDocument/documentSymbol') then
         return
@@ -148,6 +152,15 @@ function symbol:register_module()
           require('lspsaga.implement').start(args.buf, client)
         end
       end)
+    end,
+  })
+
+  api.nvim_create_autocmd('LspDetach', {
+    group = group,
+    callback = function(args)
+      if self[args.buf] then
+        self[args.buf] = nil
+      end
     end,
   })
 end
