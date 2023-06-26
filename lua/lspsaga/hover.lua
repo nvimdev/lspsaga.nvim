@@ -6,11 +6,13 @@ local treesitter = vim.treesitter
 local hover = {}
 
 local function has_arg(args, arg)
+  if not args then
+    return
+  end
   local tbl = vim.split(args, '%s')
   if vim.tbl_contains(tbl, arg) then
     return true
   end
-  return false
 end
 
 function hover:open_link()
@@ -104,12 +106,13 @@ function hover:open_floating_preview(content, option_fn)
       { config.ui.hover, 'Exception' },
       { ' Hover', 'TitleString' },
     }
+    float_option.title_pos = 'center'
   end
 
   local curbuf = api.nvim_get_current_buf()
 
   self.bufnr, self.winid = win
-    :new_float(float_option)
+    :new_float(float_option, false, option_fn and true or false)
     :setlines(content)
     :bufopt({
       ['filetype'] = 'markdown',
@@ -186,7 +189,7 @@ function hover:open_floating_preview(content, option_fn)
 end
 
 local function ignore_error(args, can_through)
-  if args and has_arg(args, '++silent') and can_through then
+  if has_arg(args, '++silent') and can_through then
     return true
   end
 end
@@ -250,7 +253,7 @@ function hover:do_request(args)
     end
 
     local option_fn
-    if args and has_arg(args, '++keep') then
+    if has_arg(args, '++keep') then
       option_fn = function(width)
         local opt = {}
         opt.relative = 'editor'
@@ -307,10 +310,11 @@ function hover:render_hover_doc(args)
   end
 
   if self.winid and api.nvim_win_is_valid(self.winid) then
-    if (args and not has_arg(args, '++keep')) or not args then
+    local win_conf = api.nvim_win_get_config(self.winid)
+    if win_conf.row[false] ~= 1 then
       api.nvim_set_current_win(self.winid)
       return
-    elseif args and has_arg(args, '++keep') then
+    else
       util.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.winid, true)
       self:remove_data()

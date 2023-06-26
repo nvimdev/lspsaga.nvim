@@ -223,7 +223,7 @@ local function msg_fmt(entry)
     .. (entry.code and entry.code or '')
 end
 
-function sd:toggle_expand(entrys_list)
+function sd:toggle_or_jump(entrys_list)
   local lnum = api.nvim_win_get_cursor(0)[1]
   local node = find_node(entrys_list, lnum)
   if not node then
@@ -232,9 +232,11 @@ function sd:toggle_expand(entrys_list)
     if not info then
       return
     end
+    api.nvim_win_close(self.winid, true)
     local ln, col, bn = unpack(vim.split(info, ':'))
     local wins = fn.win_findbuf(tonumber(bn))
     api.nvim_win_set_cursor(wins[#wins], { tonumber(ln) + 1, tonumber(col) })
+    clean_ctx()
     return
   end
 
@@ -277,6 +279,7 @@ function sd:show(opt)
       local virt_start = i == #curnode.diags and ui.lines[1] or ui.lines[2]
       local mes = msg_fmt(entry)
       if i == 1 then
+        ---@diagnostic disable-next-line: param-type-mismatch
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
         -- local counts = diag:get_diag_counts(curnode.diags)
         local text = '  ' .. fname
@@ -302,8 +305,9 @@ function sd:show(opt)
   else
     self:layout_normal()
   end
+  api.nvim_win_set_cursor(self.winid, { 2, 3 })
   util.map_keys(self.bufnr, 'n', diag_conf.keys.toggle_or_jump, function()
-    self:toggle_expand(opt.entrys_list)
+    self:toggle_or_jump(opt.entrys_list)
   end)
 end
 

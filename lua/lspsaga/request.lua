@@ -1,3 +1,0 @@
-local rq = {}
-
-return rq

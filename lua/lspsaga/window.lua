@@ -126,6 +126,7 @@ function win:new_float(float_opt, enter, force)
   enter = enter or false
 
   self.bufnr = float_opt.bufnr or api.nvim_create_buf(false, false)
+  float_opt.bufnr = nil
   float_opt = not force and make_floating_popup_options(float_opt)
     or vim.tbl_extend('force', default(), float_opt)
 
