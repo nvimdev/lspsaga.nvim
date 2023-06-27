@@ -67,9 +67,8 @@ local function tail_push(list, node)
   while true do
     if not tmp.next then
       break
-    else
-      tmp = tmp.next
     end
+    tmp = tmp.next
   end
   tmp.next = { value = node }
 end
@@ -193,35 +192,32 @@ end
 function ot:collapse(node, curlnum)
   local row = curlnum - 1
   local inlevel = fn.indent(curlnum)
-  node = node.next
-  if not node then
-    return
-  end
+  local tmp = node.next
 
   while true do
-    local icon = kind[node.value.kind][2]
-    local level = node.value.inlevel
+    local icon = kind[tmp.value.kind][2]
+    local level = tmp.value.inlevel
     buf_set_lines(
       self.bufnr,
       row + 1,
       row + 1,
       false,
-      { (' '):rep(node.value.inlevel) .. node.value.name }
+      { (' '):rep(tmp.value.inlevel) .. tmp.value.name }
     )
     row = row + 1
-    node.value.winline = row + 1
+    tmp.value.winline = row + 1
     buf_set_extmark(self.bufnr, ns, row, level - 2, {
-      virt_text = { { icon, 'SagaWinbar' .. kind[node.value.kind][1] } },
+      virt_text = { { icon, 'SagaWinbar' .. kind[tmp.value.kind][1] } },
       virt_text_pos = 'overlay',
     })
-    local has_child = node.next and node.next.value.inlevel > level
+    local has_child = tmp.next and tmp.next.value.inlevel > level
     if has_child then
       buf_set_extmark(self.bufnr, ns, row, level - 4, {
         virt_text = { { config.ui.collapse, 'SagaCollapse' } },
         virt_text_pos = 'overlay',
       })
     end
-    local islast = not node.next or node.next.value.inlevel < level
+    local islast = not tmp.next or tmp.next.value.inlevel < level
     for j = 1, level - 4, 2 do
       local virt = {}
       if j + 2 > level - 4 and not has_child then
@@ -240,15 +236,15 @@ function ot:collapse(node, curlnum)
 
     if config.outline.detail then
       buf_set_extmark(self.bufnr, ns, row, 0, {
-        virt_text = { { node.value.detail, 'Comment' } },
+        virt_text = { { tmp.value.detail, 'Comment' } },
       })
     end
-    update_winline(node, 1)
-    node = node.next
-    if not node or node.value.inlevel <= inlevel then
+    tmp = tmp.next
+    if not tmp or tmp.value.inlevel <= inlevel then
       break
     end
   end
+  update_winline(node, row - curlnum - 1)
 end
 
 function ot:expand_or_jump()

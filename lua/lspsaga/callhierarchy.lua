@@ -5,6 +5,7 @@ local win = require('lspsaga.window')
 local call_conf, ui = config.callhierarchy, config.ui
 
 local ch = {}
+ch.__index = ch
 
 function ch.__newindex(t, k, v)
   rawset(t, k, v)
@@ -39,23 +40,38 @@ local function pick_call_hierarchy_item(call_hierarchy_items)
   return choice
 end
 
+local function tail_push(list, node)
+  local head = list
+  if not head.value then
+    head.value = node
+    return
+  end
+  while true do
+    if not head.next then
+      break
+    end
+    head = head.next
+  end
+  head.next = { value = node, next = nil }
+end
+
 ---@private
-function ch:call_hierarchy(client, item, parent)
+function ch:call_hierarchy(item, client, parent)
   local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
   local frame = 0
   local curline = api.nvim_win_get_cursor(0)[1]
-  if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) and parent then
-    local timer = uv.new_timer()
-    timer:start(0, 50, function()
-      if self.pending_request then
-        self.pending_request = false
-      end
-
-      if not self.pending_request and not timer:is_closing() then
-        self.pending_request = false
-      end
-    end)
-  end
+  -- if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) and parent then
+  --   local timer = uv.new_timer()
+  --   timer:start(0, 50, function()
+  --     if self.pending_request then
+  --       self.pending_request = false
+  --     end
+  --
+  --     if not self.pending_request and not timer:is_closing() then
+  --       self.pending_request = false
+  --     end
+  --   end)
+  -- end
 
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
@@ -64,7 +80,11 @@ function ch:call_hierarchy(client, item, parent)
       return
     end
 
-    self:render_win()
+    for _, val in ipairs(res) do
+      tail_push(self.list, val)
+    end
+
+    -- self:render_win()
   end)
 end
 
@@ -74,7 +94,7 @@ function ch:send_prepare_call()
     return
   end
   self.main_buf = api.nvim_get_current_buf()
-  local clients = util.get_client_by_method()
+  local clients = util.get_client_by_method(get_method(1))
   if #clients == 0 then
     vim.notify('[Lspsaga] all clients of this buffer not support callhierarchy')
     return
@@ -94,14 +114,15 @@ function ch:send_prepare_call()
     end
     client = clients[choice]
   end
+  self.list = {}
 
   local params = lsp.util.make_position_params()
   client.request(get_method(1), params, function(_, result, ctx)
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
-    local call_hierarchy_item = pick_call_hierarchy_item(result)
-    self:call_hierarchy(client, call_hierarchy_item)
+    local item = pick_call_hierarchy_item(result)
+    self:call_hierarchy(item, client)
   end, self.main_buf)
 end
 
