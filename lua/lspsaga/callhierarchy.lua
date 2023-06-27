@@ -1,14 +1,27 @@
 local api, fn, lsp, uv = vim.api, vim.fn, vim.lsp, vim.loop
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
-local win = require('lspsaga.window')
+local slist = require('lspsaga.slist')
+local buf_set_lines = api.nvim_buf_set_lines
+local buf_set_extmark = api.nvim_buf_set_extmark
+local kind = require('lspsaga.lspkind').kind
+local ly = require('lspsaga.layout')
 local call_conf, ui = config.callhierarchy, config.ui
+local ns = api.nvim_create_namespace('SagaCallhierarchy')
 
 local ch = {}
 ch.__index = ch
 
 function ch.__newindex(t, k, v)
   rawset(t, k, v)
+end
+
+function ch:clean()
+  for key, _ in pairs(self) do
+    if type(key) ~= 'function' then
+      self[key] = nil
+    end
+  end
 end
 
 local function get_method(type)
@@ -40,26 +53,10 @@ local function pick_call_hierarchy_item(call_hierarchy_items)
   return choice
 end
 
-local function tail_push(list, node)
-  local head = list
-  if not head.value then
-    head.value = node
-    return
-  end
-  while true do
-    if not head.next then
-      break
-    end
-    head = head.next
-  end
-  head.next = { value = node, next = nil }
-end
-
----@private
-function ch:call_hierarchy(item, client, parent)
-  local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
-  local frame = 0
-  local curline = api.nvim_win_get_cursor(0)[1]
+function ch:spinner()
+  -- local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
+  -- local frame = 0
+  -- local curline = api.nvim_win_get_cursor(0)[1]
   -- if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) and parent then
   --   local timer = uv.new_timer()
   --   timer:start(0, 50, function()
@@ -72,7 +69,9 @@ function ch:call_hierarchy(item, client, parent)
   --     end
   --   end)
   -- end
+end
 
+function ch:call_hierarchy(item, client)
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
     self.pending_request = false
@@ -80,11 +79,38 @@ function ch:call_hierarchy(item, client, parent)
       return
     end
 
-    for _, val in ipairs(res) do
-      tail_push(self.list, val)
+    local cword = fn.expand('<cword>')
+    if not self.left_winid then
+      local height = bit.rshift(vim.o.lines, 1) - 4
+      self.left_bufnr, self.left_winid = ly:new(self.layout):left(height, 20)
+      buf_set_lines(self.left_bufnr, 0, -1, false, { cword })
     end
 
-    -- self:render_win()
+    local curlnum = api.nvim_win_get_cursor(0)[1]
+    local inlevel = fn.indent(curlnum)
+    local curnode = slist.find_node(self.list, curlnum)
+    local indent = (' '):rep(inlevel + 4)
+    local row = curlnum - 1
+    for _, val in ipairs(res) do
+      local data = self.method == get_method(2) and val.from or val.to
+      if not curnode then
+        buf_set_lines(self.left_bufnr, -1, -1, false, { indent .. data.name })
+        row = row + 1
+        buf_set_extmark(self.left_bufnr, ns, row, #indent - 4, {
+          virt_text = { { config.ui.expand, 'SagaExpand' } },
+          virt_text_pos = 'overlay',
+          hl_mode = 'combine',
+        })
+        buf_set_extmark(self.left_bufnr, ns, row, #indent - 2, {
+          virt_text = { { kind[data.kind][2], 'SagaWinbar' .. kind[data.kind][3] } },
+          virt_text_pos = 'overlay',
+          hl_mode = 'combine',
+        })
+        slist.tail_push(self.list, val)
+      else
+        slist.insert_node(curnode, val)
+      end
+    end
   end)
 end
 
@@ -114,7 +140,7 @@ function ch:send_prepare_call()
     end
     client = clients[choice]
   end
-  self.list = {}
+  self.list = slist.new()
 
   local params = lsp.util.make_position_params()
   client.request(get_method(1), params, function(_, result, ctx)
@@ -126,26 +152,16 @@ function ch:send_prepare_call()
   end, self.main_buf)
 end
 
-function ch:expand_collapse() end
+function ch:toggle_or_request() end
 
-function ch:apply_map() end
-
-function ch:render_win()
-  self:apply_map()
-end
-
-function ch:clean()
-  for key, _ in pairs(self) do
-    if type(key) ~= 'function' then
-      self[key] = nil
-    end
+function ch:send_method(t, args)
+  self.method = get_method(t)
+  self.layout = config.callhierarchy.layout
+  if vim.tbl_contains(args, '++normal') then
+    self.layout = 'normal'
+  elseif vim.tbl_contains(args, '++float') then
+    self.layout = 'float'
   end
-end
-
-function ch:send_method(type)
-  self.cword = fn.expand('<cword>')
-  self.method = get_method(type)
-  self.data = {}
   self:send_prepare_call()
 end
 

@@ -36,7 +36,7 @@ local default_config = {
     max_show_height = 0.6,
     text_hl_follow = true,
     border_follow = true,
-    extend_relatedInformation = true,
+    extend_relatedInformation = false,
     diagnostic_only_current = false,
     keys = {
       exec_action = 'o',
@@ -123,6 +123,7 @@ local default_config = {
   },
   callhierarchy = {
     show_detail = false,
+    layout = 'float',
     keys = {
       edit = 'e',
       vsplit = 's',

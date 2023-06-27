@@ -111,11 +111,24 @@ function obj:setlines(lines, row, erow)
   return self
 end
 
+--float window only
 function obj:winsetconf(config)
   validate({
     config = { config, 't' },
   })
   api.nvim_win_set_config(self.winid, config)
+  return self
+end
+
+--normal window only
+function obj:setwidth(width)
+  api.nvim_win_set_width(self.winid, width)
+  return self
+end
+
+--normal window only
+function obj:setheight(height)
+  api.nvim_win_set_height(self.winid, height)
   return self
 end
 
@@ -135,7 +148,10 @@ function win:new_float(float_opt, enter, force)
 end
 
 function win:new_normal(direct, bufnr)
-  vim.cmd(direct)
+  local user_val = vim.opt.splitbelow
+  vim.opt.splitbelow = true
+  vim.cmd(direct .. ' new')
+  vim.opt.splitbelow = user_val
   self.bufnr = bufnr or api.nvim_create_buf(false, false)
   self.winid = api.nvim_get_current_win()
   api.nvim_win_set_buf(self.winid, self.bufnr)

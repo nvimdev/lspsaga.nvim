@@ -46,11 +46,11 @@ local subcommands = {
   outline = function()
     require('lspsaga.symbol'):outline()
   end,
-  incoming_calls = function()
-    require('lspsaga.callhierarchy'):send_method(2)
+  incoming_calls = function(args)
+    require('lspsaga.callhierarchy'):send_method(2, args)
   end,
-  outgoing_calls = function()
-    require('lspsaga.callhierarchy'):send_method(3)
+  outgoing_calls = function(args)
+    require('lspsaga.callhierarchy'):send_method(3, args)
   end,
   term_toggle = function(args)
     require('lspsaga.floaterm'):open_float_terminal(args)

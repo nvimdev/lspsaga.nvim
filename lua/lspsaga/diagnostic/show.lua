@@ -70,10 +70,8 @@ local function range_node_winline(node, val)
 end
 
 function sd:layout_normal()
-  local default = vim.opt.splitbelow
-  vim.opt.splitbelow = true
   self.bufnr, self.winid = win
-    :new_normal('sp new', self.bufnr)
+    :new_normal('sp', self.bufnr)
     :bufopt({
       ['modifiable'] = false,
       ['filetype'] = 'sagadiagnostc',
@@ -86,7 +84,6 @@ function sd:layout_normal()
     })
     :wininfo()
   api.nvim_win_set_height(self.winid, 10)
-  vim.opt.splitbelow = default
 end
 
 function sd:layout_float(opt)
@@ -223,14 +220,6 @@ local function msg_fmt(entry)
     .. (entry.code and entry.code or '')
 end
 
-local function argument_has_layout(args)
-  if vim.tbl_contains(args, '++float') then
-    return 'float'
-  elseif vim.tbl_contains(args, '++normal') then
-    return 'normal'
-  end
-end
-
 function sd:toggle_or_jump(entrys_list)
   local lnum = api.nvim_win_get_cursor(0)[1]
   local node = find_node(entrys_list, lnum)
@@ -308,10 +297,16 @@ function sd:show(opt)
     curnode = curnode.next
   end
 
-  local layout = argument_has_layout(opt.args)
-  if layout and layout == 'float' or (not layout and diag_conf.show_layout == 'float') then
+  local layout = diag_conf.show_layout
+  if vim.tbl_contains(opt.args, '++float') then
+    layout = 'float'
+  elseif vim.tbl_contains(opt.args, '++normal') then
+    layout = 'normal'
+  end
+
+  if layout == 'float' then
     self:layout_float(opt)
-  elseif layout and layout == 'normal' or (not layout and diag_conf.show_layout == 'normal') then
+  else
     self:layout_normal()
   end
 
