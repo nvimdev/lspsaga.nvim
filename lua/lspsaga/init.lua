@@ -131,7 +131,7 @@ local default_config = {
       tabe = 't',
       jump = 'o',
       quit = 'q',
-      expand_collapse = 'u',
+      toggle = 'u',
     },
   },
   implement = {

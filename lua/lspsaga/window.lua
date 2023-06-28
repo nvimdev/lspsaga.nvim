@@ -92,6 +92,7 @@ end
 function obj:winopt(name, value)
   if type(name) == 'table' then
     for key, val in pairs(name) do
+      print(key, val, self.winid)
       api.nvim_set_option_value(key, val, { scope = 'local', win = self.winid })
     end
   else
@@ -150,7 +151,7 @@ end
 function win:new_normal(direct, bufnr)
   local user_val = vim.opt.splitbelow
   vim.opt.splitbelow = true
-  vim.cmd(direct .. ' new')
+  vim.cmd[direct]('new')
   vim.opt.splitbelow = user_val
   self.bufnr = bufnr or api.nvim_create_buf(false, false)
   self.winid = api.nvim_get_current_win()
@@ -164,7 +165,7 @@ function win:from_exist(bufnr, winid)
   return setmetatable(win, obj)
 end
 
-function obj:restore_option()
+function obj:minimal_opts()
   local minimal_opts = {
     ['number'] = vim.opt.number,
     ['relativenumber'] = vim.opt.relativenumber,

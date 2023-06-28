@@ -1,5 +1,6 @@
-local api, fn = vim.api, vim.fn
 local win = require('lspsaga.window')
+local float = require('lspsaga.layout.float')
+local normal = require('lspsaga.layout.normal')
 local M = {}
 
 function M:new(layout)
@@ -8,28 +9,25 @@ function M:new(layout)
 end
 
 function M:left(height, width, bufnr)
-  if self.layout == 'float' then
-    local curwin = api.nvim_get_current_win()
-    local pos = api.nvim_win_get_cursor(curwin)
-    local float_opt = {
-      width = width,
-      height = height,
-      bufnr = bufnr,
-      offset_x = -pos[2],
-    }
-    local topline = fn.line('w0')
-    if topline - pos[1] < height then
-      fn.winrestview({ topline = topline + height - pos[1] })
-    end
-    self.left_bufnr, self.left_winid =
-      win:new_float(float_opt, true):bufopt('buftype', 'nofile'):wininfo()
-  else
-    self.left_bufnr, self.left_winid =
-      win:new_normal('sp', bufnr):setheight(height):setwidth(width):wininfo()
-  end
-  return self.left_bufnr, self.left_winid
+  local fn = self.layout == 'float' and float.left or normal.left
+  self.left_bufnr, self.left_winid = fn(height, width, bufnr)
+  return self
 end
 
-function M:right() end
+function M:right()
+  local fn = self.layout == 'float' and float.right or normal.right
+  self.right_bufnr, self.right_winid = fn(self.left_winid)
+  return self
+end
+
+function M:done(fn)
+  vim.validate({
+    fn = { fn, { 'f', 'nil' } },
+  })
+  if fn then
+    fn(self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid)
+  end
+  return self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid
+end
 
 return M

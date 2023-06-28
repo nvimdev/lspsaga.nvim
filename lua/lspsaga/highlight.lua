@@ -13,6 +13,8 @@ local function hi_define()
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
     SagaVirtLine = { link = 'Comment' },
+    SagaSpinnerTitle = { link = 'Statement' },
+    SagaSpinner = { link = 'Statement' },
     -- code action
     ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
@@ -31,8 +33,6 @@ local function hi_define()
     FinderType = { link = 'Type' },
     FinderStart = { link = 'Function' },
     --finder spinner
-    FinderSpinnerTitle = { link = 'Statement' },
-    FinderSpinner = { link = 'Statement' },
     FinderPreview = { link = 'Search' },
     FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },

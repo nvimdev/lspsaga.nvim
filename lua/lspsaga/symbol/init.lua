@@ -136,7 +136,7 @@ function symbol:register_module()
   api.nvim_create_autocmd('LspAttach', {
     group = group,
     callback = function(args)
-      if self[args.buf] then
+      if self[args.buf] or api.nvim_get_current_buf() ~= args.buf then
         return
       end
       local client = lsp.get_client_by_id(args.data.client_id)
