@@ -21,7 +21,8 @@ function M:left(height, width, bufnr)
     if topline - pos[1] < height then
       fn.winrestview({ topline = topline + height - pos[1] })
     end
-    self.left_bufnr, self.left_winid = win:new_float(float_opt, true):wininfo()
+    self.left_bufnr, self.left_winid =
+      win:new_float(float_opt, true):bufopt('buftype', 'nofile'):wininfo()
   else
     self.left_bufnr, self.left_winid =
       win:new_normal('sp', bufnr):setheight(height):setwidth(width):wininfo()

@@ -99,12 +99,10 @@ function ch:call_hierarchy(item, client)
         buf_set_extmark(self.left_bufnr, ns, row, #indent - 4, {
           virt_text = { { config.ui.expand, 'SagaExpand' } },
           virt_text_pos = 'overlay',
-          hl_mode = 'combine',
         })
         buf_set_extmark(self.left_bufnr, ns, row, #indent - 2, {
-          virt_text = { { kind[data.kind][2], 'SagaWinbar' .. kind[data.kind][3] } },
+          virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
           virt_text_pos = 'overlay',
-          hl_mode = 'combine',
         })
         slist.tail_push(self.list, val)
       else

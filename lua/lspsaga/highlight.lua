@@ -77,8 +77,8 @@ local function hi_define()
     SagaImpIcon = { link = 'PreProc' },
     --Winbar
     SagaWinbarSep = { link = 'Operator' },
-    SagaWinbarFileName = { link = 'Comment' },
-    SagaWinbarFolderName = { link = 'Comment' },
+    SagaFileName = { link = 'Comment' },
+    SagaFolderName = { link = 'Comment' },
   }
 end
 
@@ -88,7 +88,7 @@ local function init_highlight()
   end
 
   for _, item in pairs(kind) do
-    api.nvim_set_hl(0, 'SagaWinbar' .. item[1], { link = item[3], default = true })
+    api.nvim_set_hl(0, 'Saga' .. item[1], { link = item[3], default = true })
   end
 end
 

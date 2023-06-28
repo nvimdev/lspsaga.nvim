@@ -100,7 +100,7 @@ function ot:parse(symbols)
         node.winline = row
       end
       buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
-        virt_text = { { kind[node.kind][2], 'SagaWinbar' .. kind[node.kind][1] } },
+        virt_text = { { kind[node.kind][2], 'Saga' .. kind[node.kind][1] } },
         virt_text_pos = 'overlay',
       })
       local inlevel = 4 + 2 * level
@@ -207,7 +207,7 @@ function ot:collapse(node, curlnum)
     row = row + 1
     tmp.value.winline = row + 1
     buf_set_extmark(self.bufnr, ns, row, level - 2, {
-      virt_text = { { icon, 'SagaWinbar' .. kind[tmp.value.kind][1] } },
+      virt_text = { { icon, 'Saga' .. kind[tmp.value.kind][1] } },
       virt_text_pos = 'overlay',
     })
     local has_child = tmp.next and tmp.next.value.inlevel > level

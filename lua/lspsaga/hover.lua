@@ -5,6 +5,11 @@ local util = require('lspsaga.util')
 local treesitter = vim.treesitter
 local hover = {}
 
+function hover:clean()
+  self.bufnr = nil
+  self.winid = nil
+end
+
 function hover:open_link()
   if not self.bufnr or not api.nvim_buf_is_valid(self.bufnr) then
     return
@@ -16,7 +21,6 @@ function hover:open_link()
   end
   local text = treesitter.get_node_text(node, self.bufnr)
   local link = text:match('%((.*)%)')
-  print(link)
   if not link then
     return
   end
@@ -108,6 +112,7 @@ function hover:open_floating_preview(content, option_fn)
       ['filetype'] = 'markdown',
       ['modifiable'] = false,
       ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
     })
     :winopt({
       ['winhl'] = 'NormalFloat:HoverNormal,Border:HoverBorder',
@@ -136,27 +141,22 @@ function hover:open_floating_preview(content, option_fn)
   util.map_keys(self.bufnr, 'n', 'q', function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
       api.nvim_win_close(self.winid, true)
-      self:remove_data()
+      self:clean()
     end
   end)
 
   if not option_fn then
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'WinScrolled' }, {
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete' }, {
       buffer = curbuf,
       callback = function(opt)
         if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
           util.delete_scroll_map(curbuf)
-          api.nvim_buf_delete(self.bufnr, { force = true })
         end
 
         if self.winid and api.nvim_win_is_valid(self.winid) then
           api.nvim_win_close(self.winid, true)
-          self:remove_data()
         end
-
-        if opt.event == 'WinScrolled' then
-          vim.cmd('Lspsaga hover_doc')
-        end
+        self:clean()
         api.nvim_del_autocmd(opt.id)
       end,
       desc = '[Lspsaga] Auto close hover window',
@@ -167,7 +167,7 @@ function hover:open_floating_preview(content, option_fn)
         if opt.buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
           api.nvim_win_close(self.winid, true)
           pcall(api.nvim_del_autocmd, opt.id)
-          self:remove_data()
+          self:clean()
         end
       end,
     })
@@ -188,7 +188,7 @@ function hover:do_request(args)
   local params = lsp.util.make_position_params()
   local method = 'textDocument/hover'
   local clients = util.get_client_by_method(method)
-  if not clients then
+  if #clients == 0 then
     self.pending_request = false
     vim.notify('[Lspsaga] all server of buffer not support hover request')
     return
@@ -276,14 +276,6 @@ function hover:do_request(args)
   end)
 end
 
-function hover:remove_data()
-  for k, v in pairs(self) do
-    if type(v) ~= 'function' then
-      self[k] = nil
-    end
-  end
-end
-
 local function check_parser()
   local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
   local has_parser = true
@@ -311,14 +303,13 @@ function hover:render_hover_doc(args)
   end
 
   if self.winid and api.nvim_win_is_valid(self.winid) then
-    local win_conf = api.nvim_win_get_config(self.winid)
-    if win_conf.row[false] ~= 1 then
+    if not vim.tbl_contains(args, '++keep') then
       api.nvim_set_current_win(self.winid)
       return
     else
       util.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.winid, true)
-      self:remove_data()
+      self:clean()
       return
     end
   end
