@@ -92,7 +92,6 @@ end
 function obj:winopt(name, value)
   if type(name) == 'table' then
     for key, val in pairs(name) do
-      print(key, val, self.winid)
       api.nvim_set_option_value(key, val, { scope = 'local', win = self.winid })
     end
   else

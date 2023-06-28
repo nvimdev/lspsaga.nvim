@@ -73,6 +73,17 @@ function ch:spinner(node)
   return timer
 end
 
+function ch:set_extmark(curlnum, data, inlevel)
+  buf_set_extmark(self.left_bufnr, ns, curlnum, inlevel - 4, {
+    virt_text = { { config.ui.expand, 'SagaExpand' } },
+    virt_text_pos = 'overlay',
+  })
+  buf_set_extmark(self.left_bufnr, ns, curlnum, inlevel - 2, {
+    virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
+    virt_text_pos = 'overlay',
+  })
+end
+
 function ch:toggle_or_request()
   if self.pending_request then
     vim.notify(('[Lspsaga] already have a request for %s'):format(self.method), vim.log.levels.WARN)
@@ -87,7 +98,8 @@ function ch:toggle_or_request()
   local next = curnode.next
   if not next or next.value.inlevel <= curnode.value.inlevel then
     local timer = self:spinner()
-    self:call_hierarchy(curnode.value, client, timer)
+    local item = self.method == get_method(2) and curnode.value.from or curnode.value.to
+    self:call_hierarchy(item, client, timer, curlnum)
     return
   end
   local level = curnode.value.inlevel
@@ -95,39 +107,50 @@ function ch:toggle_or_request()
   while true do
     row = row + 1
     local l = fn.indent(row)
-    if l >= level then
+    if l <= level or l == -1 then
       break
     end
   end
-  local count = row - curlnum
-  if type(curnode.expand) == 'bool' and curnode.expand then
-    buf_set_lines(self.left_bufnr, curlnum, row, false, {})
-    slist.update_winline(curnode, -count)
+  local count = row - curlnum - 1
+
+  if type(curnode.value.expand) == 'boolean' and curnode.value.expand then
+    buf_set_lines(self.left_bufnr, curlnum, curlnum + count, false, {})
+    curnode.value.expand = false
+    slist.update_winline(curnode, -1)
     return
   end
 
-  if type(curnode.expand) == 'bool' and not curnode.expand then
+  if type(curnode.value.expand) == 'boolean' and not curnode.value.expand then
+    curnode.value.expand = true
     local tmp = curnode.next
-    while count ~= 0 do
+    count = 0
+    while tmp do
+      local data = self.method == get_method(2) and tmp.value.from or tmp.value.to
       local indent = (' '):rep(tmp.value.inlevel)
-      buf_set_lines(self.left_bufnr, curlnum - 1, curlnum, false, { indent .. tmp.value.name })
-      count = count - 1
+      buf_set_lines(self.left_bufnr, curlnum, curlnum, false, { indent .. data.name })
+      self:set_extmark(curlnum, data, #indent)
+      count = count + 1
+      if not tmp.next or tmp.next.value.inlevel <= level then
+        break
+      end
       tmp = tmp.next
     end
-    slist.update_winline(curnode, row - curlnum)
+    slist.update_winline(curnode, count)
   end
 end
 
-function ch:keymap()
-  util.map_keys(self.left_bufnr, 'n', config.callhierarchy.keys.quit, function()
-    util.close_win({ self.left_winid, self.right_winid })
+function ch:keymap(bufnr, winid, _, right_winid)
+  util.map_keys(bufnr, 'n', config.callhierarchy.keys.quit, function()
+    util.close_win({ winid, right_winid })
+    self:clean()
   end)
-  util.map_keys(self.left_bufnr, 'n', config.callhierarchy.keys.toggle, function()
+
+  util.map_keys(bufnr, 'n', config.callhierarchy.keys.toggle, function()
     self:toggle_or_request()
   end)
 end
 
-function ch:call_hierarchy(item, client, timer)
+function ch:call_hierarchy(item, client, timer, curlnum)
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
     self.pending_request = false
@@ -144,16 +167,15 @@ function ch:call_hierarchy(item, client, timer)
       self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid = ly:new(self.layout)
         :left(height, 20)
         :right(20)
-        :done(function()
-          self:keymap()
+        :done(function(bufnr, winid, _, right_winid)
+          self:keymap(bufnr, winid, _, right_winid)
         end)
     end
 
-    local curlnum = api.nvim_win_get_cursor(0)[1]
-    local inlevel = fn.indent(curlnum)
+    curlnum = curlnum or 0
+    local inlevel = curlnum == 0 and 2 or fn.indent(curlnum)
     local curnode = slist.find_node(self.list, curlnum)
-    local indent = (' '):rep(inlevel + 4)
-    local row = 0
+    local indent = (' '):rep(inlevel + 2)
 
     for _, val in ipairs(res) do
       local data = self.method == get_method(2) and val.from or val.to
@@ -168,21 +190,20 @@ function ch:call_hierarchy(item, client, timer)
       api.nvim_win_set_cursor(self.right_winid, { range.start.line, range.start.character + 1 })
       api.nvim_set_option_value('signcolumn', 'no', { scope = 'local', win = self.right_winid })
 
-      buf_set_lines(self.left_bufnr, row, -1, false, { indent .. data.name })
-      buf_set_extmark(self.left_bufnr, ns, row, #indent - 4, {
-        virt_text = { { config.ui.expand, 'SagaExpand' } },
-        virt_text_pos = 'overlay',
-      })
-      buf_set_extmark(self.left_bufnr, ns, row, #indent - 2, {
-        virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
-        virt_text_pos = 'overlay',
-      })
-      row = row + 1
-      val.winline = row
+      buf_set_lines(
+        self.left_bufnr,
+        curlnum,
+        curlnum == 0 and -1 or curlnum,
+        false,
+        { indent .. data.name }
+      )
+      self:set_extmark(curlnum, data, #indent)
+      curlnum = curlnum + 1
+      val.winline = curlnum
       if not curnode then
         slist.tail_push(self.list, val)
       else
-        val.expand = true
+        curnode.value.expand = true
         slist.insert_node(curnode, val)
       end
     end
