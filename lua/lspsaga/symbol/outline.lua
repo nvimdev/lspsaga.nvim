@@ -270,7 +270,7 @@ function ot:expand_or_jump()
     buf_set_lines(self.bufnr, curlnum, _end, false, {})
     buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
       id = node.value.virtid,
-      virt_text = { { config.ui.expand, 'SagaExpand' } },
+      virt_text = { { config.ui.expand, 'SagaToggle' } },
       virt_text_pos = 'overlay',
     })
 

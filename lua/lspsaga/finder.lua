@@ -591,7 +591,7 @@ function finder:apply_map()
     text = text:gsub(ui.collapse, ui.expand)
     api.nvim_buf_clear_namespace(self.bufnr, ns_id, curline - 1, curline + #nodes)
     api.nvim_buf_set_lines(self.bufnr, curline - 1, curline + #nodes, false, { text })
-    api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaExpand', nodes[1].start - 1, 0, 5)
+    api.nvim_buf_add_highlight(self.bufnr, ns_id, 'SagaToggle', nodes[1].start - 1, 0, 5)
     self.lspdata[nodes[1].method].data[fname].expand = false
     self:change_node_winline(function(item)
       return item.winline > curline + #nodes

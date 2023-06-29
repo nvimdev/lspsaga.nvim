@@ -22,9 +22,10 @@ end
 
 function M.right(left_winid)
   vim.cmd.vsplit('new')
-  api.nvim_set_current_win(left_winid)
   api.nvim_win_set_width(left_winid, M.width)
-  return api.nvim_get_current_buf(), api.nvim_get_current_win()
+  local rbuf, rwinid = api.nvim_get_current_buf(), api.nvim_get_current_win()
+  api.nvim_set_current_win(left_winid)
+  return rbuf, rwinid
 end
 
 return M

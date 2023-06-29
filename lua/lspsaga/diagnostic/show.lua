@@ -243,14 +243,14 @@ function sd:toggle_or_jump(entrys_list)
     nvim_buf_set_lines(self.bufnr, lnum, lnum + #node.diags, false, {})
     node.expand = false
     nvim_buf_set_extmark(self.bufnr, ns, lnum - 1, 0, {
-      virt_text = { { ui.expand, 'SagaExpand' } },
+      virt_text = { { ui.expand, 'SagaToggle' } },
       virt_text_pos = 'overlay',
       hl_mode = 'combine',
     })
     range_node_winline(node.next, -#node.diags)
   else
     nvim_buf_set_extmark(self.bufnr, ns, lnum - 1, 0, {
-      virt_text = { { ui.collapse, 'SagaCollapse' } },
+      virt_text = { { ui.collapse, 'SagaToggle' } },
       virt_text_pos = 'overlay',
       hl_mode = 'combine',
     })
