@@ -1,4 +1,3 @@
-local win = require('lspsaga.window')
 local float = require('lspsaga.layout.float')
 local normal = require('lspsaga.layout.normal')
 local M = {}
