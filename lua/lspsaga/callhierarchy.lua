@@ -145,6 +145,7 @@ function ch:toggle_or_request()
         virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
         virt_text_pos = 'overlay',
       })
+      self:render_virtline(curlnum, tmp.value.inlevel)
       curlnum = curlnum + 1
       count = count + 1
       if not tmp.next or tmp.next.value.inlevel <= level then
@@ -189,6 +190,26 @@ function ch:peek_view()
     end,
     desc = '[Lspsaga] callhierarchy peek preview',
   })
+end
+
+function ch:render_virtline(row, inlevel)
+  for i = 1, inlevel - 4, 2 do
+    local virt = {}
+    if i + 2 > inlevel - 4 then
+      virt = {
+        { config.ui.lines[2], 'SagaVirtLine' },
+        { config.ui.lines[4], 'SagaVirtLine' },
+      }
+    else
+      virt = {
+        { config.ui.lines[3], 'SagaVirtLine' },
+      }
+    end
+    buf_set_extmark(self.left_bufnr, ns, row, i - 1, {
+      virt_text = virt,
+      virt_text_pos = 'overlay',
+    })
+  end
 end
 
 function ch:call_hierarchy(item, client, timer, curlnum)
@@ -241,6 +262,9 @@ function ch:call_hierarchy(item, client, timer, curlnum)
         virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
         virt_text_pos = 'overlay',
       })
+      if curlnum ~= 0 then
+        self:render_virtline(curlnum, #indent)
+      end
       curlnum = curlnum + 1
       val.winline = curlnum
       if not curnode then

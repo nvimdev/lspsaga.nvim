@@ -418,6 +418,17 @@ function ot:auto_close(group)
   })
 end
 
+function ot:clean_after_close()
+  api.nvim_create_autocmd('BufDelete', {
+    buffer = self.bufnr,
+    callback = function(args)
+      if args.buf == self.bufnr then
+        clean_ctx()
+      end
+    end,
+  })
+end
+
 function ot:outline(buf)
   if self.winid and api.nvim_win_is_valid(self.winid) then
     api.nvim_win_close(self.winid, true)
@@ -439,6 +450,7 @@ function ot:outline(buf)
   end)
 
   local group = api.nvim_create_augroup('outline', { clear = true })
+  self:clean_after_close()
   self:refresh(group)
 
   if config.outline.auto_preview then
