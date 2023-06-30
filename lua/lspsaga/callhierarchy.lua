@@ -104,7 +104,7 @@ function ch:toggle_or_request()
   local client = vim.lsp.get_client_by_id(curnode.value.client_id)
   local next = curnode.next
   if not next or next.value.inlevel <= curnode.value.inlevel then
-    local timer = self:spinner(curnode)
+    local timer = nil
     local item = self.method == get_method(2) and curnode.value.from or curnode.value.to
     self:call_hierarchy(item, client, timer, curlnum)
     return
@@ -257,6 +257,7 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       curnode.value.expand = true
       self:set_toggle_icon(config.ui.collapse, curlnum - 1, inlevel - 4, curnode.value.virtid)
     end
+    local tmp = curnode
 
     for _, val in ipairs(res) do
       local data = self.method == get_method(2) and val.from or val.to
@@ -286,7 +287,12 @@ function ch:call_hierarchy(item, client, timer, curlnum)
         slist.tail_push(self.list, val)
       else
         slist.insert_node(curnode, val)
+        curnode = curnode.next
       end
+    end
+
+    if curnode and curnode.next then
+      slist.update_winline(curnode, #res)
     end
   end)
 end
