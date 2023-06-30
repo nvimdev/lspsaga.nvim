@@ -88,11 +88,14 @@ local default_config = {
   definition = {
     width = 0.6,
     height = 0.5,
-    edit = '<C-c>o',
-    vsplit = '<C-c>v',
-    split = '<C-c>i',
-    tabe = '<C-c>t',
-    quit = 'q',
+    keys = {
+      edit = '<C-c>o',
+      vsplit = '<C-c>v',
+      split = '<C-c>i',
+      tabe = '<C-c>t',
+      quit = 'q',
+      close_all = '<C-c>k',
+    },
   },
   rename = {
     quit = '<Esc>',

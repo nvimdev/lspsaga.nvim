@@ -36,10 +36,6 @@ local function hi_define()
     FinderNormal = { link = 'SagaNormal' },
     FinderBorder = { link = 'SagaBorder' },
     FinderPreviewBorder = { link = 'SagaBorder' },
-    -- definition
-    DefinitionBorder = { link = 'SagaBorder' },
-    DefinitionNormal = { link = 'SagaNormal' },
-    DefinitionSearch = { link = 'Search' },
     -- hover
     HoverNormal = { link = 'SagaNormal' },
     HoverBorder = { link = 'SagaBorder' },

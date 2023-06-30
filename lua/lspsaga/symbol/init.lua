@@ -76,6 +76,9 @@ function symbol:do_request(buf, client, callback)
 
   self[buf].pending_request = true
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+    if not api.nvim_buf_is_loaded(ctx.bufnr) then
+      return
+    end
     self[buf].pending_request = false
     if callback then
       callback()

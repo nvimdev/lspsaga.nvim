@@ -2,7 +2,7 @@
 local M = {}
 
 function M.new()
-  return { value = nil, next = nil }
+  return { value = nil, next = nil, prev = nil }
 end
 
 function M.tail_push(list, node)
@@ -28,6 +28,19 @@ function M.find_node(list, curlnum)
   end
   while tmp do
     if tmp.value.winline == curlnum then
+      return tmp
+    end
+    tmp = tmp.next
+  end
+end
+
+function M.find_node_by_winid(list, winid)
+  local tmp = list
+  if not tmp.value then
+    return
+  end
+  while tmp do
+    if tmp.value.winid == winid then
       return tmp
     end
     tmp = tmp.next

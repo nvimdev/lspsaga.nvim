@@ -251,7 +251,7 @@ function hover:do_request(args)
     then
       local win_conf = api.nvim_win_get_config(self.winid)
       local truncate = util.gen_truncate_line(win_conf.width)
-      api.nvim_buf_set_lines(self.bufnr, -1, -1, false, { truncate })
+      content = vim.list_extend({ truncate }, content)
       api.nvim_buf_set_lines(self.bufnr, -1, -1, false, content)
       win_conf.height = win_conf.height + #content + 1
       api.nvim_win_set_config(self.winid, win_conf)

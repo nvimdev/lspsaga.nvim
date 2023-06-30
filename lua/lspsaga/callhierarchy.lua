@@ -183,6 +183,9 @@ function ch:peek_view()
       end
       local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
       local peek_bufnr = vim.uri_to_bufnr(data.uri)
+      if not api.nvim_buf_is_loaded(peek_bufnr) then
+        fn.bufadd(peek_bufnr)
+      end
       vim.bo[peek_bufnr].filetype = vim.bo[self.main_buf].filetype
       local range = data.selectionRange
       api.nvim_win_set_buf(self.right_winid, peek_bufnr)

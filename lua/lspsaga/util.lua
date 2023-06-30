@@ -1,4 +1,4 @@
-local api, lsp = vim.api, vim.lsp
+local api, lsp = vim.api, vim.lsputil
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local M = {}
@@ -32,8 +32,9 @@ function M.icon_from_devicon(ft)
   return devicons.get_icon_by_filetype(ft)
 end
 
+---get index from a list-like table
 function M.tbl_index(tbl, val)
-  for index, v in pairs(tbl) do
+  for index, v in ipairs(tbl) do
     if v == val then
       return index
     end

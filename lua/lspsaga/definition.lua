@@ -1,10 +1,11 @@
 local config = require('lspsaga').config
-local lsp, fn, api, keymap = vim.lsp, vim.fn, vim.api, vim.keymapdef
+local lsp, fn, api = vim.lsp, vim.fn, vim.api
 local log = require('lspsaga.logger')
 local util = require('lspsaga.util')
-local window = require('lspsaga.window')
-local nvim_buf_set_keymap = api.nvim_buf_set_keymap
+local win = require('lspsaga.window')
+local buf_del_keymap = api.nvim_buf_del_keymap
 local def = {}
+def.__index = def
 
 -- a double linked list for store the node infor
 local ctx = {}
@@ -20,7 +21,108 @@ local function get_method(index)
   return tbl[index]
 end
 
-function def:apply_aciton_keys(buf, main_buf) end
+local function get_node(list, winid)
+  for i, node in ipairs(list) do
+    if node.winid == winid then
+      return i
+    end
+  end
+end
+
+local function in_def_wins(list, bufnr)
+  local wins = fn.win_findbuf(bufnr)
+  local in_def = false
+  for _, id in ipairs(wins) do
+    if get_node(list, id) then
+      in_def = true
+      break
+    end
+  end
+  return in_def
+end
+
+function def:apply_maps(bufnr)
+  for action, map in pairs(config.definition.keys) do
+    if action ~= 'close_all' then
+      util.map_keys(bufnr, 'n', map, function()
+        vim.cmd[action]()
+      end)
+    else
+      util.map_keys(bufnr, 'n', map, function()
+        vim.opt.eventignore:append('WinClosed')
+        local function recursive(tbl)
+          local node = tbl[#tbl]
+          if api.nvim_win_is_valid(node.winid) then
+            api.nvim_win_close(node.winid, true)
+          end
+          table.remove(tbl, #tbl)
+          if not in_def_wins(tbl, node.bufnr) then
+            self:delete_maps(node.bufnr)
+          end
+          if #tbl ~= 0 then
+            recursive(tbl)
+          end
+        end
+        recursive(self.list)
+        clean_ctx()
+        vim.opt.eventignore:remove('WinClosed')
+      end)
+    end
+  end
+end
+
+function def:delete_maps(bufnr)
+  for _, map in pairs(config.definition.keys) do
+    buf_del_keymap(bufnr, 'n', map)
+  end
+end
+
+function def:create_win(bufnr)
+  if not self.list or vim.tbl_isempty(self.list) then
+    local float_opt = {
+      width = math.floor(api.nvim_win_get_width(0) * config.definition.width),
+      height = math.floor(api.nvim_win_get_height(0) * config.definition.height),
+      bufnr = bufnr,
+    }
+    return win
+      :new_float(float_opt, true)
+      :winopt({
+        ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+      })
+      :wininfo()
+  end
+  local win_conf = api.nvim_win_get_config(self.list[#self.list].winid)
+  win_conf.bufnr = bufnr
+  return win:new_float(win_conf, true):wininfo()
+end
+
+function def:clean_event()
+  api.nvim_create_autocmd('WinClosed', {
+    group = api.nvim_create_augroup('SagaPeekdefinition', { clear = true }),
+    callback = function(args)
+      local curwin = tonumber(args.file)
+      local index = get_node(self.list or {}, curwin)
+      local prev = self.list[index - 1] and self.list[index - 1] or nil
+      table.remove(self.list, index)
+      if prev then
+        api.nvim_set_current_win(prev.winid)
+      end
+
+      if api.nvim_buf_is_loaded(args.buf) then
+        if not in_def_wins(self.list, args.buf) then
+          self:delete_maps(args.buf)
+        end
+      end
+
+      if not self.list or #self.list == 0 then
+        clean_ctx()
+        api.nvim_del_autocmd(args.id)
+      end
+    end,
+    desc = '[Lspsaga] peek definition clean data event',
+  })
+end
+
 function def:peek_definition(method)
   if self.pending_reqeust then
     vim.notify(
@@ -32,6 +134,7 @@ function def:peek_definition(method)
 
   if not self.list then
     self.list = {}
+    self:clean_event()
   end
 
   local current_buf = api.nvim_get_current_buf()
@@ -51,11 +154,27 @@ function def:peek_definition(method)
     self.pending_request = false
     if not result or next(result) == nil then
       vim.notify(
-        '[Lspsaga] response of request method ' .. method_name .. ' is nil',
+        '[Lspsaga] response of request method ' .. method_name .. ' is empty',
         vim.log.levels.WARN
       )
       return
     end
+
+    local node = {
+      bufnr = vim.uri_to_bufnr(result[1].targetUri),
+      selectionRange = result[1].targetSelectionRange,
+    }
+    if not api.nvim_buf_is_loaded(node.bufnr) then
+      fn.bufload(node.bufnr)
+      node.wipe = true
+    end
+    _, node.winid = self:create_win(node.bufnr)
+    api.nvim_win_set_cursor(
+      node.winid,
+      { node.selectionRange.start.line + 1, node.selectionRange.start.character + 1 }
+    )
+    self:apply_maps(node.bufnr)
+    self.list[#self.list + 1] = node
   end)
 end
 
@@ -103,13 +222,4 @@ function def:goto_definition(method)
   end
 end
 
-def = setmetatable(def, {
-  __newindex = function(_, k, v)
-    ctx[k] = v
-  end,
-  __index = function(_, k)
-    return ctx[k]
-  end,
-})
-
-return def
+return setmetatable(ctx, def)
