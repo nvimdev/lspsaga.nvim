@@ -1,4 +1,4 @@
-local api, lsp = vim.api, vim.lsputil
+local api, lsp = vim.api, vim.lsp
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local M = {}

@@ -34,19 +34,6 @@ function M.find_node(list, curlnum)
   end
 end
 
-function M.find_node_by_winid(list, winid)
-  local tmp = list
-  if not tmp.value then
-    return
-  end
-  while tmp do
-    if tmp.value.winid == winid then
-      return tmp
-    end
-    tmp = tmp.next
-  end
-end
-
 function M.insert_node(curnode, node)
   local tmp = curnode.next
   curnode.next = {

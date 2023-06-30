@@ -54,21 +54,28 @@ local function pick_call_hierarchy_item(call_hierarchy_items)
 end
 
 function ch:spinner(node)
+  if not node then
+    return
+  end
   local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
-  local frame = 0
+  local frame = 1
   local timer = uv.new_timer()
 
-  if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
-    timer:start(0, 50, function()
-      vim.schedule(function()
-        buf_set_extmark(self.left_bufnr, ns, node.value.winline, #node.value.inlevle - 4, {
+  if self.left_bufnr and api.nvim_buf_is_loaded(self.left_bufnr) then
+    timer:start(
+      0,
+      50,
+      vim.schedule_wrap(function()
+        local col = node.value.winline == 1 and 0 or node.value.inlevel - 4
+        buf_set_extmark(self.left_bufnr, ns, node.value.winline - 1, col, {
+          id = node.value.virtid,
           virt_text = { { spinner[frame], 'SagaSpinner' } },
           virt_text_pos = 'overlay',
           hl_mode = 'combine',
         })
+        frame = frame + 1 > #spinner and 1 or frame + 1
       end)
-      frame = frame + 1 > #spinner and 1 or frame + 1
-    end)
+    )
   end
   return timer
 end
@@ -97,7 +104,7 @@ function ch:toggle_or_request()
   local client = vim.lsp.get_client_by_id(curnode.value.client_id)
   local next = curnode.next
   if not next or next.value.inlevel <= curnode.value.inlevel then
-    local timer = self:spinner()
+    local timer = self:spinner(curnode)
     local item = self.method == get_method(2) and curnode.value.from or curnode.value.to
     self:call_hierarchy(item, client, timer, curlnum)
     return
@@ -219,7 +226,13 @@ function ch:call_hierarchy(item, client, timer, curlnum)
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
     self.pending_request = false
-    if timer and timer:is_active() then
+    curlnum = curlnum or 0
+    local inlevel = curlnum == 0 and 2 or fn.indent(curlnum)
+    local curnode = slist.find_node(self.list, curlnum)
+
+    if curnode and timer and timer:is_active() then
+      local icon = (res and #res > 0) and config.ui.expand or config.ui.collapse
+      self:set_toggle_icon(icon, curlnum - 1, curnode.value.inlevel - 4, curnode.value.virtid)
       timer:stop()
       timer:close()
     end
@@ -238,9 +251,6 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       self:peek_view()
     end
 
-    curlnum = curlnum or 0
-    local inlevel = curlnum == 0 and 2 or fn.indent(curlnum)
-    local curnode = slist.find_node(self.list, curlnum)
     local indent = (' '):rep(inlevel + 2)
 
     if curnode then
@@ -267,6 +277,8 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       })
       if curlnum ~= 0 then
         self:render_virtline(curlnum, #indent)
+      else
+        api.nvim_win_set_cursor(self.left_winid, { 1, 4 })
       end
       curlnum = curlnum + 1
       val.winline = curlnum
