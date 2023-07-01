@@ -27,10 +27,7 @@ end
 
 local ns = api.nvim_create_namespace('SagaFinder')
 
-function fd:handler(method, results, done)
-  if not results or vim.tbl_isempty(results) then
-    return
-  end
+function fd:method_title(method)
   local title = vim.split(method, '/', { plain = true })[2]
   title = title:upper()
 
@@ -48,10 +45,36 @@ function fd:handler(method, results, done)
     hl_mode = 'combine',
   })
   slist.tail_push(self.list, n)
+end
 
+function fd:init_layout()
+  local win_width = api.nvim_win_get_width(0)
+  self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
+    :left(
+      math.floor(vim.o.lines * config.finder.max_height),
+      math.floor(win_width * config.finder.left_width)
+    )
+    :right()
+    :done(function()
+      self:event()
+    end)
+end
+
+function fd:handler(method, results, spin_close, done)
+  if not results or vim.tbl_isempty(results) then
+    return
+  end
   for client_id, item in ipairs(results) do
     for i, res in ipairs(item.result or {}) do
+      if not self.lbufnr then
+        spin_close()
+        self:init_layout()
+      end
+
+      local total = api.nvim_buf_line_count(self.lbufnr)
       if i == 1 then
+        self:method_title(method)
+
         local node = {
           count = #item.result,
           expand = true,
@@ -94,8 +117,13 @@ function fd:handler(method, results, done)
       slist.tail_push(self.list, res)
     end
   end
-  buf_set_lines(self.lbufnr, -1, -1, false, { '' })
+
+  if self.lbufnr and api.nvim_buf_line_count(self.lbufnr) > 1 then
+    buf_set_lines(self.lbufnr, -1, -1, false, { '' })
+  end
+
   if done then
+    spin_close()
     api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
   end
 end
@@ -133,13 +161,18 @@ end
 
 function fd:apply_maps()
   for action, key in pairs(config.finder.keys) do
-    util.map_keys(self.lbufnr, 'n', key, function() end)
+    util.map_keys(self.lbufnr, key, function()
+      if action ~= 'peek_close_all' and action ~= 'expand_or_jump' and action ~= 'go_peek' then
+        vim.cmd[action]()
+        return
+      end
+    end)
   end
 end
 
 function fd:new(args)
   local meth, layout = box.parse_argument(args)
-  layout = layout or config.finder.layout
+  self.layout = layout or config.finder.layout
   if not meth then
     meth = vim.split(config.finder.default, '+', { plain = true })
   end
@@ -160,27 +193,19 @@ function fd:new(args)
   end
 
   self.list = slist.new()
-  local win_width = api.nvim_win_get_width(0)
   local params = lsp.util.make_position_params()
   params.context = {
     includeDeclaration = false,
   }
 
-  for i, method in ipairs(methods) do
+  local spin_close = box.spinner()
+  local count = 0
+  for _, method in ipairs(methods) do
     lsp.buf_request_all(curbuf, method, params, function(results)
-      self:handler(method, results, i == #methods)
+      count = count + 1
+      self:handler(method, results, spin_close, count == #methods)
     end)
   end
-
-  self.lbufnr, self.lwinid, _, self.rwinid = ly:new(layout)
-    :left(
-      math.floor(vim.o.lines * config.finder.max_height),
-      math.floor(win_width * config.finder.left_width)
-    )
-    :right()
-    :done(function()
-      self:event()
-    end)
 end
 
 return setmetatable(ctx, fd)

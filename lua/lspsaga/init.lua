@@ -73,18 +73,18 @@ local default_config = {
   finder = {
     max_height = 0.5,
     left_width = 0.3,
+    methods = {},
     default = 'ref+imp',
     layout = 'float',
-    force_max_height = false,
     keys = {
-      jump = 'p',
+      go_peek = 'p',
       expand_or_jump = 'o',
       vsplit = 's',
       split = 'i',
       tabe = 't',
       tabnew = 'r',
-      quit = { 'q', '<ESC>' },
-      close_all = '<C-c>k',
+      quit = 'q',
+      peek_close_all = '<C-c>k',
     },
   },
   definition = {

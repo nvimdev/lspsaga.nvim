@@ -445,7 +445,7 @@ function ot:outline(buf)
     self.bufnr, self.winid = create_outline_window()
   end
   self:parse(res.symbols)
-  util.map_keys(self.bufnr, 'n', config.outline.keys.expand_or_jump, function()
+  util.map_keys(self.bufnr, config.outline.keys.expand_or_jump, function()
     self:expand_or_jump()
   end)
 

@@ -138,7 +138,7 @@ function hover:open_floating_preview(content, option_fn)
 
   util.scroll_in_float(curbuf, self.winid)
 
-  util.map_keys(self.bufnr, 'n', 'q', function()
+  util.map_keys(self.bufnr, 'q', function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
       api.nvim_win_close(self.winid, true)
       self:clean()
@@ -173,7 +173,7 @@ function hover:open_floating_preview(content, option_fn)
     })
   end
 
-  util.map_keys(self.bufnr, 'n', config.hover.open_link, function()
+  util.map_keys(self.bufnr, config.hover.open_link, function()
     self:open_link()
   end)
 end

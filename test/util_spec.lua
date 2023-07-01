@@ -37,7 +37,7 @@ describe('lspsaga util', function()
   end)
 
   it('util.map_keys', function()
-    util.map_keys(bufnr, 'n', 'gq', function()
+    util.map_keys(bufnr, 'gq', function()
       return '<Nop>'
     end)
     local maps = api.nvim_buf_get_keymap(bufnr, 'n')

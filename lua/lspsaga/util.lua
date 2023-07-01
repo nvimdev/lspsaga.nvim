@@ -156,14 +156,15 @@ end
 
 --- Creates a buffer local mapping.
 ---@param buffer number
----@param modes string|table<string>
 ---@param keys string|table<string>
 ---@param rhs string|function
----@param opts? table
-function M.map_keys(buffer, modes, keys, rhs, opts)
+---@param modes string|table<string>|nil
+---@param opts table|nil
+function M.map_keys(buffer, keys, rhs, modes, opts)
   opts = opts or {}
   opts.nowait = true
   opts.noremap = true
+  modes = modes or 'n'
 
   if type(rhs) == 'function' then
     opts.callback = rhs

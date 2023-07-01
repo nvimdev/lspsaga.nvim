@@ -275,7 +275,7 @@ end
 
 function act:num_shortcut(bufnr, action_tuples)
   for num, _ in pairs(self.action_tuples or {}) do
-    util.map_keys(bufnr, 'n', tostring(num), function()
+    util.map_keys(bufnr, tostring(num), function()
       if not self.action_tuples or not self.action_tuples[num] then
         return
       end

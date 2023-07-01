@@ -152,7 +152,7 @@ function sd:layout_float(opt)
 
   api.nvim_win_set_cursor(self.winid, { 2, 3 })
   for _, key in ipairs(diag_conf.keys.quit_in_show) do
-    util.map_keys(self.bufnr, 'n', key, function()
+    util.map_keys(self.bufnr, key, function()
       local curwin = api.nvim_get_current_win()
       if curwin ~= self.winid then
         return
@@ -232,6 +232,10 @@ function sd:toggle_or_jump(entrys_list)
     api.nvim_win_close(self.winid, true)
     local ln, col, bn = unpack(vim.split(info, ':'))
     local wins = fn.win_findbuf(tonumber(bn))
+    if #wins == 0 then
+      api.nvim_win_set_buf(0, tonumber(bn))
+      wins[#wins] = 0
+    end
     api.nvim_win_set_cursor(wins[#wins], { tonumber(ln) + 1, tonumber(col) })
     clean_ctx()
     return
@@ -311,7 +315,7 @@ function sd:show(opt)
   end
 
   api.nvim_win_set_cursor(self.winid, { 2, 3 })
-  util.map_keys(self.bufnr, 'n', diag_conf.keys.toggle_or_jump, function()
+  util.map_keys(self.bufnr, diag_conf.keys.toggle_or_jump, function()
     self:toggle_or_jump(opt.entrys_list)
   end)
 end

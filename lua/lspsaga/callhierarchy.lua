@@ -170,12 +170,12 @@ function ch:toggle_or_request()
 end
 
 function ch:keymap(bufnr, winid, _, right_winid)
-  util.map_keys(bufnr, 'n', config.callhierarchy.keys.quit, function()
+  util.map_keys(bufnr, config.callhierarchy.keys.quit, function()
     util.close_win({ winid, right_winid })
     self:clean()
   end)
 
-  util.map_keys(bufnr, 'n', config.callhierarchy.keys.toggle, function()
+  util.map_keys(bufnr, config.callhierarchy.keys.toggle, function()
     self:toggle_or_request()
   end)
 end

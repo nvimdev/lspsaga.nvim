@@ -113,7 +113,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
 
   if diag_conf.jump_num_shortcut then
     for num, _ in pairs(action_tuples or {}) do
-      util.map_keys(self.main_buf, 'n', tostring(num), function()
+      util.map_keys(self.main_buf, tostring(num), function()
         local action = action_tuples[num][2]
         local client = vim.lsp.get_client_by_id(action_tuples[num][1])
         act:do_code_action(action, client, enriched_ctx)
@@ -156,16 +156,16 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
     end)
   end
 
-  util.map_keys(self.bufnr, 'n', diag_conf.keys.exec_action, function()
+  util.map_keys(self.bufnr, diag_conf.keys.exec_action, function()
     self:close_win()
     self:do_code_action(action_tuples, enriched_ctx)
   end)
 
-  util.map_keys(self.main_buf, 'n', config.scroll_preview.scroll_down, function()
+  util.map_keys(self.main_buf, config.scroll_preview.scroll_down, function()
     scroll_with_preview(1)
   end)
 
-  util.map_keys(self.main_buf, 'n', config.scroll_preview.scroll_up, function()
+  util.map_keys(self.main_buf, config.scroll_preview.scroll_up, function()
     scroll_with_preview(-1)
   end)
 end
@@ -355,7 +355,7 @@ function diag:render_diagnostic_window(entry, option)
     end,
   })
 
-  util.map_keys(self.bufnr, 'n', diag_conf.keys.quit, function()
+  util.map_keys(self.bufnr, diag_conf.keys.quit, function()
     self:clean_data()
   end)
 
