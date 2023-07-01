@@ -164,7 +164,7 @@ function win:from_exist(bufnr, winid)
   return setmetatable(win, obj)
 end
 
-function obj:minimal_opts()
+function win:minimal_restore()
   local minimal_opts = {
     ['number'] = vim.opt.number,
     ['relativenumber'] = vim.opt.relativenumber,
@@ -179,15 +179,14 @@ function obj:minimal_opts()
     ['statuscolumn'] = vim.opt.statuscolumn,
   }
 
-  function minimal_opts.restore()
+  local restore = function()
     for opt, val in pairs(minimal_opts) do
       if type(val) ~= 'function' then
         vim.opt[opt] = val
       end
     end
   end
-
-  return minimal_opts
+  return restore
 end
 
 return win

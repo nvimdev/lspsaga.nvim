@@ -21,7 +21,7 @@ local function get_method(index)
   return tbl[index]
 end
 
-local function get_node(list, winid)
+local function get_node_idx(list, winid)
   for i, node in ipairs(list) do
     if node.winid == winid then
       return i
@@ -33,7 +33,7 @@ local function in_def_wins(list, bufnr)
   local wins = fn.win_findbuf(bufnr)
   local in_def = false
   for _, id in ipairs(wins) do
-    if get_node(list, id) then
+    if get_node_idx(list, id) then
       in_def = true
       break
     end
@@ -41,31 +41,47 @@ local function in_def_wins(list, bufnr)
   return in_def
 end
 
+function def:close_all()
+  vim.opt.eventignore:append('WinClosed')
+  local function recursive(tbl)
+    local node = tbl[#tbl]
+    if api.nvim_win_is_valid(node.winid) then
+      api.nvim_win_close(node.winid, true)
+    end
+    if not node.wipe and not in_def_wins(tbl, node.bufnr) then
+      self:delete_maps(node.bufnr)
+    end
+    table.remove(tbl, #tbl)
+    if #tbl ~= 0 then
+      recursive(tbl)
+    end
+  end
+  recursive(self.list)
+  clean_ctx()
+  vim.opt.eventignore:remove('WinClosed')
+end
+
 function def:apply_maps(bufnr)
   for action, map in pairs(config.definition.keys) do
     if action ~= 'close_all' then
       util.map_keys(bufnr, 'n', map, function()
-        vim.cmd[action]()
+        local fname = api.nvim_buf_get_name(0)
+        local index = get_node_idx(self.list, api.nvim_get_current_win())
+        local pos = {
+          self.list[index].selectionRange.start.line + 1,
+          self.list[index].selectionRange.start.character,
+        }
+        if action == 'quit' then
+          vim.cmd[action]()
+          return
+        end
+        self:close_all()
+        vim.cmd[action](fname)
+        api.nvim_win_set_cursor(0, pos)
       end)
     else
       util.map_keys(bufnr, 'n', map, function()
-        vim.opt.eventignore:append('WinClosed')
-        local function recursive(tbl)
-          local node = tbl[#tbl]
-          if api.nvim_win_is_valid(node.winid) then
-            api.nvim_win_close(node.winid, true)
-          end
-          table.remove(tbl, #tbl)
-          if not in_def_wins(tbl, node.bufnr) then
-            self:delete_maps(node.bufnr)
-          end
-          if #tbl ~= 0 then
-            recursive(tbl)
-          end
-        end
-        recursive(self.list)
-        clean_ctx()
-        vim.opt.eventignore:remove('WinClosed')
+        self:close_all()
       end)
     end
   end
@@ -101,7 +117,14 @@ function def:clean_event()
     group = api.nvim_create_augroup('SagaPeekdefinition', { clear = true }),
     callback = function(args)
       local curwin = tonumber(args.file)
-      local index = get_node(self.list or {}, curwin)
+      local index = get_node_idx(self.list or {}, curwin)
+      if not index then
+        return
+      end
+
+      if self.list[index].restore then
+        self.opt_restore()
+      end
       local prev = self.list[index - 1] and self.list[index - 1] or nil
       table.remove(self.list, index)
       if prev then
@@ -148,6 +171,7 @@ function def:peek_definition(method)
 
   local params = lsp.util.make_position_params()
   local method_name = get_method(method)
+  self.opt_restore = win:minimal_restore()
 
   self.pending_request = true
   lsp.buf_request(current_buf, method_name, params, function(_, result)
@@ -166,12 +190,13 @@ function def:peek_definition(method)
     }
     if not api.nvim_buf_is_loaded(node.bufnr) then
       fn.bufload(node.bufnr)
+      api.nvim_set_option_value('bufhidden', 'wipe', { buf = node.bufnr })
       node.wipe = true
     end
     _, node.winid = self:create_win(node.bufnr)
     api.nvim_win_set_cursor(
       node.winid,
-      { node.selectionRange.start.line + 1, node.selectionRange.start.character + 1 }
+      { node.selectionRange.start.line + 1, node.selectionRange.start.character }
     )
     self:apply_maps(node.bufnr)
     self.list[#self.list + 1] = node

@@ -1,4 +1,5 @@
 local api, fn = vim.api, vim.fn
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config.implement
 local symbol = require('lspsaga.symbol')
 local ui = require('lspsaga').config.ui
@@ -66,18 +67,15 @@ local function try_render(client, bufnr, pos, data)
       indent = ('\t'):rep(level)
     end
 
-    local id = api.nvim_buf_set_extmark(bufnr, ns, pos.line, 0, {
+    data.virt_id = uv.hrtime()
+    api.nvim_buf_set_extmark(bufnr, ns, pos.line, 0, {
+      id = data.virt_id,
       virt_lines = { { { indent .. #result .. ' ' .. word, 'Comment' } } },
       virt_lines_above = true,
       hl_mode = 'combine',
     })
-    data.virt_id = id
     data.res_count = #result
   end, bufnr)
-end
-
-local function dbp()
-  print(vim.inspect(buffers_cache))
 end
 
 local function langmap(bufnr)
@@ -208,5 +206,4 @@ end
 
 return {
   start = start,
-  dbp = dbp,
 }
