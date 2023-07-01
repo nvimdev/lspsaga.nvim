@@ -66,6 +66,7 @@ function ch:spinner(node)
       0,
       50,
       vim.schedule_wrap(function()
+        vim.bo[self.left_bufnr].modifiable = true
         local col = node.value.winline == 1 and 0 or node.value.inlevel - 4
         buf_set_extmark(self.left_bufnr, ns, node.value.winline - 1, col, {
           id = node.value.virtid,
@@ -104,7 +105,7 @@ function ch:toggle_or_request()
   local client = vim.lsp.get_client_by_id(curnode.value.client_id)
   local next = curnode.next
   if not next or next.value.inlevel <= curnode.value.inlevel then
-    local timer = nil
+    local timer = self:spinner(curnode)
     local item = self.method == get_method(2) and curnode.value.from or curnode.value.to
     self:call_hierarchy(item, client, timer, curlnum)
     return
@@ -127,7 +128,9 @@ function ch:toggle_or_request()
       curnode.value.inlevel - 4,
       curnode.value.virtid
     )
+    vim.bo[self.left_bufnr].modifiable = true
     buf_set_lines(self.left_bufnr, curlnum, curlnum + count, false, {})
+    vim.bo[self.left_bufnr].modifiable = false
     curnode.value.expand = false
     slist.update_winline(curnode, -1)
     return
@@ -143,6 +146,7 @@ function ch:toggle_or_request()
     )
     local tmp = curnode.next
     count = 0
+    vim.bo[self.left_bufnr].modifiable = true
     while tmp do
       local data = self.method == get_method(2) and tmp.value.from or tmp.value.to
       local indent = (' '):rep(tmp.value.inlevel)
@@ -160,6 +164,7 @@ function ch:toggle_or_request()
       end
       tmp = tmp.next
     end
+    vim.bo[self.left_bufnr].modifiable = false
     slist.update_winline(curnode, count)
   end
 end
@@ -258,6 +263,7 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       self:set_toggle_icon(config.ui.collapse, curlnum - 1, inlevel - 4, curnode.value.virtid)
     end
     local tmp = curnode
+    vim.bo[self.left_bufnr].modifiable = true
 
     for _, val in ipairs(res) do
       local data = self.method == get_method(2) and val.from or val.to
@@ -290,6 +296,7 @@ function ch:call_hierarchy(item, client, timer, curlnum)
         curnode = curnode.next
       end
     end
+    vim.bo[self.left_bufnr].modifiable = false
 
     if curnode and curnode.next then
       slist.update_winline(curnode, #res)

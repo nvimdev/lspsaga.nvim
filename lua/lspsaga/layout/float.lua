@@ -20,7 +20,10 @@ function M.left(height, width, bufnr)
   end
   return win
     :new_float(float_opt, true)
-    :bufopt('buftype', 'nofile')
+    :bufopt({
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+    })
     :winopt({
       ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
     })

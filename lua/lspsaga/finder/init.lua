@@ -3,6 +3,7 @@ local api, lsp, fn = vim.api, vim.lsp, vim.fn
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local ly = require('lspsaga.layout')
 local slist = require('lspsaga.slist')
+local box = require('lspsaga.finder.box')
 local util = require('lspsaga.util')
 local buf_set_lines, buf_set_extmark = api.nvim_buf_set_lines, api.nvim_buf_set_extmark
 local buf_add_highlight = api.nvim_buf_add_highlight
@@ -16,20 +17,12 @@ fd.__newindex = function(t, k, v)
   rawset(t, k, v)
 end
 
-local function clean_ctx() end
-
-local function get_methods(args)
-  local methods = {
-    ['def'] = 'textDocument/definition',
-    ['ref'] = 'textDocument/references',
-    ['imp'] = 'textDocument/implementation',
-  }
-  local keys = vim.tbl_keys(methods)
-  return vim.tbl_map(function(item)
-    if vim.tbl_contains(keys, item) then
-      return methods[item]
+local function clean_ctx()
+  for key, _ in pairs(ctx) do
+    if type(ctx) ~= 'function' then
+      ctx[key] = nil
     end
-  end, args)
+  end
 end
 
 local ns = api.nvim_create_namespace('SagaFinder')
@@ -107,19 +100,6 @@ function fd:handler(method, results, done)
   end
 end
 
-local function parse_argument(args)
-  local methods, layout
-  for _, arg in ipairs(args) do
-    if arg:find('%w+%+%w+') then
-      methods = vim.split(arg, '+', { plain = true })
-    end
-    if arg:find('%+%+') then
-      layout = vim.split(arg, '%+%+')[1]
-    end
-  end
-  return methods, layout
-end
-
 function fd:event()
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.lbufnr,
@@ -129,7 +109,7 @@ function fd:event()
       end
       local curlnum = api.nvim_win_get_cursor(self.lwinid)[1]
       local node = slist.find_node(self.list, curlnum)
-      if not node or not node.bufnr then
+      if not node or not node.value.bufnr then
         return
       end
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
@@ -151,13 +131,19 @@ function fd:event()
   })
 end
 
+function fd:apply_maps()
+  for action, key in pairs(config.finder.keys) do
+    util.map_keys(self.lbufnr, 'n', key, function() end)
+  end
+end
+
 function fd:new(args)
-  local meth, layout = parse_argument(args)
+  local meth, layout = box.parse_argument(args)
   layout = layout or config.finder.layout
   if not meth then
     meth = vim.split(config.finder.default, '+', { plain = true })
   end
-  local methods = get_methods(meth)
+  local methods = box.get_methods(meth)
   methods = vim.tbl_filter(function(method)
     return #util.get_client_by_method(method) > 0
   end, methods)
@@ -186,14 +172,15 @@ function fd:new(args)
     end)
   end
 
-  self.lbufnr, self.lwinid, self.rbufnr, self.rwinid = ly:new(layout)
+  self.lbufnr, self.lwinid, _, self.rwinid = ly:new(layout)
     :left(
       math.floor(vim.o.lines * config.finder.max_height),
       math.floor(win_width * config.finder.left_width)
     )
     :right()
-    :done(function(lbufnr, lwinid, rbufnr, rwinid) end)
-  self:event()
+    :done(function()
+      self:event()
+    end)
 end
 
 return setmetatable(ctx, fd)

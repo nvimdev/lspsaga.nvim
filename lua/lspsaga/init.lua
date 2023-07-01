@@ -77,14 +77,14 @@ local default_config = {
     layout = 'float',
     force_max_height = false,
     keys = {
-      jump_to = 'p',
+      jump = 'p',
       expand_or_jump = 'o',
       vsplit = 's',
       split = 'i',
       tabe = 't',
       tabnew = 'r',
       quit = { 'q', '<ESC>' },
-      close_in_preview = '<ESC>',
+      close_all = '<C-c>k',
     },
   },
   definition = {
