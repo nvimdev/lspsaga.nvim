@@ -1,8 +1,8 @@
 local command = {}
 
 local subcommands = {
-  lsp_finder = function()
-    require('lspsaga.finder'):lsp_finder()
+  finder = function(args)
+    require('lspsaga.finder'):new(args)
   end,
   peek_definition = function()
     require('lspsaga.definition'):peek_definition(1)

@@ -14,6 +14,9 @@ local function hi_define()
     SagaVirtLine = { link = 'Comment' },
     SagaSpinnerTitle = { link = 'Statement' },
     SagaSpinner = { link = 'Statement' },
+    SagaFinderText = { link = 'Comment' },
+    SagaSelection = { link = 'String' },
+    SagaSearch = { link = 'Search' },
     -- code action
     ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
@@ -23,14 +26,6 @@ local function hi_define()
     CodeActionBorder = { link = 'SagaBorder' },
     CodeActionText = { link = '@variable' },
     CodeActionNumber = { link = 'DiffAdd' },
-    -- finder
-    FinderSelection = { link = 'String' },
-    FinderFName = {},
-    FinderCode = { link = 'Comment' },
-    FinderCount = { link = 'Constant' },
-    FinderIcon = { link = '@property' },
-    FinderType = { link = 'Type' },
-    FinderStart = { link = 'Function' },
     --finder spinner
     FinderPreview = { link = 'Search' },
     FinderNormal = { link = 'SagaNormal' },

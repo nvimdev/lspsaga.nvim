@@ -1,5 +1,13 @@
+local api, lsp, fn = vim.api, vim.lsp, vim.fn
+---@diagnostic disable-next-line: deprecated
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local ly = require('lspsaga.layout')
+local slist = require('lspsaga.slist')
 local util = require('lspsaga.util')
+local buf_set_lines, buf_set_extmark = api.nvim_buf_set_lines, api.nvim_buf_set_extmark
+local buf_add_highlight = api.nvim_buf_add_highlight
+local config = require('lspsaga').config
+
 local fd = {}
 local ctx = {}
 
@@ -12,8 +20,8 @@ local function clean_ctx() end
 
 local function get_methods(args)
   local methods = {
-    ['def'] = 'textDoucment/definition',
-    ['ref'] = 'textDocument/reference',
+    ['def'] = 'textDocument/definition',
+    ['ref'] = 'textDocument/references',
     ['imp'] = 'textDocument/implementation',
   }
   local keys = vim.tbl_keys(methods)
@@ -24,9 +32,168 @@ local function get_methods(args)
   end, args)
 end
 
+local ns = api.nvim_create_namespace('SagaFinder')
+
+function fd:handler(method, results, done)
+  if not results or vim.tbl_isempty(results) then
+    return
+  end
+  local title = vim.split(method, '/', { plain = true })[2]
+  title = title:upper()
+
+  local total = api.nvim_buf_line_count(self.lbufnr)
+  local n = {
+    winline = total,
+    expand = true,
+    virtid = uv.hrtime(),
+  }
+  buf_set_lines(self.lbufnr, total == 1 and 0 or total, -1, false, { (' '):rep(2) .. title })
+  buf_set_extmark(self.lbufnr, ns, total == 1 and 0 or total, 0, {
+    id = n.virtid,
+    virt_text = { { config.ui.expand, 'SagaToggle' } },
+    virt_text_pos = 'overlay',
+    hl_mode = 'combine',
+  })
+  slist.tail_push(self.list, n)
+
+  for client_id, item in ipairs(results) do
+    for i, res in ipairs(item.result or {}) do
+      if i == 1 then
+        local node = {
+          count = #item.result,
+          expand = true,
+          virtid = uv.hrtime(),
+        }
+        local fname = vim.uri_to_fname(res.uri)
+        local client = lsp.get_client_by_id(client_id)
+        fname = fname:sub(#client.config.root_dir + 2)
+        buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. fname })
+        total = total + 1
+        node.winline = total
+        buf_set_extmark(self.lbufnr, ns, total - 1, 2, {
+          id = node.virtid,
+          virt_text = { { config.ui.expand, 'SagaToggle' } },
+          virt_text_pos = 'overlay',
+          hl_mode = 'combine',
+        })
+        slist.tail_push(self.list, node)
+      end
+      res.bufnr = vim.uri_to_bufnr(res.uri)
+      if not api.nvim_buf_is_loaded(res.bufnr) then
+        fn.bufload(res.bufnr)
+        res.wipe = true
+        api.nvim_set_option_value('bufhidden', 'wipe', { buf = res.bufnr })
+        slist.tail_push(self.list, res)
+      end
+      local range = res.range or res.targetSelectionRange or res.selectionRange
+      res.line = api.nvim_buf_get_text(
+        res.bufnr,
+        range.start.line,
+        range.start.character,
+        range['end'].line,
+        range['end'].character,
+        {}
+      )[1]
+      buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
+      buf_add_highlight(self.lbufnr, ns, 'SagaFinderText', total, 0, -1)
+      total = total + 1
+      res.winline = total
+      slist.tail_push(self.list, res)
+    end
+  end
+  buf_set_lines(self.lbufnr, -1, -1, false, { '' })
+  if done then
+    api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
+  end
+end
+
+local function parse_argument(args)
+  local methods, layout
+  for _, arg in ipairs(args) do
+    if arg:find('%w+%+%w+') then
+      methods = vim.split(arg, '+', { plain = true })
+    end
+    if arg:find('%+%+') then
+      layout = vim.split(arg, '%+%+')[1]
+    end
+  end
+  return methods, layout
+end
+
+function fd:event()
+  api.nvim_create_autocmd('CursorMoved', {
+    buffer = self.lbufnr,
+    callback = function()
+      if not self.lwinid or not api.nvim_win_is_valid(self.lwinid) then
+        return
+      end
+      local curlnum = api.nvim_win_get_cursor(self.lwinid)[1]
+      local node = slist.find_node(self.list, curlnum)
+      if not node or not node.bufnr then
+        return
+      end
+      api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
+      local range = node.value.range or node.value.targetSelectionRange or node.value.selectionRange
+      api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, range.start.character })
+      api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
+      api.nvim_win_call(self.rwinid, function()
+        fn.winrestview({ topline = range.start.line + 1 })
+      end)
+      buf_add_highlight(
+        node.value.bufnr,
+        ns,
+        'SagaSearch',
+        range.start.line,
+        range.start.character,
+        range['end'].character
+      )
+    end,
+  })
+end
+
 function fd:new(args)
-  local methods = get_methods(args)
-  local clients = util.get_client_by_method(methods)
+  local meth, layout = parse_argument(args)
+  layout = layout or config.finder.layout
+  if not meth then
+    meth = vim.split(config.finder.default, '+', { plain = true })
+  end
+  local methods = get_methods(meth)
+  methods = vim.tbl_filter(function(method)
+    return #util.get_client_by_method(method) > 0
+  end, methods)
+  local curbuf = api.nvim_get_current_buf()
+  if #methods == 0 then
+    vim.notify(
+      ('[Lspsaga] all server of %s buffer does not these methods %s'):format(
+        curbuf,
+        table.concat(args, ' ')
+      ),
+      vim.log.levels.WARN
+    )
+    return
+  end
+
+  self.list = slist.new()
+  local win_width = api.nvim_win_get_width(0)
+  local params = lsp.util.make_position_params()
+  params.context = {
+    includeDeclaration = false,
+  }
+
+  for i, method in ipairs(methods) do
+    lsp.buf_request_all(curbuf, method, params, function(results)
+      self:handler(method, results, i == #methods)
+    end)
+  end
+
+  self.lbufnr, self.lwinid, self.rbufnr, self.rwinid = ly:new(layout)
+    :left(
+      math.floor(vim.o.lines * config.finder.max_height),
+      math.floor(win_width * config.finder.left_width)
+    )
+    :right()
+    :done(function(lbufnr, lwinid, rbufnr, rwinid) end)
+  self:event()
 end
 
 return setmetatable(ctx, fd)
