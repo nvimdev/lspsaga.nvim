@@ -22,8 +22,6 @@ local function hi_define()
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
     ActionPreviewTitle = { link = 'Title' },
-    CodeActionNormal = { link = 'SagaNormal' },
-    CodeActionBorder = { link = 'SagaBorder' },
     CodeActionText = { link = '@variable' },
     CodeActionNumber = { link = 'DiffAdd' },
     -- hover
@@ -35,19 +33,12 @@ local function hi_define()
     RenameMatch = { link = 'Search' },
     -- diagnostic
     DiagnosticBorder = { link = 'SagaBorder' },
-    DiagnosticSource = { link = 'Comment' },
     DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticText = {},
-    DiagnosticBufnr = { link = '@variable' },
-    DiagnosticFname = { link = 'KeyWord' },
     DiagnosticShowNormal = { link = 'SagaNormal' },
     DiagnosticShowBorder = { link = '@property' },
     -- lightbulb
     SagaLightBulb = { link = 'DiagnosticSignHint' },
-    -- Outline
-    OutlineIndent = { fg = '#806d9e' },
-    OutlinePreviewBorder = { link = 'SagaNormal' },
-    OutlinePreviewNormal = { link = 'SagaBorder' },
     -- Float term
     TerminalBorder = { link = 'SagaBorder' },
     TerminalNormal = { link = 'SagaNormal' },
