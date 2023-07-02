@@ -43,7 +43,18 @@ end
 
 function hover:open_floating_preview(content, option_fn)
   local new = {}
+  local max_float_width = math.floor(vim.o.columns * config.hover.max_width)
+  local max_content_len = util.get_max_content_length(content)
+  local increase = util.win_height_increase(content)
+  local max_height = math.floor(vim.o.lines * config.hover.max_height)
+
+  local float_option = {
+    width = math.min(max_float_width, max_content_len),
+    zindex = 80,
+  }
+
   local in_codeblock = false
+
   for _, line in ipairs(content) do
     if line:find('\\') then
       line = line:gsub('\\(?![tn])', '')
@@ -75,21 +86,22 @@ function hover:open_floating_preview(content, option_fn)
     if line:find('```') then
       in_codeblock = in_codeblock and false or true
     end
+    if line:find('^%-%-%-$') then
+      line = util.gen_truncate_line(float_option.width)
+    end
     if #line > 0 then
       new[#new + 1] = line
     end
   end
 
-  local max_float_width = math.floor(vim.o.columns * config.hover.max_width)
-  local max_content_len = util.get_max_content_length(content)
-  local increase = util.win_height_increase(content)
-  local max_height = math.floor(vim.o.lines * config.hover.max_height)
+  local tuncate_lnum = -1
+  for i, line in ipairs(new) do
+    if line:find('^─') then
+      tuncate_lnum = i
+    end
+  end
 
-  local float_option = {
-    width = math.min(max_float_width, max_content_len),
-    height = math.min(max_height, #content + increase),
-    zindex = 80,
-  }
+  float_option.height = math.min(max_height, #new + increase)
 
   if option_fn then
     float_option = vim.tbl_extend('keep', float_option, option_fn(float_option.width))
@@ -107,7 +119,7 @@ function hover:open_floating_preview(content, option_fn)
 
   self.bufnr, self.winid = win
     :new_float(float_option, false, option_fn and true or false)
-    :setlines(content)
+    :setlines(new)
     :bufopt({
       ['filetype'] = 'markdown',
       ['modifiable'] = false,
@@ -122,6 +134,11 @@ function hover:open_floating_preview(content, option_fn)
       ['wrap'] = true,
     })
     :wininfo()
+
+  print(tuncate_lnum)
+  if tuncate_lnum > 0 then
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', tuncate_lnum - 1, 0, -1)
+  end
 
   vim.treesitter.start(self.bufnr, 'markdown')
   vim.treesitter.query.set(
