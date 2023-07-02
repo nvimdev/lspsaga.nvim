@@ -194,6 +194,7 @@ function fd:event()
         range.start.character,
         range['end'].character
       )
+      node.value.rendered = true
       util.map_keys(node.value.bufnr, config.finder.keys['close_all'], function()
         self:clean()
       end)
@@ -206,7 +207,9 @@ function fd:clean()
   slist.list_map(self.list, function(node)
     if not node.value.wipe and node.value.bufnr then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
-      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
+      if node.value.rendered then
+        api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
+      end
     end
   end)
   clean_ctx()
