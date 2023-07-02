@@ -80,20 +80,30 @@ describe('window module', function()
     vim.opt.number = true
     vim.opt.swapfile = false
     local restore = win:minimal_restore()
-    bufnr = vim.fn.bufadd('test.lua')
-    vim.fn.bufload(bufnr)
-    bufnr, winid = win:new_float({
-      relative = 'editor',
-      row = 10,
-      col = 10,
-      height = 20,
-      width = 20,
-      style = 'minimal',
-    }, true)
-    restore()
-    vim.cmd.quit()
-    vim.cmd.edit('test.lua')
+    vim.cmd('enew')
+    bufnr = vim.api.nvim_get_current_buf()
     local curwin = vim.api.nvim_get_current_win()
+    vim.api.nvim_win_set_buf(curwin, bufnr)
+
+    bufnr, winid = win
+      :new_float({
+        relative = 'editor',
+        row = 10,
+        col = 10,
+        height = 20,
+        width = 20,
+        style = 'minimal',
+        bufnr = bufnr,
+      }, true)
+      :wininfo()
+
+    vim.api.nvim_create_autocmd('WinClosed', {
+      callback = function()
+        restore()
+      end,
+    })
+    vim.api.nvim_win_close(winid, true)
+    vim.cmd.edit('test.lua')
     assert.is_true(vim.api.nvim_get_option_value('number', { win = curwin }))
   end)
 end)
