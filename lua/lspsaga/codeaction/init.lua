@@ -90,7 +90,7 @@ function act:action_callback(tuples, enriched_ctx)
 
   self:apply_action_keys(tuples, enriched_ctx)
   if config.code_action.num_shortcut then
-    self:num_shortcut(self.action_bufnr, enriched_ctx)
+    self:num_shortcut(self.action_bufnr, tuples, enriched_ctx)
   end
 end
 
@@ -273,16 +273,16 @@ function act:apply_action_keys(action_tuples, enriched_ctx)
   end, { buffer = self.action_bufnr })
 end
 
-function act:num_shortcut(bufnr, action_tuples)
-  for num, _ in pairs(self.action_tuples or {}) do
+function act:num_shortcut(bufnr, action_tuples, enriched_ctx)
+  for num, _ in pairs(action_tuples or {}) do
     util.map_keys(bufnr, tostring(num), function()
-      if not self.action_tuples or not self.action_tuples[num] then
+      if not action_tuples or not action_tuples[num] then
         return
       end
       local action = action_tuples[num][2]
-      local client = lsp.get_client_by_id(self.action_tuples[num][1])
+      local client = lsp.get_client_by_id(action_tuples[num][1])
       self:close_action_window()
-      self:do_code_action(action, client, self.enriched_ctx)
+      self:do_code_action(action, client, enriched_ctx)
     end)
   end
 end

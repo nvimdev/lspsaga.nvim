@@ -146,6 +146,7 @@ function rename:lsp_rename(arg)
 end
 
 local function auto_save()
+  ---@diagnostic disable-next-line: duplicate-set-field
   lsp.handlers['textDocument/rename'] = function(err, result, ctx)
     if err then
       vim.notify(
