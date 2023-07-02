@@ -78,10 +78,7 @@ function M.scroll_in_float(bufnr, winid)
           feedkeys(key)
         end)
       end
-    end, {
-      noremap = true,
-      nowait = true,
-    })
+    end)
   end
 end
 

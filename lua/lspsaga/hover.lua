@@ -148,6 +148,7 @@ function hover:open_floating_preview(content, option_fn)
   if not option_fn then
     api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete' }, {
       buffer = curbuf,
+      once = true,
       callback = function(opt)
         if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
           util.delete_scroll_map(curbuf)
