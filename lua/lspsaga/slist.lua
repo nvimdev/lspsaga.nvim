@@ -42,7 +42,7 @@ function M.insert_node(curnode, node)
   }
 end
 
-function M.update_winline(node, count)
+function M.update_winline(node, count, curlnum)
   node = node.next
   local total = count < 0 and math.abs(count) or 0
   while node do
@@ -53,10 +53,11 @@ function M.update_winline(node, count)
         node.value.expand = false
       end
     else
-      node.value.winline = node.value.winline + count
+      node.value.winline = node.value.winline == -1 and curlnum + 1 or node.value.winline + count
       if type(node.value.expand) == 'boolean' and node.value.expand == false then
         node.value.expand = true
       end
+      curlnum = curlnum + 1
     end
     node = node.next
   end

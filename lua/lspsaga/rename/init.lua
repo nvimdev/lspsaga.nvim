@@ -89,7 +89,7 @@ function rename:lsp_rename(arg)
 
   if config.ui.title then
     float_opt.title = {
-      { 'Rename', 'TitleString' },
+      { 'Rename', 'SagaTitle' },
     }
   end
 

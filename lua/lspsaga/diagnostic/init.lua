@@ -104,7 +104,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
 
   api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', start_line - 1, 0, -1)
   api.nvim_buf_add_highlight(self.bufnr, 0, 'ActionFix', start_line, 0, #config.ui.actionfix)
-  api.nvim_buf_add_highlight(self.bufnr, 0, 'TitleString', start_line, #config.ui.actionfix, -1)
+  api.nvim_buf_add_highlight(self.bufnr, 0, 'SagaTitle', start_line, #config.ui.actionfix, -1)
 
   for i = 3, #contents do
     local row = start_line + i - 2

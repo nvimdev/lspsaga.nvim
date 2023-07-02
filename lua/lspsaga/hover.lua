@@ -98,7 +98,7 @@ function hover:open_floating_preview(content, option_fn)
   if config.ui.title then
     float_option.title = {
       { config.ui.hover, 'Exception' },
-      { ' Hover', 'TitleString' },
+      { ' Hover', 'SagaTitle' },
     }
     float_option.title_pos = 'center'
   end

@@ -4,8 +4,7 @@ local kind = require('lspsaga.lspkind').kind
 local function hi_define()
   return {
     -- general
-    TitleString = { link = 'Title' },
-    TitleIcon = { link = 'Repeat' },
+    SagaTitle = { link = 'Title' },
     SagaBorder = { link = 'FloatBorder' },
     SagaNormal = { link = 'NormalFloat' },
     SagaToggle = { link = 'Comment' },
@@ -17,6 +16,7 @@ local function hi_define()
     SagaText = { link = 'Comment' },
     SagaSelection = { link = 'String' },
     SagaSearch = { link = 'Search' },
+    SagaFinderFname = { link = 'Type' },
     -- code action
     ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
@@ -26,11 +26,6 @@ local function hi_define()
     CodeActionBorder = { link = 'SagaBorder' },
     CodeActionText = { link = '@variable' },
     CodeActionNumber = { link = 'DiffAdd' },
-    --finder spinner
-    FinderPreview = { link = 'Search' },
-    FinderNormal = { link = 'SagaNormal' },
-    FinderBorder = { link = 'SagaBorder' },
-    FinderPreviewBorder = { link = 'SagaBorder' },
     -- hover
     HoverNormal = { link = 'SagaNormal' },
     HoverBorder = { link = 'SagaBorder' },
@@ -47,11 +42,6 @@ local function hi_define()
     DiagnosticFname = { link = 'KeyWord' },
     DiagnosticShowNormal = { link = 'SagaNormal' },
     DiagnosticShowBorder = { link = '@property' },
-    -- Call Hierachry
-    CallHierarchyNormal = { link = 'SagaNormal' },
-    CallHierarchyBorder = { link = 'SagaBorder' },
-    CallHierarchyIcon = { link = 'TitleIcon' },
-    CallHierarchyTitle = { link = 'Title' },
     -- lightbulb
     SagaLightBulb = { link = 'DiagnosticSignHint' },
     -- Outline

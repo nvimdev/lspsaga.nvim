@@ -166,7 +166,7 @@ function ch:toggle_or_request()
       tmp = tmp.next
     end
     vim.bo[self.left_bufnr].modifiable = false
-    slist.update_winline(curnode, count)
+    slist.update_winline(curnode, count, curlnum - count)
   end
 end
 

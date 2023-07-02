@@ -27,22 +27,6 @@ end
 
 local ns = api.nvim_create_namespace('SagaFinder')
 
-function fd:method_title(method)
-  local title = vim.split(method, '/', { plain = true })[2]
-  title = title:upper()
-
-  local total = api.nvim_buf_line_count(self.lbufnr)
-  local n = {
-    winline = total,
-    expand = true,
-    virtid = uv.hrtime(),
-    inlevel = 2,
-  }
-  buf_set_lines(self.lbufnr, total == 1 and 0 or total, -1, false, { (' '):rep(2) .. title })
-  self:set_toggle_icon(config.ui.expand, n.virtid, total == 1 and 0 or total, 0)
-  slist.tail_push(self.list, n)
-end
-
 function fd:init_layout()
   local win_width = api.nvim_win_get_width(0)
   self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
@@ -62,6 +46,55 @@ function fd:set_toggle_icon(icon, virtid, row, col)
     virt_text = { { icon, 'SagaToggle' } },
     virt_text_pos = 'overlay',
   })
+end
+
+function fd:set_highlight(inlevel, line)
+  local hl_group, col_start
+  if inlevel == 2 then
+    hl_group = 'SagaTitle'
+    col_start = 2
+  elseif inlevel == 4 then
+    hl_group = 'SagaFinderFname'
+    col_start = 4
+  else
+    hl_group = 'SagaText'
+    col_start = 6
+  end
+  buf_add_highlight(self.lbufnr, ns, hl_group, line, col_start, -1)
+end
+
+function fd:render_virtline(inlevel, line, islast)
+  local hl = 'SagaVirtLine'
+  for i = 1, inlevel - 2, 2 do
+    local virt = i + 2 > inlevel - 2
+        and {
+          { islast and config.ui.lines[1] or config.ui.lines[2], hl },
+          { config.ui.lines[4]:rep(i >= 3 and 3 or 1), hl },
+        }
+      or { { config.ui.lines[3], hl } }
+    buf_set_extmark(self.lbufnr, ns, line, i - 1, {
+      virt_text = virt,
+      virt_text_pos = 'overlay',
+    })
+  end
+end
+
+function fd:method_title(method)
+  local title = vim.split(method, '/', { plain = true })[2]
+  title = title:upper()
+
+  local total = api.nvim_buf_line_count(self.lbufnr)
+  local n = {
+    winline = total,
+    expand = true,
+    virtid = uv.hrtime(),
+    inlevel = 2,
+  }
+  buf_set_lines(self.lbufnr, total == 1 and 0 or total, -1, false, { (' '):rep(2) .. title })
+  self:set_highlight(n.inlevel, total == 1 and 0 or total)
+  self:set_toggle_icon(config.ui.expand, n.virtid, total == 1 and 0 or total, 0)
+  self:render_virtline(n.inlevel, total, false)
+  slist.tail_push(self.list, n)
 end
 
 function fd:handler(method, results, spin_close, done)
@@ -93,6 +126,8 @@ function fd:handler(method, results, spin_close, done)
         total = total + 1
         node.winline = total
         self:set_toggle_icon(config.ui.expand, node.virtid, total - 1, 2)
+        self:set_highlight(node.inlevel, total - 1)
+        self:render_virtline(node.inlevel, total - 1, false)
         slist.tail_push(self.list, node)
       end
       res.bufnr = vim.uri_to_bufnr(res.uri)
@@ -111,11 +146,12 @@ function fd:handler(method, results, spin_close, done)
         range['end'].character,
         {}
       )[1]
+      res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
-      buf_add_highlight(self.lbufnr, ns, 'SagaText', total, 0, -1)
+      self:set_highlight(res.inlevel, total)
+      self:render_virtline(res.inlevel, total, i == #item.result)
       total = total + 1
       res.winline = total
-      res.inlevel = 6
       slist.tail_push(self.list, res)
     end
   end
@@ -246,12 +282,15 @@ function fd:toggle_or_open()
       if tmp.value.inlevel < 6 then
         self:set_toggle_icon(config.ui.expand, tmp.value.virtid, curlnum, tmp.value.inlevel - 2)
       end
+      self:set_highlight(tmp.value.inlevel, curlnum)
+      local islast = (not tmp.next or tmp.next.value.inlevel <= tmp.value.inlevel) and true or false
+      self:render_virtline(tmp.value.inlevel, curlnum, islast)
       tmp = tmp.next
       count = count + 1
       curlnum = curlnum + 1
     end
     vim.bo[self.lbufnr].modifiable = false
-    slist.update_winline(node, count)
+    slist.update_winline(node, count, curlnum - count)
   end)
 end
 
