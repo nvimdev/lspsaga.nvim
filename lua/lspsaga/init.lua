@@ -76,6 +76,7 @@ local default_config = {
     methods = {},
     default = 'ref+imp',
     layout = 'float',
+    filter = {},
     keys = {
       go_peek = 'p',
       toggle_or_open = 'o',

@@ -32,6 +32,20 @@ function M.parse_argument(args)
   return methods, layout
 end
 
+function M.filter(method, results)
+  if vim.tbl_isempty(config.finder.filter) or not config.finder.filter[method] then
+    return results
+  end
+  local fn = config.finder.filter[method]
+  local retval = {}
+  for client_id, item in pairs(results) do
+    retval[client_id] = {
+      result = fn(client_id, item.result),
+    }
+  end
+  return retval
+end
+
 function M.spinner()
   local timer = uv.new_timer()
   local bufnr, winid = win

@@ -101,7 +101,7 @@ function fd:handler(method, results, spin_close, done)
   if not results or vim.tbl_isempty(results) then
     return
   end
-  for client_id, item in ipairs(results) do
+  for client_id, item in pairs(results) do
     for i, res in ipairs(item.result or {}) do
       if not self.lbufnr then
         spin_close()
@@ -204,7 +204,7 @@ end
 function fd:clean()
   util.close_win({ self.lwinid, self.rwinid })
   slist.list_map(self.list, function(node)
-    if node.value.wipe == false then
+    if not node.value.wipe and node.value.bufnr then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
       api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
     end
@@ -295,12 +295,19 @@ function fd:toggle_or_open()
 end
 
 function fd:apply_maps()
+  local black = { 'close_all', 'toggle_or_open', 'go_peek', 'quit' }
   for action, key in pairs(config.finder.keys) do
     util.map_keys(self.lbufnr, key, function()
-      if action ~= 'close_all' and action ~= 'toggle_or_open' and action ~= 'go_peek' then
+      if not vim.tbl_contains(black, action) then
         vim.cmd[action]()
         return
       end
+
+      if action == 'quit' then
+        self:clean()
+        return
+      end
+
       if action == 'go_peek' then
         api.nvim_set_current_win(self.rwinid)
         return
@@ -343,6 +350,7 @@ function fd:new(args)
   for _, method in ipairs(methods) do
     lsp.buf_request_all(curbuf, method, params, function(results)
       count = count + 1
+      results = box.filter(method, results)
       self:handler(method, results, spin_close, count == #methods)
     end)
   end
