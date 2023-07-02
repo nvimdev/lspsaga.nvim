@@ -14,7 +14,7 @@ local function hi_define()
     SagaSpinnerTitle = { link = 'Statement' },
     SagaSpinner = { link = 'Statement' },
     SagaText = { link = 'Comment' },
-    SagaSelection = { link = 'String' },
+    SagaSelect = { link = 'String' },
     SagaSearch = { link = 'Search' },
     SagaFinderFname = { link = 'Type' },
     -- code action

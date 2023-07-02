@@ -101,10 +101,16 @@ local default_config = {
     },
   },
   rename = {
-    quit = '<Esc>',
-    exec = '<CR>',
     in_select = true,
     auto_save = true,
+    project_max_width = 0.5,
+    project_max_height = 0.5,
+    keys = {
+      quit = '<Esc>',
+      exec = '<CR>',
+      select = 'x',
+      confirm = '<CR>',
+    },
   },
   symbol_in_winbar = {
     enable = true,

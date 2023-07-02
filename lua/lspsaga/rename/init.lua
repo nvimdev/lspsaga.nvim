@@ -33,12 +33,12 @@ function rename:apply_action_keys()
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in ipairs(modes) do
-    util.map_keys(self.bufnr, config.rename.quit, function()
+    util.map_keys(self.bufnr, config.rename.keys.quit, function()
       self:close_rename_win()
     end, mode)
 
     if i ~= 3 then
-      util.map_keys(self.bufnr, config.rename.exec, function()
+      util.map_keys(self.bufnr, config.rename.keys.exec, function()
         self:do_rename()
       end, mode)
     end
