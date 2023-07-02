@@ -1,8 +1,8 @@
 local command = {}
 
 local subcommands = {
-  lsp_finder = function()
-    require('lspsaga.finder'):lsp_finder()
+  finder = function(args)
+    require('lspsaga.finder'):new(args)
   end,
   peek_definition = function()
     require('lspsaga.definition'):peek_definition(1)
@@ -16,23 +16,26 @@ local subcommands = {
   goto_type_definition = function()
     require('lspsaga.definition'):goto_definition(2)
   end,
-  rename = function(arg)
-    require('lspsaga.rename'):lsp_rename(arg)
+  rename = function(args)
+    require('lspsaga.rename'):lsp_rename(args)
   end,
-  hover_doc = function(arg)
-    require('lspsaga.hover'):render_hover_doc(arg)
+  project_search = function(args)
+    require('lspsaga.rename.project'):new(args)
   end,
-  show_workspace_diagnostics = function(arg)
-    require('lspsaga.showdiag'):show_diagnostics({ workspace = true, arg = arg })
+  hover_doc = function(args)
+    require('lspsaga.hover'):render_hover_doc(args)
   end,
-  show_line_diagnostics = function(arg)
-    require('lspsaga.showdiag'):show_diagnostics({ line = true, arg = arg })
+  show_workspace_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ workspace = true, args = args })
   end,
-  show_buf_diagnostics = function(arg)
-    require('lspsaga.showdiag'):show_diagnostics({ buffer = true, arg = arg })
+  show_line_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ line = true, args = args })
   end,
-  show_cursor_diagnostics = function(arg)
-    require('lspsaga.showdiag'):show_diagnostics({ cursor = true, arg = arg })
+  show_buf_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ buffer = true, args = args })
+  end,
+  show_cursor_diagnostics = function(args)
+    require('lspsaga.diagnostic.show'):show_diagnostics({ cursor = true, args = args })
   end,
   diagnostic_jump_next = function()
     require('lspsaga.diagnostic'):goto_next()
@@ -44,16 +47,19 @@ local subcommands = {
     require('lspsaga.codeaction'):code_action()
   end,
   outline = function()
-    require('lspsaga.outline'):outline()
+    require('lspsaga.symbol'):outline()
   end,
-  incoming_calls = function()
-    require('lspsaga.callhierarchy'):send_method(2)
+  incoming_calls = function(args)
+    require('lspsaga.callhierarchy'):send_method(2, args)
   end,
-  outgoing_calls = function()
-    require('lspsaga.callhierarchy'):send_method(3)
+  outgoing_calls = function(args)
+    require('lspsaga.callhierarchy'):send_method(3, args)
   end,
-  term_toggle = function(cmd)
-    require('lspsaga.floaterm'):open_float_terminal(cmd)
+  term_toggle = function(args)
+    require('lspsaga.floaterm'):open_float_terminal(args)
+  end,
+  open_log = function()
+    require('lspsaga.logger'):open()
   end,
 }
 

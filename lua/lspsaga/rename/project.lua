@@ -1,0 +1,184 @@
+local lsp, fn, api = vim.lsp, vim.fn, vim.api
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
+local config = require('lspsaga').config
+local win = require('lspsaga.window')
+local ns = api.nvim_create_namespace('SagaProjectRename')
+local util = require('lspsaga.util')
+--project rename module
+local M = {}
+
+local function safe_close(handle)
+  if not uv.is_closing(handle) then
+    uv.close(handle)
+  end
+end
+
+local function get_root_dir()
+  local clients = lsp.get_active_clients({ bufnr = 0 })
+  for _, client in ipairs(clients) do
+    if client.config.root_dir then
+      return client.config.root_dir
+    end
+  end
+end
+
+local function decode(data)
+  local result = {}
+  for _, v in pairs(data) do
+    for _, item in pairs(v) do
+      local tbl = vim.json.decode(item)
+      if tbl.type == 'match' then
+        local path = tbl.data.path.text
+        if not result[path] then
+          result[path] = {}
+        end
+        result[path][#result[path] + 1] = tbl
+      end
+    end
+  end
+  return result
+end
+
+local function create_win()
+  local win_height = api.nvim_win_get_height(0)
+  local win_width = api.nvim_win_get_width(0)
+  local float_opt = {
+    height = math.floor(win_height * config.rename.project_max_height),
+    width = math.floor(win_width * config.rename.project_max_width),
+  }
+  return win
+    :new_float(float_opt, true)
+    :bufopt({
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+    })
+    :winopt({
+      ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+    })
+    :wininfo()
+end
+
+local function find_data_by_lnum(data, lnum)
+  for _, item in pairs(data) do
+    for _, v in ipairs(item) do
+      if v.winline == lnum then
+        return v
+      end
+    end
+  end
+end
+
+local function apply_map(bufnr, winid, data, new_name)
+  util.map_keys(bufnr, config.rename.keys.select, function()
+    local curlnum = api.nvim_win_get_cursor(winid)[1]
+    if fn.indent(curlnum) ~= 2 then
+      return
+    end
+    local item = find_data_by_lnum(data, curlnum)
+    print(vim.inspect(item))
+    if not item.selected then
+      item.selected = true
+      api.nvim_buf_add_highlight(bufnr, ns, 'SagaSelect', curlnum - 1, 0, -1)
+      return
+    end
+    item.selectd = false
+    api.nvim_buf_add_highlight(bufnr, ns, 'Comment', curlnum - 1, 0, -1)
+  end)
+
+  util.map_keys(bufnr, config.rename.keys.confirm, function()
+    for fname, v in pairs(data) do
+      for _, item in ipairs(v) do
+        if item.selected then
+          local buf = fn.bufadd(fname)
+          if not api.nvim_buf_is_loaded(buf) then
+            fn.bufload(buf)
+          end
+          for _, match in ipairs(item.data.submatches) do
+            api.nvim_buf_set_text(
+              buf,
+              item.data.line_number - 1,
+              match.start,
+              item.data.line_number - 1,
+              match['end'],
+              { new_name }
+            )
+            api.nvim_buf_call(buf, function()
+              vim.cmd.write()
+            end)
+          end
+        end
+      end
+    end
+    api.nvim_win_close(winid, true)
+  end)
+end
+
+local function render(chunks, root_dir, new_name)
+  local result = decode(chunks, root_dir)
+  local lines = {}
+  local bufnr, winid = create_win()
+  local line = 1
+  print(vim.inspect(result))
+  for fname, item in pairs(result) do
+    api.nvim_buf_set_lines(bufnr, line - 1, line - 1, false, { fname })
+    api.nvim_buf_add_highlight(bufnr, ns, 'SagaFinderFname', line - 1, 0, -1)
+    line = line + 1
+    vim.tbl_map(function(val)
+      local text = 'ln:' .. val.data.line_number .. '  ' .. vim.trim(val.data.lines.text)
+      api.nvim_buf_set_lines(bufnr, line - 1, -1, false, { (' '):rep(2) .. text })
+      api.nvim_buf_add_highlight(bufnr, ns, 'Comment', line - 1, 0, -1)
+      val.winline = line
+      line = line + 1
+    end, item)
+  end
+  apply_map(bufnr, winid, result, new_name)
+end
+
+function M:new(args)
+  if fn.executable('rg') == 0 then
+    vim.notify('[Lspsaga] does not find rg')
+    return
+  end
+
+  if not args[2] then
+    vim.notify('[Lspsaga] missing new name')
+    return
+  end
+
+  local stdout = uv.new_pipe(false)
+  local stderr = uv.new_pipe(false)
+  local stdin = uv.new_pipe(false)
+
+  local handle
+  local chunks = {}
+  local root_dir = get_root_dir()
+  if not root_dir then
+    vim.notify('[Lspsaga] buffer run in single file mode')
+    return
+  end
+
+  handle, _ = uv.spawn('rg', {
+    args = { args[1], root_dir, '--json' },
+    stdio = { stdin, stdout, stderr },
+  }, function(_, _)
+    uv.read_stop(stdout)
+    uv.read_stop(stderr)
+    safe_close(handle)
+    safe_close(stdout)
+    safe_close(stderr)
+    -- parse after close
+    vim.schedule(function()
+      render(chunks, root_dir, args[2])
+    end)
+  end)
+
+  uv.read_start(stdout, function(err, data)
+    assert(not err, err)
+
+    if data then
+      chunks[#chunks + 1] = vim.split(data, '\n', { trimempty = true })
+    end
+  end)
+end
+
+return M

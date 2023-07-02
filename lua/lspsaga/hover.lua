@@ -1,70 +1,61 @@
-local api, fn, lsp, util = vim.api, vim.fn, vim.lsp, vim.lsp.util
+local api, fn, lsp = vim.api, vim.fn, vim.lsp
 local config = require('lspsaga').config
-local window = require('lspsaga.window')
-local libs = require('lspsaga.libs')
+local win = require('lspsaga.window')
+local util = require('lspsaga.util')
+local treesitter = vim.treesitter
 local hover = {}
 
-local function has_arg(args, arg)
-  local tbl = vim.split(args, '%s')
-  if vim.tbl_contains(tbl, arg) then
-    return true
-  end
-  return false
+function hover:clean()
+  self.bufnr = nil
+  self.winid = nil
 end
 
-local function open_link()
-  local ts_utils = require('nvim-treesitter.ts_utils')
-  local node = ts_utils.get_node_at_cursor()
-
-  if node ~= nil and node:type() ~= 'inline_link' then
-    node = node:parent()
+function hover:open_link()
+  if not self.bufnr or not api.nvim_buf_is_valid(self.bufnr) then
+    return
   end
 
-  if node ~= nil and node:type() == 'inline_link' then
-    local path
+  local node = treesitter.get_node()
+  if not node or node:type() ~= 'inline' then
+    return
+  end
+  local text = treesitter.get_node_text(node, self.bufnr)
+  local link = text:match('%((.*)%)')
+  if not link then
+    return
+  end
 
-    for i = 0, node:named_child_count() - 1, 1 do
-      local child = node:named_child(i)
-      if child:type() == 'link_destination' then
-        ---@diagnostic disable-next-line: undefined-field
-        path = vim.treesitter.get_node_text(child, 0)
-        break
-      end
-    end
+  local cmd
+  if util.iswin then
+    cmd = '!start cmd /cstart /b '
+  elseif util.ismac then
+    cmd = 'silent !open '
+  else
+    cmd = config.hover.open_browser .. ' '
+  end
 
-    if path:find('#') then
-      vim.fn.escape(path, '#')
-    end
-
-    local cmd
-    if libs.iswin then
-      cmd = '!start cmd /cstart /b '
-    elseif libs.ismac then
-      cmd = 'silent !open '
-    else
-      cmd = config.hover.open_browser .. ' '
-    end
-
-    if path and path:find('file://') then
-      vim.cmd.edit(vim.uri_to_fname(path))
-    else
-      fn.execute(cmd .. '"' .. fn.escape(path, '#') .. '"')
-    end
+  if link:find('file://') then
+    vim.cmd.edit(vim.uri_to_fname(link))
+  else
+    fn.execute(cmd .. '"' .. fn.escape(link, '#') .. '"')
   end
 end
 
-function hover:open_floating_preview(res, option_fn)
-  vim.validate({
-    res = { res, 't' },
-  })
-
-  local bufnr = api.nvim_get_current_buf()
-  self.preview_bufnr = api.nvim_create_buf(false, true)
-
-  local content = vim.split(res.value, '\n', { trimempty = true })
+function hover:open_floating_preview(content, option_fn)
   local new = {}
+  local max_float_width = math.floor(vim.o.columns * config.hover.max_width)
+  local max_content_len = util.get_max_content_length(content)
+  local increase = util.win_height_increase(content)
+  local max_height = math.floor(vim.o.lines * config.hover.max_height)
+
+  local float_option = {
+    width = math.min(max_float_width, max_content_len),
+    zindex = 80,
+  }
+
   local in_codeblock = false
-  for _, line in pairs(content) do
+
+  for _, line in ipairs(content) do
     if line:find('\\') then
       line = line:gsub('\\(?![tn])', '')
     end
@@ -95,177 +86,145 @@ function hover:open_floating_preview(res, option_fn)
     if line:find('```') then
       in_codeblock = in_codeblock and false or true
     end
-    if line:find('&emsp;') then
-      line = line:gsub('&emsp;', vim.bo.filetype == 'yaml' and '' or ' ')
+    if line:find('^%-%-%-$') then
+      line = util.gen_truncate_line(float_option.width)
     end
     if #line > 0 then
       new[#new + 1] = line
     end
   end
-  content = new
 
-  local max_float_width = math.floor(vim.o.columns * config.hover.max_width)
-  local max_content_len = window.get_max_content_length(content)
-  local increase = window.win_height_increase(content)
-  local max_height = math.floor(vim.o.lines * 0.8)
-
-  local float_option = {
-    width = max_content_len < max_float_width and max_content_len or max_float_width,
-    height = #content + increase > max_height and max_height or #content + increase,
-    no_size_override = true,
-    zindex = 80,
-  }
-
-  if fn.has('nvim-0.9') == 1 and config.ui.title then
-    float_option.title = {
-      { config.ui.hover, 'Exception' },
-      { ' Hover', 'TitleString' },
-    }
+  local tuncate_lnum = -1
+  for i, line in ipairs(new) do
+    if line:find('^─') then
+      tuncate_lnum = i
+    end
   end
+
+  float_option.height = math.min(max_height, #new + increase)
 
   if option_fn then
-    local new_opt = option_fn(float_option.width)
-    float_option = vim.tbl_extend('keep', float_option, new_opt)
+    float_option = vim.tbl_extend('keep', float_option, option_fn(float_option.width))
   end
 
-  local contents_opt = {
-    contents = content,
-    filetype = res.kind or 'markdown',
-    buftype = 'nofile',
-    wrap = true,
-    highlight = {
-      normal = 'HoverNormal',
-      border = 'HoverBorder',
-    },
-    bufnr = self.preview_bufnr,
-  }
-  _, self.preview_winid = window.create_win_with_border(contents_opt, float_option)
-  vim.bo[self.preview_bufnr].modifiable = false
+  if config.ui.title then
+    float_option.title = {
+      { config.ui.hover, 'Exception' },
+      { ' Hover', 'SagaTitle' },
+    }
+    float_option.title_pos = 'center'
+  end
 
-  vim.wo[self.preview_winid].conceallevel = 2
-  vim.wo[self.preview_winid].concealcursor = 'niv'
-  vim.wo[self.preview_winid].showbreak = 'NONE'
-  if fn.has('nvim-0.9') == 1 then
-    api.nvim_set_option_value(
-      'fillchars',
-      'lastline: ',
-      { scope = 'local', win = self.preview_winid }
-    )
-    vim.treesitter.start(self.preview_bufnr, 'markdown')
-    vim.treesitter.query.set(
-      'markdown',
-      'highlights',
-      [[
+  local curbuf = api.nvim_get_current_buf()
+
+  self.bufnr, self.winid = win
+    :new_float(float_option, false, option_fn and true or false)
+    :setlines(new)
+    :bufopt({
+      ['filetype'] = 'markdown',
+      ['modifiable'] = false,
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+    })
+    :winopt({
+      ['winhl'] = 'NormalFloat:HoverNormal,Border:HoverBorder',
+      ['conceallevel'] = 2,
+      ['concealcursor'] = 'niv',
+      ['showbreak'] = 'NONE',
+      ['wrap'] = true,
+    })
+    :wininfo()
+
+  print(tuncate_lnum)
+  if tuncate_lnum > 0 then
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', tuncate_lnum - 1, 0, -1)
+  end
+
+  vim.treesitter.start(self.bufnr, 'markdown')
+  vim.treesitter.query.set(
+    'markdown',
+    'highlights',
+    [[
       ([
         (info_string)
         (fenced_code_block_delimiter)
       ] @conceal
       (#set! conceal ""))
     ]]
-    )
-  end
+  )
 
-  vim.keymap.set('n', 'q', function()
-    if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-      api.nvim_win_close(self.preview_winid, true)
-      self:remove_data()
+  util.scroll_in_float(curbuf, self.winid)
+
+  util.map_keys(self.bufnr, 'q', function()
+    if self.winid and api.nvim_win_is_valid(self.winid) then
+      api.nvim_win_close(self.winid, true)
+      self:clean()
     end
-  end, { buffer = self.preview_bufnr })
+  end)
 
   if not option_fn then
-    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete', 'WinScrolled' }, {
-      buffer = bufnr,
+    api.nvim_create_autocmd({ 'CursorMoved', 'InsertEnter', 'BufDelete' }, {
+      buffer = curbuf,
+      once = true,
       callback = function(opt)
-        if self.preview_bufnr and api.nvim_buf_is_loaded(self.preview_bufnr) then
-          libs.delete_scroll_map(bufnr)
-          api.nvim_buf_delete(self.preview_bufnr, { force = true })
+        if self.bufnr and api.nvim_buf_is_loaded(self.bufnr) then
+          util.delete_scroll_map(curbuf)
         end
 
-        if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-          api.nvim_win_close(self.preview_winid, true)
-          self:remove_data()
+        if self.winid and api.nvim_win_is_valid(self.winid) then
+          api.nvim_win_close(self.winid, true)
         end
-
-        if opt.event == 'WinScrolled' then
-          vim.cmd('Lspsaga hover_doc')
-        end
+        self:clean()
         api.nvim_del_autocmd(opt.id)
       end,
       desc = '[Lspsaga] Auto close hover window',
     })
 
-    self.enter_leave_id = api.nvim_create_autocmd('BufEnter', {
+    api.nvim_create_autocmd('BufEnter', {
       callback = function(opt)
-        if
-          opt.buf ~= self.preview_bufnr
-          and self.preview_winid
-          and api.nvim_win_is_valid(self.preview_winid)
-        then
-          api.nvim_win_close(self.preview_winid, true)
-          if self.enter_leave_id then
-            pcall(api.nvim_del_autocmd, self.enter_leave_id)
-          end
-          self:remove_data()
+        if opt.buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
+          api.nvim_win_close(self.winid, true)
+          pcall(api.nvim_del_autocmd, opt.id)
+          self:clean()
         end
       end,
     })
   end
 
-  api.nvim_buf_set_keymap(self.preview_bufnr, 'n', config.hover.open_link, '', {
-    nowait = true,
-    noremap = true,
-    callback = function()
-      open_link()
-    end,
-  })
-
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    libs.scroll_in_preview(bufnr, self.preview_winid)
-  end
+  util.map_keys(self.bufnr, config.hover.open_link, function()
+    self:open_link()
+  end)
 end
 
-local function should_error(args)
-  -- Never error if we have ++quiet
-  if args and has_arg(args, '++quiet') then
-    return false
+local function ignore_error(args, can_through)
+  if vim.tbl_contains(args, '++silent') and can_through then
+    return true
   end
-  return true
-end
-
-local function support_clients()
-  local count = 0
-  local clients = lsp.get_active_clients({ bufnr = 0 })
-  for _, client in ipairs(clients) do
-    if client.supports_method('textDocument/hover') then
-      count = count + 1
-      break
-    end
-  end
-  return count, #clients
 end
 
 function hover:do_request(args)
-  local params = util.make_position_params()
-  local count, total = support_clients()
-  if count == 0 and should_error(args) then
+  local params = lsp.util.make_position_params()
+  local method = 'textDocument/hover'
+  local clients = util.get_client_by_method(method)
+  if #clients == 0 then
     self.pending_request = false
     vim.notify('[Lspsaga] all server of buffer not support hover request')
     return
   end
-  count = 0
+  local count = 0
 
-  local failed = 0
-  lsp.buf_request(0, 'textDocument/hover', params, function(_, result, ctx)
-    self.pending_request = false
+  lsp.buf_request(api.nvim_get_current_buf(), method, params, function(_, result, ctx)
     count = count + 1
+    if count == #clients then
+      self.pending_request = false
+    end
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
 
     if not result or not result.contents then
-      failed = failed + 1
-      if count == total and failed == total and should_error(args) then
+      if ignore_error(args, count == #clients) then
         vim.notify('No information available')
       end
       return
@@ -278,13 +237,9 @@ function hover:do_request(args)
     if type(result.contents) == 'string' then -- MarkedString
       value = result.contents
     elseif result.contents.language then -- MarkedString
-      if result.contents.language == 'css' then
-        value = '```css\n' .. result.contents.value .. '\n```'
-      else
-        value = result.contents.value
-      end
+      value = result.contents.value
     elseif vim.tbl_islist(result.contents) then -- MarkedString[]
-      if vim.tbl_isempty(result.contents) and should_error(args) then
+      if vim.tbl_isempty(result.contents) and ignore_error(args) then
         vim.notify('No information available')
         return
       end
@@ -299,19 +254,30 @@ function hover:do_request(args)
     end
 
     if not value or #value == 0 then
-      if should_error(args) then
+      if ignore_error(args, count == #clients) then
         vim.notify('No information available')
       end
       return
     end
+    local content = vim.split(value, '\n', { trimempty = true })
 
-    result.contents = {
-      kind = 'markdown',
-      value = value,
-    }
+    if
+      self.bufnr
+      and api.nvim_buf_is_valid(self.bufnr)
+      and self.winid
+      and api.nvim_win_is_valid(self.winid)
+    then
+      local win_conf = api.nvim_win_get_config(self.winid)
+      local truncate = util.gen_truncate_line(win_conf.width)
+      content = vim.list_extend({ truncate }, content)
+      api.nvim_buf_set_lines(self.bufnr, -1, -1, false, content)
+      win_conf.height = win_conf.height + #content + 1
+      api.nvim_win_set_config(self.winid, win_conf)
+      return
+    end
 
     local option_fn
-    if args and has_arg(args, '++keep') then
+    if vim.tbl_contains(args, '++keep') then
       option_fn = function(width)
         local opt = {}
         opt.relative = 'editor'
@@ -321,22 +287,17 @@ function hover:do_request(args)
       end
     end
 
-    self:open_floating_preview(result.contents, option_fn)
-  end)
-end
-
-function hover:remove_data()
-  for k, v in pairs(self) do
-    if type(v) ~= 'function' then
-      self[k] = nil
+    if not self.winid then
+      self:open_floating_preview(content, option_fn)
+      return
     end
-  end
+  end)
 end
 
 local function check_parser()
   local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
   local has_parser = true
-  for _, p in pairs(parsers) do
+  for _, p in ipairs(parsers) do
     if #api.nvim_get_runtime_file(p, true) == 0 then
       has_parser = false
       break
@@ -348,27 +309,9 @@ end
 function hover:render_hover_doc(args)
   if not check_parser() then
     vim.notify(
-      '[Lspsaga.nvim] Please install markdown and markdown_inline parser in nvim-treesitter',
+      '[Lpsaga.nvim] Please install markdown and markdown_inline parser in nvim-treesitter',
       vim.log.levels.WARN
     )
-    return
-  end
-
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    if (args and not has_arg(args, '++keep')) or not args then
-      api.nvim_set_current_win(self.preview_winid)
-      return
-    elseif args and has_arg(args, '++keep') then
-      libs.delete_scroll_map(api.nvim_get_current_buf())
-      api.nvim_win_close(self.preview_winid, true)
-      self.preview_winid = nil
-      self.preview_bufnr = nil
-      return
-    end
-  end
-
-  if vim.bo.filetype == 'help' then
-    api.nvim_feedkeys('K', 'ni', true)
     return
   end
 
@@ -377,15 +320,20 @@ function hover:render_hover_doc(args)
     return
   end
 
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    if not vim.tbl_contains(args, '++keep') then
+      api.nvim_set_current_win(self.winid)
+      return
+    else
+      util.delete_scroll_map(api.nvim_get_current_buf())
+      api.nvim_win_close(self.winid, true)
+      self:clean()
+      return
+    end
+  end
+
   self.pending_request = true
   self:do_request(args)
-end
-
-function hover:has_hover()
-  if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-    return true
-  end
-  return false
 end
 
 return hover
