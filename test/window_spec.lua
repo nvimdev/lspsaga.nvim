@@ -103,7 +103,7 @@ describe('window module', function()
       end,
     })
     vim.api.nvim_win_close(winid, true)
-    vim.cmd.edit('test.lua')
+    vim.api.nvim_set_current_win(curwin)
     assert.is_true(vim.api.nvim_get_option_value('number', { win = curwin }))
   end)
 end)
