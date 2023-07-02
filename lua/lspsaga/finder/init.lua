@@ -8,6 +8,7 @@ local util = require('lspsaga.util')
 local buf_set_lines, buf_set_extmark = api.nvim_buf_set_lines, api.nvim_buf_set_extmark
 local buf_add_highlight = api.nvim_buf_add_highlight
 local config = require('lspsaga').config
+local select_ns = api.nvim_create_namespace('SagaSelect')
 
 local fd = {}
 local ctx = {}
@@ -175,6 +176,10 @@ function fd:event()
         return
       end
       local curlnum = api.nvim_win_get_cursor(self.lwinid)[1]
+      api.nvim_buf_clear_namespace(self.lbufnr, select_ns, 0, -1)
+      if fn.indent(curlnum) == 6 then
+        buf_add_highlight(self.lbufnr, select_ns, 'String', curlnum - 1, 6, -1)
+      end
       local node = slist.find_node(self.list, curlnum)
       if not node or not node.value.bufnr then
         return
