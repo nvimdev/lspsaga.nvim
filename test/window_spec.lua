@@ -75,4 +75,25 @@ describe('window module', function()
     bufnr, winid = win:new_normal('sp'):winopt('number', true):wininfo()
     assert.is_true(vim.wo[winid].number)
   end)
+
+  it('can restore options after close ', function()
+    vim.opt.number = true
+    vim.opt.swapfile = false
+    local restore = win:minimal_restore()
+    bufnr = vim.fn.bufadd('test.lua')
+    vim.fn.bufload(bufnr)
+    bufnr, winid = win:new_float({
+      relative = 'editor',
+      row = 10,
+      col = 10,
+      height = 20,
+      width = 20,
+      style = 'minimal',
+    }, true)
+    restore()
+    vim.cmd.quit()
+    vim.cmd.edit('test.lua')
+    local curwin = vim.api.nvim_get_current_win()
+    assert.is_true(vim.api.nvim_get_option_value('number', { win = curwin }))
+  end)
 end)
