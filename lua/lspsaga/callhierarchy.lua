@@ -82,12 +82,16 @@ function ch:spinner(node)
 end
 
 function ch:set_toggle_icon(icon, row, col, virtid)
-  vim.validate({
-    virtid = { virtid, 'n' },
-  })
   buf_set_extmark(self.left_bufnr, ns, row, col, {
     id = virtid,
     virt_text = { { icon, 'SagaToggle' } },
+    virt_text_pos = 'overlay',
+  })
+end
+
+function ch:set_data_icon(curlnum, data, col)
+  buf_set_extmark(self.left_bufnr, ns, curlnum, col, {
+    virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
     virt_text_pos = 'overlay',
   })
 end
@@ -111,17 +115,17 @@ function ch:toggle_or_request()
     return
   end
   local level = curnode.value.inlevel
-  local row = curlnum
-  while true do
-    row = row + 1
-    local l = fn.indent(row)
-    if l <= level or l == -1 then
-      break
-    end
-  end
-  local count = row - curlnum - 1
 
-  if type(curnode.value.expand) == 'boolean' and curnode.value.expand then
+  if curnode.value.expand == true then
+    local row = curlnum
+    while true do
+      row = row + 1
+      local l = fn.indent(row)
+      if l <= level or l == -1 then
+        break
+      end
+    end
+    local count = row - curlnum - 1
     self:set_toggle_icon(
       config.ui.expand,
       curlnum - 1,
@@ -132,11 +136,11 @@ function ch:toggle_or_request()
     buf_set_lines(self.left_bufnr, curlnum, curlnum + count, false, {})
     vim.bo[self.left_bufnr].modifiable = false
     curnode.value.expand = false
-    slist.update_winline(curnode, -1)
+    slist.update_winline(curnode, -count)
     return
   end
 
-  if type(curnode.value.expand) == 'boolean' and not curnode.value.expand then
+  if curnode.value.expand == false then
     curnode.value.expand = true
     self:set_toggle_icon(
       config.ui.collapse,
@@ -145,17 +149,14 @@ function ch:toggle_or_request()
       curnode.value.virtid
     )
     local tmp = curnode.next
-    count = 0
+    local count = 0
     vim.bo[self.left_bufnr].modifiable = true
     while tmp do
       local data = self.method == get_method(2) and tmp.value.from or tmp.value.to
       local indent = (' '):rep(tmp.value.inlevel)
       buf_set_lines(self.left_bufnr, curlnum, curlnum, false, { indent .. data.name })
       self:set_toggle_icon(config.ui.expand, curlnum, #indent - 4, tmp.value.virtid)
-      buf_set_extmark(self.left_bufnr, ns, curlnum, #indent - 2, {
-        virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
-        virt_text_pos = 'overlay',
-      })
+      self:set_data_icon(curlnum, data, #indent - 2)
       self:render_virtline(curlnum, tmp.value.inlevel)
       curlnum = curlnum + 1
       count = count + 1
@@ -198,9 +199,9 @@ function ch:peek_view()
       if not api.nvim_buf_is_loaded(peek_bufnr) then
         fn.bufload(peek_bufnr)
       end
-      vim.bo[peek_bufnr].filetype = vim.bo[self.main_buf].filetype
       local range = data.selectionRange
       api.nvim_win_set_buf(self.right_winid, peek_bufnr)
+      vim.bo[peek_bufnr].filetype = vim.bo[self.main_buf].filetype
       api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, range.start.character + 1 })
     end,
     desc = '[Lspsaga] callhierarchy peek preview',
@@ -278,10 +279,7 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       )
       val.virtid = uv.hrtime()
       self:set_toggle_icon(config.ui.expand, curlnum, #indent - 4, val.virtid)
-      buf_set_extmark(self.left_bufnr, ns, curlnum, #indent - 2, {
-        virt_text = { { kind[data.kind][2], 'Saga' .. kind[data.kind][3] } },
-        virt_text_pos = 'overlay',
-      })
+      self:set_data_icon(curlnum, data, #indent - 2)
       if curlnum ~= 0 then
         self:render_virtline(curlnum, #indent)
       else

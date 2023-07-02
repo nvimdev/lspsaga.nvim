@@ -71,7 +71,7 @@ function M.scroll_in_float(bufnr, winid)
   end
 
   for i, map in ipairs({ config.scroll_preview.scroll_down, config.scroll_preview.scroll_up }) do
-    M.map_keys(bufnr, 'n', map, function()
+    M.map_keys(bufnr, map, function()
       if api.nvim_win_is_valid(winid) then
         api.nvim_win_call(winid, function()
           local key = i == 1 and '<C-d>' or '<C-u>'

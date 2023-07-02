@@ -242,7 +242,7 @@ function sd:toggle_or_jump(entrys_list)
   end
 
   vim.bo[self.bufnr].modifiable = true
-  if node.expand then
+  if node.expand == true then
     api.nvim_buf_clear_namespace(self.bufnr, ns, lnum - 1, lnum + #node.diags)
     nvim_buf_set_lines(self.bufnr, lnum, lnum + #node.diags, false, {})
     node.expand = false
@@ -252,7 +252,11 @@ function sd:toggle_or_jump(entrys_list)
       hl_mode = 'combine',
     })
     range_node_winline(node.next, -#node.diags)
-  else
+    vim.bo[self.bufnr].modifiable = false
+    return
+  end
+
+  if node.expand == false then
     nvim_buf_set_extmark(self.bufnr, ns, lnum - 1, 0, {
       virt_text = { { ui.collapse, 'SagaToggle' } },
       virt_text_pos = 'overlay',

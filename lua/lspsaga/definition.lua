@@ -104,6 +104,7 @@ function def:create_win(bufnr)
       :new_float(float_opt, true)
       :winopt({
         ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+        ['winbar'] = '',
       })
       :wininfo()
   end

@@ -36,14 +36,10 @@ function fd:method_title(method)
     winline = total,
     expand = true,
     virtid = uv.hrtime(),
+    inlevel = 2,
   }
   buf_set_lines(self.lbufnr, total == 1 and 0 or total, -1, false, { (' '):rep(2) .. title })
-  buf_set_extmark(self.lbufnr, ns, total == 1 and 0 or total, 0, {
-    id = n.virtid,
-    virt_text = { { config.ui.expand, 'SagaToggle' } },
-    virt_text_pos = 'overlay',
-    hl_mode = 'combine',
-  })
+  self:set_toggle_icon(config.ui.expand, n.virtid, total == 1 and 0 or total, 0)
   slist.tail_push(self.list, n)
 end
 
@@ -55,9 +51,17 @@ function fd:init_layout()
       math.floor(win_width * config.finder.left_width)
     )
     :right()
-    :done(function()
-      self:event()
-    end)
+    :done()
+  self:apply_maps()
+  self:event()
+end
+
+function fd:set_toggle_icon(icon, virtid, row, col)
+  api.nvim_buf_set_extmark(self.lbufnr, ns, row, col, {
+    id = virtid,
+    virt_text = { { icon, 'SagaToggle' } },
+    virt_text_pos = 'overlay',
+  })
 end
 
 function fd:handler(method, results, spin_close, done)
@@ -69,6 +73,7 @@ function fd:handler(method, results, spin_close, done)
       if not self.lbufnr then
         spin_close()
         self:init_layout()
+        vim.bo[self.lbufnr].modifiable = true
       end
 
       local total = api.nvim_buf_line_count(self.lbufnr)
@@ -79,19 +84,15 @@ function fd:handler(method, results, spin_close, done)
           count = #item.result,
           expand = true,
           virtid = uv.hrtime(),
+          inlevel = 4,
         }
         local fname = vim.uri_to_fname(res.uri)
         local client = lsp.get_client_by_id(client_id)
-        fname = fname:sub(#client.config.root_dir + 2)
-        buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. fname })
+        node.line = fname:sub(#client.config.root_dir + 2)
+        buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. node.line })
         total = total + 1
         node.winline = total
-        buf_set_extmark(self.lbufnr, ns, total - 1, 2, {
-          id = node.virtid,
-          virt_text = { { config.ui.expand, 'SagaToggle' } },
-          virt_text_pos = 'overlay',
-          hl_mode = 'combine',
-        })
+        self:set_toggle_icon(config.ui.expand, node.virtid, total - 1, 2)
         slist.tail_push(self.list, node)
       end
       res.bufnr = vim.uri_to_bufnr(res.uri)
@@ -111,18 +112,20 @@ function fd:handler(method, results, spin_close, done)
         {}
       )[1]
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
-      buf_add_highlight(self.lbufnr, ns, 'SagaFinderText', total, 0, -1)
+      buf_add_highlight(self.lbufnr, ns, 'SagaText', total, 0, -1)
       total = total + 1
       res.winline = total
+      res.inlevel = 6
       slist.tail_push(self.list, res)
     end
   end
 
-  if self.lbufnr and api.nvim_buf_line_count(self.lbufnr) > 1 then
+  if self.lbufnr and api.nvim_buf_line_count(self.lbufnr) > 1 and not done then
     buf_set_lines(self.lbufnr, -1, -1, false, { '' })
   end
 
   if done then
+    vim.bo[self.lbufnr].modifiable = false
     spin_close()
     api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
   end
@@ -155,19 +158,117 @@ function fd:event()
         range.start.character,
         range['end'].character
       )
+      util.map_keys(node.value.bufnr, config.finder.keys['close_all'], function()
+        self:clean()
+      end)
     end,
   })
+end
+
+function fd:clean()
+  util.close_win({ self.lwinid, self.rwinid })
+  slist.list_map(self.list, function(node)
+    if node.value.wipe == false then
+      api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
+      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
+    end
+  end)
+  clean_ctx()
+end
+
+function fd:toggle_or_open()
+  util.map_keys(self.lbufnr, config.finder.keys['toggle_or_open'], function()
+    local curlnum = api.nvim_win_get_cursor(self.lwinid)[1]
+    local node = slist.find_node(self.list, curlnum)
+    if not node then
+      return
+    end
+    if node.value.expand == nil then
+      local fname = vim.uri_to_fname(node.value.uri)
+      local wipe = node.value.wipe
+      self:clean()
+      if wipe then
+        vim.cmd.edit(fname)
+        return
+      end
+      local win = fn.bufwinid(node.value.bufnr)
+      if api.nvim_win_is_valid(win) then
+        api.nvim_win_set_buf(win, node.value.bufnr)
+        api.nvim_set_current_win(win)
+      else
+        api.nvim_win_set_buf(0, node.value.bufnr)
+      end
+      api.nvim_win_set_cursor(
+        0,
+        { node.value.range.start.line + 1, node.value.range.start.character }
+      )
+      return
+    end
+
+    vim.bo[self.lbufnr].modifiable = true
+    if node.value.expand == true then
+      local row = curlnum + 1
+      while true do
+        local l = fn.indent(row)
+        if l <= node.value.inlevel or l == 0 or l == -1 then
+          break
+        end
+        row = row + 1
+      end
+
+      local count = row - curlnum - 1
+
+      buf_set_lines(self.lbufnr, curlnum, curlnum + count, false, {})
+      vim.bo[self.lbufnr].modifiable = false
+      node.value.expand = false
+      self:set_toggle_icon(
+        config.ui.collapse,
+        node.value.virtid,
+        curlnum - 1,
+        node.value.inlevel - 2
+      )
+      slist.update_winline(node, -count)
+      return
+    end
+
+    local count = 0
+    node.value.expand = true
+    self:set_toggle_icon(config.ui.expand, node.value.virtid, curlnum - 1, node.value.inlevel - 2)
+    local tmp = node.next
+    while tmp do
+      buf_set_lines(
+        self.lbufnr,
+        curlnum,
+        curlnum,
+        false,
+        { (' '):rep(tmp.value.inlevel) .. tmp.value.line }
+      )
+      if tmp.value.inlevel < 6 then
+        self:set_toggle_icon(config.ui.expand, tmp.value.virtid, curlnum, tmp.value.inlevel - 2)
+      end
+      tmp = tmp.next
+      count = count + 1
+      curlnum = curlnum + 1
+    end
+    vim.bo[self.lbufnr].modifiable = false
+    slist.update_winline(node, count)
+  end)
 end
 
 function fd:apply_maps()
   for action, key in pairs(config.finder.keys) do
     util.map_keys(self.lbufnr, key, function()
-      if action ~= 'peek_close_all' and action ~= 'expand_or_jump' and action ~= 'go_peek' then
+      if action ~= 'close_all' and action ~= 'toggle_or_open' and action ~= 'go_peek' then
         vim.cmd[action]()
+        return
+      end
+      if action == 'go_peek' then
+        api.nvim_set_current_win(self.rwinid)
         return
       end
     end)
   end
+  self:toggle_or_open()
 end
 
 function fd:new(args)

@@ -78,13 +78,13 @@ local default_config = {
     layout = 'float',
     keys = {
       go_peek = 'p',
-      expand_or_jump = 'o',
+      toggle_or_open = 'o',
       vsplit = 's',
       split = 'i',
       tabe = 't',
       tabnew = 'r',
       quit = 'q',
-      peek_close_all = '<C-c>k',
+      close_all = '<C-c>k',
     },
   },
   definition = {

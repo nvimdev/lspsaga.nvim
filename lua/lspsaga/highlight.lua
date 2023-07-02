@@ -14,7 +14,7 @@ local function hi_define()
     SagaVirtLine = { link = 'Comment' },
     SagaSpinnerTitle = { link = 'Statement' },
     SagaSpinner = { link = 'Statement' },
-    SagaFinderText = { link = 'Comment' },
+    SagaText = { link = 'Comment' },
     SagaSelection = { link = 'String' },
     SagaSearch = { link = 'Search' },
     -- code action
@@ -54,8 +54,6 @@ local function hi_define()
     CallHierarchyTitle = { link = 'Title' },
     -- lightbulb
     SagaLightBulb = { link = 'DiagnosticSignHint' },
-    -- shadow
-    SagaShadow = { link = 'FloatShadow' },
     -- Outline
     OutlineIndent = { fg = '#806d9e' },
     OutlinePreviewBorder = { link = 'SagaNormal' },

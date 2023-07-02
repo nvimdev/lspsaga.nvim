@@ -62,4 +62,12 @@ function M.update_winline(node, count)
   end
 end
 
+function M.list_map(list, fn)
+  local node = list
+  while node do
+    fn(node)
+    node = node.next
+  end
+end
+
 return M
