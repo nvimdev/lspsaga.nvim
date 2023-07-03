@@ -75,25 +75,13 @@ end
 
 function ot:parse(symbols)
   local row = 0
-  local fname = api.nvim_buf_get_name(self.main_buf)
-  fname = fn.fnamemodify(fname, ':t')
-  buf_set_lines(self.bufnr, row, -1, false, { '  ' .. fname })
-  row = row + 1
-  if config.ui.devicon then
-    local icon, hl = util.icon_from_devicon(vim.bo[self.main_buf].filetype)
-    if icon and hl then
-      buf_set_extmark(self.bufnr, ns, 0, 0, {
-        virt_text = { { icon, hl } },
-        virt_text_pos = 'overlay',
-      })
-    end
-  end
   self.list = { value = nil, next = nil }
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
       level = level or 0
       local indent = '    ' .. ('  '):rep(level)
+      node.name = node.name == ' ' and '_' or node.name
       buf_set_lines(self.bufnr, row, -1, false, { indent .. node.name })
       row = row + 1
       if level == 0 then
@@ -105,8 +93,10 @@ function ot:parse(symbols)
       })
       local inlevel = 4 + 2 * level
       if inlevel == 4 and not node.children then
-        local virt =
-          { { config.ui.lines[2], 'SagaVirtLine' }, { config.ui.lines[4]:rep(2), 'SagaVirtLine' } }
+        local virt = {
+          { row == 1 and config.ui.lines[5] or config.ui.lines[2], 'SagaVirtLine' },
+          { config.ui.lines[4]:rep(2), 'SagaVirtLine' },
+        }
         buf_set_extmark(self.bufnr, ns, row - 1, 0, {
           virt_text = virt,
           virt_text_pos = 'overlay',
@@ -144,7 +134,7 @@ function ot:parse(symbols)
         copy.virtid = uv.hrtime()
         buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
           id = copy.virtid,
-          virt_text = { { config.ui.collapse, 'SagaCollapse' } },
+          virt_text = { { config.ui.collapse, 'SagaToggle' } },
           virt_text_pos = 'overlay',
         })
         tail_push(self.list, copy)
@@ -180,9 +170,8 @@ local function update_winline(node, count)
         node.value.expand = false
       end
     else
-      node.value.winline = node.value.winline + count
-      if type(node.value.expand) == 'boolean' and node.value.expand == false then
-        node.value.expand = true
+      if node.value.winline ~= -1 then
+        node.value.winline = node.value.winline + count
       end
     end
     node = node.next
@@ -194,7 +183,7 @@ function ot:collapse(node, curlnum)
   local inlevel = fn.indent(curlnum)
   local tmp = node.next
 
-  while true do
+  while tmp do
     local icon = kind[tmp.value.kind][2]
     local level = tmp.value.inlevel
     buf_set_lines(
@@ -206,6 +195,9 @@ function ot:collapse(node, curlnum)
     )
     row = row + 1
     tmp.value.winline = row + 1
+    if tmp.value.expand == false then
+      tmp.value.expand = true
+    end
     buf_set_extmark(self.bufnr, ns, row, level - 2, {
       virt_text = { { icon, 'Saga' .. kind[tmp.value.kind][1] } },
       virt_text_pos = 'overlay',
@@ -213,7 +205,7 @@ function ot:collapse(node, curlnum)
     local has_child = tmp.next and tmp.next.value.inlevel > level
     if has_child then
       buf_set_extmark(self.bufnr, ns, row, level - 4, {
-        virt_text = { { config.ui.collapse, 'SagaCollapse' } },
+        virt_text = { { config.ui.collapse, 'SagaToggle' } },
         virt_text_pos = 'overlay',
       })
     end
@@ -239,12 +231,15 @@ function ot:collapse(node, curlnum)
         virt_text = { { tmp.value.detail, 'Comment' } },
       })
     end
-    tmp = tmp.next
-    if not tmp or tmp.value.inlevel <= inlevel then
+    if not tmp or (tmp.next and tmp.next.value.inlevel <= inlevel) then
       break
     end
+    tmp = tmp.next
   end
-  update_winline(node, row - curlnum - 1)
+
+  if tmp then
+    update_winline(tmp, row - curlnum + 1, curlnum)
+  end
 end
 
 function ot:expand_or_jump()
@@ -285,7 +280,7 @@ function ot:expand_or_jump()
     api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
     buf_set_extmark(self.bufnr, ns, curlnum - 1, inlevel - 4, {
       id = node.value.virtid,
-      virt_text = { { config.ui.collapse, 'SagaCollapse' } },
+      virt_text = { { config.ui.collapse, 'SagaToggle' } },
       virt_text_pos = 'overlay',
     })
     self:collapse(node, curlnum)

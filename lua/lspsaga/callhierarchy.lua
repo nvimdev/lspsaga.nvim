@@ -159,14 +159,21 @@ function ch:toggle_or_request()
       self:set_data_icon(curlnum, data, #indent - 2)
       self:render_virtline(curlnum, tmp.value.inlevel)
       curlnum = curlnum + 1
+      tmp.value.winline = curlnum
+      if tmp.value.expand == false then
+        tmp.value.expand = true
+      end
       count = count + 1
-      if not tmp.next or tmp.next.value.inlevel <= level then
+      if not tmp or (tmp.next and tmp.next.value.inlevel <= level) then
         break
       end
       tmp = tmp.next
     end
     vim.bo[self.left_bufnr].modifiable = false
-    slist.update_winline(curnode, count, curlnum - count)
+
+    if tmp then
+      slist.update_winline(tmp, count)
+    end
   end
 end
 

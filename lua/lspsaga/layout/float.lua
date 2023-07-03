@@ -15,7 +15,7 @@ function M.left(height, width, bufnr)
   }
   local topline = fn.line('w0')
   local room = fn.line('w$') - pos[1]
-  if room < height then
+  if room <= height then
     fn.winrestview({ topline = topline + height - room + 5 })
   end
   return win

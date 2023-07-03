@@ -48,7 +48,7 @@ end
 
 function M:done(fn)
   vim.validate({
-    fn = { fn, { 'f', 'nil' } },
+    fn = { fn, { 'f' }, true },
   })
   if fn then
     fn(self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid)
