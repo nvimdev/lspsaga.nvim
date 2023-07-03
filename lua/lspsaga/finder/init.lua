@@ -44,6 +44,7 @@ end
 function fd:set_toggle_icon(icon, virtid, row, col)
   api.nvim_buf_set_extmark(self.lbufnr, ns, row, col, {
     id = virtid,
+    -- virt_text_win_col = col,
     virt_text = { { icon, 'SagaToggle' } },
     virt_text_pos = 'overlay',
   })
@@ -64,37 +65,21 @@ function fd:set_highlight(inlevel, line)
   buf_add_highlight(self.lbufnr, ns, hl_group, line, col_start, -1)
 end
 
-function fd:render_virtline(inlevel, line, islast)
-  local hl = 'SagaVirtLine'
-  for i = 1, inlevel - 2, 2 do
-    local virt = i + 2 > inlevel - 2
-        and {
-          { islast and config.ui.lines[1] or config.ui.lines[2], hl },
-          { config.ui.lines[4]:rep(i >= 3 and 3 or 1), hl },
-        }
-      or { { config.ui.lines[3], hl } }
-    buf_set_extmark(self.lbufnr, ns, line, i - 1, {
-      virt_text = virt,
-      virt_text_pos = 'overlay',
-    })
-  end
-end
+function fd:render_virtline(inlevel, line, islast) end
 
-function fd:method_title(method)
+function fd:method_title(method, row)
   local title = vim.split(method, '/', { plain = true })[2]
   title = title:upper()
 
-  local total = api.nvim_buf_line_count(self.lbufnr)
   local n = {
-    winline = total,
+    winline = row + 1,
     expand = true,
     virtid = uv.hrtime(),
     inlevel = 2,
   }
-  buf_set_lines(self.lbufnr, total == 1 and 0 or total, -1, false, { (' '):rep(2) .. title })
-  self:set_highlight(n.inlevel, total == 1 and 0 or total)
-  self:set_toggle_icon(config.ui.expand, n.virtid, total == 1 and 0 or total, 0)
-  self:render_virtline(n.inlevel, total, false)
+  buf_set_lines(self.lbufnr, row, -1, false, { (' '):rep(2) .. title })
+  self:set_highlight(n.inlevel, row)
+  self:set_toggle_icon(config.ui.collapse, n.virtid, row, 0)
   slist.tail_push(self.list, n)
 end
 
@@ -102,6 +87,7 @@ function fd:handler(method, results, spin_close, done)
   if not results or vim.tbl_isempty(results) then
     return
   end
+
   for client_id, item in pairs(results) do
     for i, res in ipairs(item.result or {}) do
       if not self.lbufnr then
@@ -109,10 +95,12 @@ function fd:handler(method, results, spin_close, done)
         self:init_layout()
         vim.bo[self.lbufnr].modifiable = true
       end
+      local row = api.nvim_buf_line_count(self.lbufnr)
+      row = row == 1 and row - 1 or row
 
-      local total = api.nvim_buf_line_count(self.lbufnr)
       if i == 1 then
-        self:method_title(method)
+        self:method_title(method, row)
+        row = row + 1
 
         local node = {
           count = #item.result,
@@ -124,19 +112,17 @@ function fd:handler(method, results, spin_close, done)
         local client = lsp.get_client_by_id(client_id)
         node.line = fname:sub(#client.config.root_dir + 2)
         buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. node.line })
-        total = total + 1
-        node.winline = total
-        self:set_toggle_icon(config.ui.expand, node.virtid, total - 1, 2)
-        self:set_highlight(node.inlevel, total - 1)
-        self:render_virtline(node.inlevel, total - 1, false)
+        self:set_toggle_icon(config.ui.collapse, node.virtid, row, 2)
+        self:set_highlight(node.inlevel, row)
+        row = row + 1
+        node.winline = row
         slist.tail_push(self.list, node)
       end
+
       res.bufnr = vim.uri_to_bufnr(res.uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
         fn.bufload(res.bufnr)
         res.wipe = true
-        api.nvim_set_option_value('bufhidden', 'wipe', { buf = res.bufnr })
-        slist.tail_push(self.list, res)
       end
       local range = res.range or res.targetSelectionRange or res.selectionRange
       res.line = api.nvim_buf_get_text(
@@ -149,16 +135,16 @@ function fd:handler(method, results, spin_close, done)
       )[1]
       res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
-      self:set_highlight(res.inlevel, total)
-      self:render_virtline(res.inlevel, total, i == #item.result)
-      total = total + 1
-      res.winline = total
+      self:set_highlight(res.inlevel, row)
+      self:render_virtline(res.inlevel, row, i == #item.result)
+      row = row + 1
+      res.winline = row
       slist.tail_push(self.list, res)
     end
   end
 
-  if self.lbufnr and api.nvim_buf_line_count(self.lbufnr) > 1 and not done then
-    buf_set_lines(self.lbufnr, -1, -1, false, { '' })
+  if not done then
+    buf_set_lines(self.lbufnr, -1, -1, false, {})
   end
 
   if done then
@@ -210,10 +196,13 @@ end
 function fd:clean()
   util.close_win({ self.lwinid, self.rwinid })
   slist.list_map(self.list, function(node)
-    if not node.value.wipe and node.value.bufnr then
+    if node.value.bufnr and api.nvim_buf_is_loaded(node.value.bufnr) then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
       if node.value.rendered then
         api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
+      end
+      if node.value.wipe then
+        api.nvim_buf_delete(node.value.bufnr, { force = true })
       end
     end
   end)
@@ -262,22 +251,17 @@ function fd:toggle_or_open()
 
       local count = row - curlnum - 1
 
+      self:set_toggle_icon(config.ui.expand, node.value.virtid, curlnum - 1, node.value.inlevel - 2)
       buf_set_lines(self.lbufnr, curlnum, curlnum + count, false, {})
-      vim.bo[self.lbufnr].modifiable = false
       node.value.expand = false
-      self:set_toggle_icon(
-        config.ui.collapse,
-        node.value.virtid,
-        curlnum - 1,
-        node.value.inlevel - 2
-      )
+      vim.bo[self.lbufnr].modifiable = false
       slist.update_winline(node, -count)
       return
     end
 
     local count = 0
     node.value.expand = true
-    self:set_toggle_icon(config.ui.expand, node.value.virtid, curlnum - 1, node.value.inlevel - 2)
+    self:set_toggle_icon(config.ui.collapse, node.value.virtid, curlnum - 1, node.value.inlevel - 2)
     local tmp = node.next
     while tmp do
       buf_set_lines(
@@ -287,18 +271,24 @@ function fd:toggle_or_open()
         false,
         { (' '):rep(tmp.value.inlevel) .. tmp.value.line }
       )
-      if tmp.value.inlevel < 6 then
-        self:set_toggle_icon(config.ui.expand, tmp.value.virtid, curlnum, tmp.value.inlevel - 2)
-      end
       self:set_highlight(tmp.value.inlevel, curlnum)
       local islast = (not tmp.next or tmp.next.value.inlevel <= tmp.value.inlevel) and true or false
-      self:render_virtline(tmp.value.inlevel, curlnum, islast)
-      tmp = tmp.next
+      tmp.value.winline = curlnum
+      if tmp.value.expand == false then
+        self:set_toggle_icon(config.ui.collapse, tmp.value.virtid, curlnum, tmp.value.inlevel - 2)
+        tmp.value.expand = true
+      end
       count = count + 1
       curlnum = curlnum + 1
+      if not tmp or (tmp.next and tmp.next.value.inlevel <= node.value.inlevel) then
+        break
+      end
+      tmp = tmp.next
     end
     vim.bo[self.lbufnr].modifiable = false
-    slist.update_winline(node, count, curlnum - count)
+    if tmp then
+      slist.update_winline(tmp, count)
+    end
   end)
 end
 
