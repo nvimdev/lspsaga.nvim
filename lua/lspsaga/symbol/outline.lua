@@ -383,6 +383,7 @@ function ot:preview(group)
       api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
       local win_conf = api.nvim_win_get_config(self.preview_winid)
       win_conf.row = fn.winline() - 1
+      win_conf.height = math.min(#lines, bit.rshift(vim.o.lines, 1))
       api.nvim_win_set_config(self.preview_winid, win_conf)
     end,
   })
@@ -442,6 +443,11 @@ function ot:outline(buf)
   self:parse(res.symbols)
   util.map_keys(self.bufnr, config.outline.keys.expand_or_jump, function()
     self:expand_or_jump()
+  end)
+
+  util.map_keys(self.bufnr, config.outline.keys.quit, function()
+    api.nvim_win_close(self.winid, true)
+    clean_ctx()
   end)
 
   local group = api.nvim_create_augroup('outline', { clear = true })
