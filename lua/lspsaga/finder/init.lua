@@ -9,6 +9,7 @@ local buf_set_lines, buf_set_extmark = api.nvim_buf_set_lines, api.nvim_buf_set_
 local buf_add_highlight = api.nvim_buf_add_highlight
 local config = require('lspsaga').config
 local select_ns = api.nvim_create_namespace('SagaSelect')
+local win = require('lspsaga.window')
 
 local fd = {}
 local ctx = {}
@@ -88,6 +89,7 @@ function fd:handler(method, results, spin_close, done)
   if not results or vim.tbl_isempty(results) then
     return
   end
+  local rendered_fname = {}
 
   for client_id, item in pairs(results) do
     for i, res in ipairs(item.result or {}) do
@@ -103,14 +105,15 @@ function fd:handler(method, results, spin_close, done)
       if i == 1 then
         self:method_title(method, row)
         row = row + 1
-
+      end
+      local fname = vim.uri_to_fname(uri)
+      if not vim.tbl_contains(rendered_fname, fname) then
         local node = {
           count = #item.result,
           expand = true,
           virtid = uv.hrtime(),
           inlevel = 4,
         }
-        local fname = vim.uri_to_fname(uri)
         local client = lsp.get_client_by_id(client_id)
         node.line = fname:sub(#client.config.root_dir + 2)
         buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. node.line })
@@ -124,7 +127,7 @@ function fd:handler(method, results, spin_close, done)
       res.bufnr = vim.uri_to_bufnr(uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
         fn.bufload(res.bufnr)
-        res.wipe = true
+        api.nvim_set_option_value('bufhidden', 'wipe', { buf = res.bufnr })
       end
       local range = res.range or res.targetSelectionRange or res.selectionRange
       res.line = api.nvim_buf_get_text(
@@ -137,6 +140,7 @@ function fd:handler(method, results, spin_close, done)
       )[1]
       res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
+      rendered_fname[#rendered_fname + 1] = fname
       self:set_highlight(res.inlevel, row)
       row = row + 1
       res.winline = row
@@ -200,14 +204,9 @@ end
 function fd:clean()
   util.close_win({ self.lwinid, self.rwinid })
   slist.list_map(self.list, function(node)
-    if node.value.bufnr and api.nvim_buf_is_loaded(node.value.bufnr) then
+    if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
-      if node.value.rendered then
-        api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
-      end
-      if node.value.wipe then
-        api.nvim_buf_delete(node.value.bufnr, { force = true })
-      end
+      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
     end
   end)
   clean_ctx()
@@ -221,24 +220,13 @@ function fd:toggle_or_open()
       return
     end
     if node.value.expand == nil then
+      local restore = win:minimal_restore()
       local fname = vim.uri_to_fname(node.value.uri)
-      local wipe = node.value.wipe
+      local pos = { node.value.range.start.line + 1, node.value.range.start.character }
       self:clean()
-      if wipe then
-        vim.cmd.edit(fname)
-        return
-      end
-      local win = fn.bufwinid(node.value.bufnr)
-      if api.nvim_win_is_valid(win) then
-        api.nvim_win_set_buf(win, node.value.bufnr)
-        api.nvim_set_current_win(win)
-      else
-        api.nvim_win_set_buf(0, node.value.bufnr)
-      end
-      api.nvim_win_set_cursor(
-        0,
-        { node.value.range.start.line + 1, node.value.range.start.character }
-      )
+      vim.cmd.edit(fname)
+      restore()
+      api.nvim_win_set_cursor(0, pos)
       return
     end
 
@@ -301,7 +289,18 @@ function fd:apply_maps()
   for action, key in pairs(config.finder.keys) do
     util.map_keys(self.lbufnr, key, function()
       if not vim.tbl_contains(black, action) then
-        vim.cmd[action]()
+        local curlnum = api.nvim_win_get_cursor(0)[1]
+        local curnode = slist.find_node(self.list, curlnum)
+        if not curnode then
+          return
+        end
+        local fname = api.nvim_buf_get_name(curnode.value.bufnr)
+        local pos = { curnode.value.range.start.line + 1, curnode.value.range.start.character }
+        self:clean()
+        local restore = win:minimal_restore()
+        vim.cmd[action](fname)
+        restore()
+        api.nvim_win_set_cursor(0, pos)
         return
       end
 
