@@ -35,6 +35,9 @@ function fd:init_layout()
       math.floor(vim.o.lines * config.finder.max_height),
       math.floor(win_width * config.finder.left_width)
     )
+    :bufopt({
+      ['filetype'] = 'sagafinder',
+    })
     :right()
     :done()
   self:apply_maps()
@@ -64,8 +67,6 @@ function fd:set_highlight(inlevel, line)
   end
   buf_add_highlight(self.lbufnr, ns, hl_group, line, col_start, -1)
 end
-
-function fd:render_virtline(inlevel, line, islast) end
 
 function fd:method_title(method, row)
   local title = vim.split(method, '/', { plain = true })[2]
@@ -98,6 +99,7 @@ function fd:handler(method, results, spin_close, done)
       local row = api.nvim_buf_line_count(self.lbufnr)
       row = row == 1 and row - 1 or row
 
+      local uri = res.uri or res.targetUri
       if i == 1 then
         self:method_title(method, row)
         row = row + 1
@@ -108,7 +110,7 @@ function fd:handler(method, results, spin_close, done)
           virtid = uv.hrtime(),
           inlevel = 4,
         }
-        local fname = vim.uri_to_fname(res.uri)
+        local fname = vim.uri_to_fname(uri)
         local client = lsp.get_client_by_id(client_id)
         node.line = fname:sub(#client.config.root_dir + 2)
         buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. node.line })
@@ -119,7 +121,7 @@ function fd:handler(method, results, spin_close, done)
         slist.tail_push(self.list, node)
       end
 
-      res.bufnr = vim.uri_to_bufnr(res.uri)
+      res.bufnr = vim.uri_to_bufnr(uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
         fn.bufload(res.bufnr)
         res.wipe = true
@@ -136,7 +138,6 @@ function fd:handler(method, results, spin_close, done)
       res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
       self:set_highlight(res.inlevel, row)
-      self:render_virtline(res.inlevel, row, i == #item.result)
       row = row + 1
       res.winline = row
       slist.tail_push(self.list, res)
@@ -151,6 +152,7 @@ function fd:handler(method, results, spin_close, done)
     vim.bo[self.lbufnr].modifiable = false
     spin_close()
     api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
+    box.indent(ns, self.lbufnr, self.lwinid)
   end
 end
 
@@ -163,9 +165,11 @@ function fd:event()
       end
       local curlnum = api.nvim_win_get_cursor(self.lwinid)[1]
       api.nvim_buf_clear_namespace(self.lbufnr, select_ns, 0, -1)
-      if fn.indent(curlnum) == 6 then
+      local inlevel = fn.indent(curlnum)
+      if inlevel == 6 then
         buf_add_highlight(self.lbufnr, select_ns, 'String', curlnum - 1, 6, -1)
       end
+      box.indent_current(inlevel)
       local node = slist.find_node(self.list, curlnum)
       if not node or not node.value.bufnr then
         return
@@ -273,13 +277,13 @@ function fd:toggle_or_open()
       )
       self:set_highlight(tmp.value.inlevel, curlnum)
       local islast = (not tmp.next or tmp.next.value.inlevel <= tmp.value.inlevel) and true or false
-      tmp.value.winline = curlnum
       if tmp.value.expand == false then
         self:set_toggle_icon(config.ui.collapse, tmp.value.virtid, curlnum, tmp.value.inlevel - 2)
         tmp.value.expand = true
       end
       count = count + 1
       curlnum = curlnum + 1
+      tmp.value.winline = curlnum
       if not tmp or (tmp.next and tmp.next.value.inlevel <= node.value.inlevel) then
         break
       end
@@ -318,10 +322,11 @@ end
 function fd:new(args)
   local meth, layout = box.parse_argument(args)
   self.layout = layout or config.finder.layout
-  if not meth then
+  if #meth == 0 then
     meth = vim.split(config.finder.default, '+', { plain = true })
   end
   local methods = box.get_methods(meth)
+
   methods = vim.tbl_filter(function(method)
     return #util.get_client_by_method(method) > 0
   end, methods)

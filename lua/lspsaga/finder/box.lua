@@ -20,13 +20,17 @@ function M.get_methods(args)
 end
 
 function M.parse_argument(args)
-  local methods, layout
+  local methods = {}
+  local layout
   for _, arg in ipairs(args) do
-    if arg:find('%w+%+%w+') then
+    if arg:find('^%w+$') then
+      methods[#methods + 1] = arg
+    elseif arg:find('%w+%+%w+') then
       methods = vim.split(arg, '+', { plain = true })
-    end
-    if arg:find('%+%+') then
-      layout = vim.split(arg, '%+%+')[1]
+    elseif arg:find('%+%+normal') then
+      layout = 'normal'
+    elseif arg:find('%+%+float') then
+      layout = 'float'
     end
   end
   return methods, layout
@@ -54,7 +58,7 @@ function M.spinner()
       height = 1,
       focusable = false,
       noautocmd = true,
-    }, false)
+    }, true)
     :bufopt({
       ['bufhidden'] = 'wipe',
       ['buftype'] = 'nofile',
@@ -89,6 +93,46 @@ function M.spinner()
       api.nvim_win_close(winid, true)
     end
   end
+end
+
+function M.indent_current(inlevel)
+  local available = { 0, 2, 4 }
+  local current = inlevel - 2
+  vim.tbl_map(function(index)
+    local hi = index == current and 'Type' or 'Comment'
+    api.nvim_set_hl(0, 'SagaIndent' .. index, { link = hi })
+  end, available)
+end
+
+function M.indent(ns, lbufnr, lwinid)
+  api.nvim_set_decoration_provider(ns, {
+    on_win = function(_, winid, bufnr)
+      if winid ~= lwinid or lbufnr ~= bufnr then
+        return false
+      end
+    end,
+    on_start = function()
+      if api.nvim_get_current_buf() ~= lbufnr then
+        return false
+      end
+    end,
+    on_line = function(_, winid, bufnr, row)
+      local inlevel = vim.fn.indent(row + 1)
+      if bufnr ~= lbufnr or winid ~= lwinid or inlevel == 2 then
+        return
+      end
+
+      local total = inlevel == 4 and 4 - 2 or inlevel - 1
+
+      for i = 1, total, 2 do
+        api.nvim_buf_set_extmark(bufnr, ns, row, i - 1, {
+          virt_text = { { config.ui.lines[3], 'SagaIndent' .. (i - 1) } },
+          virt_text_pos = 'overlay',
+          ephemeral = true,
+        })
+      end
+    end,
+  })
 end
 
 return M

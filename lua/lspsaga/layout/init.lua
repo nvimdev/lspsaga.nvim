@@ -30,6 +30,30 @@ function M:left(height, width, bufnr)
   return self
 end
 
+function M:bufopt(name, value)
+  local bufnr = LEFT == 1 and self.left_bufnr or self.right_bufnr
+  if type(name) == 'table' then
+    for key, val in pairs(name) do
+      api.nvim_set_option_value(key, val, { buf = bufnr })
+    end
+  else
+    api.nvim_set_option_value(name, value, { buf = bufnr })
+  end
+  return self
+end
+
+function M:winopt(name, value)
+  local winid = LEFT == 1 and self.left_winid or self.right_winid
+  if type(name) == 'table' then
+    for key, val in pairs(name) do
+      api.nvim_set_option_value(key, val, { win = winid, scope = 'local' })
+    end
+  else
+    api.nvim_set_option_value(name, value, { win = winid, scope = 'local' })
+  end
+  return self
+end
+
 function M:setlines(lines)
   vim.validate({
     lines = { lines, 't' },
