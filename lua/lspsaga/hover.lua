@@ -20,24 +20,30 @@ function hover:open_link()
     return
   end
   local text = treesitter.get_node_text(node, self.bufnr)
-  local link = text:match('%((.*)%)')
+  local link = text:match('%]%((.-)%)')
+
   if not link then
     return
   end
 
   local cmd
-  if util.iswin then
-    cmd = '!start cmd /cstart /b '
-  elseif util.ismac then
-    cmd = 'silent !open '
+
+  if vim.fn.has('mac') == 1 then
+    cmd = '!open'
+  elseif vim.fn.has('win32') == 1 then
+    cmd = '!explorer'
+  elseif vim.fn.executable('wslview') == 1 then
+    cmd = '!wslview'
+  elseif vim.fn.executable('xdg-open') == 1 then
+    cmd = '!xdg-open'
   else
-    cmd = config.hover.open_browser .. ' '
+    cmd = config.hover.open_browser
   end
 
   if link:find('file://') then
     vim.cmd.edit(vim.uri_to_fname(link))
   else
-    fn.execute(cmd .. '"' .. fn.escape(link, '#') .. '"')
+    fn.execute(cmd .. ' ' .. fn.escape(link, '#'))
   end
 end
 
@@ -135,7 +141,6 @@ function hover:open_floating_preview(content, option_fn)
     })
     :wininfo()
 
-  print(tuncate_lnum)
   if tuncate_lnum > 0 then
     api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', tuncate_lnum - 1, 0, -1)
   end
