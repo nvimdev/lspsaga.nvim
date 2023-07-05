@@ -63,7 +63,7 @@ end
 
 function def:apply_maps(bufnr)
   for action, map in pairs(config.definition.keys) do
-    if action ~= 'close_all' then
+    if action ~= 'close' then
       util.map_keys(bufnr, map, function()
         local fname = api.nvim_buf_get_name(0)
         local index = get_node_idx(self.list, api.nvim_get_current_win())

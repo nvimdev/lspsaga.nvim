@@ -197,7 +197,7 @@ function fd:event()
         range['end'].character
       )
       node.value.rendered = true
-      util.map_keys(node.value.bufnr, config.finder.keys['close_all'], function()
+      util.map_keys(node.value.bufnr, config.finder.keys.close, function()
         self:clean()
       end)
       util.map_keys(node.value.bufnr, config.finder.keys.shuttle, function()
@@ -215,7 +215,7 @@ function fd:clean()
   slist.list_map(self.list, function(node)
     if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
-      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys['close_all'])
+      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys.close)
     end
   end)
   clean_ctx()
@@ -294,7 +294,7 @@ function fd:toggle_or_open()
 end
 
 function fd:apply_maps()
-  local black = { 'close_all', 'toggle_or_open', 'go_peek', 'quit', 'shuttle' }
+  local black = { 'close', 'toggle_or_open', 'go_peek', 'quit', 'shuttle' }
   for action, key in pairs(config.finder.keys) do
     util.map_keys(self.lbufnr, key, function()
       if not vim.tbl_contains(black, action) then

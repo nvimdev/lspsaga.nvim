@@ -85,7 +85,7 @@ local default_config = {
       tabe = 't',
       tabnew = 'r',
       quit = 'q',
-      close_all = '<C-c>k',
+      close = '<C-c>k',
     },
   },
   definition = {
@@ -97,7 +97,7 @@ local default_config = {
       split = '<C-c>i',
       tabe = '<C-c>t',
       quit = 'q',
-      close_all = '<C-c>k',
+      close = '<C-c>k',
     },
   },
   rename = {
