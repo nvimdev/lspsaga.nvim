@@ -29,7 +29,7 @@ function rename:close_rename_win()
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
 end
 
-function rename:apply_action_keys()
+function rename:apply_action_keys(project)
   local modes = { 'i', 'n', 'v' }
 
   for i, mode in ipairs(modes) do
@@ -39,7 +39,7 @@ function rename:apply_action_keys()
 
     if i ~= 3 then
       util.map_keys(self.bufnr, config.rename.keys.exec, function()
-        self:do_rename()
+        self:do_rename(project)
       end, mode)
     end
   end
@@ -49,12 +49,12 @@ function rename:find_reference()
   local bufnr = api.nvim_get_current_buf()
   local params = lsp.util.make_position_params()
   params.context = { includeDeclaration = true }
-  local client = util.get_client_by_method('textDocment/references')
-  if client == nil then
+  local clients = util.get_client_by_method('textDocment/references')
+  if #clients == 0 then
     return
   end
 
-  client.request('textDocument/references', params, function(_, result)
+  clients[1].request('textDocument/references', params, function(_, result)
     if not result then
       return
     end
@@ -77,10 +77,22 @@ local feedkeys = function(keys, mode)
   api.nvim_feedkeys(api.nvim_replace_termcodes(keys, true, true, true), mode, true)
 end
 
-function rename:lsp_rename(arg)
+local function parse_arugment(args)
+  local mode, project
+  for _, arg in ipairs(args) do
+    if arg:find('mode=') then
+      mode = vim.split(arg, '=', { trimempty = true })
+    elseif arg:find('%+%+project') then
+      project = true
+    end
+  end
+  return mode, project
+end
+
+function rename:lsp_rename(args)
   local cword = fn.expand('<cword>')
   self.pos = api.nvim_win_get_cursor(0)
-  self.arg = arg
+  local mode, project = parse_arugment(args)
 
   local float_opt = {
     height = 1,
@@ -102,17 +114,11 @@ function rename:lsp_rename(arg)
     :winopt('winhl', 'NormalFloat:RenameNormal,Border:RenameBorder')
     :wininfo()
 
-  if config.rename.in_select and not self.arg then
+  if mode == 'i' then
+    vim.cmd.startinsert()
+  elseif mode == 's' or config.rename.in_select then
     vim.cmd([[normal! V]])
     feedkeys('<C-g>', 'n')
-  elseif self.arg then
-    local mode = vim.split(self.arg, '=')[2]
-    if mode == 'i' then
-      vim.cmd.startinsert()
-    elseif mode == 's' then
-      vim.cmd([[normal! V]])
-      feedkeys('<C-g>', 'n')
-    end
   end
 
   local quit_id, close_unfocus
@@ -142,10 +148,11 @@ function rename:lsp_rename(arg)
       end
     end,
   })
-  self:apply_action_keys()
+
+  self:apply_action_keys(project)
 end
 
-local function auto_save()
+local function rename_handler(project, curname, new_name)
   ---@diagnostic disable-next-line: duplicate-set-field
   lsp.handlers['textDocument/rename'] = function(err, result, ctx)
     if err then
@@ -158,29 +165,34 @@ local function auto_save()
     local client = lsp.get_client_by_id(ctx.client_id)
     for uri, edits in pairs(result.changes or {}) do
       local bufnr = vim.uri_to_bufnr(uri)
-      if api.nvim_buf_is_loaded(bufnr) then
-        lsp.util.apply_text_edits(edits, bufnr, client.offset_encoding)
+      lsp.util.apply_text_edits(edits, bufnr, client.offset_encoding)
+      if config.rename.auto_save then
         api.nvim_buf_call(bufnr, function()
-          vim.cmd.write()
+          vim.cmd('noautocmd write!')
         end)
       end
+    end
+
+    if project then
+      require('lspsaga.rename.project'):new({ curname, new_name })
     end
   end
 end
 
-function rename:do_rename()
-  self.new_name = vim.trim(api.nvim_get_current_line())
+local original = vim.lsp.util.apply_workspace_edit
+
+function rename:do_rename(project)
+  local new_name = vim.trim(api.nvim_get_current_line())
   self:close_rename_win()
   local current_name = vim.fn.expand('<cword>')
-  if not (self.new_name and #self.new_name > 0) or self.new_name == current_name then
+  if not (new_name and #new_name > 0) or new_name == current_name then
     return
   end
   local current_win = api.nvim_get_current_win()
   api.nvim_win_set_cursor(current_win, self.pos)
-  if config.rename.auto_save then
-    auto_save()
-  end
-  lsp.buf.rename(self.new_name)
+  rename_handler(project, current_name, new_name)
+
+  lsp.buf.rename(new_name)
   local lnum, col = unpack(self.pos)
   self.pos = nil
   api.nvim_win_set_cursor(current_win, { lnum, col + 1 })

@@ -19,7 +19,7 @@ local subcommands = {
   rename = function(args)
     require('lspsaga.rename'):lsp_rename(args)
   end,
-  project_search = function(args)
+  project_replace = function(args)
     require('lspsaga.rename.project'):new(args)
   end,
   hover_doc = function(args)

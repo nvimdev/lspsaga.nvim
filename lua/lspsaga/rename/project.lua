@@ -1,4 +1,5 @@
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
+---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config
 local win = require('lspsaga.window')
@@ -75,7 +76,7 @@ local function apply_map(bufnr, winid, data, new_name)
       return
     end
     local item = find_data_by_lnum(data, curlnum)
-    print(vim.inspect(item))
+
     if not item.selected then
       item.selected = true
       api.nvim_buf_add_highlight(bufnr, ns, 'SagaSelect', curlnum - 1, 0, -1)
@@ -118,7 +119,7 @@ local function render(chunks, root_dir, new_name)
   local lines = {}
   local bufnr, winid = create_win()
   local line = 1
-  print(vim.inspect(result))
+
   for fname, item in pairs(result) do
     api.nvim_buf_set_lines(bufnr, line - 1, line - 1, false, { fname })
     api.nvim_buf_add_highlight(bufnr, ns, 'SagaFinderFname', line - 1, 0, -1)
@@ -140,8 +141,8 @@ function M:new(args)
     return
   end
 
-  if not args[2] then
-    vim.notify('[Lspsaga] missing new name')
+  if #args < 2 then
+    vim.notify('[Lspsaga] missing search pattern or new name')
     return
   end
 
