@@ -38,6 +38,7 @@ function fd:init_layout()
     )
     :bufopt({
       ['filetype'] = 'sagafinder',
+      ['buftype'] = 'nofile',
     })
     :right()
     :done()
@@ -125,10 +126,9 @@ function fd:handler(method, results, spin_close, done)
       end
 
       res.bufnr = vim.uri_to_bufnr(uri)
-      res.fname = vim.uri_to_fname(uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
         fn.bufload(res.bufnr)
-        api.nvim_set_option_value('bufhidden', 'wipe', { buf = res.bufnr })
+        res.wipe = true
       end
       local range = res.range or res.targetSelectionRange or res.selectionRange
       res.line = api.nvim_buf_get_text(
@@ -158,6 +158,14 @@ function fd:handler(method, results, spin_close, done)
     spin_close()
     api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
     box.indent(ns, self.lbufnr, self.lwinid)
+    api.nvim_create_autocmd('BufEnter', {
+      callback = function(args)
+        if args.buf ~= self.lbufnr or args.buf ~= self.rbufnr then
+          self:clean()
+          api.nvim_del_autocmd(args.id)
+        end
+      end,
+    })
   end
 end
 
@@ -179,8 +187,6 @@ function fd:event()
       if not node or not node.value.bufnr then
         return
       end
-      node.value.bufnr = api.nvim_buf_is_valid(node.value.bufnr) and node.value.bufnr
-        or fn.bufadd(node.value.fname)
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
       local range = node.value.range or node.value.targetSelectionRange or node.value.selectionRange
       api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, range.start.character })
@@ -213,6 +219,10 @@ end
 function fd:clean()
   util.close_win({ self.lwinid, self.rwinid })
   slist.list_map(self.list, function(node)
+    if node.value.wipe then
+      api.nvim_buf_delete(node.value.bufnr, { force = true })
+      return
+    end
     if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
       api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys.close)
