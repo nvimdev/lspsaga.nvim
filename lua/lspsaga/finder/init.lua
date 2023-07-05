@@ -125,6 +125,7 @@ function fd:handler(method, results, spin_close, done)
       end
 
       res.bufnr = vim.uri_to_bufnr(uri)
+      res.fname = vim.uri_to_fname(uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
         fn.bufload(res.bufnr)
         api.nvim_set_option_value('bufhidden', 'wipe', { buf = res.bufnr })
@@ -178,6 +179,8 @@ function fd:event()
       if not node or not node.value.bufnr then
         return
       end
+      node.value.bufnr = api.nvim_buf_is_valid(node.value.bufnr) and node.value.bufnr
+        or fn.bufadd(node.value.fname)
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
       local range = node.value.range or node.value.targetSelectionRange or node.value.selectionRange
       api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, range.start.character })
@@ -196,6 +199,12 @@ function fd:event()
       node.value.rendered = true
       util.map_keys(node.value.bufnr, config.finder.keys['close_all'], function()
         self:clean()
+      end)
+      util.map_keys(node.value.bufnr, config.finder.keys.shuttle, function()
+        if api.nvim_get_current_win() ~= self.rwinid then
+          return
+        end
+        api.nvim_set_current_win(self.lwinid)
       end)
     end,
   })
@@ -285,7 +294,7 @@ function fd:toggle_or_open()
 end
 
 function fd:apply_maps()
-  local black = { 'close_all', 'toggle_or_open', 'go_peek', 'quit' }
+  local black = { 'close_all', 'toggle_or_open', 'go_peek', 'quit', 'shuttle' }
   for action, key in pairs(config.finder.keys) do
     util.map_keys(self.lbufnr, key, function()
       if not vim.tbl_contains(black, action) then
@@ -316,6 +325,13 @@ function fd:apply_maps()
     end)
   end
   self:toggle_or_open()
+
+  util.map_keys(self.lbufnr, config.finder.keys.shuttle, function()
+    if api.nvim_get_current_win() ~= self.lwinid then
+      return
+    end
+    api.nvim_set_current_win(self.rwinid)
+  end)
 end
 
 function fd:new(args)
