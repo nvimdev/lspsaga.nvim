@@ -1,8 +1,8 @@
-### What's New?
+## What's New?
 
 The new finder is no longer called lsp_finder. It is much more powerful. Better scalability. Better window layout. More stable.
 
-### Default Options
+## Default Options
 
 these are defeault options in `finder` section.
 
@@ -13,7 +13,7 @@ these are defeault options in `finder` section.
 - `layout = 'float'`        available value is `normal` or `float` normal will use normal layout window priority is lower than command layout
 - `filter = {}`             key is lsp method value is a filter handler function parameter are `client_id` `result`
 
-### Default KeyMap
+## Default KeyMap
 
 these are defaule keymaps in `finder.keys` table section.
 
@@ -26,7 +26,7 @@ these are defaule keymaps in `finder.keys` table section.
 - `quit = 'q'`           quit the finder only work in layout left window
 - `close = '<C-c>k'`     close finder
 
-### How to change options
+## How to change options
 
 put the option which you want change in `setup` function parameter table. like
 
@@ -41,13 +41,13 @@ require('lspsaga').setup({
 })
 ```
 
-### Finder Usage
+## Finder Usage
 
 basiclly usage is `:Lspsaga finder` then you will see the finder layout window . It will show you the `references` and `implemnetation` results. relate options is `default = 'ref+imp'` (see above)
 
 ![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/1d957dda-5825-4d15-8d5a-ca5dd7ca63a9)
 
-#### Change Lsp Methods in finder
+### Change Lsp Methods in finder
 
 There has two ways, First is from command this way has a high priority if you pass methods alais from command it will ignore `default` options. like `:Lspsaga finder imp` this will only show `implementation` or like `:Lspsaga finder def+ref` this will only show `definition` and `references` . like `:Lspsaga finder def+ref`.
 
@@ -94,8 +94,11 @@ Notice current indent highlight is  provider by `finder` not provide by any thir
 ![Untitled](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/009990db-5ba5-455b-ab3f-d9bd25904cf0)
 
 
-#### Change Finder Layout
+### Change Finder Layout
 
 same as finder show lsp methods . you can use command and option to config it . if you don't pass any layout from command it will use `layout` option. available value is `normal ` and `layout` . a little different is when you want change layout from command you need `++` before the layout like `:Lspsaga finder ++normal`.
 
 ![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/df566e6f-fd45-47c2-a34e-b70ab248f400)
+
+### Filter lsp methods result
+TODO:
