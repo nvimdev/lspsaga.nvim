@@ -1,4 +1,6 @@
 local api, lsp, fn = vim.api, vim.lsp, vim.fn
+---@diagnostic disable-next-line: deprecated
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local inrender_row = -1
@@ -65,7 +67,6 @@ local function render(bufnr)
   end)
 end
 
-local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local timer = uv.new_timer()
 
 local function update(buf)

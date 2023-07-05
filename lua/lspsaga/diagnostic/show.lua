@@ -233,6 +233,7 @@ function sd:toggle_or_jump(entrys_list)
     local ln, col, bn = unpack(vim.split(info, ':'))
     local wins = fn.win_findbuf(tonumber(bn))
     if #wins == 0 then
+      ---@diagnostic disable-next-line: param-type-mismatch
       api.nvim_win_set_buf(0, tonumber(bn))
       wins[#wins] = 0
     end

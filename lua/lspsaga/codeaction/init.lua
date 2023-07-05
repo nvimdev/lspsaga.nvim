@@ -159,8 +159,8 @@ function act:send_request(main_buf, options, callback)
     self.pending_request = false
     local action_tuples = {}
 
-    for client_id, result in pairs(results) do
-      for _, action in pairs(result.result or {}) do
+    for client_id, item in pairs(results) do
+      for _, action in ipairs(item.result or {}) do
         action_tuples[#action_tuples + 1] = { client_id, action }
       end
     end
@@ -168,7 +168,7 @@ function act:send_request(main_buf, options, callback)
     if config.code_action.extend_gitsigns then
       local res = self:extend_gitsign(params)
       if res then
-        for _, action in pairs(res) do
+        for _, action in ipairs(res) do
           action_tuples[#action_tuples + 1] = { 'gitsigns', action }
         end
       end
