@@ -24,17 +24,16 @@ local function get_root_dir()
 end
 
 local function decode(data)
+  local t = vim.split(data, '\n', { trimempty = true })
   local result = {}
-  for _, v in pairs(data) do
-    for _, item in pairs(v) do
-      local tbl = vim.json.decode(item)
-      if tbl.type == 'match' then
-        local path = tbl.data.path.text
-        if not result[path] then
-          result[path] = {}
-        end
-        result[path][#result[path] + 1] = tbl
+  for _, v in pairs(t) do
+    local tbl = vim.json.decode(v)
+    if tbl.type == 'match' then
+      local path = tbl.data.path.text
+      if not result[path] then
+        result[path] = {}
       end
+      result[path][#result[path] + 1] = tbl
     end
   end
   return result
@@ -46,7 +45,9 @@ local function create_win()
   local float_opt = {
     height = math.floor(win_height * config.rename.project_max_height),
     width = math.floor(win_width * config.rename.project_max_width),
+    title = config.ui.title and 'Project' or nil,
   }
+
   return win
     :new_float(float_opt, true)
     :bufopt({
@@ -84,7 +85,11 @@ local function apply_map(bufnr, winid, data, new_name)
     api.nvim_buf_add_highlight(bufnr, ns, 'Comment', curlnum - 1, 0, -1)
   end)
 
-  util.map_keys(bufnr, config.rename.keys.confirm, function()
+  util.map_keys(bufnr, config.rename.keys.quit, function()
+    api.nvim_win_close(winid, true)
+  end)
+
+  util.map_keys(bufnr, config.rename.keys.exec, function()
     for fname, v in pairs(data) do
       for _, item in ipairs(v) do
         if item.selected then
@@ -123,7 +128,8 @@ local function render(chunks, root_dir, new_name)
     api.nvim_buf_add_highlight(bufnr, ns, 'SagaFinderFname', line - 1, 0, -1)
     line = line + 1
     vim.tbl_map(function(val)
-      local text = 'ln:' .. val.data.line_number .. '  ' .. vim.trim(val.data.lines.text)
+      local ln = val.data.line_number
+      local text = 'ln:' .. ln .. (' '):rep(5 - #tostring(ln)) .. vim.trim(val.data.lines.text)
       api.nvim_buf_set_lines(bufnr, line - 1, -1, false, { (' '):rep(2) .. text })
       api.nvim_buf_add_highlight(bufnr, ns, 'Comment', line - 1, 0, -1)
       val.winline = line
@@ -167,7 +173,7 @@ function M:new(args)
     safe_close(stderr)
     -- parse after close
     vim.schedule(function()
-      render(chunks, root_dir, args[2])
+      render(table.concat(chunks), root_dir, args[2])
     end)
   end)
 
@@ -175,7 +181,7 @@ function M:new(args)
     assert(not err, err)
 
     if data then
-      chunks[#chunks + 1] = vim.split(data, '\n', { trimempty = true })
+      chunks[#chunks + 1] = data
     end
   end)
 end

@@ -13,7 +13,6 @@ local default_config = {
     incoming = '󰏷 ',
     outgoing = '󰏻 ',
     actionfix = ' ',
-    hover = ' ',
     theme = 'arrow',
     lines = { '┗', '┣', '┃', '━', '┏' },
     kind = nil,
@@ -61,10 +60,6 @@ local default_config = {
     sign_priority = 40,
     virtual_text = true,
   },
-  preview = {
-    lines_above = 0,
-    lines_below = 10,
-  },
   scroll_preview = {
     scroll_down = '<C-f>',
     scroll_up = '<C-b>',
@@ -109,7 +104,6 @@ local default_config = {
       quit = '<Esc>',
       exec = '<CR>',
       select = 'x',
-      confirm = '<CR>',
     },
   },
   symbol_in_winbar = {

@@ -51,7 +51,6 @@ function hover:open_floating_preview(content, option_fn)
   local new = {}
   local max_float_width = math.floor(vim.o.columns * config.hover.max_width)
   local max_content_len = util.get_max_content_length(content)
-  local increase = util.win_height_increase(content)
   local max_height = math.floor(vim.o.lines * config.hover.max_height)
 
   local float_option = {
@@ -107,18 +106,11 @@ function hover:open_floating_preview(content, option_fn)
     end
   end
 
+  local increase = util.win_height_increase(new, config.hover.max_width)
   float_option.height = math.min(max_height, #new + increase)
 
   if option_fn then
     float_option = vim.tbl_extend('keep', float_option, option_fn(float_option.width))
-  end
-
-  if config.ui.title then
-    float_option.title = {
-      { config.ui.hover, 'Exception' },
-      { ' Hover', 'SagaTitle' },
-    }
-    float_option.title_pos = 'center'
   end
 
   local curbuf = api.nvim_get_current_buf()

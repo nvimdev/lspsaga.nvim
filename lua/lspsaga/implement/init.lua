@@ -21,7 +21,7 @@ local function render_sign(bufnr, row, data)
   data.sign_id = row + 1
 end
 
-local function try_render(client, bufnr, pos, data)
+local function try_render(client_id, bufnr, pos, data)
   local params = {
     position = {
       character = pos.character,
@@ -32,6 +32,11 @@ local function try_render(client, bufnr, pos, data)
     },
   }
 
+  local client = vim.lsp.get_client_by_id(client_id)
+  if not client then
+    return
+  end
+  ---@diagnostic disable-next-line: invisible
   client.request('textDocument/implementation', params, function(err, result)
     if err or api.nvim_get_current_buf() ~= bufnr then
       return
@@ -123,7 +128,7 @@ local function clean(buf)
   end
 end
 
-local function render(client, bufnr, symbols, need_clean)
+local function render(client_id, bufnr, symbols, need_clean)
   local langdata = langmap(bufnr)
   local bufkey = tostring(bufnr)
   local new = {}
@@ -153,7 +158,7 @@ local function render(client, bufnr, symbols, need_clean)
           }
         end
 
-        try_render(client, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
+        try_render(client_id, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
       end
       if item.children and langdata.children then
         parse_symbol(item.children)
@@ -187,7 +192,7 @@ local function render(client, bufnr, symbols, need_clean)
   end
 end
 
-local function start(buf, client)
+local function start(buf, client_id)
   api.nvim_create_autocmd('CursorHold', {
     buffer = buf,
     callback = function()
@@ -197,7 +202,7 @@ local function start(buf, client)
       end
       local res = symbol:get_buf_symbols(buf)
       if res and res.symbols and #res.symbols > 0 then
-        render(client, buf, res.symbols, true)
+        render(client_id, buf, res.symbols, true)
       end
     end,
     desc = '[Lspsaga] Implement show',

@@ -152,7 +152,7 @@ function symbol:register_module()
       self:do_request(args.buf, client, function()
         winbar.init_winbar(args.buf)
         if config.implement.enable and client.supports_method('textDocument/implementation') then
-          require('lspsaga.implement').start(args.buf, client)
+          require('lspsaga.implement').start(args.buf, args.data.client_id)
         end
       end)
     end,

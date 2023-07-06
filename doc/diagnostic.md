@@ -59,6 +59,8 @@ In some situation like copy the diagnostic message text want jump to diagnsotic 
 
 ![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/ac085c8e-dd6b-4995-8201-c474966abb61)
 
+change the `Actions` icon by using `ui.actionfix='your icon'`
+
 ### Diagnsotic jump Filter
 
 if you want only jump to error or some other severity diagnostic .you can use function to config like.

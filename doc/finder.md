@@ -111,3 +111,9 @@ require('lspsaga').setup({
     }
   }
 })
+```
+
+### Highlight
+
+- `SagaNormal` config layout normal background
+- `SagaBorder` config layout float window border
