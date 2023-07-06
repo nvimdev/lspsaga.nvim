@@ -137,16 +137,17 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
     api.nvim_win_call(self.winid, function()
       local curlnum = api.nvim_win_get_cursor(self.winid)[1]
       local lines = api.nvim_buf_line_count(self.bufnr)
+      local sline = start_line + 2
       local col = 6
-      if curlnum < 5 then
-        curlnum = 5
-      elseif curlnum >= 5 then
-        curlnum = curlnum + direction > lines and 5 or curlnum + direction
+      if curlnum < sline then
+        curlnum = sline
+      elseif curlnum >= sline then
+        curlnum = curlnum + direction > lines and sline or curlnum + direction
       end
       api.nvim_win_set_cursor(self.winid, { curlnum, col })
-      api.nvim_buf_clear_namespace(self.bufnr, ns, 0, -1)
-      if curlnum > 4 then
-        api.nvim_buf_add_highlight(self.bufnr, ns, 'FinderSelection', curlnum - 1, 6, -1)
+      api.nvim_buf_clear_namespace(self.bufnr, ns, sline, -1)
+      if curlnum >= sline then
+        api.nvim_buf_add_highlight(self.bufnr, ns, 'SagaSelect', curlnum - 1, 6, -1)
       end
 
       local tuple = action_tuples[tonumber(get_num())]
