@@ -93,13 +93,19 @@ function def:delete_maps(bufnr)
   end
 end
 
-function def:create_win(bufnr)
+function def:create_win(bufnr, root_dir)
+  local fname = api.nvim_buf_get_name(bufnr)
+  fname = fname:sub(#root_dir + 2)
   if not self.list or vim.tbl_isempty(self.list) then
     local float_opt = {
       width = math.floor(api.nvim_win_get_width(0) * config.definition.width),
       height = math.floor(api.nvim_win_get_height(0) * config.definition.height),
       bufnr = bufnr,
     }
+    if config.ui.title then
+      float_opt.title = fname
+      float_opt.title_pos = 'center'
+    end
     return win
       :new_float(float_opt, true)
       :winopt({
@@ -110,6 +116,7 @@ function def:create_win(bufnr)
   end
   local win_conf = api.nvim_win_get_config(self.list[#self.list].winid)
   win_conf.bufnr = bufnr
+  win_conf.title = fname
   return win:new_float(win_conf, true):wininfo()
 end
 
@@ -175,7 +182,7 @@ function def:peek_definition(method)
   self.opt_restore = win:minimal_restore()
 
   self.pending_request = true
-  lsp.buf_request(current_buf, method_name, params, function(_, result)
+  lsp.buf_request(current_buf, method_name, params, function(_, result, context)
     self.pending_request = false
     if not result or next(result) == nil then
       vim.notify(
@@ -194,7 +201,8 @@ function def:peek_definition(method)
       api.nvim_set_option_value('bufhidden', 'wipe', { buf = node.bufnr })
       node.wipe = true
     end
-    _, node.winid = self:create_win(node.bufnr)
+    local root_dir = lsp.get_client_by_id(context.client_id).config.root_dir
+    _, node.winid = self:create_win(node.bufnr, root_dir)
     api.nvim_win_set_cursor(
       node.winid,
       { node.selectionRange.start.line + 1, node.selectionRange.start.character }
