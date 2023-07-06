@@ -41,11 +41,18 @@ function M.filter(method, results)
     return results
   end
   local fn = config.finder.filter[method]
+  if type(fn) ~= 'function' then
+    vim.notify('[Lspsaga] filter must be function', vim.log.levels.ERROR)
+    return
+  end
   local retval = {}
   for client_id, item in pairs(results) do
-    retval[client_id] = {
-      result = fn(client_id, item.result),
-    }
+    retval[client_id] = {}
+    for _, val in ipairs(item) do
+      if fn(val) then
+        retval[client_id][#retval[client_id] + 1] = val
+      end
+    end
   end
   return retval
 end
