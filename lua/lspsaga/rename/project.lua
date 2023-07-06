@@ -53,9 +53,7 @@ local function create_win()
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
     })
-    :winopt({
-      ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
-    })
+    :winhl('SagaNormal', 'SagaBorder')
     :wininfo()
 end
 

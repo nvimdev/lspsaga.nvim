@@ -1,7 +1,3 @@
-## What's New?
-
-The new finder is no longer called lsp_finder. It is much more powerful. Better scalability. Better window layout. More stable.
-
 ## Default Options
 
 these are defeault options in `finder` section.
@@ -96,9 +92,22 @@ Notice current indent highlight is  provider by `finder` not provide by any thir
 
 ### Change Finder Layout
 
-same as finder show lsp methods . you can use command and option to config it . if you don't pass any layout from command it will use `layout` option. available value is `normal ` and `layout` . a little different is when you want change layout from command you need `++` before the layout like `:Lspsaga finder ++normal`.
+same as finder show lsp methods . you can use command or option to config it . if you don't pass any layout from command it will use `layout` option. available value is `normal ` and `layout` . a little different is when you want change layout from command you need `++` before the layout like `:Lspsaga finder ++normal`.
 
 ![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/df566e6f-fd45-47c2-a34e-b70ab248f400)
 
 ### Filter lsp methods result
-TODO:
+
+you can use `filter` option to filter lsp methods result key is method value is function parameter is `client_id` and `result`. return value is boolean, config it like
+
+```lua
+require('lspsaga').setup({
+  finder = {
+    filter = {
+      ['textDocument/references']  = function(client_id, result)
+        -- your logic
+        return true or false
+      end
+    }
+  }
+})

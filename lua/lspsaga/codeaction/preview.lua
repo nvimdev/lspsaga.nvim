@@ -127,7 +127,7 @@ local function create_preview_win(content, main_winid)
       ['buftype'] = 'nofile',
       ['modifiable'] = false,
     })
-    :winopt('winhl', 'NormalFloat:ActionPreviewNormal,Border:ActionPreviewBorder')
+    :winhl('ActionPreviewNormal', 'ActionPreviewBorder')
     :wininfo()
 end
 

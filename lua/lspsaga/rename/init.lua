@@ -111,7 +111,7 @@ function rename:lsp_rename(args)
     :new_float(float_opt, true)
     :setlines({ cword })
     :winopt('scrolloff', 0)
-    :winopt('winhl', 'NormalFloat:RenameNormal,Border:RenameBorder')
+    :winhl('RenameNormal', 'RenameBorder')
     :wininfo()
 
   if mode == 'i' then

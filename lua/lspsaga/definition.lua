@@ -108,10 +108,8 @@ function def:create_win(bufnr, root_dir)
     end
     return win
       :new_float(float_opt, true)
-      :winopt({
-        ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
-        ['winbar'] = '',
-      })
+      :winopt('winbar', '')
+      :winhl('SagaNormal', 'SagaBorder')
       :wininfo()
   end
   local win_conf = api.nvim_win_get_config(self.list[#self.list].winid)

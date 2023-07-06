@@ -133,12 +133,12 @@ function hover:open_floating_preview(content, option_fn)
       ['bufhidden'] = 'wipe',
     })
     :winopt({
-      ['winhl'] = 'NormalFloat:HoverNormal,Border:HoverBorder',
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
       ['showbreak'] = 'NONE',
       ['wrap'] = true,
     })
+    :winhl('HoverNormal', 'HoverBorder')
     :wininfo()
 
   if tuncate_lnum > 0 then

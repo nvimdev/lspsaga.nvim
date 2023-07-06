@@ -307,9 +307,8 @@ function diag:render_diagnostic_window(entry, option)
       ['breakindent'] = true,
       ['breakindentopt'] = 'shift:0',
       ['linebreak'] = false,
-      ['winhl'] = 'NormalFloat:DiagnosticNormal,Border:'
-        .. (diag_conf.border_follow and hi_name or 'DiagnosticBorder'),
     })
+    :winhl('DiagnosticNormal', diag_conf.border_follow and hi_name or 'DiagnosticBorder')
     :wininfo()
 
   api.nvim_buf_set_extmark(self.bufnr, ns, #content - 1, 0, {

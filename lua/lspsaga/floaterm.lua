@@ -50,7 +50,7 @@ function term:open_float_terminal(args)
   ctx.term_bufnr, ctx.term_winid = win
     :new_float(float_opt, true, true)
     :bufopt('bufhidden', 'hide')
-    :winopt('winhl', 'NormalFloat:TerminalNormal,Border:TerminalBorder')
+    :winhl('TerminalNormal', 'TerminalBorder')
     :wininfo()
 
   if spawn_new then

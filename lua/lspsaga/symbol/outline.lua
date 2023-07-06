@@ -333,7 +333,7 @@ function ot:create_preview_win(lines)
       ['buftype'] = 'nofile',
     })
     :winopt({
-      ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+      ['winhl'] = 'NormalFloat:SagaNormal,FloatBorder:SagaBorder',
       ['sidescrolloff'] = 5,
     })
     :wininfo()
