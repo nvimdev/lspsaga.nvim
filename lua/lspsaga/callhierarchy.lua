@@ -7,6 +7,7 @@ local buf_set_lines = api.nvim_buf_set_lines
 local buf_set_extmark = api.nvim_buf_set_extmark
 local kind = require('lspsaga.lspkind').kind
 local ly = require('lspsaga.layout')
+local win = require('lspsaga.window')
 local ns = api.nvim_create_namespace('SagaCallhierarchy')
 
 local ch = {}
@@ -177,15 +178,49 @@ function ch:toggle_or_request()
   end
 end
 
+local function window_shuttle(winid, right_winid)
+  local curwin = api.nvim_get_current_win()
+  local target
+  if curwin == winid then
+    target = right_winid
+  elseif curwin == right_winid then
+    target = winid
+  end
+  if target then
+    api.nvim_set_current_win(target)
+  end
+end
+
 function ch:keymap(bufnr, winid, _, right_winid)
-  util.map_keys(bufnr, config.callhierarchy.keys.quit, function()
+  util.map_keys(bufnr, config.callhierarchy.keys.close, function()
     util.close_win({ winid, right_winid })
     self:clean()
   end)
 
-  util.map_keys(bufnr, config.callhierarchy.keys.toggle, function()
+  util.map_keys(bufnr, config.callhierarchy.keys.toggle_or_req, function()
     self:toggle_or_request()
   end)
+
+  util.map_keys(bufnr, config.callhierarchy.keys.shuttle, function()
+    window_shuttle(winid, right_winid)
+  end)
+
+  local tbl = { 'edit', 'vsplit', 'split', 'tabe' }
+  for _, action in ipairs(tbl) do
+    util.map_keys(bufnr, config.callhierarchy[action], function()
+      local curlnum = api.nvim_win_get_cursor(0)[1]
+      local curnode = slist.find_node(self.list, curlnum)
+      if not curnode then
+        return
+      end
+      local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
+      local fname = vim.uri_to_fname(data.uri)
+      local restore = win:minimal_restore()
+      vim.cmd[action](fname)
+      restore()
+      self:clean()
+    end)
+  end
 end
 
 function ch:peek_view()
@@ -208,8 +243,12 @@ function ch:peek_view()
       end
       local range = data.selectionRange
       api.nvim_win_set_buf(self.right_winid, peek_bufnr)
+      curnode.value.rendered = true
       vim.bo[peek_bufnr].filetype = vim.bo[self.main_buf].filetype
       api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, range.start.character + 1 })
+      util.map_keys(peek_bufnr, config.callhierarchy.keys.shuttle, function()
+        window_shuttle(self.left_winid, self.right_winid)
+      end)
     end,
     desc = '[Lspsaga] callhierarchy peek preview',
   })

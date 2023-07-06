@@ -10,8 +10,6 @@ local default_config = {
     expand = '⊞',
     collapse = '⊟',
     code_action = '💡',
-    incoming = '󰏷 ',
-    outgoing = '󰏻 ',
     actionfix = ' ',
     theme = 'arrow',
     lines = { '┗', '┣', '┃', '━', '┏' },
@@ -128,16 +126,15 @@ local default_config = {
     },
   },
   callhierarchy = {
-    show_detail = false,
     layout = 'float',
     keys = {
       edit = 'e',
       vsplit = 's',
       split = 'i',
       tabe = 't',
-      jump = 'o',
-      quit = 'q',
-      toggle = 'u',
+      close = 'q',
+      shuttle = '[w',
+      toggle_or_req = 'u',
     },
   },
   implement = {
