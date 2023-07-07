@@ -1,3 +1,27 @@
+## Diagnostic Jump Usage
+
+you need config a keymap for command `:Lspsaga diangostic_jump_next` and `:Lspsaga diagnsotic_jump_prev`.
+When cursor position have diagnostic it will show in current not go prev or next position.
+
+![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/d88f9d9f-fae1-47ca-94d2-8ef536e4eb7f)
+
+when diagnostic window rendered. you can use `scroll_preview` to preview code action. default is `<C-f>` and `<C-b>`.
+
+![Untitled](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/91d9c0a0-ee1e-4f70-9d6b-08e32fad8b98)
+
+workflow in gif need `jump_num_shutcut` true.
+
+1. set `[e`  to jump next diangostic `vim.keymap.set('n', '[e', '<cmd>Lspsaga diagnsotic_jump_next)`
+2. current position has diagnsotic so not jump to other place.
+3. use `<C-f>` and `<C-b>` scroll in code action section to preview code action.
+4. press num key `2` to execute code action `2`.
+
+In some situation like copy the diagnostic message text want jump to diagnsotic jump window. you can use `<C-w>w` wincmd to jump. and use `keys.quit` to quit the window or move to code action then press `o` to execute code action.
+
+![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/ac085c8e-dd6b-4995-8201-c474966abb61)
+
+change the `Actions` icon by using `ui.actionfix='your icon'`
+
 ## Default Options
 
 default options of diagnostic module. 
@@ -36,30 +60,6 @@ require('lspsaga').setup({
     },
 })
 ```
-
-## Diagnostic Jump Usage
-
-you need config a keymap for command `:Lspsaga diangostic_jump_next` and `:Lspsaga diagnsotic_jump_prev`.
-When cursor position have diagnostic it will show in current not go prev or next position.
-
-![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/d88f9d9f-fae1-47ca-94d2-8ef536e4eb7f)
-
-when diagnostic window rendered. you can use `scroll_preview` to preview code action. default is `<C-f>` and `<C-b>`.
-
-![Untitled](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/91d9c0a0-ee1e-4f70-9d6b-08e32fad8b98)
-
-workflow in gif need `jump_num_shutcut` true.
-
-1. set `[e`  to jump next diangostic `vim.keymap.set('n', '[e', '<cmd>Lspsaga diagnsotic_jump_next)`
-2. current position has diagnsotic so not jump to other place.
-3. use `<C-f>` and `<C-b>` scroll in code action section to preview code action.
-4. press num key `2` to execute code action `2`.
-
-In some situation like copy the diagnostic message text want jump to diagnsotic jump window. you can use `<C-w>w` wincmd to jump. and use `keys.quit` to quit the window or move to code action then press `o` to execute code action.
-
-![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/ac085c8e-dd6b-4995-8201-c474966abb61)
-
-change the `Actions` icon by using `ui.actionfix='your icon'`
 
 ### Diagnsotic jump Filter
 

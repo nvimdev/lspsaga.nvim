@@ -1,3 +1,11 @@
+## Finder Usage
+
+finder is a ui interface to show lsp methods result.
+
+basiclly usage is `:Lspsaga finder` then you will see the finder layout window . It will show you the `references` and `implemnetation` results. relate options is `default = 'ref+imp'` (see above)
+
+![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/1d957dda-5825-4d15-8d5a-ca5dd7ca63a9)
+
 ## Default Options
 
 these are defeault options in `finder` section.
@@ -36,12 +44,6 @@ require('lspsaga').setup({
   }
 })
 ```
-
-## Finder Usage
-
-basiclly usage is `:Lspsaga finder` then you will see the finder layout window . It will show you the `references` and `implemnetation` results. relate options is `default = 'ref+imp'` (see above)
-
-![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/1d957dda-5825-4d15-8d5a-ca5dd7ca63a9)
 
 ### Change Lsp Methods in finder
 

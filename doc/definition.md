@@ -1,3 +1,9 @@
+## Peek Definition/TypeDefinition Usage
+
+command are `:Lspsaga peek_definition` and `:Lspsaga peek_type_definition`  . layout is `drawer` current only has this layout style.
+
+![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/b4f1b724-7d6a-49cc-9b4b-6c95b49abae7)
+
 ## Default Options
 
 default options in `definition` section
@@ -15,12 +21,6 @@ keymap config in `definition.keys` section
 - `tabe = '<C-c>t'`
 - `quit = 'q'`
 - `close = '<C-c>k'`
-
-## Peek Definition/TypeDefinition Usage
-
-command are `:Lspsaga peek_definition` and `:Lspsaga peek_type_definition`  . layout is `drawer` current only has this layout style.
-
-![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/b4f1b724-7d6a-49cc-9b4b-6c95b49abae7)
 
 ### Why keymap not a single character ?
 

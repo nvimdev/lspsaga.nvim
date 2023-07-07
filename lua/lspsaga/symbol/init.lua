@@ -121,16 +121,29 @@ function symbol:node_is_keyword(buf, node)
   if not node.selectionRange then
     return false
   end
-  local captures = vim.treesitter.get_captures_at_pos(
-    buf,
-    node.selectionRange.start.line,
-    node.selectionRange.start.character
-  )
-  for _, v in pairs(captures) do
-    if v.capture == 'keyword' or v.capture == 'conditional' or v.capture == 'repeat' then
-      return true
-    end
+  local tnode = vim.treesitter.get_node({
+    bufnr = buf,
+    pos = {
+      node.selectionRange.start.line,
+      node.selectionRange.start.character,
+    },
+  })
+
+  if not tnode then
+    return
   end
+
+  local keylist = {
+    'if_statement',
+    'for_statement',
+    'while_statement',
+    'repeat_statement',
+    'do_statement',
+  }
+  if vim.tbl_contains(keylist, tnode:type()) then
+    return true
+  end
+
   return false
 end
 

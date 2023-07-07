@@ -251,7 +251,9 @@ function ot:expand_or_jump()
   )
   local width = #api.nvim_get_current_line()
   beacon({ node.value.selectionRange.start.line, 0 }, width)
-  clean_ctx()
+  if config.outline.close_after_jump then
+    clean_ctx()
+  end
 end
 
 function ot:create_preview_win(lines)
@@ -397,7 +399,7 @@ function ot:outline(buf)
     self.bufnr, self.winid = create_outline_window()
   end
   self:parse(res.symbols)
-  util.map_keys(self.bufnr, config.outline.keys.expand_or_jump, function()
+  util.map_keys(self.bufnr, config.outline.keys.toggle_or_jump, function()
     self:expand_or_jump()
   end)
 

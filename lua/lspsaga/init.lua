@@ -107,7 +107,7 @@ local default_config = {
   symbol_in_winbar = {
     enable = true,
     separator = ' › ',
-    hide_keyword = true,
+    hide_keyword = false,
     show_file = true,
     folder_level = 1,
     color_mode = true,
@@ -119,9 +119,9 @@ local default_config = {
     auto_preview = true,
     detail = true,
     auto_close = true,
-    close_after_jump = false,
+    close_after_jump = true,
     keys = {
-      expand_or_jump = 'o',
+      toggle_or_jump = 'o',
       quit = 'q',
     },
   },

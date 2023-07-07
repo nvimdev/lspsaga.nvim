@@ -1,3 +1,9 @@
+## Rename Usage
+
+command is `:Lspsaga lsp_rename`. when open rename window it will also highlight the references in this buffer.
+
+![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/bb81149a-d24e-4f14-a8b5-ddf0cc1d9908)
+
 ## Default Options
 
 default options in `rename` section.
@@ -14,13 +20,6 @@ default keymap in `rename.keys` section.
 - `quit = '<Esc>'`             quit rename window or project_replace window
 - `exec = '<CR>'`              execute rename in rename window or execute replace in project_replace window
 - `select = 'x'`               select or cancel select item in project_replace float window
-
-
-## Rename Usage
-
-command is `:Lspsaga lsp_rename`. when open rename window it will also highlight the references in this buffer.
-
-![image](https://github.com/nvimdev/lspsaga.nvim/assets/41671631/bb81149a-d24e-4f14-a8b5-ddf0cc1d9908)
 
 ### Change start mode from command
 
