@@ -121,17 +121,15 @@ local function is_rename(data, range, word)
 end
 
 local function clean(buf)
-  local bufkey = tostring(buf)
-  for k, data in pairs(buffers_cache[bufkey] or {}) do
+  for k, data in pairs(buffers_cache[buf] or {}) do
     pcall(api.nvim_buf_del_extmark, buf, ns, data.virt_id)
     pcall(fn.sign_unplace, name, { buffer = buf, id = data.sign_id })
-    buffers_cache[bufkey][k] = nil
+    buffers_cache[buf][k] = nil
   end
 end
 
 local function render(client_id, bufnr, symbols, need_clean)
   local langdata = langmap(bufnr)
-  local bufkey = tostring(bufnr)
   local new = {}
 
   local function parse_symbol(nodes)
@@ -144,22 +142,22 @@ local function render(client_id, bufnr, symbols, need_clean)
 
         local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
         new[#new + 1] = word
-        local before = is_rename(buffers_cache[bufkey], item.range, word)
+        local before = is_rename(buffers_cache[bufnr], item.range, word)
         if before then
-          buffers_cache[bufkey][before].range = item.range
-          buffers_cache[bufkey][word] = vim.deepcopy(buffers_cache[bufkey][before])
-          buffers_cache[bufkey][before] = nil
-        elseif buffers_cache[bufkey][word] then
-          if range_compare(buffers_cache[bufkey][word].range, item.range) then
-            buffers_cache[bufkey][word].range = item.range
+          buffers_cache[bufnr][before].range = item.range
+          buffers_cache[bufnr][word] = vim.deepcopy(buffers_cache[bufnr][before])
+          buffers_cache[bufnr][before] = nil
+        elseif buffers_cache[bufnr][word] then
+          if range_compare(buffers_cache[bufnr][word].range, item.range) then
+            buffers_cache[bufnr][word].range = item.range
           end
         else
-          buffers_cache[bufkey][word] = {
+          buffers_cache[bufnr][word] = {
             range = item.range,
           }
         end
 
-        try_render(client_id, bufnr, item.selectionRange.start, buffers_cache[bufkey][word])
+        try_render(client_id, bufnr, item.selectionRange.start, buffers_cache[bufnr][word])
       end
       if item.children and langdata.children then
         parse_symbol(item.children)
@@ -179,29 +177,28 @@ local function render(client_id, bufnr, symbols, need_clean)
 
   local non_exists = vim.tbl_filter(function(item)
     return not vim.tbl_contains(new, item)
-  end, vim.tbl_keys(buffers_cache[bufkey]) or {})
+  end, vim.tbl_keys(buffers_cache[bufnr]) or {})
 
   if #non_exists == 0 then
     return
   end
 
   for _, word in ipairs(non_exists) do
-    local data = buffers_cache[bufkey][word]
+    local data = buffers_cache[bufnr][word]
     pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
     pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
-    buffers_cache[bufkey][word] = nil
+    buffers_cache[bufnr][word] = nil
   end
 end
 
 local function start(buf, client_id)
-  api.nvim_create_autocmd('CursorHold', {
+  api.nvim_create_autocmd('CursorMoved', {
     buffer = buf,
-    callback = function()
-      local bufkey = tostring(buf)
-      if not buffers_cache[bufkey] then
-        buffers_cache[bufkey] = {}
+    callback = function(args)
+      if not buffers_cache[args.buf] then
+        buffers_cache[args.buf] = {}
       end
-      local res = symbol:get_buf_symbols(buf)
+      local res = symbol:get_buf_symbols(args.buf)
       if res and res.symbols and #res.symbols > 0 then
         render(client_id, buf, res.symbols, true)
       end

@@ -92,7 +92,7 @@ function symbol:do_request(buf, client, callback)
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
-      data = { symbols = result or {}, bufnr = ctx.bufnr },
+      data = { symbols = result or {}, client_id = ctx.client_id, bufnr = ctx.bufnr },
     })
   end, buf)
   if register then
