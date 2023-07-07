@@ -18,6 +18,16 @@ function ch.__newindex(t, k, v)
 end
 
 function ch:clean()
+  slist.list_map(self.list, function(node)
+    if node.value.wipe then
+      api.nvim_buf_delete(node.value.bufnr, { force = true })
+      return
+    end
+    if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
+      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys.close)
+    end
+  end)
+
   for key, _ in pairs(self) do
     if type(key) ~= 'function' then
       self[key] = nil
@@ -237,16 +247,17 @@ function ch:peek_view()
         return
       end
       local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
-      local peek_bufnr = vim.uri_to_bufnr(data.uri)
-      if not api.nvim_buf_is_loaded(peek_bufnr) then
-        fn.bufload(peek_bufnr)
+      curnode.value.bufnr = vim.uri_to_bufnr(data.uri)
+      if not api.nvim_buf_is_loaded(curnode.value.bufnr) then
+        fn.bufload(curnode.value.bufnr)
+        curnode.value.wipe = true
       end
       local range = data.selectionRange
-      api.nvim_win_set_buf(self.right_winid, peek_bufnr)
+      api.nvim_win_set_buf(self.right_winid, curnode.value.bufnr)
       curnode.value.rendered = true
-      vim.bo[peek_bufnr].filetype = vim.bo[self.main_buf].filetype
+      vim.bo[curnode.value.bufnr].filetype = vim.bo[self.main_buf].filetype
       api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, range.start.character + 1 })
-      util.map_keys(peek_bufnr, config.callhierarchy.keys.shuttle, function()
+      util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.shuttle, function()
         window_shuttle(self.left_winid, self.right_winid)
       end)
     end,

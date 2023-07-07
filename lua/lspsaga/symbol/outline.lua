@@ -12,6 +12,7 @@ local buf_set_extmark = api.nvim_buf_set_extmark
 local outline_conf = config.outline
 local ns = api.nvim_create_namespace('SagaOutline')
 local beacon = require('lspsaga.beacon').jump_beacon
+local slist = require('lspsaga.slist')
 local ctx = {}
 
 function ot.__newindex(t, k, v)
@@ -57,25 +58,9 @@ local function create_outline_window()
     :wininfo()
 end
 
-local function tail_push(list, node)
-  local tmp = list
-  if not tmp.value then
-    tmp.value = node
-    return
-  end
-
-  while true do
-    if not tmp.next then
-      break
-    end
-    tmp = tmp.next
-  end
-  tmp.next = { value = node }
-end
-
 function ot:parse(symbols)
   local row = 0
-  self.list = { value = nil, next = nil }
+  self.list = slist.new()
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
@@ -137,45 +122,16 @@ function ot:parse(symbols)
           virt_text = { { config.ui.collapse, 'SagaToggle' } },
           virt_text_pos = 'overlay',
         })
-        tail_push(self.list, copy)
+        slist.tail_push(self.list, copy)
         recursive_parse(node.children, level + 1)
       else
-        tail_push(self.list, copy)
+        slist.tail_push(self.list, copy)
       end
     end
   end
 
   recursive_parse(symbols)
   api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
-end
-
-local function find_node(list, curlnum)
-  local tmp = list
-  while tmp do
-    if tmp.value.winline == curlnum then
-      return tmp
-    end
-    tmp = tmp.next
-  end
-end
-
-local function update_winline(node, count)
-  node = node.next
-  local total = count < 0 and math.abs(count) or 0
-  while node do
-    if total ~= 0 then
-      node.value.winline = -1
-      total = total - 1
-      if node.value.expand then
-        node.value.expand = false
-      end
-    else
-      if node.value.winline ~= -1 then
-        node.value.winline = node.value.winline + count
-      end
-    end
-    node = node.next
-  end
 end
 
 function ot:collapse(node, curlnum)
@@ -238,13 +194,13 @@ function ot:collapse(node, curlnum)
   end
 
   if tmp then
-    update_winline(tmp, row - curlnum + 1, curlnum)
+    slist.update_winline(tmp, row - curlnum + 1, curlnum)
   end
 end
 
 function ot:expand_or_jump()
   local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
-  local node = find_node(self.list, curlnum)
+  local node = slist.find_node(self.list, curlnum)
   if not node then
     return
   end
@@ -269,7 +225,7 @@ function ot:expand_or_jump()
       virt_text_pos = 'overlay',
     })
 
-    update_winline(node, -(_end - curlnum))
+    slist.update_winline(node, -(_end - curlnum))
     node.value.expand = false
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
     return
@@ -363,7 +319,7 @@ function ot:preview(group)
     buffer = self.bufnr,
     callback = function()
       local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
-      local node = find_node(self.list, curlnum)
+      local node = slist.find_node(self.list, curlnum)
       if not node then
         if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
           api.nvim_win_close(self.preview_winid, true)
