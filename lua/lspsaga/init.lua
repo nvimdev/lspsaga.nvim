@@ -11,7 +11,6 @@ local default_config = {
     collapse = '⊟',
     code_action = '💡',
     actionfix = ' ',
-    theme = 'arrow',
     lines = { '┗', '┣', '┃', '━', '┏' },
     kind = nil,
     imp_sign = '󰳛 ',
