@@ -195,8 +195,8 @@ function def:peek_definition(method)
     end
 
     local node = {
-      bufnr = vim.uri_to_bufnr(result[1].targetUri),
-      selectionRange = result[1].targetSelectionRange,
+      bufnr = vim.uri_to_bufnr(result[1].targetUri or result[1].uri),
+      selectionRange = result[1].targetSelectionRange or result[1].range,
     }
     if not api.nvim_buf_is_loaded(node.bufnr) then
       fn.bufload(node.bufnr)
@@ -249,7 +249,7 @@ function def:goto_definition(method)
 
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local width = #api.nvim_get_current_line()
-    util.jump_beacon({ res.range.start.line, res.range.start.character }, width)
+    require('lspsaga.beacon').jump_beacon({ res.range.start.line, res.range.start.character }, width)
   end
   if method == 1 then
     lsp.buf.definition()
