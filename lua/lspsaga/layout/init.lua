@@ -31,7 +31,7 @@ function M:left(height, width, bufnr)
 end
 
 function M:bufopt(name, value)
-  local bufnr = LEFT == 1 and self.left_bufnr or self.right_bufnr
+  local bufnr = self.current == LEFT and self.left_bufnr or self.right_bufnr
   if type(name) == 'table' then
     for key, val in pairs(name) do
       api.nvim_set_option_value(key, val, { buf = bufnr })
@@ -43,7 +43,7 @@ function M:bufopt(name, value)
 end
 
 function M:winopt(name, value)
-  local winid = LEFT == 1 and self.left_winid or self.right_winid
+  local winid = self.current == LEFT and self.left_winid or self.right_winid
   if type(name) == 'table' then
     for key, val in pairs(name) do
       api.nvim_set_option_value(key, val, { win = winid, scope = 'local' })
@@ -78,6 +78,16 @@ function M:done(fn)
     fn(self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid)
   end
   return self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid
+end
+
+function M:close()
+  for _, id in ipairs({ self.left_winid, self.right_winid }) do
+    if api.nvim_win_is_valid(id) then
+      api.nvim_win_close(id, true)
+    end
+  end
+  self.left_winid = nil
+  self.right_winid = nil
 end
 
 return M

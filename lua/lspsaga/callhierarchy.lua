@@ -307,7 +307,16 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       local height = bit.rshift(vim.o.lines, 1) - 4
       self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid = ly:new(self.layout)
         :left(height, 20)
+        :bufopt({
+          ['filetype'] = 'sagacallhierarchy',
+          ['buftype'] = 'nofile',
+          ['bufhidden'] = 'wipe',
+        })
         :right(20)
+        :bufopt({
+          ['buftype'] = 'nofile',
+          ['bufhidden'] = 'wipe',
+        })
         :done(function(bufnr, winid, _, right_winid)
           self:keymap(bufnr, winid, _, right_winid)
         end)

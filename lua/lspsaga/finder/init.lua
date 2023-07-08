@@ -39,8 +39,13 @@ function fd:init_layout()
     :bufopt({
       ['filetype'] = 'sagafinder',
       ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
     })
     :right()
+    :bufopt({
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+    })
     :done()
   self:apply_maps()
   self:event()
@@ -217,7 +222,7 @@ function fd:event()
 end
 
 function fd:clean()
-  util.close_win({ self.lwinid, self.rwinid })
+  ly:close()
   slist.list_map(self.list, function(node)
     if node.value.wipe then
       api.nvim_buf_delete(node.value.bufnr, { force = true })
