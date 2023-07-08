@@ -2,6 +2,7 @@ local api = vim.api
 require('lspsaga').setup({})
 local win = require('lspsaga.window')
 local eq = assert.equal
+vim.opt.swapfile = false
 
 describe('window module', function()
   local bufnr, winid
@@ -67,7 +68,7 @@ describe('window module', function()
   end)
 
   it('can create normal window', function()
-    bufnr, winid = win:new_normal('sp')
+    bufnr, winid = win:new_normal('sp'):wininfo()
     eq(2, #api.nvim_list_wins())
   end)
 
