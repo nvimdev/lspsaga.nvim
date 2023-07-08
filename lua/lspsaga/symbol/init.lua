@@ -79,7 +79,7 @@ function symbol:do_request(buf, client, callback)
     if not api.nvim_buf_is_loaded(ctx.bufnr) then
       return
     end
-    self[buf].pending_request = false
+    self[ctx.bufnr].pending_request = false
 
     if callback then
       callback(result)
@@ -90,6 +90,10 @@ function symbol:do_request(buf, client, callback)
     end
 
     self[ctx.bufnr].symbols = result
+    if self[ctx.bufnr].callback then
+      self[ctx.bufnr].callback({ symbols=result })
+      self[ctx.bufnr].callback = nil
+    end
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
@@ -100,6 +104,10 @@ function symbol:do_request(buf, client, callback)
   if register then
     self:buf_watcher(buf, client)
   end
+end
+
+function symbol:register_callback(buf, cb)
+  self[buf].callback = cb
 end
 
 function symbol:get_buf_symbols(buf)

@@ -383,15 +383,7 @@ function ot:clean_after_close()
   })
 end
 
-function ot:outline(buf)
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    api.nvim_win_close(self.winid, true)
-    clean_ctx()
-    return
-  end
-
-  self.main_buf = buf or api.nvim_get_current_buf()
-  local res = symbol:get_buf_symbols(self.main_buf)
+function ot:outline_parse(res)
   if not res or not res.symbols or #res.symbols == 0 then
     return
   end
@@ -418,6 +410,24 @@ function ot:outline(buf)
 
   if outline_conf.auto_close then
     self:auto_close(group)
+  end
+end
+
+function ot:outline(buf)
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
+    clean_ctx()
+    return
+  end
+
+  self.main_buf = buf or api.nvim_get_current_buf()
+  local res = symbol:get_buf_symbols(self.main_buf)
+  if res and res.symbols then
+    self:outline_parse(res)
+  else
+    symbol:register_callback(self.main_buf, function(t)
+      self:outline_parse(t)
+    end)
   end
 end
 
