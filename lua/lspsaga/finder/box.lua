@@ -63,6 +63,7 @@ function M.spinner()
     :new_float({
       width = 10,
       height = 1,
+      border = 'solid',
       focusable = false,
       noautocmd = true,
     }, true)
