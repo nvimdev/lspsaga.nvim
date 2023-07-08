@@ -105,7 +105,7 @@ function ot:parse(symbols)
 
       if config.outline.detail then
         buf_set_extmark(self.bufnr, ns, row - 1, 0, {
-          virt_text = { { node.detail, 'Comment' } },
+          virt_text = { { node.detail or '', 'Comment' } },
         })
       end
 

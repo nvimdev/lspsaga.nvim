@@ -207,7 +207,7 @@ local function init_winbar(buf)
     buffer = buf,
     callback = function()
       local res = symbol:get_buf_symbols(buf)
-      if res.symbols then
+      if res and res.symbols then
         render_symbol_winbar(buf, res.symbols)
       end
     end,
