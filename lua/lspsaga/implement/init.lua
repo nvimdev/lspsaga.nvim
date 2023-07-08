@@ -50,10 +50,8 @@ local function try_render(client_id, bufnr, pos, data)
     if data.res_count then
       if data.res_count == #result then
         return
-      else
-        pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
-        api.nvim_buf_del_extmark(bufnr, ns, data.virt_id)
       end
+      pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
     end
 
     if config.sign and #result > 0 then
@@ -73,7 +71,10 @@ local function try_render(client_id, bufnr, pos, data)
       indent = ('\t'):rep(level)
     end
 
-    data.virt_id = uv.hrtime()
+    if not data.virt_id then
+      data.virt_id = uv.hrtime()
+    end
+
     api.nvim_buf_set_extmark(bufnr, ns, pos.line, 0, {
       id = data.virt_id,
       virt_lines = { { { indent .. #result .. ' ' .. word, 'Comment' } } },
@@ -128,9 +129,13 @@ local function clean(buf)
   end
 end
 
-local function render(client_id, bufnr, symbols, need_clean)
+local function render(client_id, bufnr, symbols)
   local langdata = langmap(bufnr)
-  local new = {}
+  local hit = buffers_cache[bufnr] and {} or nil
+
+  if not buffers_cache[bufnr] then
+    buffers_cache[bufnr] = {}
+  end
 
   local function parse_symbol(nodes)
     for _, item in ipairs(nodes) do
@@ -139,22 +144,19 @@ local function render(client_id, bufnr, symbols, need_clean)
         local scol = item.selectionRange.start.character
         local erow = item.selectionRange['end'].line
         local ecol = item.selectionRange['end'].character
-
         local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
-        new[#new + 1] = word
-        local before = is_rename(buffers_cache[bufnr], item.range, word)
-        if before then
-          buffers_cache[bufnr][before].range = item.range
-          buffers_cache[bufnr][word] = vim.deepcopy(buffers_cache[bufnr][before])
-          buffers_cache[bufnr][before] = nil
-        elseif buffers_cache[bufnr][word] then
-          if range_compare(buffers_cache[bufnr][word].range, item.range) then
-            buffers_cache[bufnr][word].range = item.range
-          end
-        else
+        if not buffers_cache[bufnr][word] then
           buffers_cache[bufnr][word] = {
             range = item.range,
           }
+        else
+          if not range_compare(buffers_cache[bufnr][word].range, item.range) then
+            buffers_cache[bufnr][word].range = item.range
+          end
+        end
+
+        if hit then
+          hit[#hit + 1] = word
         end
 
         try_render(client_id, bufnr, item.selectionRange.start, buffers_cache[bufnr][word])
@@ -166,41 +168,32 @@ local function render(client_id, bufnr, symbols, need_clean)
   end
 
   parse_symbol(symbols)
-  if not need_clean then
-    return
-  end
 
-  if #new == 0 then
-    clean(bufnr)
-    return
-  end
+  if hit and #hit > 0 then
+    local nonexist = vim.tbl_filter(function(word)
+      return not vim.tbl_contains(hit, word)
+    end, vim.tbl_keys(buffers_cache[bufnr]))
 
-  local non_exists = vim.tbl_filter(function(item)
-    return not vim.tbl_contains(new, item)
-  end, vim.tbl_keys(buffers_cache[bufnr]) or {})
-
-  if #non_exists == 0 then
-    return
-  end
-
-  for _, word in ipairs(non_exists) do
-    local data = buffers_cache[bufnr][word]
-    pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
-    pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
-    buffers_cache[bufnr][word] = nil
+    for _, word in ipairs(nonexist) do
+      local data = buffers_cache[bufnr][word]
+      pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
+      pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
+      buffers_cache[bufnr][word] = nil
+    end
   end
 end
 
-local function start(buf, client_id)
-  api.nvim_create_autocmd('CursorMoved', {
+local function start(buf, client_id, symbols)
+  if symbols then
+    render(client_id, buf, symbols)
+  end
+
+  api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
     buffer = buf,
     callback = function(args)
-      if not buffers_cache[args.buf] then
-        buffers_cache[args.buf] = {}
-      end
       local res = symbol:get_buf_symbols(args.buf)
       if res and res.symbols and #res.symbols > 0 then
-        render(client_id, buf, res.symbols, true)
+        render(client_id, buf, res.symbols)
       end
     end,
     desc = '[Lspsaga] Implement show',

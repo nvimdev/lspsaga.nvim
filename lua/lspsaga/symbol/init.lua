@@ -80,8 +80,9 @@ function symbol:do_request(buf, client, callback)
       return
     end
     self[buf].pending_request = false
+
     if callback then
-      callback()
+      callback(result)
     end
 
     if err then
@@ -95,6 +96,7 @@ function symbol:do_request(buf, client, callback)
       data = { symbols = result or {}, client_id = ctx.client_id, bufnr = ctx.bufnr },
     })
   end, buf)
+
   if register then
     self:buf_watcher(buf, client)
   end
@@ -155,17 +157,20 @@ function symbol:register_module()
       if self[args.buf] or api.nvim_get_current_buf() ~= args.buf then
         return
       end
+
       local client = lsp.get_client_by_id(args.data.client_id)
       if not client.supports_method('textDocument/documentSymbol') then
         return
       end
+
       local winbar = require('lspsaga.symbol.winbar')
       winbar.file_bar(args.buf)
 
-      self:do_request(args.buf, client, function()
+      self:do_request(args.buf, client, function(result)
         winbar.init_winbar(args.buf)
+
         if config.implement.enable and client.supports_method('textDocument/implementation') then
-          require('lspsaga.implement').start(args.buf, args.data.client_id)
+          require('lspsaga.implement').start(args.buf, args.data.client_id, result)
         end
       end)
     end,
