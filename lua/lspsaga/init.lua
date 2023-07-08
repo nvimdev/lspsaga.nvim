@@ -94,7 +94,7 @@ local default_config = {
   },
   rename = {
     in_select = true,
-    auto_save = true,
+    auto_save = false,
     project_max_width = 0.5,
     project_max_height = 0.5,
     keys = {
