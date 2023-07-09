@@ -95,7 +95,7 @@ end
 function fd:handler(method, results, spin_close, done)
   if not results or util.res_isempty(results) then
     spin_close()
-    vim.notify('[Lspsaga] No definition/reference', vim.log.levels.WARN)
+    vim.notify(('[Lspsaga] no response of %s'):format(method), vim.log.levels.WARN)
     return
   end
   local rendered_fname = {}
