@@ -91,8 +91,26 @@ function fd:method_title(method, row)
   slist.tail_push(self.list, n)
 end
 
+local function is_empty(results)
+  -- handle {{}}
+  if vim.tbl_isempty(results) then
+    return true
+  end
+  for i, res in ipairs(results) do
+    if res.result and #res.result > 0 then
+      return false
+    end
+  end
+  return true
+end
+
 function fd:handler(method, results, spin_close, done)
-  if not results or vim.tbl_isempty(results) then
+  if not results or is_empty(results) then
+    spin_close()
+    vim.notify(
+      '[Lspsaga] No definition/reference',
+      vim.log.levels.WARN
+    )
     return
   end
   local rendered_fname = {}
