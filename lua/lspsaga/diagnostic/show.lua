@@ -3,6 +3,7 @@ local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 local diag = require('lspsaga.diagnostic')
 local config = require('lspsaga').config
+local beacon = require('lspsaga.beacon').jump_beacon
 local ui = config.ui
 local diag_conf = config.diagnostic
 local ns = api.nvim_create_namespace('SagaDiagnostic')
@@ -238,6 +239,7 @@ function sd:toggle_or_jump(entrys_list)
       wins[#wins] = 0
     end
     api.nvim_win_set_cursor(wins[#wins], { tonumber(ln) + 1, tonumber(col) })
+    beacon({ tonumber(ln), 0 }, #api.nvim_get_current_line())
     clean_ctx()
     return
   end

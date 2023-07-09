@@ -8,6 +8,7 @@ local buf_set_extmark = api.nvim_buf_set_extmark
 local kind = require('lspsaga.lspkind').kind
 local ly = require('lspsaga.layout')
 local win = require('lspsaga.window')
+local beacon = require('lspsaga.beacon').jump_beacon
 local ns = api.nvim_create_namespace('SagaCallhierarchy')
 
 local ch = {}
@@ -18,6 +19,7 @@ function ch.__newindex(t, k, v)
 end
 
 function ch:clean()
+  ly:close()
   slist.list_map(self.list, function(node)
     if node.value.wipe then
       api.nvim_buf_delete(node.value.bufnr, { force = true })
@@ -201,23 +203,23 @@ local function window_shuttle(winid, right_winid)
   end
 end
 
-function ch:keymap(bufnr, winid, _, right_winid)
-  util.map_keys(bufnr, config.callhierarchy.keys.close, function()
-    util.close_win({ winid, right_winid })
+function ch:keymap()
+  util.map_keys(self.left_bufnr, config.callhierarchy.keys.close, function()
+    util.close_win({ self.left_winid, self.right_winid })
     self:clean()
   end)
 
-  util.map_keys(bufnr, config.callhierarchy.keys.toggle_or_req, function()
+  util.map_keys(self.left_bufnr, config.callhierarchy.keys.toggle_or_req, function()
     self:toggle_or_request()
   end)
 
-  util.map_keys(bufnr, config.callhierarchy.keys.shuttle, function()
-    window_shuttle(winid, right_winid)
+  util.map_keys(self.left_bufnr, config.callhierarchy.keys.shuttle, function()
+    window_shuttle(self.left_winid, self.right_winid)
   end)
 
   local tbl = { 'edit', 'vsplit', 'split', 'tabe' }
   for _, action in ipairs(tbl) do
-    util.map_keys(bufnr, config.callhierarchy[action], function()
+    util.map_keys(self.left_bufnr, config.callhierarchy.keys[action], function()
       local curlnum = api.nvim_win_get_cursor(0)[1]
       local curnode = slist.find_node(self.list, curlnum)
       if not curnode then
@@ -225,10 +227,13 @@ function ch:keymap(bufnr, winid, _, right_winid)
       end
       local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
       local fname = vim.uri_to_fname(data.uri)
+      local pos = { data.selectionRange.start.line + 1, data.selectionRange.start.character }
+      self:clean()
       local restore = win:minimal_restore()
       vim.cmd[action](fname)
       restore()
-      self:clean()
+      api.nvim_win_set_cursor(0, pos)
+      beacon({ pos[1], 0 }, #api.nvim_get_current_line())
     end)
   end
 end
@@ -322,10 +327,9 @@ function ch:call_hierarchy(item, client, timer, curlnum)
           ['buftype'] = 'nofile',
           ['bufhidden'] = 'wipe',
         })
-        :done(function(bufnr, winid, _, right_winid)
-          self:keymap(bufnr, winid, _, right_winid)
-        end)
+        :done()
       self:peek_view()
+      self:keymap()
     end
 
     local indent = (' '):rep(inlevel + 2)

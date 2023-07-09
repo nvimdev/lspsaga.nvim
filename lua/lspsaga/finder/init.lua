@@ -10,6 +10,7 @@ local buf_add_highlight = api.nvim_buf_add_highlight
 local config = require('lspsaga').config
 local select_ns = api.nvim_create_namespace('SagaSelect')
 local win = require('lspsaga.window')
+local beacon = require('lspsaga.beacon').jump_beacon
 
 local fd = {}
 local ctx = {}
@@ -255,13 +256,14 @@ function fd:toggle_or_open()
       return
     end
     if node.value.expand == nil then
-      local restore = win:minimal_restore()
       local fname = vim.uri_to_fname(node.value.uri)
       local pos = { node.value.range.start.line + 1, node.value.range.start.character }
       self:clean()
+      local restore = win:minimal_restore()
       vim.cmd.edit(fname)
       restore()
       api.nvim_win_set_cursor(0, pos)
+      beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
       return
     end
 
@@ -336,6 +338,7 @@ function fd:apply_maps()
         vim.cmd[action](fname)
         restore()
         api.nvim_win_set_cursor(0, pos)
+        beacon({ pos[1], 0 }, #api.nvim_get_current_line())
         return
       end
 

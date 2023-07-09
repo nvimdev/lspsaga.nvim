@@ -4,6 +4,7 @@ local log = require('lspsaga.logger')
 local util = require('lspsaga.util')
 local win = require('lspsaga.window')
 local buf_del_keymap = api.nvim_buf_del_keymap
+local beacon = require('lspsaga.beacon').jump_beacon
 local def = {}
 def.__index = def
 
@@ -78,6 +79,7 @@ function def:apply_maps(bufnr)
         self:close_all()
         vim.cmd[action](fname)
         api.nvim_win_set_cursor(0, pos)
+        beacon({ pos[1], 0 }, #api.nvim_get_current_line())
       end)
     else
       util.map_keys(bufnr, map, function()
@@ -209,6 +211,10 @@ function def:peek_definition(method)
       node.winid,
       { node.selectionRange.start.line + 1, node.selectionRange.start.character }
     )
+    beacon(
+      { node.selectionRange.start.line, node.selectionRange.start.character },
+      #api.nvim_get_current_line()
+    )
     self:apply_maps(node.bufnr)
     self.list[#self.list + 1] = node
   end)
@@ -249,10 +255,7 @@ function def:goto_definition(method)
 
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local width = #api.nvim_get_current_line()
-    require('lspsaga.beacon').jump_beacon(
-      { res.range.start.line, res.range.start.character },
-      width
-    )
+    beacon({ res.range.start.line, res.range.start.character }, width)
   end
   if method == 1 then
     lsp.buf.definition()
