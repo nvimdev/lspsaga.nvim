@@ -133,6 +133,7 @@ local default_config = {
       split = 'i',
       tabe = 't',
       close = '<C-c>k',
+      quit = 'q',
       shuttle = '[w',
       toggle_or_req = 'u',
     },

@@ -49,7 +49,7 @@ function symbol:buf_watcher(buf, client_id)
         return
       end
       buf_changedtick[buf] = changedtick
-      if not self[buf].pending_request then
+      if self[buf] and not self[buf].pending_request then
         defer_request(changedtick)
       end
     end,

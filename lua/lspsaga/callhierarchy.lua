@@ -209,6 +209,11 @@ function ch:keymap()
     self:clean()
   end)
 
+  util.map_keys(self.left_bufnr, config.callhierarchy.keys.quit, function()
+    util.close_win({ self.left_winid, self.right_winid })
+    self:clean()
+  end)
+
   util.map_keys(self.left_bufnr, config.callhierarchy.keys.toggle_or_req, function()
     self:toggle_or_request()
   end)
