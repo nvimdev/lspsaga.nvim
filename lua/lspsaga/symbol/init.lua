@@ -21,23 +21,23 @@ end
 
 local buf_changedtick = {}
 
-function symbol:buf_watcher(buf, client)
-  local function defer_request(changedtick)
+function symbol:buf_watcher(buf, client_id)
+  local function defer_request(bn, changedtick)
     vim.defer_fn(function()
-      if not self[buf] or not api.nvim_buf_is_valid(buf) then
+      if not self[bn] or not api.nvim_buf_is_valid(bn) then
         return
       end
-      self[buf].pending_request = true
-      self:do_request(buf, client, function()
-        if not api.nvim_buf_is_valid(buf) then
+      self[bn].pending_request = true
+      self:do_request(bn, client_id, function()
+        if not api.nvim_buf_is_valid(bn) then
           return
         end
-        self[buf].pending_request = false
-        if changedtick < buf_changedtick[buf] then
-          changedtick = api.nvim_buf_get_changedtick(buf)
+        self[bn].pending_request = false
+        if changedtick < buf_changedtick[bn] then
+          changedtick = api.nvim_buf_get_changedtick(bn)
           defer_request(changedtick)
         else
-          self[buf].changedtick = changedtick
+          self[bn].changedtick = changedtick
         end
       end)
     end, 1000)
@@ -48,9 +48,9 @@ function symbol:buf_watcher(buf, client)
       if b ~= buf then
         return
       end
-      buf_changedtick[buf] = changedtick
-      if not self[buf].pending_request then
-        defer_request(changedtick)
+      buf_changedtick[b] = changedtick
+      if not self[b].pending_request then
+        defer_request(b, changedtick)
       end
     end,
   })
@@ -63,23 +63,29 @@ function symbol:buf_watcher(buf, client)
   })
 end
 
-function symbol:do_request(buf, client, callback)
+function symbol:do_request(buf, client_id, callback)
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
 
-  local register = false
+  local client = vim.lsp.get_client_by_id(client_id)
+  if not client then
+    return
+  end
+
   if not self[buf] then
     self[buf] = {}
-    register = true
+    self:buf_watcher(buf, client.id)
   end
 
   self[buf].pending_request = true
+
+  ---@diagnostic disable-next-line: invisible
   client.request('textDocument/documentSymbol', params, function(err, result, ctx)
-    if not api.nvim_buf_is_loaded(ctx.bufnr) then
+    if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] then
       return
     end
-    self[buf].pending_request = false
+    self[ctx.bufnr].pending_request = false
 
     if callback then
       callback(result)
@@ -90,16 +96,13 @@ function symbol:do_request(buf, client, callback)
     end
 
     self[ctx.bufnr].symbols = result
+
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
       data = { symbols = result or {}, client_id = ctx.client_id, bufnr = ctx.bufnr },
     })
   end, buf)
-
-  if register then
-    self:buf_watcher(buf, client)
-  end
 end
 
 function symbol:get_buf_symbols(buf)
@@ -166,7 +169,10 @@ function symbol:register_module()
       local winbar = require('lspsaga.symbol.winbar')
       winbar.file_bar(args.buf)
 
-      self:do_request(args.buf, client, function(result)
+      self:do_request(args.buf, args.data.client_id, function(result)
+        if api.nvim_get_current_buf() ~= args.buf then
+          return
+        end
         winbar.init_winbar(args.buf)
 
         if config.implement.enable and client.supports_method('textDocument/implementation') then
