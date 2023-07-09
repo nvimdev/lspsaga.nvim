@@ -241,9 +241,12 @@ local function apply_action(action, client, enriched_ctx)
 end
 
 function act:support_resolve(client)
-  local reg = client.dynamic_capabilities:get('textDocument/codeAction', { bufnr = ctx.bufnr })
-  return vim.tbl_get(reg or {}, 'registerOptions', 'resolveProvider')
-    or client.supports_method('codeAction/resolve')
+  if vim.version().minor >= 10 then
+    local reg = client.dynamic_capabilities:get('textDocument/codeAction', { bufnr = ctx.bufnr })
+    return vim.tbl_get(reg or {}, 'registerOptions', 'resolveProvider')
+      or client.supports_method('codeAction/resolve')
+  end
+  return vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
 end
 
 function act:get_resolve_action(client, action, bufnr)
