@@ -393,11 +393,17 @@ function ot:outline(buf)
   self.main_buf = buf or api.nvim_get_current_buf()
   local res = symbol:get_buf_symbols(self.main_buf)
   if not res or not res.symbols or #res.symbols == 0 then
+    vim.inspect(
+      '[lspsaga] get symbols failed server may not initialed try again later',
+      vim.log.levels.INFO
+    )
     return
   end
+
   if not self.winid or not api.nvim_win_is_valid(self.winid) then
     self.bufnr, self.winid = create_outline_window()
   end
+
   self:parse(res.symbols)
   util.map_keys(self.bufnr, config.outline.keys.toggle_or_jump, function()
     self:expand_or_jump()
