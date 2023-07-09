@@ -1,18 +1,14 @@
 local api = vim.api
-local window = require('lspsaga.window')
+local win = require('lspsaga.window')
 local term = {}
 
 local ctx = {}
 
-function term:open_float_terminal(command)
+function term:open_float_terminal(args)
   local cur_buf = api.nvim_get_current_buf()
   if not vim.tbl_isempty(ctx) and ctx.term_bufnr == cur_buf then
     api.nvim_win_close(ctx.term_winid, true)
-    if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
-      api.nvim_win_close(ctx.shadow_winid, true)
-    end
     ctx.term_winid = nil
-    ctx.shadow_winid = nil
     if ctx.cur_win and ctx.pos then
       api.nvim_set_current_win(ctx.cur_win)
       api.nvim_win_set_cursor(0, ctx.pos)
@@ -22,8 +18,8 @@ function term:open_float_terminal(command)
     return
   end
 
-  local cmd = command and command
-    or (require('lspsaga.libs').iswin and 'cmd.exe' or os.getenv('SHELL'))
+  local cmd = (#args == 1 and args[1]) and args[1]
+    or (require('lspsaga.util').iswin and 'cmd.exe' or os.getenv('SHELL'))
   -- calculate our floating window size
   local win_height = math.ceil(vim.o.lines * 0.7)
   local win_width = math.ceil(vim.o.columns * 0.7)
@@ -33,7 +29,7 @@ function term:open_float_terminal(command)
   local col = math.ceil((vim.o.columns - win_width) * 0.5)
 
   -- set some options
-  local opts = {
+  local float_opt = {
     style = 'minimal',
     relative = 'editor',
     width = win_width,
@@ -42,26 +38,20 @@ function term:open_float_terminal(command)
     col = col,
   }
 
-  local content_opts = {
-    contents = {},
-    enter = true,
-    bufhidden = 'hide',
-    highlight = {
-      normal = 'TerminalNormal',
-      border = 'TerminalBorder',
-    },
-  }
   local spawn_new = vim.tbl_isempty(ctx) and true or false
 
   if not spawn_new then
-    content_opts.bufnr = ctx.term_bufnr
+    float_opt.bufnr = ctx.term_bufnr
     api.nvim_buf_set_option(ctx.term_bufnr, 'modified', false)
   end
   ctx.cur_win = api.nvim_get_current_win()
   ctx.pos = api.nvim_win_get_cursor(0)
 
-  ctx.term_bufnr, ctx.term_winid, ctx.shadow_bufnr, ctx.shadow_winid =
-    window.open_shadow_float_win(content_opts, opts)
+  ctx.term_bufnr, ctx.term_winid = win
+    :new_float(float_opt, true, true)
+    :bufopt('bufhidden', 'hide')
+    :winhl('TerminalNormal', 'TerminalBorder')
+    :wininfo()
 
   if spawn_new then
     vim.fn.termopen(cmd, {

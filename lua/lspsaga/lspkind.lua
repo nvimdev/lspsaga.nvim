@@ -1,5 +1,4 @@
 local ui = require('lspsaga').config.ui
-local api = vim.api
 
 local function merge_custom(kind)
   local function find_index_by_type(k)
@@ -8,10 +7,9 @@ local function merge_custom(kind)
         return index
       end
     end
-    return nil
   end
 
-  for k, v in pairs(ui.kind) do
+  for k, v in ipairs(ui.kind or {}) do
     local index = find_index_by_type(k)
     if not index then
       vim.notify('[lspsaga.nvim] could not find kind in default')
@@ -23,38 +21,39 @@ local function merge_custom(kind)
       kind[index][3] = v
     else
       vim.notify('[Lspsaga.nvim] value must be string or table')
+      return
     end
   end
 end
 
 local function get_kind()
   local kind = {
-    [1] = { 'File', ' ', 'Tag' },
-    [2] = { 'Module', ' ', 'Exception' },
-    [3] = { 'Namespace', ' ', 'Include' },
-    [4] = { 'Package', ' ', 'Label' },
-    [5] = { 'Class', ' ', 'Include' },
-    [6] = { 'Method', ' ', 'Function' },
-    [7] = { 'Property', ' ', '@property' },
-    [8] = { 'Field', ' ', '@field' },
-    [9] = { 'Constructor', ' ', '@constructor' },
-    [10] = { 'Enum', ' ', '@number' },
-    [11] = { 'Interface', ' ', 'Type' },
-    [12] = { 'Function', '󰡱 ', 'Function' },
-    [13] = { 'Variable', ' ', '@variable' },
-    [14] = { 'Constant', ' ', 'Constant' },
-    [15] = { 'String', '󰅳 ', 'String' },
-    [16] = { 'Number', '󰎠 ', 'Number' },
-    [17] = { 'Boolean', ' ', 'Boolean' },
-    [18] = { 'Array', '󰅨 ', 'Type' },
-    [19] = { 'Object', ' ', 'Type' },
-    [20] = { 'Key', ' ', 'Constant' },
-    [21] = { 'Null', '󰟢 ', 'Constant' },
-    [22] = { 'EnumMember', ' ', 'Number' },
-    [23] = { 'Struct', ' ', 'Type' },
-    [24] = { 'Event', ' ', 'Constant' },
-    [25] = { 'Operator', ' ', 'Operator' },
-    [26] = { 'TypeParameter', ' ', 'Type' },
+    { 'File', ' ', 'Tag' },
+    { 'Module', ' ', 'Exception' },
+    { 'Namespace', ' ', 'Include' },
+    { 'Package', ' ', 'Label' },
+    { 'Class', ' ', 'Include' },
+    { 'Method', ' ', 'Function' },
+    { 'Property', ' ', '@property' },
+    { 'Field', ' ', '@field' },
+    { 'Constructor', ' ', '@constructor' },
+    { 'Enum', ' ', '@number' },
+    { 'Interface', ' ', 'Type' },
+    { 'Function', '󰡱 ', 'Function' },
+    { 'Variable', ' ', '@variable' },
+    { 'Constant', ' ', 'Constant' },
+    { 'String', '󰅳 ', 'String' },
+    { 'Number', '󰎠 ', 'Number' },
+    { 'Boolean', ' ', 'Boolean' },
+    { 'Array', '󰅨 ', 'Type' },
+    { 'Object', ' ', 'Type' },
+    { 'Key', ' ', 'Constant' },
+    { 'Null', '󰟢 ', 'Constant' },
+    { 'EnumMember', ' ', 'Number' },
+    { 'Struct', ' ', 'Type' },
+    { 'Event', ' ', 'Constant' },
+    { 'Operator', ' ', 'Operator' },
+    { 'TypeParameter', ' ', 'Type' },
     -- ccls
     [252] = { 'TypeAlias', ' ', 'Type' },
     [253] = { 'Parameter', ' ', '@parameter' },
@@ -72,51 +71,8 @@ local function get_kind()
   return kind
 end
 
-local function other_groups()
-  local prefix = 'SagaWinbar'
-  return { prefix .. 'Filename', prefix .. 'FolderName' }
-end
-
-local function get_kind_group()
-  local prefix = 'SagaWinbar'
-  local res = {}
-  ---@diagnostic disable-next-line: param-type-mismatch
-  for _, item in pairs(get_kind()) do
-    res[#res + 1] = prefix .. item[1]
-  end
-  res = vim.list_extend(res, other_groups())
-  res[#res + 1] = 'SagaWinbarFileIcon'
-  res[#res + 1] = 'SagaWinbarSep'
-  return res
-end
-
-local function find_kind_group(name)
-  ---@diagnostic disable-next-line: param-type-mismatch
-  for _, v in pairs(get_kind()) do
-    if name:find(v[1]) then
-      return v[3]
-    end
-  end
-end
-
-local function init_kind_hl()
-  local others = other_groups()
-  local tbl = get_kind_group()
-  ---@diagnostic disable-next-line: param-type-mismatch
-  for i, v in pairs(tbl) do
-    if vim.tbl_contains(others, v) then
-      api.nvim_set_hl(0, v, { fg = '#bdbfb8', default = true })
-    elseif i == #tbl then
-      api.nvim_set_hl(0, v, { link = 'Operator', default = true })
-    else
-      local group = find_kind_group(v)
-      api.nvim_set_hl(0, v, { link = group, default = true })
-    end
-  end
-end
+local kind = get_kind()
 
 return {
-  init_kind_hl = init_kind_hl,
-  get_kind = get_kind,
-  get_kind_group = get_kind_group,
+  kind = kind,
 }

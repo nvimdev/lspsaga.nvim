@@ -1,54 +1,32 @@
 local api = vim.api
-
-local function theme_normal()
-  local conf = api.nvim_get_hl_by_name('Normal', true)
-  if conf.background then
-    return conf.background
-  end
-  return 'NONE'
-end
+local kind = require('lspsaga.lspkind').kind
 
 local function hi_define()
-  local bg = theme_normal()
   return {
     -- general
-    TitleString = { link = 'Title' },
-    TitleIcon = { link = 'Repeat' },
+    SagaTitle = { link = 'Title' },
     SagaBorder = { link = 'FloatBorder' },
-    SagaNormal = { bg = bg },
-    SagaExpand = { fg = '#475164' },
-    SagaCollapse = { fg = '#475164' },
+    SagaNormal = { link = 'NormalFloat' },
+    SagaToggle = { link = 'Comment' },
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
+    SagaVirtLine = { link = 'Comment' },
+    SagaSpinnerTitle = { link = 'Statement' },
+    SagaSpinner = { link = 'Statement' },
+    SagaText = { link = 'Comment' },
+    SagaSelect = { link = 'String' },
+    SagaSearch = { link = 'Search' },
+    SagaFinderFname = { link = 'Keyword' },
+    SagaIndent0 = { link = 'Comment' },
+    SagaIndent2 = { link = 'Comment' },
+    SagaIndent4 = { link = 'Comment' },
     -- code action
     ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
     ActionPreviewTitle = { link = 'Title' },
-    CodeActionNormal = { link = 'SagaNormal' },
-    CodeActionBorder = { link = 'SagaBorder' },
     CodeActionText = { link = '@variable' },
     CodeActionNumber = { link = 'DiffAdd' },
-    -- finder
-    FinderSelection = { link = 'String' },
-    FinderFName = {},
-    FinderCode = { link = 'Comment' },
-    FinderCount = { link = 'Constant' },
-    FinderIcon = { link = 'Type' },
-    FinderType = { link = '@property' },
-    FinderStart = { link = 'Function' },
-    --finder spinner
-    FinderSpinnerTitle = { link = 'Statement' },
-    FinderSpinner = { link = 'Statement' },
-    FinderPreview = { link = 'Search' },
-    FinderLines = { link = 'Operator' },
-    FinderNormal = { link = 'SagaNormal' },
-    FinderBorder = { link = 'SagaBorder' },
-    FinderPreviewBorder = { link = 'SagaBorder' },
-    -- definition
-    DefinitionBorder = { link = 'SagaBorder' },
-    DefinitionNormal = { link = 'SagaNormal' },
-    DefinitionSearch = { link = 'Search' },
     -- hover
     HoverNormal = { link = 'SagaNormal' },
     HoverBorder = { link = 'SagaBorder' },
@@ -58,36 +36,31 @@ local function hi_define()
     RenameMatch = { link = 'Search' },
     -- diagnostic
     DiagnosticBorder = { link = 'SagaBorder' },
-    DiagnosticSource = { link = 'Comment' },
     DiagnosticNormal = { link = 'SagaNormal' },
     DiagnosticText = {},
-    DiagnosticBufnr = { link = '@variable' },
-    DiagnosticFname = { link = 'KeyWord' },
     DiagnosticShowNormal = { link = 'SagaNormal' },
     DiagnosticShowBorder = { link = '@property' },
-    -- Call Hierachry
-    CallHierarchyNormal = { link = 'SagaNormal' },
-    CallHierarchyBorder = { link = 'SagaBorder' },
-    CallHierarchyIcon = { link = 'TitleIcon' },
-    CallHierarchyTitle = { link = 'Title' },
     -- lightbulb
     SagaLightBulb = { link = 'DiagnosticSignHint' },
-    -- shadow
-    SagaShadow = { link = 'FloatShadow' },
-    -- Outline
-    OutlineIndent = { fg = '#806d9e' },
-    OutlinePreviewBorder = { link = 'SagaNormal' },
-    OutlinePreviewNormal = { link = 'SagaBorder' },
-    OutlineWinSeparator = { link = 'WinSeparator' },
     -- Float term
     TerminalBorder = { link = 'SagaBorder' },
     TerminalNormal = { link = 'SagaNormal' },
+    -- Implement
+    SagaImpIcon = { link = 'PreProc' },
+    --Winbar
+    SagaWinbarSep = { link = 'Operator' },
+    SagaFileName = { link = 'Comment' },
+    SagaFolderName = { link = 'Comment' },
   }
 end
 
 local function init_highlight()
   for group, conf in pairs(hi_define()) do
     api.nvim_set_hl(0, group, vim.tbl_extend('keep', conf, { default = true }))
+  end
+
+  for _, item in pairs(kind) do
+    api.nvim_set_hl(0, 'Saga' .. item[1], { link = item[3], default = true })
   end
 end
 
