@@ -79,7 +79,7 @@ function def:apply_maps(bufnr)
         self:close_all()
         vim.cmd[action](fname)
         api.nvim_win_set_cursor(0, pos)
-        beacon({ pos[1], 0 }, #api.nvim_get_current_line())
+        beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
       end)
     else
       util.map_keys(bufnr, map, function()
