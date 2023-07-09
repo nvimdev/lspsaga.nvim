@@ -64,6 +64,10 @@ function act:action_callback(tuples, enriched_ctx)
   self.action_bufnr, self.action_winid = win
     :new_float(float_opt, true)
     :setlines(content)
+    :bufopt({
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+    })
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
@@ -235,12 +239,21 @@ local function apply_action(action, client, enriched_ctx)
   clean_ctx()
 end
 
+function act:support_resolve(client)
+  local reg = client.dynamic_capabilities:get('textDocument/codeAction', { bufnr = ctx.bufnr })
+  return vim.tbl_get(reg or {}, 'registerOptions', 'resolveProvider')
+    or client.supports_method('codeAction/resolve')
+end
+
+function act:get_resolve_action(client, action, bufnr)
+  if not self:support_resolve(client) then
+    return
+  end
+  return client.request_sync('codeAction/resolve', action, 1500, bufnr).result
+end
+
 function act:do_code_action(action, client, enriched_ctx)
-  if
-    not action.edit
-    and client
-    and vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
-  then
+  if not action.edit and client and self:support_resolve(client) then
     client.request('codeAction/resolve', action, function(err, resolved_action)
       if err then
         vim.notify(err.code .. ': ' .. err.message, vim.log.levels.ERROR)
@@ -305,6 +318,7 @@ function act:code_action(options)
   end
 
   self:send_request(api.nvim_get_current_buf(), options, function(tuples)
+    self.pending_request = false
     self:action_callback(tuples)
   end)
 end

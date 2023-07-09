@@ -3,6 +3,7 @@ local config = require('lspsaga').config
 local win = require('lspsaga.window')
 
 local function get_action_diff(main_buf, tuple)
+  local act = require('lspsaga.codeaction.init')
   local action = tuple[2]
   if not action then
     return
@@ -10,14 +11,8 @@ local function get_action_diff(main_buf, tuple)
 
   local id = tuple[1]
   local client = lsp.get_client_by_id(id)
-  if
-    not action.edit
-    and client
-    and vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
-  then
-    local results = lsp.buf_request_sync(main_buf, 'codeAction/resolve', action, 1000)
-    ---@diagnostic disable-next-line: need-check-nil
-    action = results[client.id].result
+  if not action.edit and client and act:support_resolve(client) then
+    action = act:get_resolve_action(client, action, main_buf)
     if not action then
       return
     end
@@ -132,8 +127,8 @@ local function create_preview_win(content, main_winid)
 end
 
 local function action_preview(main_winid, main_buf, tuple)
-  local tbl = get_action_diff(main_buf, tuple)
-  if not tbl or #tbl == 0 then
+  local diff = get_action_diff(main_buf, tuple)
+  if not diff or #diff == 0 then
     if preview_winid and api.nvim_win_is_valid(preview_winid) then
       api.nvim_win_close(preview_winid, true)
       preview_buf = nil
@@ -143,13 +138,15 @@ local function action_preview(main_winid, main_buf, tuple)
   end
 
   if not preview_winid or not api.nvim_win_is_valid(preview_winid) then
-    create_preview_win(tbl, main_winid)
+    create_preview_win(diff, main_winid)
   else
     --reuse before window
     vim.bo[preview_buf].modifiable = true
-    api.nvim_buf_set_lines(preview_buf, 0, -1, false, tbl)
+    api.nvim_buf_set_lines(preview_buf, 0, -1, false, diff)
     vim.bo[preview_buf].modifiable = false
-    api.nvim_win_set_config(preview_winid, { height = #tbl })
+    local win_conf = api.nvim_win_get_config(preview_winid)
+    win_conf.height = #diff
+    api.nvim_win_set_config(preview_winid, win_conf)
   end
 
   return preview_buf, preview_winid
