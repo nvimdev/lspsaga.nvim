@@ -23,6 +23,11 @@ function M.path_itera(buf)
   end
 end
 
+function M.path_sub(fname, root)
+  root = (root and fname:find(root)) and root or vim.env.HOME
+  return fname:sub(#root + 2)
+end
+
 --get icon hlgroup color
 function M.icon_from_devicon(ft)
   local ok, devicons = pcall(require, 'nvim-web-devicons')

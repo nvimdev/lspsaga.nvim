@@ -119,6 +119,7 @@ function fd:handler(method, results, spin_close, done)
           expand = true,
           virtid = uv.hrtime(),
           inlevel = 4,
+          client_id = client_id,
         }
         local client = lsp.get_client_by_id(client_id)
         node.line = fname:sub(#client.config.root_dir + 2)
@@ -144,6 +145,7 @@ function fd:handler(method, results, spin_close, done)
         range['end'].character,
         {}
       )[1]
+      res.client_id = client_id
       res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
       rendered_fname[#rendered_fname + 1] = fname
@@ -196,6 +198,13 @@ function fd:event()
       local range = node.value.range or node.value.targetSelectionRange or node.value.selectionRange
       api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, range.start.character })
       api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
+      local rwin_conf = api.nvim_win_get_config(self.rwinid)
+      local client = vim.lsp.get_client_by_id(node.value.client_id)
+      rwin_conf.title =
+        util.path_sub(api.nvim_buf_get_name(node.value.bufnr), client.config.root_dir)
+      rwin_conf.title_pos = 'center'
+      api.nvim_win_set_config(self.rwinid, rwin_conf)
+
       api.nvim_win_call(self.rwinid, function()
         fn.winrestview({ topline = range.start.line + 1 })
       end)
@@ -230,7 +239,7 @@ function fd:clean()
     end
     if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
       api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
-      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys.close)
+      pcall(api.nvim_buf_del_keymap, node.value.bufnr, 'n', config.finder.keys.close)
     end
   end)
   clean_ctx()

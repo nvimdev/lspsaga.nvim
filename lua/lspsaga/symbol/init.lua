@@ -22,22 +22,22 @@ end
 local buf_changedtick = {}
 
 function symbol:buf_watcher(buf, client_id)
-  local function defer_request(bn, changedtick)
+  local function defer_request(changedtick)
     vim.defer_fn(function()
-      if not self[bn] or not api.nvim_buf_is_valid(bn) then
+      if not self[buf] or not api.nvim_buf_is_valid(buf) then
         return
       end
-      self[bn].pending_request = true
-      self:do_request(bn, client_id, function()
-        if not api.nvim_buf_is_valid(bn) then
+      self[buf].pending_request = true
+      self:do_request(buf, client_id, function()
+        if not api.nvim_buf_is_valid(buf) then
           return
         end
-        self[bn].pending_request = false
-        if changedtick < buf_changedtick[bn] then
-          changedtick = api.nvim_buf_get_changedtick(bn)
+        self[buf].pending_request = false
+        if changedtick < buf_changedtick[buf] then
+          changedtick = api.nvim_buf_get_changedtick(buf)
           defer_request(changedtick)
         else
-          self[bn].changedtick = changedtick
+          self[buf].changedtick = changedtick
         end
       end)
     end, 1000)
@@ -48,9 +48,9 @@ function symbol:buf_watcher(buf, client_id)
       if b ~= buf then
         return
       end
-      buf_changedtick[b] = changedtick
-      if not self[b].pending_request then
-        defer_request(b, changedtick)
+      buf_changedtick[buf] = changedtick
+      if not self[buf].pending_request then
+        defer_request(changedtick)
       end
     end,
   })
