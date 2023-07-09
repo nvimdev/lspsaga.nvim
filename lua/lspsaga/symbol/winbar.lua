@@ -169,6 +169,7 @@ local function render_symbol_winbar(buf, symbols)
     end
     api.nvim_set_option_value('winbar', winbar_str, { scope = 'local', win = cur_win })
   end
+
   return winbar_str
 end
 
@@ -215,7 +216,16 @@ local function init_winbar(buf)
   })
 end
 
+local function get_bar()
+  local curbuf = api.nvim_get_current_buf()
+  local res = symbol:get_buf_symbols(curbuf)
+  if res and res.symbols then
+    return render_symbol_winbar(curbuf, res.symbols)
+  end
+end
+
 return {
   init_winbar = init_winbar,
   file_bar = file_bar,
+  get_bar = get_bar,
 }
