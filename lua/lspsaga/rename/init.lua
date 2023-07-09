@@ -110,6 +110,11 @@ function rename:lsp_rename(args)
   self.bufnr, self.winid = win
     :new_float(float_opt, true)
     :setlines({ cword })
+    :bufopt({
+      ['bufhidden'] = 'wipe',
+      ['buftype'] = 'nofile',
+      ['filetype'] = 'sagarename',
+    })
     :winopt('scrolloff', 0)
     :winhl('RenameNormal', 'RenameBorder')
     :wininfo()

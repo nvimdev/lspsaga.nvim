@@ -65,6 +65,7 @@ function act:action_callback(tuples, enriched_ctx)
     :new_float(float_opt, true)
     :setlines(content)
     :bufopt({
+      ['filetype'] = 'saga_codeaction',
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
     })
