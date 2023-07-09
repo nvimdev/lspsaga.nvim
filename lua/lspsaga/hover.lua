@@ -211,7 +211,6 @@ function hover:do_request(args)
   local count = 0
 
   lsp.buf_request(api.nvim_get_current_buf(), method, params, function(_, result, ctx)
-    print(result, vim.inspect(ctx))
     count = count + 1
     if count == #clients then
       self.pending_request = false
