@@ -24,7 +24,7 @@ function M.path_itera(buf)
 end
 
 function M.path_sub(fname, root)
-  root = (root and fname:find(root)) and root or vim.env.HOME
+  root = (root and fname:sub(1, #root) == root) and root or vim.env.HOME
   return fname:sub(#root + 2)
 end
 
