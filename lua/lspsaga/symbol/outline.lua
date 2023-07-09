@@ -253,6 +253,7 @@ function ot:toggle_or_jump()
   end
 
   local wins = fn.win_findbuf(main_buf)
+  api.nvim_set_current_win(wins[#wins])
   api.nvim_win_set_cursor(wins[#wins], pos)
   local width = #api.nvim_get_current_line()
   beacon({ pos[1] - 1, 0 }, width)
@@ -427,6 +428,7 @@ function ot:outline(buf)
     end
 
     local wins = fn.win_findbuf(main_buf)
+    api.nvim_set_current_win(wins[#wins])
     api.nvim_win_set_cursor(wins[#wins], pos)
     local width = #api.nvim_get_current_line()
     beacon({ pos[1] - 1, 0 }, width)
