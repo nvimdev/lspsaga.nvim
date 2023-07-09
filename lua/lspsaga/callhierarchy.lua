@@ -260,6 +260,11 @@ function ch:peek_view()
       util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.shuttle, function()
         window_shuttle(self.left_winid, self.right_winid)
       end)
+
+      util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.close, function()
+        ly:close()
+        self:clean()
+      end)
     end,
     desc = '[Lspsaga] callhierarchy peek preview',
   })

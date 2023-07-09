@@ -131,7 +131,7 @@ local default_config = {
       vsplit = 's',
       split = 'i',
       tabe = 't',
-      close = 'q',
+      close = '<C-c>k',
       shuttle = '[w',
       toggle_or_req = 'u',
     },
