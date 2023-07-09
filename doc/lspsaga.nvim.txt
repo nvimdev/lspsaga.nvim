@@ -5,6 +5,7 @@ Table of Contents                             *lspsaga.nvim-table-of-contents*
 
 1. Donate                                                |lspsaga.nvim-donate|
 2. License                                              |lspsaga.nvim-license|
+
 improve lsp experences in neovim
 
 <https://matrix.to/#/#lspsaga-nvim:matrix.org>
