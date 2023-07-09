@@ -168,14 +168,29 @@ local function rename_handler(project, curname, new_name)
       return
     end
     local client = lsp.get_client_by_id(ctx.client_id)
-    for uri, edits in pairs(result.changes or {}) do
-      local bufnr = vim.uri_to_bufnr(uri)
-      lsp.util.apply_text_edits(edits, bufnr, client.offset_encoding)
-      if config.rename.auto_save then
+    local buffers = {}
+    if result.changes then
+      for uri, edits in pairs(result.changes or {}) do
+        local bufnr = vim.uri_to_bufnr(uri)
+        lsp.util.apply_text_edits(edits, bufnr, client.offset_encoding)
+        buffers[#buffers + 1] = bufnr
+      end
+    elseif result.documentChanges then
+      for _, change in ipairs(result.documentChanges) do
+        if change.textDocument and change.textDocument.uri then
+          local bufnr = vim.uri_to_bufnr(change.textDocument.uri)
+          lsp.util.apply_text_edits(change.edits, bufnr, client.offset_encoding)
+          buffers[#buffers + 1] = bufnr
+        end
+      end
+    end
+
+    if config.rename.auto_save then
+      vim.tbl_map(function(bufnr)
         api.nvim_buf_call(bufnr, function()
           vim.cmd('noautocmd write!')
         end)
-      end
+      end, buffers)
     end
 
     if project then
