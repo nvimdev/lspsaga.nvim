@@ -124,6 +124,7 @@ local function render(chunks, root_dir, new_name)
   local line = 1
 
   for fname, item in pairs(result) do
+    fname = fname:sub(#vim.env.HOME + 2)
     api.nvim_buf_set_lines(bufnr, line - 1, line - 1, false, { fname })
     api.nvim_buf_add_highlight(bufnr, ns, 'SagaFinderFname', line - 1, 0, -1)
     line = line + 1
