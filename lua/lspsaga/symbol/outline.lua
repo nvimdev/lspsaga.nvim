@@ -198,7 +198,7 @@ function ot:collapse(node, curlnum)
   end
 end
 
-function ot:expand_or_jump()
+function ot:toggle_or_jump()
   local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
   local node = slist.find_node(self.list, curlnum)
   if not node then
@@ -243,17 +243,19 @@ function ot:expand_or_jump()
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
     return
   end
-  api.nvim_win_close(self.winid, true)
-  local wins = fn.win_findbuf(self.main_buf)
-  api.nvim_win_set_cursor(
-    wins[#wins],
+  local pos =
     { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
-  )
-  local width = #api.nvim_get_current_line()
-  beacon({ node.value.selectionRange.start.line, 0 }, width)
+
+  local main_buf = self.main_buf
   if config.outline.close_after_jump then
+    api.nvim_win_close(self.winid, true)
     clean_ctx()
   end
+
+  local wins = fn.win_findbuf(main_buf)
+  api.nvim_win_set_cursor(wins[#wins], pos)
+  local width = #api.nvim_get_current_line()
+  beacon({ pos[1] - 1, 0 }, width)
 end
 
 function ot:create_preview_win(lines)
@@ -393,7 +395,7 @@ function ot:outline(buf)
   self.main_buf = buf or api.nvim_get_current_buf()
   local res = symbol:get_buf_symbols(self.main_buf)
   if not res or not res.symbols or #res.symbols == 0 then
-    vim.inspect(
+    vim.notify(
       '[lspsaga] get symbols failed server may not initialed try again later',
       vim.log.levels.INFO
     )
@@ -406,7 +408,28 @@ function ot:outline(buf)
 
   self:parse(res.symbols)
   util.map_keys(self.bufnr, config.outline.keys.toggle_or_jump, function()
-    self:expand_or_jump()
+    self:toggle_or_jump()
+  end)
+
+  util.map_keys(self.bufnr, config.outline.keys.jump, function()
+    local curlnum = unpack(api.nvim_win_get_cursor(self.winid))
+    local node = slist.find_node(self.list, curlnum)
+    if not node then
+      return
+    end
+    local pos =
+      { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
+    local main_buf = self.main_buf
+
+    if config.outline.close_after_jump then
+      api.nvim_win_close(self.winid, true)
+      clean_ctx()
+    end
+
+    local wins = fn.win_findbuf(main_buf)
+    api.nvim_win_set_cursor(wins[#wins], pos)
+    local width = #api.nvim_get_current_line()
+    beacon({ pos[1] - 1, 0 }, width)
   end)
 
   util.map_keys(self.bufnr, config.outline.keys.quit, function()

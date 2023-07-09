@@ -122,6 +122,7 @@ local default_config = {
     keys = {
       toggle_or_jump = 'o',
       quit = 'q',
+      jump = 'e',
     },
   },
   callhierarchy = {
