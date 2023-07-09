@@ -180,4 +180,17 @@ function M.map_keys(buffer, keys, rhs, modes, opts)
   end
 end
 
+function M.res_isempty(results)
+  -- handle {{}}
+  if vim.tbl_isempty(results) then
+    return true
+  end
+  for i, res in ipairs(results) do
+    if res.result and #res.result > 0 then
+      return false
+    end
+  end
+  return true
+end
+
 return M

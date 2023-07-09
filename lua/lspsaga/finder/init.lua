@@ -92,7 +92,12 @@ function fd:method_title(method, row)
 end
 
 function fd:handler(method, results, spin_close, done)
-  if not results or vim.tbl_isempty(results) then
+  if not results or util.res_isempty(results) then
+    spin_close()
+    vim.notify(
+      '[Lspsaga] No definition/reference',
+      vim.log.levels.WARN
+    )
     return
   end
   local rendered_fname = {}

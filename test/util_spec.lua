@@ -50,4 +50,9 @@ describe('lspsaga util', function()
     end
     is_true(true, created)
   end)
+
+  it('util.res_isempty', function()
+    local client_results = { { result = {} } }
+    assert.is_true(util.res_isempty(client_results))
+  end)
 end)
