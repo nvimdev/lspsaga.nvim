@@ -1,13 +1,6 @@
-```
-                                 __
-                                / /________  _________ _____ _____ _
-                               / / ___/ __ \/ ___/ __ `/ __ `/ __ `/
-                              / (__  ) /_/ (__  ) /_/ / /_/ / /_/ /
-                             /_/____/ .___/____/\__,_/\__, /\__,_/
-                                   /_/               /____/
-
-                          ⚡ Designed for convenience and efficiency ⚡
-```
+<center>
+<img src="https://github.com/nvimdev/lspsaga.nvim/assets/41671631/682a189e-6571-48f8-af1c-1e52142c7071">
+</center>
 
 improve lsp experences in neovim
 
@@ -20,19 +13,6 @@ improve lsp experences in neovim
 Currently, I am in need of some donations. If you'd like to support my work financially, please donate through Github Sponsor button or
 [PayPal](https://paypal.me/bobbyhub) [wechat or Alipay](https://user-images.githubusercontent.com/41671631/219828224-8834f48a-0769-45d0-a6b9-1e7f38642fcf.png)
 
-
-# Backers
-
-Thanks for everyone!
-
-[@Tuo Huang](https://github.com/youngtuotuo)
-[@Scott Ming](https://github.com/scottming)
-[@Möller Lukas](https://github.com/lmllrjr)
-[@HendrikPetertje](https://github.com/HendrikPetertje)
-[@Bojan Wilytsch](https://github.com/bwilytsch)
-[@zhourrr](https://github.com/zhourrr)
-[@Burgess Darrion](https://github.com/ca-mantis-shrimp)
-[@Ceserani Alessandro](https://github.com/al-ce)
 
 # License
 
