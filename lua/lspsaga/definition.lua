@@ -249,7 +249,10 @@ function def:goto_definition(method)
 
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local width = #api.nvim_get_current_line()
-    require('lspsaga.beacon').jump_beacon({ res.range.start.line, res.range.start.character }, width)
+    require('lspsaga.beacon').jump_beacon(
+      { res.range.start.line, res.range.start.character },
+      width
+    )
   end
   if method == 1 then
     lsp.buf.definition()
