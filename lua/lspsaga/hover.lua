@@ -211,6 +211,7 @@ function hover:do_request(args)
   local count = 0
 
   lsp.buf_request(api.nvim_get_current_buf(), method, params, function(_, result, ctx)
+    print(result, vim.inspect(ctx))
     count = count + 1
     if count == #clients then
       self.pending_request = false
@@ -257,6 +258,8 @@ function hover:do_request(args)
       return
     end
     local content = vim.split(value, '\n', { trimempty = true })
+    local client = vim.lsp.get_client_by_id(ctx.client_id)
+    content[#content + 1] = '`From: ' .. client.name .. '`'
 
     if
       self.bufnr
@@ -264,10 +267,17 @@ function hover:do_request(args)
       and self.winid
       and api.nvim_win_is_valid(self.winid)
     then
+      vim.bo[self.bufnr].modifiable = true
       local win_conf = api.nvim_win_get_config(self.winid)
+      local max_len = util.get_max_content_length(content)
+      if max_len > win_conf.width then
+        win_conf.width = max_len
+      end
+
       local truncate = util.gen_truncate_line(win_conf.width)
       content = vim.list_extend({ truncate }, content)
       api.nvim_buf_set_lines(self.bufnr, -1, -1, false, content)
+      vim.bo[self.bufnr].modifiable = false
       win_conf.height = win_conf.height + #content + 1
       api.nvim_win_set_config(self.winid, win_conf)
       return
