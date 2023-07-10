@@ -264,13 +264,14 @@ function fd:toggle_or_open()
       return
     end
     if node.value.expand == nil then
-      local fname = vim.uri_to_fname(node.value.uri)
+      local fname = vim.uri_to_fname(node.value.uri or node.value.targetUri)
       local client = lsp.get_client_by_id(node.value.client_id)
+      local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
       local pos = {
-        node.value.range.start.line + 1,
+        range.start.line + 1,
         lsp.util._get_line_byte_from_position(
           node.value.bufnr,
-          node.value.range.start,
+          range.start,
           client.offset_encoding
         ),
       }
