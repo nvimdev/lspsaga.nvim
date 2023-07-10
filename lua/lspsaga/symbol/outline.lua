@@ -90,7 +90,7 @@ function ot:parse(symbols, bufnr, list)
       else
         for j = 1, inlevel - 4, 2 do
           local virt = {}
-          if not node.children and j + 2 > inlevel - 4 then
+          if (not node.children or #node.children == 0) and j + 2 > inlevel - 4 then
             virt[#virt + 1] = i == #data and { config.ui.lines[1], 'SagaVirtLine' }
               or { config.ui.lines[2], 'SagaVirtLine' }
             virt[#virt + 1] = { config.ui.lines[4]:rep(2), 'SagaVirtLine' }
@@ -115,7 +115,7 @@ function ot:parse(symbols, bufnr, list)
       copy.winline = row
       copy.inlevel = #indent
 
-      if node.children then
+      if node.children and #node.children > 0 then
         copy.expand = true
         copy.virtid = uv.hrtime()
         buf_set_extmark(bufnr, ns, row - 1, #indent - 4, {
