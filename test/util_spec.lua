@@ -52,7 +52,13 @@ describe('lspsaga util', function()
   end)
 
   it('util.res_isempty', function()
-    local client_results = { { result = {} } }
+    local client_results = { result = {} }
     assert.is_true(util.res_isempty(client_results))
+    client_results[3] = { result = {} }
+    assert.is_true(util.res_isempty(client_results))
+    client_results[6] = { result = { {
+      { uri = 'file:///util_spec.lua' },
+    } } }
+    assert.is_false(util.res_isempty(client_results))
   end)
 end)
