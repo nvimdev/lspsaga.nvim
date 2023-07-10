@@ -106,7 +106,6 @@ local default_config = {
   },
   symbol_in_winbar = {
     enable = true,
-    custom = false,
     separator = ' › ',
     hide_keyword = false,
     show_file = true,
@@ -161,9 +160,7 @@ function saga.setup(opts)
     require('lspsaga.codeaction.lightbulb').lb_autocmd()
   end
 
-  if saga.config.symbol_in_winbar.enable or saga.config.symbol_in_winbar.custom then
-    require('lspsaga.symbol'):register_module()
-  end
+  require('lspsaga.symbol'):register_module()
 
   if saga.config.diagnostic.diagnostic_only_current then
     require('lspsaga.diagnostic.virt').diag_on_current()

@@ -172,14 +172,20 @@ function symbol:register_module()
         return
       end
 
-      local winbar = require('lspsaga.symbol.winbar')
-      winbar.file_bar(args.buf)
+      local winbar
+      if config.symbol_in_winbar.enable then
+        winbar = require('lspsaga.symbol.winbar')
+        winbar.file_bar(args.buf)
+      end
 
       self:do_request(args.buf, args.data.client_id, function(result)
         if api.nvim_get_current_buf() ~= args.buf then
           return
         end
-        winbar.init_winbar(args.buf)
+
+        if winbar then
+          winbar.init_winbar(args.buf)
+        end
 
         if config.implement.enable and client.supports_method('textDocument/implementation') then
           require('lspsaga.implement').start(args.buf, args.data.client_id, result)
