@@ -146,11 +146,12 @@ function fd:handler(method, results, spin_close, done)
       res.line = api.nvim_buf_get_text(
         res.bufnr,
         range.start.line,
-        lsp.util._get_line_byte_from_position(res.bufnr, range.start, client.offset_encoding),
+        0,
         range['end'].line,
         lsp.util._get_line_byte_from_position(res.bufnr, range['end'], client.offset_encoding),
         {}
       )[1]
+      res.line = res.line:gsub('^%s+', '')
 
       res.client_id = client_id
       res.inlevel = 6
