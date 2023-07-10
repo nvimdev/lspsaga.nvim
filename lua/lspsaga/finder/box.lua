@@ -86,10 +86,8 @@ function M.spinner()
   }
   local frame = 1
 
-  timer:start(
-    0,
-    50,
-    vim.schedule_wrap(function()
+  timer:start(0, 50, function()
+    vim.schedule(function()
       if not api.nvim_buf_is_valid(bufnr) then
         return
       end
@@ -97,7 +95,7 @@ function M.spinner()
       api.nvim_buf_add_highlight(bufnr, 0, 'SagaSpinner', 0, 0, -1)
       frame = frame + 1 > #spinner and 1 or frame + 1
     end)
-  )
+  end)
 
   return function()
     if timer:is_active() and not timer:is_closing() then
