@@ -206,10 +206,12 @@ function fd:event()
       api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
       local rwin_conf = api.nvim_win_get_config(self.rwinid)
       local client = vim.lsp.get_client_by_id(node.value.client_id)
-      rwin_conf.title =
-        util.path_sub(api.nvim_buf_get_name(node.value.bufnr), client.config.root_dir)
-      rwin_conf.title_pos = 'center'
-      api.nvim_win_set_config(self.rwinid, rwin_conf)
+      if self.layout == 'float' then
+        rwin_conf.title =
+          util.path_sub(api.nvim_buf_get_name(node.value.bufnr), client.config.root_dir)
+        rwin_conf.title_pos = 'center'
+        api.nvim_win_set_config(self.rwinid, rwin_conf)
+      end
 
       api.nvim_win_call(self.rwinid, function()
         fn.winrestview({ topline = range.start.line + 1 })
