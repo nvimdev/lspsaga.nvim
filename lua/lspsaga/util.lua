@@ -185,7 +185,7 @@ function M.res_isempty(results)
   if vim.tbl_isempty(results) then
     return true
   end
-  for client, res in pairs(results) do
+  for _, res in pairs(results) do
     if res.result and #res.result > 0 then
       return false
     end

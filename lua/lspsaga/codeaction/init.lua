@@ -321,9 +321,9 @@ function act:code_action(options)
     }
   end
 
-  self:send_request(api.nvim_get_current_buf(), options, function(tuples)
+  self:send_request(api.nvim_get_current_buf(), options, function(tuples, enriched_ctx)
     self.pending_request = false
-    self:action_callback(tuples)
+    self:action_callback(tuples, enriched_ctx)
   end)
 end
 
