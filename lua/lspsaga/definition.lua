@@ -128,8 +128,8 @@ function def:clean_event()
   api.nvim_create_autocmd('WinClosed', {
     group = api.nvim_create_augroup('SagaPeekdefinition', { clear = true }),
     callback = function(args)
-      local curwin = tonumber(args.file)
-      local index = get_node_idx(self.list or {}, curwin)
+      local curwin = tonumber(args.match)
+      local index = get_node_idx(self.list, curwin)
       if not index then
         return
       end
