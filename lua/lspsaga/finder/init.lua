@@ -120,6 +120,7 @@ function fd:handler(method, results, spin_close, done)
       local fname = vim.uri_to_fname(uri)
       local client = lsp.get_client_by_id(client_id)
       if not vim.tbl_contains(rendered_fname, fname) then
+        rendered_fname[#rendered_fname + 1] = fname
         local node = {
           count = #item.result,
           expand = true,
@@ -154,7 +155,6 @@ function fd:handler(method, results, spin_close, done)
       res.client_id = client_id
       res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
-      rendered_fname[#rendered_fname + 1] = fname
       self:set_highlight(res.inlevel, row)
       row = row + 1
       res.winline = row
