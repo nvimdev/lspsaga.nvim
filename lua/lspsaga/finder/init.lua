@@ -200,7 +200,7 @@ function fd:event()
         return
       end
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
-      local range = node.value.range or node.value.targetSelectionRange or node.value.selectionRange
+      local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
       api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, range.start.character })
       api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
       local rwin_conf = api.nvim_win_get_config(self.rwinid)
