@@ -127,8 +127,7 @@ function fd:handler(method, results, spin_close, done)
           client_id = client_id,
         }
         local client = lsp.get_client_by_id(client_id)
-        local dir = client.config.root_dir or vim.env.HOME
-        node.line = fname:sub(#dir + 2)
+        node.line = util.path_sub(fname, client.config.root_dir)
         buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. node.line })
         self:set_toggle_icon(config.ui.collapse, node.virtid, row, 2)
         self:set_highlight(node.inlevel, row)

@@ -97,7 +97,7 @@ end
 
 function def:create_win(bufnr, root_dir)
   local fname = api.nvim_buf_get_name(bufnr)
-  fname = fname:sub(#root_dir + 2)
+  fname = util.path_sub(fname, root_dir)
   if not self.list or vim.tbl_isempty(self.list) then
     local float_opt = {
       width = math.floor(api.nvim_win_get_width(0) * config.definition.width),
