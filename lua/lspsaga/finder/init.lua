@@ -118,6 +118,7 @@ function fd:handler(method, results, spin_close, done)
         row = row + 1
       end
       local fname = vim.uri_to_fname(uri)
+      local client = lsp.get_client_by_id(client_id)
       if not vim.tbl_contains(rendered_fname, fname) then
         local node = {
           count = #item.result,
@@ -126,7 +127,6 @@ function fd:handler(method, results, spin_close, done)
           inlevel = 4,
           client_id = client_id,
         }
-        local client = lsp.get_client_by_id(client_id)
         node.line = util.path_sub(fname, client.config.root_dir)
         buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(4) .. node.line })
         self:set_toggle_icon(config.ui.collapse, node.virtid, row, 2)
@@ -145,11 +145,12 @@ function fd:handler(method, results, spin_close, done)
       res.line = api.nvim_buf_get_text(
         res.bufnr,
         range.start.line,
-        range.start.character,
+        lsp.util._get_line_byte_from_position(res.bufnr, range.start, client.offset_encoding),
         range['end'].line,
-        range['end'].character,
+        lsp.util._get_line_byte_from_position(res.bufnr, range['end'], client.offset_encoding),
         {}
       )[1]
+
       res.client_id = client_id
       res.inlevel = 6
       buf_set_lines(self.lbufnr, -1, -1, false, { (' '):rep(6) .. res.line })
@@ -213,13 +214,18 @@ function fd:event()
       api.nvim_win_call(self.rwinid, function()
         fn.winrestview({ topline = range.start.line + 1 })
       end)
+
       buf_add_highlight(
         node.value.bufnr,
         ns,
         'SagaSearch',
         range.start.line,
-        range.start.character,
-        range['end'].character
+        lsp.util._get_line_byte_from_position(node.value.bufnr, range.start, client.offset_encoding),
+        lsp.util._get_line_byte_from_position(
+          node.value.bufnr,
+          range['end'],
+          client.offset_encoding
+        )
       )
       node.value.rendered = true
       util.map_keys(node.value.bufnr, config.finder.keys.close, function()
@@ -259,7 +265,15 @@ function fd:toggle_or_open()
     end
     if node.value.expand == nil then
       local fname = vim.uri_to_fname(node.value.uri)
-      local pos = { node.value.range.start.line + 1, node.value.range.start.character }
+      local client = lsp.get_client_by_id(node.value.client_id)
+      local pos = {
+        node.value.range.start.line + 1,
+        lsp.util._get_line_byte_from_position(
+          node.value.bufnr,
+          node.value.range.start,
+          client.offset_encoding
+        ),
+      }
       self:clean()
       local restore = win:minimal_restore()
       vim.cmd.edit(fname)
