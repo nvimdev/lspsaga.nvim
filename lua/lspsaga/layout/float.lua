@@ -35,8 +35,8 @@ local function border_map()
     ['single'] = { '┴', '┬' },
     ['rounded'] = { '┴', '┬' },
     ['double'] = { '╩', '╦' },
-    ['solid'] = { '', '' },
-    ['shadow'] = { '', '' },
+    ['solid'] = { ' ', ' ' },
+    ['shadow'] = { ' ', ' ' },
   }
 end
 
