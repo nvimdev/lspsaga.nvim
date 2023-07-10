@@ -185,7 +185,7 @@ function ot:collapse(node, curlnum)
 
     if config.outline.detail then
       buf_set_extmark(self.bufnr, ns, row, 0, {
-        virt_text = { { tmp.value.detail, 'Comment' } },
+        virt_text = { { tmp.value.detail or ' ', 'Comment' } },
       })
     end
     if not tmp or (tmp.next and tmp.next.value.inlevel <= inlevel) then
