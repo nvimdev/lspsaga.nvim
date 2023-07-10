@@ -60,6 +60,7 @@ function def:close_all()
   recursive(self.list)
   clean_ctx()
   vim.opt.eventignore:remove('WinClosed')
+  api.nvim_del_augroup_by_name('SagaPeekdefinition')
 end
 
 function def:apply_maps(bufnr)
@@ -210,10 +211,6 @@ function def:peek_definition(method)
     api.nvim_win_set_cursor(
       node.winid,
       { node.selectionRange.start.line + 1, node.selectionRange.start.character }
-    )
-    beacon(
-      { node.selectionRange.start.line, node.selectionRange.start.character },
-      #api.nvim_get_current_line()
     )
     self:apply_maps(node.bufnr)
     self.list[#self.list + 1] = node
