@@ -68,6 +68,7 @@ local default_config = {
     methods = {},
     default = 'ref+imp',
     layout = 'float',
+    silent = false,
     filter = {},
     keys = {
       shuttle = '[w',
