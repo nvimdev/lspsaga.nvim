@@ -1,0 +1,6 @@
+vim.opt.rtp:append('~/workspace/lspsaga.nvim')
+vim.opt.rtp:append('~/workspace/nvim-lspconfig')
+local lspconfig = require('lspconfig')
+lspconfig.lua_ls.setup({})
+require('lspsaga').setup({})
+vim.keymap.set('n', 'gd', '<cmd>Lspsaga peek_definition<CR>')
