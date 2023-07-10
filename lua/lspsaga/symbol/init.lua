@@ -123,6 +123,12 @@ function symbol:get_buf_symbols(buf)
 end
 
 function symbol:node_is_keyword(buf, node)
+  local lang = vim.treesitter.language.get_lang(vim.bo[buf].filetype)
+  local ok = pcall(vim.treesitter.get_parser, buf, lang)
+  if not ok then
+    return
+  end
+
   if not node.selectionRange then
     return false
   end
