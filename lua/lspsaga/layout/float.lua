@@ -3,7 +3,7 @@ local win = require('lspsaga.window')
 local ui = require('lspsaga').config.ui
 local M = {}
 
-function M.left(height, width, bufnr)
+function M.left(height, width, bufnr, title)
   local curwin = api.nvim_get_current_win()
   local pos = api.nvim_win_get_cursor(curwin)
   local float_opt = {
@@ -12,7 +12,12 @@ function M.left(height, width, bufnr)
     bufnr = bufnr,
     offset_x = -pos[2],
     focusable = true,
+    title = title,
   }
+  if title then
+    float_opt.title_pos = 'center'
+  end
+
   local topline = fn.line('w0')
   local room = fn.line('w$') - pos[1]
   if room <= height + 4 then
@@ -40,7 +45,7 @@ local function border_map()
   }
 end
 
-function M.right(left_winid)
+function M.right(left_winid, title)
   local win_conf = api.nvim_win_get_config(left_winid)
   local original = vim.deepcopy(win_conf)
   local map = border_map()
@@ -56,6 +61,12 @@ function M.right(left_winid)
   win_conf.border[7] = ''
   win_conf.row = row
   win_conf.col = col + 2
+  win_conf.title = nil
+  win_conf.title_pos = nil
+  if title then
+    win_conf.title = title
+    win_conf.title_pos = 'center'
+  end
   return win
     :new_float(win_conf, false, true)
     :winopt({

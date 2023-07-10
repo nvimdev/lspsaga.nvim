@@ -23,9 +23,9 @@ end
 local LEFT = 1
 local RIGHT = 2
 
-function M:left(height, width, bufnr)
+function M:left(height, width, bufnr, title)
   local fn = self.layout == 'float' and float.left or normal.left
-  self.left_bufnr, self.left_winid = fn(height, width, bufnr)
+  self.left_bufnr, self.left_winid = fn(height, width, bufnr, title)
   self.current = LEFT
   return self
 end
@@ -63,9 +63,9 @@ function M:setlines(lines)
   return self
 end
 
-function M:right()
+function M:right(title)
   local fn = self.layout == 'float' and float.right or normal.right
-  self.right_bufnr, self.right_winid = fn(self.left_winid)
+  self.right_bufnr, self.right_winid = fn(self.left_winid, title)
   self.current = RIGHT
   return self
 end

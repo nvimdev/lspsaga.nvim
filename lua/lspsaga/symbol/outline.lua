@@ -58,21 +58,22 @@ local function create_outline_window()
     :wininfo()
 end
 
-function ot:parse(symbols)
+function ot:parse(symbols, bufnr, list)
   local row = 0
-  self.list = slist.new()
+  bufnr = bufnr or self.bufnr
+  list = list or self.list
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
       level = level or 0
       local indent = '    ' .. ('  '):rep(level)
       node.name = node.name == ' ' and '_' or node.name
-      buf_set_lines(self.bufnr, row, -1, false, { indent .. node.name })
+      buf_set_lines(bufnr, row, -1, false, { indent .. node.name })
       row = row + 1
       if level == 0 then
         node.winline = row
       end
-      buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
+      buf_set_extmark(bufnr, ns, row - 1, #indent - 2, {
         virt_text = { { kind[node.kind][2], 'Saga' .. kind[node.kind][1] } },
         virt_text_pos = 'overlay',
       })
@@ -82,7 +83,7 @@ function ot:parse(symbols)
           { row == 1 and config.ui.lines[5] or config.ui.lines[2], 'SagaVirtLine' },
           { config.ui.lines[4]:rep(2), 'SagaVirtLine' },
         }
-        buf_set_extmark(self.bufnr, ns, row - 1, 0, {
+        buf_set_extmark(bufnr, ns, row - 1, 0, {
           virt_text = virt,
           virt_text_pos = 'overlay',
         })
@@ -96,7 +97,7 @@ function ot:parse(symbols)
           else
             virt = { { config.ui.lines[3], 'SagaVirtLine' } }
           end
-          buf_set_extmark(self.bufnr, ns, row - 1, j - 1, {
+          buf_set_extmark(bufnr, ns, row - 1, j - 1, {
             virt_text = virt,
             virt_text_pos = 'overlay',
           })
@@ -104,7 +105,7 @@ function ot:parse(symbols)
       end
 
       if config.outline.detail then
-        buf_set_extmark(self.bufnr, ns, row - 1, 0, {
+        buf_set_extmark(bufnr, ns, row - 1, 0, {
           virt_text = { { node.detail or '', 'Comment' } },
         })
       end
@@ -117,21 +118,21 @@ function ot:parse(symbols)
       if node.children then
         copy.expand = true
         copy.virtid = uv.hrtime()
-        buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
+        buf_set_extmark(bufnr, ns, row - 1, #indent - 4, {
           id = copy.virtid,
           virt_text = { { config.ui.collapse, 'SagaToggle' } },
           virt_text_pos = 'overlay',
         })
-        slist.tail_push(self.list, copy)
+        slist.tail_push(list, copy)
         recursive_parse(node.children, level + 1)
       else
-        slist.tail_push(self.list, copy)
+        slist.tail_push(list, copy)
       end
     end
   end
 
   recursive_parse(symbols)
-  api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
+  api.nvim_set_option_value('modifiable', false, { buf = bufnr })
 end
 
 function ot:collapse(node, curlnum)
@@ -387,6 +388,11 @@ function ot:clean_after_close()
 end
 
 function ot:outline(buf)
+  if config.outline.layout == 'float' then
+    require('lspsaga.symbol.otfloat'):render()
+    return
+  end
+
   if self.winid and api.nvim_win_is_valid(self.winid) then
     api.nvim_win_close(self.winid, true)
     clean_ctx()
@@ -407,6 +413,7 @@ function ot:outline(buf)
     self.bufnr, self.winid = create_outline_window()
   end
 
+  self.list = slist.new()
   self:parse(res.symbols)
   util.map_keys(self.bufnr, config.outline.keys.toggle_or_jump, function()
     self:toggle_or_jump()
