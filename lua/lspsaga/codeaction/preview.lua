@@ -60,12 +60,11 @@ local function get_action_diff(main_buf, tuple)
     end, changes)
   end
 
-  local data = api.nvim_buf_get_lines(tmp_buf, srow - 1, erow, false)
+  local data = api.nvim_buf_get_lines(tmp_buf, 0, -1, false)
   data = vim.tbl_map(function(line)
     return line .. '\n'
   end, data)
 
-  lines = vim.list_slice(lines, srow, erow + 1)
   lines = vim.tbl_map(function(line)
     return line .. '\n'
   end, lines)
@@ -75,6 +74,7 @@ local function get_action_diff(main_buf, tuple)
     algorithm = 'minimal',
     ctxlen = 0,
   })
+
   diff = vim.tbl_filter(function(item)
     return not item:find('@@%s')
   end, vim.split(diff, '\n'))
