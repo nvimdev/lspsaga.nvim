@@ -17,8 +17,10 @@ body:
         - How to reproduce with a min config.
         - better to provide some example codes which can reproduce.
       placeholder: |
-        nvim --clean -u min.lua
-        :edit foo
+        use min.lua https://github.com/nvimdev/lspsaga.nvim/blob/main/test/minimal_test.lua for test
+        nvim --clean -u min.lua language_file
+        1. step 1
+        2. step 2
     validations:
       required: true
 
