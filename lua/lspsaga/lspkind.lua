@@ -9,7 +9,7 @@ local function merge_custom(kind)
     end
   end
 
-  for k, v in ipairs(ui.kind or {}) do
+  for k, v in pairs(ui.kind or {}) do
     local index = find_index_by_type(k)
     if not index then
       vim.notify('[lspsaga.nvim] could not find kind in default')
