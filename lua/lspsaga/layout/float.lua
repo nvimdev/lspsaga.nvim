@@ -30,7 +30,7 @@ function M.left(height, width, bufnr, title)
       ['bufhidden'] = 'wipe',
     })
     :winopt({
-      ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+      ['winhl'] = 'NormalFloat:SagaNormal,FloatBorder:SagaBorder',
     })
     :wininfo()
 end
@@ -70,7 +70,7 @@ function M.right(left_winid, title)
   return win
     :new_float(win_conf, false, true)
     :winopt({
-      ['winhl'] = 'NormalFloat:SagaNormal,Border:SagaBorder',
+      ['winhl'] = 'NormalFloat:SagaNormal,FloatBorder:SagaBorder',
       ['signcolumn'] = 'no',
     })
     :wininfo()
