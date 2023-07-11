@@ -264,6 +264,7 @@ function diag:render_diagnostic_window(entry, option)
         start = { entry.lnum + 1, entry.col },
         ['end'] = { entry.lnum + 1, entry.col },
       },
+      gitsign = false,
     }, function(action_tuples, enriched_ctx)
       self:code_action_cb(action_tuples, enriched_ctx)
     end)

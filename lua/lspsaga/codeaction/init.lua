@@ -170,7 +170,7 @@ function act:send_request(main_buf, options, callback)
       end
     end
 
-    if config.code_action.extend_gitsigns then
+    if config.code_action.extend_gitsigns and not options.gitsign then
       local res = self:extend_gitsign(params)
       if res then
         for _, action in ipairs(res) do
