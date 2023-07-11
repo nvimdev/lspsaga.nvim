@@ -143,12 +143,24 @@ end
 
 function act:send_request(main_buf, options, callback)
   self.bufnr = main_buf
+  options = options or {}
+  if options.diagnostics or options.only then
+    options = { options = options }
+  end
+  local context = options.context or {}
+  if not context.triggerKind then
+    context.triggerKind = vim.lsp.protocol.CodeActionTriggerKind.Invoked
+  end
+  if not context.diagnostics then
+    local bufnr = api.nvim_get_current_buf()
+    context.diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr)
+  end
   local params
   local mode = api.nvim_get_mode().mode
   if options.range then
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
-    local end_ = assert(options.range['end'], 'range must have an `end` property')
+    local end_ = assert(options.range['end'], 'range must have a `end` property')
     params = lsp.util.make_given_range_params(start, end_)
   elseif mode == 'v' or mode == 'V' then
     local range = range_from_selection(0, mode)
@@ -156,8 +168,8 @@ function act:send_request(main_buf, options, callback)
   else
     params = lsp.util.make_range_params()
   end
-  params.context = options.context
 
+  params.context = context
   local enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
 
   lsp.buf_request_all(main_buf, 'textDocument/codeAction', params, function(results)

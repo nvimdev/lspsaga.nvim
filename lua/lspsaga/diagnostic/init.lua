@@ -177,8 +177,8 @@ function diag:get_cursor_diagnostic()
   local res = {}
   for _, entry in ipairs(diags) do
     res[#res + 1] = {
-      message = entry.message,
       code = entry.code or nil,
+      message = entry.message,
       codeDescription = entry.codeDescription or nil,
       data = entry.data or nil,
       tags = entry.tags or nil,
@@ -188,9 +188,11 @@ function diag:get_cursor_diagnostic()
       range = {
         start = {
           line = entry.lnum,
+          character = entry.col,
         },
         ['end'] = {
           line = entry.end_lnum,
+          character = entry.end_col,
         },
       },
     }
