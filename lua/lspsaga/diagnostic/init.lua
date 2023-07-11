@@ -112,13 +112,15 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
   end
 
   if diag_conf.jump_num_shortcut then
-    for num, _ in pairs(action_tuples or {}) do
+    for num, _ in ipairs(action_tuples or {}) do
       util.map_keys(self.main_buf, tostring(num), function()
         local action = action_tuples[num][2]
         local client = vim.lsp.get_client_by_id(action_tuples[num][1])
         act:do_code_action(action, client, enriched_ctx)
+        self:clean_data()
       end)
     end
+    self.number_count = #action_tuples
   end
 
   api.nvim_create_autocmd('CursorMoved', {
@@ -217,8 +219,10 @@ end
 function diag:clean_data()
   util.close_win(self.winid)
   pcall(util.delete_scroll_map, self.main_buf)
-  for num, _ in pairs(self.action_tuples or {}) do
-    nvim_buf_del_keymap(self.main_buf, 'n', tostring(num))
+  if self.number_count then
+    for i = 1, self.number_count do
+      nvim_buf_del_keymap(self.main_buf, 'n', tostring(i))
+    end
   end
   clean_ctx()
 end

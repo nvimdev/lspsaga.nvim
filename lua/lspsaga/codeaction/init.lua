@@ -303,7 +303,7 @@ function act:apply_action_keys(action_tuples, enriched_ctx)
 end
 
 function act:num_shortcut(bufnr, action_tuples, enriched_ctx)
-  for num, _ in pairs(action_tuples or {}) do
+  for num in ipairs(action_tuples or {}) do
     util.map_keys(bufnr, tostring(num), function()
       if not action_tuples or not action_tuples[num] then
         return
@@ -314,6 +314,7 @@ function act:num_shortcut(bufnr, action_tuples, enriched_ctx)
       self:do_code_action(action, client, enriched_ctx)
     end)
   end
+  self.number_count = #action_tuples
 end
 
 function act:code_action(options)
@@ -347,6 +348,11 @@ function act:close_action_window()
 end
 
 function act:clean_context()
+  if self.number_count then
+    for i = 1, self.number_count do
+      api.nvim_buf_del_keymap(self.bufnr, 'n', tostring(i))
+    end
+  end
   clean_ctx()
 end
 
