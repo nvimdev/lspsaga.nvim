@@ -13,6 +13,7 @@ local outline_conf = config.outline
 local ns = api.nvim_create_namespace('SagaOutline')
 local beacon = require('lspsaga.beacon').jump_beacon
 local slist = require('lspsaga.slist')
+local ly = require('lspsaga.layout')
 local ctx = {}
 
 function ot.__newindex(t, k, v)
@@ -27,7 +28,33 @@ local function clean_ctx()
   end
 end
 
-local function create_outline_window()
+local function outline_in_float()
+  local win_width = api.nvim_win_get_width(0)
+  local curbuf = api.nvim_get_current_buf()
+
+  return ly:new('float')
+    :left(
+      math.floor(vim.o.lines * config.outline.max_height),
+      math.floor(win_width * config.outline.left_width),
+      nil,
+      'outline'
+    )
+    :bufopt({
+      ['filetype'] = 'sagafinder',
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+    })
+    :winopt('wrap', false)
+    :right('preview')
+    :bufopt({
+      ['buftype'] = 'nofile',
+      ['bufhidden'] = 'wipe',
+      ['filetype'] = vim.bo[curbuf].filetype,
+    })
+    :done()
+end
+
+local function outline_normal_win()
   local pos = outline_conf.win_position == 'right' and 'botright' or 'topleft'
   vim.cmd(pos .. ' vnew')
   local winid, bufnr = api.nvim_get_current_win(), api.nvim_get_current_buf()
@@ -248,8 +275,11 @@ function ot:toggle_or_jump()
     { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
 
   local main_buf = self.main_buf
-  if config.outline.close_after_jump then
-    api.nvim_win_close(self.winid, true)
+  if config.outline.layout == 'normal' and config.outline.close_after_jump then
+    util.close_win({ self.winid, self.rwinid })
+    clean_ctx()
+  else
+    ly:close()
     clean_ctx()
   end
 
@@ -362,6 +392,26 @@ function ot:preview(group)
   })
 end
 
+function ot:float_preview(group)
+  api.nvim_create_autocmd('CursorMoved', {
+    group = group,
+    buffer = self.bufnr,
+    callback = function()
+      local curlnum = api.nvim_win_get_cursor(self.winid)[1]
+      local curnode = slist.find_node(self.list, curlnum)
+      if not curnode then
+        return
+      end
+      local range = curnode.value.range
+      local start = range.start.line
+      local erow = range['end'].line
+      erow = start == erow and erow + 1 or erow
+      local lines = api.nvim_buf_get_lines(self.main_buf, start, erow, false)
+      api.nvim_buf_set_lines(self.rbufnr, 0, -1, false, lines)
+    end,
+  })
+end
+
 function ot:auto_close(group)
   api.nvim_create_autocmd('WinEnter', {
     group = group,
@@ -387,34 +437,24 @@ function ot:clean_after_close()
   })
 end
 
-function ot:outline(buf)
-  if config.outline.layout == 'float' then
-    require('lspsaga.symbol.otfloat'):render()
-    return
+function ot:normal_fn(group)
+  self:clean_after_close()
+  self:refresh(group)
+
+  if config.outline.auto_preview then
+    self:preview(group)
   end
 
-  if self.winid and api.nvim_win_is_valid(self.winid) then
-    api.nvim_win_close(self.winid, true)
-    clean_ctx()
-    return
+  if outline_conf.auto_close then
+    self:auto_close(group)
   end
+end
 
-  self.main_buf = buf or api.nvim_get_current_buf()
-  local res = symbol:get_buf_symbols(self.main_buf)
-  if not res or not res.symbols or #res.symbols == 0 then
-    vim.notify(
-      '[lspsaga] get symbols failed server may not initialed try again later',
-      vim.log.levels.INFO
-    )
-    return
-  end
+function ot:float_fn(group)
+  self:float_preview(group)
+end
 
-  if not self.winid or not api.nvim_win_is_valid(self.winid) then
-    self.bufnr, self.winid = create_outline_window()
-  end
-
-  self.list = slist.new()
-  self:parse(res.symbols)
+function ot:keymap()
   util.map_keys(self.bufnr, config.outline.keys.toggle_or_jump, function()
     self:toggle_or_jump()
   end)
@@ -429,8 +469,11 @@ function ot:outline(buf)
       { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
     local main_buf = self.main_buf
 
-    if config.outline.close_after_jump then
-      api.nvim_win_close(self.winid, true)
+    if config.outline.layout == 'normal' and config.outline.close_after_jump then
+      util.close_win({ self.winid, self.rwinid })
+      clean_ctx()
+    else
+      ly:close()
       clean_ctx()
     end
 
@@ -442,21 +485,42 @@ function ot:outline(buf)
   end)
 
   util.map_keys(self.bufnr, config.outline.keys.quit, function()
-    api.nvim_win_close(self.winid, true)
+    util.close_win({ self.winid, self.rwinid })
     clean_ctx()
   end)
+end
 
+function ot:outline(buf)
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    util.close_win({ self.winid, self.rwinid })
+    clean_ctx()
+    return
+  end
+
+  self.main_buf = buf or api.nvim_get_current_buf()
+  local res = symbol:get_buf_symbols(self.main_buf)
+  if not res or not res.symbols or #res.symbols == 0 then
+    vim.notify(
+      '[lspsaga] get symbols failed server may not initialed try again later',
+      vim.log.levels.INFO
+    )
+    return
+  end
   local group = api.nvim_create_augroup('outline', { clear = true })
-  self:clean_after_close()
-  self:refresh(group)
 
-  if config.outline.auto_preview then
-    self:preview(group)
+  if not self.winid or not api.nvim_win_is_valid(self.winid) then
+    if config.outline.layout == 'normal' then
+      self.bufnr, self.winid = outline_normal_win()
+      self:normal_fn(group)
+    else
+      self.bufnr, self.winid, self.rbufnr, self.rwinid = outline_in_float()
+      self:float_fn(group)
+    end
   end
 
-  if outline_conf.auto_close then
-    self:auto_close(group)
-  end
+  self.list = slist.new()
+  self:parse(res.symbols)
+  self:keymap()
 end
 
 return setmetatable(ctx, ot)
