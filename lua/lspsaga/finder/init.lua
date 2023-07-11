@@ -42,6 +42,7 @@ function fd:init_layout()
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
     })
+    :winopt('wrap', false)
     :right()
     :bufopt({
       ['buftype'] = 'nofile',
