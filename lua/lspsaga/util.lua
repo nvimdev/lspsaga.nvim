@@ -64,7 +64,7 @@ function M.get_client_by_method(methods)
   return supports
 end
 
-local function feedkeys(key)
+function M.feedkeys(key)
   local k = api.nvim_replace_termcodes(key, true, false, true)
   api.nvim_feedkeys(k, 'x', false)
 end
@@ -80,7 +80,7 @@ function M.scroll_in_float(bufnr, winid)
       if api.nvim_win_is_valid(winid) then
         api.nvim_win_call(winid, function()
           local key = i == 1 and '<C-d>' or '<C-u>'
-          feedkeys(key)
+          M.feedkeys(key)
         end)
       end
     end)

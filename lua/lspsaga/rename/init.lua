@@ -168,6 +168,9 @@ local function rename_handler(project, curname, new_name)
       return
     end
     local client = lsp.get_client_by_id(ctx.client_id)
+    if not client then
+      return
+    end
     local buffers = {}
     if result.changes then
       for uri, edits in pairs(result.changes or {}) do

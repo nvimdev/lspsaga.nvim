@@ -99,7 +99,7 @@ local default_config = {
     project_max_width = 0.5,
     project_max_height = 0.5,
     keys = {
-      quit = '<Esc>',
+      quit = '<C-k>',
       exec = '<CR>',
       select = 'x',
     },
