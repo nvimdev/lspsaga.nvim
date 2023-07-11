@@ -1,3 +1,4 @@
+local vfn = vim.fn
 local M = {}
 ---@diagnostic disable-next-line: deprecated
 local api, uv = vim.api, vim.version().minor >= 10 and vim.uv or vim.loop
@@ -106,13 +107,43 @@ function M.spinner()
   end
 end
 
+local function indent_range(inlevel)
+  local curlnum = api.nvim_win_get_cursor(0)[1]
+  local start, _end
+  if inlevel > 4 then
+    for i = curlnum - 1, 0, -1 do
+      if vfn.indent(i) < inlevel or i == 0 then
+        start = i
+        break
+      end
+    end
+  end
+
+  local count = api.nvim_buf_line_count(0)
+  for i = curlnum + 1, count, 1 do
+    if inlevel == 6 and vfn.indent(i) < inlevel then
+      _end = i
+      break
+    elseif inlevel == 4 and vfn.indent(i) <= inlevel then
+      _end = i
+      break
+    end
+  end
+  _end = _end or count
+  return { start and start - 1 or curlnum, _end - 1 }
+end
+
 function M.indent_current(inlevel)
-  local available = { 0, 2, 4 }
   local current = inlevel - 2
-  vim.tbl_map(function(index)
-    local hi = index == current and 'Type' or 'Comment'
-    api.nvim_set_hl(0, 'SagaIndent' .. index, { link = hi })
-  end, available)
+  local range = indent_range(inlevel)
+  local t = { 0, 2, 4 }
+
+  for i = 0, api.nvim_buf_line_count(0) - 1 do
+    vim.tbl_map(function(item)
+      local hi = (item == current and i >= range[1] and i <= range[2]) and 'Type' or 'Comment'
+      api.nvim_set_hl(0, 'SagaIndent' .. i .. item, { link = hi })
+    end, t)
+  end
 end
 
 function M.indent(ns, lbufnr, lwinid)
@@ -136,11 +167,13 @@ function M.indent(ns, lbufnr, lwinid)
       local total = inlevel == 4 and 4 - 2 or inlevel - 1
 
       for i = 1, total, 2 do
+        local hi = 'SagaIndent' .. row .. (i - 1)
         api.nvim_buf_set_extmark(bufnr, ns, row, i - 1, {
-          virt_text = { { config.ui.lines[3], 'SagaIndent' .. (i - 1) } },
+          virt_text = { { config.ui.lines[3], hi } },
           virt_text_pos = 'overlay',
           ephemeral = true,
         })
+        api.nvim_set_hl(0, hi, { link = 'Comment', default = true })
       end
     end,
   })

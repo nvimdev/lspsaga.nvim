@@ -327,7 +327,7 @@ function ch:call_hierarchy(item, client, timer, curlnum)
           ['buftype'] = 'nofile',
           ['bufhidden'] = 'wipe',
         })
-        :right(20)
+        :right()
         :bufopt({
           ['buftype'] = 'nofile',
           ['bufhidden'] = 'wipe',

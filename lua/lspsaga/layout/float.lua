@@ -12,7 +12,7 @@ function M.left(height, width, bufnr, title)
     bufnr = bufnr,
     offset_x = -pos[2],
     focusable = true,
-    title = title,
+    title = title or nil,
   }
   if title then
     float_opt.title_pos = 'center'
@@ -23,6 +23,7 @@ function M.left(height, width, bufnr, title)
   if room <= height + 4 then
     fn.winrestview({ topline = topline + (height + 4 - room) })
   end
+
   return win
     :new_float(float_opt, true)
     :bufopt({

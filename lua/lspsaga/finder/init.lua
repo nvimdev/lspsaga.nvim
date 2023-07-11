@@ -119,6 +119,9 @@ function fd:handler(method, results, spin_close, done)
       end
       local fname = vim.uri_to_fname(uri)
       local client = lsp.get_client_by_id(client_id)
+      if not client then
+        return
+      end
       if not vim.tbl_contains(rendered_fname, fname) then
         rendered_fname[#rendered_fname + 1] = fname
         local node = {
@@ -207,6 +210,9 @@ function fd:event()
       api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
       local rwin_conf = api.nvim_win_get_config(self.rwinid)
       local client = vim.lsp.get_client_by_id(node.value.client_id)
+      if not client then
+        return
+      end
       if self.layout == 'float' then
         rwin_conf.title =
           util.path_sub(api.nvim_buf_get_name(node.value.bufnr), client.config.root_dir)
@@ -269,6 +275,9 @@ function fd:toggle_or_open()
     if node.value.expand == nil then
       local fname = vim.uri_to_fname(node.value.uri or node.value.targetUri)
       local client = lsp.get_client_by_id(node.value.client_id)
+      if not client then
+        return
+      end
       local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
       local pos = {
         range.start.line + 1,
