@@ -129,6 +129,15 @@ local function clean(buf)
   end
 end
 
+local function clean_data(t, bufnr)
+  for _, word in ipairs(t) do
+    local data = buffers_cache[bufnr][word]
+    pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
+    pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
+    buffers_cache[bufnr][word] = nil
+  end
+end
+
 local function render(client_id, bufnr, symbols)
   local langdata = langmap(bufnr)
   local hit = buffers_cache[bufnr] and {} or nil
@@ -140,10 +149,11 @@ local function render(client_id, bufnr, symbols)
   local function parse_symbol(nodes)
     for _, item in ipairs(nodes) do
       if vim.tbl_contains(langdata.kinds, item.kind) then
-        local srow = item.selectionRange.start.line
-        local scol = item.selectionRange.start.character
-        local erow = item.selectionRange['end'].line
-        local ecol = item.selectionRange['end'].character
+        local range = item.selectionRange or item.range
+        local srow = range.start.line
+        local scol = range.start.character
+        local erow = range['end'].line
+        local ecol = range['end'].character
         local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
         if not buffers_cache[bufnr][word] then
           buffers_cache[bufnr][word] = {
@@ -169,17 +179,17 @@ local function render(client_id, bufnr, symbols)
 
   parse_symbol(symbols)
 
-  if hit and #hit > 0 then
-    local nonexist = vim.tbl_filter(function(word)
-      return not vim.tbl_contains(hit, word)
-    end, vim.tbl_keys(buffers_cache[bufnr]))
-
-    for _, word in ipairs(nonexist) do
-      local data = buffers_cache[bufnr][word]
-      pcall(api.nvim_buf_del_extmark, bufnr, ns, data.virt_id)
-      pcall(fn.sign_unplace, name, { buffer = bufnr, id = data.sign_id })
-      buffers_cache[bufnr][word] = nil
+  if hit then
+    local nonexist = {}
+    if #hit == 0 then
+      nonexist = vim.tbl_keys(buffers_cache[bufnr])
+    else
+      nonexist = vim.tbl_filter(function(word)
+        return not vim.tbl_contains(hit, word)
+      end, vim.tbl_keys(buffers_cache[bufnr]))
     end
+
+    clean_data(nonexist, bufnr)
   end
 end
 
@@ -188,15 +198,34 @@ local function start(buf, client_id, symbols)
     render(client_id, buf, symbols)
   end
 
-  api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
-    buffer = buf,
+  api.nvim_create_autocmd('User', {
+    pattern = 'SagaSymbolUpdate',
     callback = function(args)
-      local res = symbol:get_buf_symbols(args.buf)
-      if res and res.symbols and #res.symbols > 0 then
-        render(client_id, buf, res.symbols)
+      if api.nvim_get_mode().mode ~= 'n' then
+        return
+      end
+
+      if #args.data.symbols > 0 then
+        render(client_id, buf, args.data.symbols)
+      else
+        clean_data(vim.tbl_keys(buffers_cache[args.buf]), args.buf)
       end
     end,
     desc = '[Lspsaga] Implement show',
+  })
+
+  api.nvim_create_autocmd('InsertLeave', {
+    buffer = buf,
+    callback = function(args)
+      local res = symbol:get_buf_symbols(args.buf)
+      if res then
+        if #res.symbols > 0 then
+          render(client_id, buf, res.symbols)
+        else
+          clean_data(vim.tbl_keys(buffers_cache[args.buf]), args.buf)
+        end
+      end
+    end,
   })
 end
 

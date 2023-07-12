@@ -100,7 +100,7 @@ function symbol:do_request(buf, client_id, callback)
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
-      data = { symbols = result or {}, client_id = ctx.client_id, bufnr = ctx.bufnr },
+      data = { symbols = result, client_id = ctx.client_id, bufnr = ctx.bufnr },
     })
   end, buf)
 end
@@ -168,6 +168,9 @@ function symbol:register_module()
       end
 
       local client = lsp.get_client_by_id(args.data.client_id)
+      if not client then
+        return
+      end
       if not client.supports_method('textDocument/documentSymbol') then
         return
       end
