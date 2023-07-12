@@ -148,7 +148,7 @@ function sd:layout_float(opt)
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
     })
-    :winhl('DiagnosticShowNormal', 'DiagnsoticShowBorder')
+    :winhl('DiagnosticShowNormal', 'DiagnosticShowBorder')
     :wininfo()
 
   api.nvim_win_set_cursor(self.winid, { 2, 3 })
