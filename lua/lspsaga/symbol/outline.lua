@@ -133,7 +133,7 @@ function ot:parse(symbols, bufnr, list)
 
       if config.outline.detail then
         buf_set_extmark(bufnr, ns, row - 1, 0, {
-          virt_text = { { node.detail or '', 'Comment' } },
+          virt_text = { { node.detail or '', 'SagaDetail' } },
         })
       end
 
@@ -212,7 +212,7 @@ function ot:collapse(node, curlnum)
 
     if config.outline.detail then
       buf_set_extmark(self.bufnr, ns, row, 0, {
-        virt_text = { { tmp.value.detail or ' ', 'Comment' } },
+        virt_text = { { tmp.value.detail or ' ', 'SagaDetail' } },
       })
     end
     if not tmp or (tmp.next and tmp.next.value.inlevel <= inlevel) then

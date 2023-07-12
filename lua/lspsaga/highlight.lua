@@ -17,6 +17,7 @@ local function hi_define()
     SagaSelect = { link = 'String' },
     SagaSearch = { link = 'Search' },
     SagaFinderFname = { link = 'Function' },
+    SagaDetail = { link = 'Comment' },
 
     -- code action
     ActionFix = { link = 'Keyword' },
