@@ -1,6 +1,7 @@
 local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local win = require('lspsaga.window')
+local util = require('lspsaga.util')
 
 local function get_action_diff(main_buf, tuple)
   local act = require('lspsaga.codeaction.init')
@@ -146,6 +147,7 @@ local function action_preview(main_winid, main_buf, tuple)
     vim.bo[preview_buf].modifiable = false
     local win_conf = api.nvim_win_get_config(preview_winid)
     win_conf.height = #diff
+    win_conf.width = util.get_max_content_length(diff)
     api.nvim_win_set_config(preview_winid, win_conf)
   end
 
