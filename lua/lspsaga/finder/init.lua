@@ -249,6 +249,13 @@ function fd:event()
       end)
     end,
   })
+
+  api.nvim_create_autocmd('QuitPre', {
+    buffer = self.lbufnr,
+    callback = function()
+      util.close_win(self.rwinid)
+    end,
+  })
 end
 
 function fd:clean()
