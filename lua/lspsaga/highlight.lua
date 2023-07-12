@@ -10,7 +10,7 @@ local function hi_define()
     SagaToggle = { link = 'Comment' },
     SagaCount = { link = 'Comment' },
     SagaBeacon = { bg = '#c43963' },
-    SagaVirtLine = { link = 'Comment' },
+    SagaVirtLine = { fg = '#444a4d' },
     SagaSpinnerTitle = { link = 'Statement' },
     SagaSpinner = { link = 'Statement' },
     SagaText = { link = 'Comment' },

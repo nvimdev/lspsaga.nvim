@@ -107,6 +107,14 @@ function M.spinner()
   end
 end
 
+local function to_normal_bg()
+  local data = api.nvim_get_hl_by_name('SagaNormal', true)
+  if data.background then
+    return { fg = data.background }
+  end
+  return { link = 'SagaVirtLine' }
+end
+
 local function indent_range(inlevel)
   local curlnum = api.nvim_win_get_cursor(0)[1]
   local start, _end
@@ -140,8 +148,9 @@ function M.indent_current(inlevel)
 
   for i = 0, api.nvim_buf_line_count(0) - 1 do
     vim.tbl_map(function(item)
-      local hi = (item == current and i >= range[1] and i <= range[2]) and 'Type' or 'Comment'
-      api.nvim_set_hl(0, 'SagaIndent' .. i .. item, { link = hi })
+      local hi = (item == current and i >= range[1] and i <= range[2]) and { link = 'Type' }
+        or to_normal_bg()
+      api.nvim_set_hl(0, 'SagaIndent' .. i .. item, hi)
     end, t)
   end
 end
@@ -165,6 +174,7 @@ function M.indent(ns, lbufnr, lwinid)
       end
 
       local total = inlevel == 4 and 4 - 2 or inlevel - 1
+      local conf = to_normal_bg()
 
       for i = 1, total, 2 do
         local hi = 'SagaIndent' .. row .. (i - 1)
@@ -173,7 +183,7 @@ function M.indent(ns, lbufnr, lwinid)
           virt_text_pos = 'overlay',
           ephemeral = true,
         })
-        api.nvim_set_hl(0, hi, { link = 'Comment', default = true })
+        api.nvim_set_hl(0, hi, { link = 'SagaNormal', default = true })
       end
     end,
   })
