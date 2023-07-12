@@ -214,7 +214,7 @@ function fd:event()
       if not client then
         return
       end
-      if self.layout == 'float' then
+      if self.layout == 'float' and config.ui.title then
         rwin_conf.title =
           util.path_sub(api.nvim_buf_get_name(node.value.bufnr), client.config.root_dir)
         rwin_conf.title_pos = 'center'
