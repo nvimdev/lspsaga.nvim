@@ -173,7 +173,7 @@ function M.indent(ns, lbufnr, lwinid)
           virt_text_pos = 'overlay',
           ephemeral = true,
         })
-        api.nvim_set_hl(0, hi, { link = 'SagaVirtLine', default = true })
+        api.nvim_set_hl(0, hi, { link = 'Comment', default = true })
       end
     end,
   })
