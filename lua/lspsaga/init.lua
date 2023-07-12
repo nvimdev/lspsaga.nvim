@@ -4,7 +4,7 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 local default_config = {
   ui = {
-    border = 'none',
+    border = 'single',
     devicon = true,
     title = true,
     expand = '⊞',

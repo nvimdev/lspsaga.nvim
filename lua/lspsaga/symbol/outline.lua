@@ -475,7 +475,7 @@ function ot:keymap()
     if config.outline.layout == 'normal' and config.outline.close_after_jump then
       util.close_win({ self.winid, self.rwinid })
       clean_ctx()
-    else
+    elseif config.outline.layout == 'float' then
       ly:close()
       clean_ctx()
     end
