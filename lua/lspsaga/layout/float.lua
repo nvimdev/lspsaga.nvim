@@ -49,21 +49,26 @@ end
 function M.right(left_winid, title)
   local win_conf = api.nvim_win_get_config(left_winid)
   local original = vim.deepcopy(win_conf)
-  local map = border_map()
-  original.border[5] = map[ui.border][1]
-  original.border[3] = map[ui.border][2]
-  api.nvim_win_set_config(left_winid, original)
+  if original.border then
+    local map = border_map()
+    original.border[5] = map[ui.border][1]
+    original.border[3] = map[ui.border][2]
+    api.nvim_win_set_config(left_winid, original)
+  end
 
   local WIDTH = api.nvim_win_get_width(win_conf.win)
   local col = win_conf.col[false] + win_conf.width
   local row = win_conf.row[false]
   win_conf.width = WIDTH - win_conf.width - 15
-  win_conf.border[8] = ''
-  win_conf.border[7] = ''
   win_conf.row = row
   win_conf.col = col + 2
   win_conf.title = nil
   win_conf.title_pos = nil
+  if win_conf.border then
+    win_conf.border[8] = ''
+    win_conf.border[7] = ''
+  end
+
   if title then
     win_conf.title = title
     win_conf.title_pos = 'center'
