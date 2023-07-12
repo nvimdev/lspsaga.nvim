@@ -181,10 +181,11 @@ function diag:get_cursor_diagnostic()
     res[#res + 1] = {
       code = entry.code or nil,
       message = entry.message,
-      codeDescription = entry.codeDescription or nil,
-      data = entry.data or nil,
+      codeDescription = entry.codeDescription
+        or vim.tbl_get(entry, 'user_data', 'lsp', 'codeDescription'),
+      data = vim.tbl_get(entry, 'user_data', 'lsp', 'data'),
       tags = entry.tags or nil,
-      relatedInformation = entry.relatedInformation or nil,
+      relatedInformation = vim.tbl_get(entry, 'user_data', 'lsp.relatedInformation'),
       source = entry.source or nil,
       severity = entry.severity or nil,
       range = {
