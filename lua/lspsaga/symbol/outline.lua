@@ -276,9 +276,9 @@ function ot:toggle_or_jump()
 
   local main_buf = self.main_buf
   if config.outline.layout == 'normal' and config.outline.close_after_jump then
-    util.close_win({ self.winid, self.rwinid })
+    util.close_win({ self.winid, self.preview_winid })
     clean_ctx()
-  else
+  elseif config.outline.layout == 'float' then
     ly:close()
     clean_ctx()
   end
