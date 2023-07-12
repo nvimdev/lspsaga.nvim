@@ -362,7 +362,18 @@ function fd:apply_maps()
           return
         end
         local fname = api.nvim_buf_get_name(curnode.value.bufnr)
-        local pos = { curnode.value.range.start.line + 1, curnode.value.range.start.character }
+        local client = lsp.get_client_by_id(curnode.value.client_id)
+        if not client then
+          return
+        end
+        local pos = {
+          curnode.value.range.start.line + 1,
+          lsp.util._get_line_byte_from_position(
+            curnode.value.bufnr,
+            curnode.value.range.start,
+            client.offset_encoding
+          ),
+        }
         self:clean()
         local restore = win:minimal_restore()
         vim.cmd[action](fname)

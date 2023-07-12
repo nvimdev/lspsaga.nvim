@@ -230,13 +230,17 @@ function ch:keymap()
       if not curnode then
         return
       end
+      local client = lsp.get_client_by_id(curnode.value.client_id)
       local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
       local fname = vim.uri_to_fname(data.uri)
-      local pos = { data.selectionRange.start.line + 1, data.selectionRange.start.character }
+      local start = data.selectionRange.start
+      local pos = { start.line + 1 }
       self:clean()
       local restore = win:minimal_restore()
       vim.cmd[action](fname)
       restore()
+      local curbuf = api.nvim_get_current_buf()
+      pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
       api.nvim_win_set_cursor(0, pos)
       beacon({ pos[1], 0 }, #api.nvim_get_current_line())
     end)
@@ -367,6 +371,7 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       end
       curlnum = curlnum + 1
       val.winline = curlnum
+      val.client_id = client.id
       if not curnode then
         slist.tail_push(self.list, val)
       else

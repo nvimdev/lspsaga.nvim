@@ -69,9 +69,10 @@ function def:apply_maps(bufnr)
       util.map_keys(bufnr, map, function()
         local fname = api.nvim_buf_get_name(0)
         local index = get_node_idx(self.list, api.nvim_get_current_win())
+        local start = self.list[index].selectionRange.start
+        local client = lsp.get_client_by_id(self.list[index].client_id)
         local pos = {
-          self.list[index].selectionRange.start.line + 1,
-          self.list[index].selectionRange.start.character,
+          start.line + 1,
         }
         if action == 'quit' then
           vim.cmd[action]()
@@ -79,6 +80,8 @@ function def:apply_maps(bufnr)
         end
         self:close_all()
         vim.cmd[action](fname)
+        local curbuf = api.nvim_get_current_buf()
+        pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
         api.nvim_win_set_cursor(0, pos)
         beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
       end)
@@ -200,6 +203,7 @@ function def:peek_definition(method)
     local node = {
       bufnr = vim.uri_to_bufnr(result[1].targetUri or result[1].uri),
       selectionRange = result[1].targetSelectionRange or result[1].range,
+      client_id = context.client_id,
     }
     if not api.nvim_buf_is_loaded(node.bufnr) then
       fn.bufload(node.bufnr)
@@ -219,7 +223,7 @@ end
 
 -- override the default the defintion handler
 function def:goto_definition(method)
-  lsp.handlers[get_method(method)] = function(_, result, _, _)
+  lsp.handlers[get_method(method)] = function(_, result, lsp_ctx, _)
     if not result or vim.tbl_isempty(result) then
       return
     end
@@ -232,8 +236,9 @@ function def:goto_definition(method)
       res.uri = result.uri or result.targetUri
       res.range = result.range or result.targetSelectionRange
     end
+    local client = lsp.get_client_by_id(lsp_ctx.client_id)
 
-    if vim.tbl_isempty(res) then
+    if vim.tbl_isempty(res) or not client then
       return
     end
 
@@ -249,10 +254,12 @@ function def:goto_definition(method)
     end
 
     api.nvim_command('edit ' .. jump_destination)
-
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
+    local curbuf = api.nvim_get_current_buf()
     local width = #api.nvim_get_current_line()
-    beacon({ res.range.start.line, res.range.start.character }, width)
+    local col =
+      lsp.util._get_line_byte_from_position(curbuf, res.range.start, client.offset_encoding)
+    beacon({ res.range.start.line, col }, width)
   end
   if method == 1 then
     lsp.buf.definition()
