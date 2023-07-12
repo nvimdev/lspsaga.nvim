@@ -278,10 +278,10 @@ function diag:render_diagnostic_window(entry, option)
 
   local virt = {}
   if entry.source then
-    virt[#virt + 1] = { entry.source, 'Comment' }
+    virt[#virt + 1] = { entry.source, 'SagaVirtLine' }
   end
   if entry.code then
-    virt[#virt + 1] = { ' ' .. entry.code, 'Comment' }
+    virt[#virt + 1] = { ' ' .. entry.code, 'SagaVirtLine' }
   end
 
   local max_width = math.floor(vim.o.columns * diag_conf.max_width)

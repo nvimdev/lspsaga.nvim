@@ -77,7 +77,7 @@ local function try_render(client_id, bufnr, pos, data)
 
     api.nvim_buf_set_extmark(bufnr, ns, pos.line, 0, {
       id = data.virt_id,
-      virt_lines = { { { indent .. #result .. ' ' .. word, 'Comment' } } },
+      virt_lines = { { { indent .. #result .. ' ' .. word, 'SagaSpinner' } } },
       virt_lines_above = true,
       hl_mode = 'combine',
     })
