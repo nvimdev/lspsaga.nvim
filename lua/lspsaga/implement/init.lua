@@ -201,7 +201,7 @@ local function start(buf, client_id, symbols)
   api.nvim_create_autocmd('User', {
     pattern = 'SagaSymbolUpdate',
     callback = function(args)
-      if api.nvim_get_mode().mode ~= 'n' then
+      if api.nvim_get_mode().mode ~= 'n' or api.nvim_get_current_buf() ~= args.data.bufnr then
         return
       end
 
