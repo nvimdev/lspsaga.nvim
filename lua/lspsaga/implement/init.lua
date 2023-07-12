@@ -139,6 +139,9 @@ local function clean_data(t, bufnr)
 end
 
 local function render(client_id, bufnr, symbols)
+  if not api.nvim_buf_is_valid(bufnr) then
+    return
+  end
   local langdata = langmap(bufnr)
   local hit = buffers_cache[bufnr] and {} or nil
 
