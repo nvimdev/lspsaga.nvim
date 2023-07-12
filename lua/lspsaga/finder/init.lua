@@ -245,7 +245,9 @@ function fd:event()
         if api.nvim_get_current_win() ~= self.rwinid then
           return
         end
+        vim.opt.eventignore:append('BufEnter')
         api.nvim_set_current_win(self.lwinid)
+        vim.opt.eventignore:remove('BufEnter')
       end)
     end,
   })
@@ -407,7 +409,9 @@ function fd:apply_maps()
     if api.nvim_get_current_win() ~= self.lwinid then
       return
     end
+    vim.opt.eventignore:append('BufEnter')
     api.nvim_set_current_win(self.rwinid)
+    vim.opt.eventignore:remove('BufEnter')
   end)
 end
 
