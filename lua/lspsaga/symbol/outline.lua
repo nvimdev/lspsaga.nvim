@@ -306,15 +306,17 @@ function ot:create_preview_win(lines)
     noautocmd = true,
   }
 
+  local row = fn.screenrow()
+
   if outline_conf.win_position == 'right' then
     float_opt.anchor = 'NE'
     float_opt.col = vim.o.columns - outline_conf.win_width - 1
-    float_opt.row = fn.winline() + 2
+    float_opt.row = row + 2
     float_opt.row = fn.winline()
   else
     float_opt.anchor = 'NW'
     float_opt.col = outline_conf.win_width + 1
-    float_opt.row = fn.winline()
+    float_opt.row = row
   end
   self.preview_bufnr, self.preview_winid = win
     :new_float(float_opt, false, true)
@@ -374,7 +376,8 @@ function ot:preview(group)
 
       api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
       local win_conf = api.nvim_win_get_config(self.preview_winid)
-      win_conf.row = fn.winline() - 1
+      local row = fn.screenrow()
+      win_conf.row = row - 1
       win_conf.height = math.min(#lines, bit.rshift(vim.o.lines, 1))
       api.nvim_win_set_config(self.preview_winid, win_conf)
     end,
