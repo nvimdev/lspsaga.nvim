@@ -167,7 +167,7 @@ function symbol:register_module()
         return
       end
 
-      local client = lsp.get_client_by_id(args.data.client_id)
+      local client = lsp.get_client_by_id(args.id)
       if not client then
         return
       end
