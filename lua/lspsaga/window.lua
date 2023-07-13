@@ -185,6 +185,7 @@ function win:minimal_restore()
     ['colorcolumn'] = vim.opt.colorcolumn,
     ['fillchars'] = vim.opt.fillchars,
     ['statuscolumn'] = vim.opt.statuscolumn,
+    ['winhl'] = vim.opt.winhl,
   }
 
   local restore = function()

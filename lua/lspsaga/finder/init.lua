@@ -395,7 +395,7 @@ function fd:apply_maps()
         vim.cmd[action](fname)
         restore()
         api.nvim_win_set_cursor(0, pos)
-        beacon({ pos[1], 0 }, #api.nvim_get_current_line())
+        beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
         return
       end
 
