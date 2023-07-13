@@ -137,6 +137,7 @@ function def:clean_event()
       if not index then
         return
       end
+      local bufnr = self.list[index].bufnr
 
       if self.list[index].restore then
         self.opt_restore()
@@ -147,9 +148,9 @@ function def:clean_event()
         api.nvim_set_current_win(prev.winid)
       end
 
-      if api.nvim_buf_is_loaded(args.buf) then
-        if not in_def_wins(self.list, args.buf) then
-          self:delete_maps(args.buf)
+      if api.nvim_buf_is_loaded(bufnr) then
+        if not in_def_wins(self.list, bufnr) then
+          self:delete_maps(bufnr)
         end
       end
 
