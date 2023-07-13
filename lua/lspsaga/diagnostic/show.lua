@@ -211,9 +211,9 @@ end
 local function msg_fmt(entry)
   return entry.message
     .. ' '
-    .. entry.lnum
+    .. entry.lnum + 1
     .. ':'
-    .. entry.col
+    .. entry.col + 1
     .. ':'
     .. entry.bufnr
     .. ' '
@@ -238,8 +238,8 @@ function sd:toggle_or_jump(entrys_list)
       api.nvim_win_set_buf(0, tonumber(bn))
       wins[#wins] = 0
     end
-    api.nvim_win_set_cursor(wins[#wins], { tonumber(ln) + 1, tonumber(col) })
-    beacon({ tonumber(ln), 0 }, #api.nvim_get_current_line())
+    api.nvim_win_set_cursor(wins[#wins], { tonumber(ln), tonumber(col) - 1 })
+    beacon({ tonumber(ln) - 1, 0 }, #api.nvim_get_current_line())
     clean_ctx()
     return
   end
