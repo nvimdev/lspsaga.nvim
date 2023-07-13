@@ -41,6 +41,7 @@ function fd:init_layout()
       ['filetype'] = 'sagafinder',
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
+      ['modifiable'] = true,
     })
     :winopt('wrap', false)
     :right()
@@ -108,7 +109,6 @@ function fd:handler(method, results, spin_close, done)
       if not self.lbufnr then
         spin_close()
         self:init_layout()
-        vim.bo[self.lbufnr].modifiable = true
       end
       local row = api.nvim_buf_line_count(self.lbufnr)
       row = row == 1 and row - 1 or row
@@ -143,10 +143,14 @@ function fd:handler(method, results, spin_close, done)
 
       res.bufnr = vim.uri_to_bufnr(uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
-        vim.opt.eventignore:append('FileType')
+        local events = { 'BufEnter' }
+        if not uri:find('jdt://') then
+          events[#events + 1] = 'FileType'
+        end
+        vim.opt.eventignore:append(events)
         fn.bufload(res.bufnr)
         res.wipe = true
-        vim.opt.eventignore:remove('FileType')
+        vim.opt.eventignore:remove(events)
       end
       local range = res.range or res.targetSelectionRange or res.selectionRange
       res.line = api.nvim_buf_get_text(
@@ -174,7 +178,7 @@ function fd:handler(method, results, spin_close, done)
   end
 
   if done then
-    vim.bo[self.lbufnr].modifiable = false
+    -- vim.bo[self.lbufnr].modifiable = false
     spin_close()
     api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
     box.indent(ns, self.lbufnr, self.lwinid)
@@ -208,7 +212,9 @@ function fd:event()
         return
       end
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
-      box.ts_highlight(node.value.bufnr)
+      if node.value.wipe then
+        box.ts_highlight(node.value.bufnr)
+      end
       api.nvim_set_option_value('winhl', 'Normal:SagaNormal,FloatBorder:SagaBorder', {
         scope = 'local',
         win = self.rwinid,
@@ -460,13 +466,26 @@ function fd:new(args)
 
   local spin_close = box.spinner()
   local count = 0
-  for _, method in ipairs(methods) do
-    lsp.buf_request_all(curbuf, method, params, function(results)
+  coroutine.resume(coroutine.create(function()
+    local retval = {}
+    local co = coroutine.running()
+    for _, method in ipairs(methods) do
+      lsp.buf_request_all(curbuf, method, params, function(results)
+        count = count + 1
+        results = box.filter(method, results)
+        retval[method] = results
+        if #vim.tbl_keys(retval) == #methods then
+          coroutine.resume(co)
+        end
+      end)
+    end
+    coroutine.yield()
+    count = 0
+    for method, results in pairs(retval) do
       count = count + 1
-      results = box.filter(method, results)
       self:handler(method, results, spin_close, count == #methods)
-    end)
-  end
+    end
+  end))
 end
 
 return setmetatable(ctx, fd)
