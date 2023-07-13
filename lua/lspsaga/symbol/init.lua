@@ -178,7 +178,10 @@ function symbol:register_module()
       local winbar
       if config.symbol_in_winbar.enable then
         winbar = require('lspsaga.symbol.winbar')
-        winbar.file_bar(args.buf)
+        local curwin_conf = api.nvim_win_get_config(0)
+        if curwin_conf.relative == 0 then
+          winbar.file_bar(args.buf)
+        end
       end
 
       self:do_request(args.buf, args.data.client_id, function(result)

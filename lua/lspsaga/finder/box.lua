@@ -1,4 +1,5 @@
 local vfn = vim.fn
+local treesitter = vim.treesitter
 local M = {}
 ---@diagnostic disable-next-line: deprecated
 local api, uv = vim.api, vim.version().minor >= 10 and vim.uv or vim.loop
@@ -187,6 +188,16 @@ function M.indent(ns, lbufnr, lwinid)
       end
     end,
   })
+end
+
+function M.ts_highlight(bufnr)
+  local lang = treesitter.language.get_lang(vim.bo[bufnr].filetype)
+  local ok = pcall(treesitter.get_parser, bufnr, lang)
+  if not ok then
+    vim.bo[bufnr].syntax = 'on'
+    return
+  end
+  treesitter.start(bufnr, lang)
 end
 
 return M

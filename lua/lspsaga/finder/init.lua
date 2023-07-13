@@ -143,8 +143,10 @@ function fd:handler(method, results, spin_close, done)
 
       res.bufnr = vim.uri_to_bufnr(uri)
       if not api.nvim_buf_is_loaded(res.bufnr) then
+        vim.opt.eventignore:append('FileType')
         fn.bufload(res.bufnr)
         res.wipe = true
+        vim.opt.eventignore:remove('FileType')
       end
       local range = res.range or res.targetSelectionRange or res.selectionRange
       res.line = api.nvim_buf_get_text(
@@ -206,6 +208,7 @@ function fd:event()
         return
       end
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
+      box.ts_highlight(node.value.bufnr)
       api.nvim_set_option_value('winhl', 'Normal:SagaNormal,FloatBorder:SagaBorder', {
         scope = 'local',
         win = self.rwinid,
@@ -413,9 +416,16 @@ function fd:apply_maps()
     if api.nvim_get_current_win() ~= self.lwinid then
       return
     end
+    local curlnum = api.nvim_win_get_cursor(0)[1]
+    local curnode = slist.find_node(self.list, curlnum)
+    if not curnode then
+      return
+    end
     vim.opt.eventignore:append('BufEnter')
     api.nvim_set_current_win(self.rwinid)
     vim.opt.eventignore:remove('BufEnter')
+    local curbuf = api.nvim_get_current_buf()
+    vim.lsp.buf_attach_client(curbuf, curnode.value.client_id)
   end)
 end
 
