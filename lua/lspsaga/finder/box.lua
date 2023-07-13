@@ -23,7 +23,7 @@ end
 
 function M.parse_argument(args)
   local methods = {}
-  local layout
+  local layout, inexist
   for _, arg in ipairs(args) do
     if arg:find('^%w+$') then
       methods[#methods + 1] = arg
@@ -33,9 +33,11 @@ function M.parse_argument(args)
       layout = 'normal'
     elseif arg:find('%+%+float') then
       layout = 'float'
+    elseif arg:find('%+%+inexist') then
+      inexist = true
     end
   end
-  return methods, layout
+  return methods, layout, inexist
 end
 
 function M.filter(method, results)
@@ -198,6 +200,33 @@ function M.ts_highlight(bufnr)
     return
   end
   treesitter.start(bufnr, lang)
+end
+
+function M.win_reuse(direction)
+  local wins = api.nvim_tabpage_list_wins(0)
+  if #wins == 1 then
+    return
+  end
+  local curwin = api.nvim_get_current_win()
+  local curwin_pos = vfn.win_screenpos(curwin)
+  local winheight = api.nvim_win_get_height(curwin)
+  local winwidth = api.nvim_win_get_width(curwin)
+  local index
+  if direction == 'vsplit' and winwidth ~= vim.o.columns then
+    index = 2
+  elseif direction == 'split' and winheight ~= vim.o.lines then
+    index = 1
+  end
+
+  if not index then
+    return
+  end
+
+  for _, winid in ipairs(wins) do
+    if winid ~= curwin and vfn.win_screenpos(winid)[index] > curwin_pos[index] then
+      return winid
+    end
+  end
 end
 
 return M

@@ -178,7 +178,7 @@ function fd:handler(method, results, spin_close, done)
   end
 
   if done then
-    -- vim.bo[self.lbufnr].modifiable = false
+    vim.bo[self.lbufnr].modifiable = false
     spin_close()
     api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
     box.indent(ns, self.lbufnr, self.lwinid)
@@ -396,9 +396,20 @@ function fd:apply_maps()
             client.offset_encoding
           ),
         }
+        local inexist = self.inexist
         self:clean()
         local restore = win:minimal_restore()
-        vim.cmd[action](fname)
+        if inexist and (action == 'split' or action == 'vsplit') then
+          local reuse = box.win_reuse(action)
+          if not reuse then
+            vim.cmd[action](fname)
+          else
+            api.nvim_win_set_buf(reuse, fn.bufadd(fname))
+            api.nvim_set_current_win(reuse)
+          end
+        else
+          vim.cmd[action](fname)
+        end
         restore()
         api.nvim_win_set_cursor(0, pos)
         beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
@@ -436,7 +447,8 @@ function fd:apply_maps()
 end
 
 function fd:new(args)
-  local meth, layout = box.parse_argument(args)
+  local meth, layout, inexist = box.parse_argument(args)
+  self.inexist = inexist
   self.layout = layout or config.finder.layout
   if #meth == 0 then
     meth = vim.split(config.finder.default, '+', { plain = true })
