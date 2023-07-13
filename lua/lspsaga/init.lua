@@ -143,7 +143,7 @@ local default_config = {
     },
   },
   implement = {
-    enable = true,
+    enable = false,
     sign = true,
     virtual_text = true,
     priority = 100,
