@@ -144,14 +144,24 @@ local function indent_range(inlevel)
   return { start and start - 1 or curlnum, _end - 1 }
 end
 
+local con_ns = api.nvim_create_namespace('FinderCurrent')
 function M.indent_current(inlevel)
   local current = inlevel - 2
   local range = indent_range(inlevel)
   local t = { 0, 2, 4 }
+  local currow = api.nvim_win_get_cursor(0)[1] - 1
+  api.nvim_buf_clear_namespace(0, con_ns, 0, -1)
+  if current == 4 then
+    api.nvim_buf_set_extmark(0, con_ns, currow, current + 1, {
+      virt_text = { { config.ui.lines[4], 'SagaInCurrent' } },
+      virt_text_pos = 'overlay',
+    })
+  end
 
   for i = 0, api.nvim_buf_line_count(0) - 1 do
     vim.tbl_map(function(item)
-      local hi = (item == current and i >= range[1] and i <= range[2]) and { link = 'Type' }
+      local hi = (item == current and i >= range[1] and i <= range[2])
+          and { link = 'SagaInCurrent' }
         or to_normal_bg()
       api.nvim_set_hl(0, 'SagaIndent' .. i .. item, hi)
     end, t)
@@ -171,6 +181,7 @@ function M.indent(ns, lbufnr, lwinid)
       end
     end,
     on_line = function(_, winid, bufnr, row)
+      local currow = api.nvim_win_get_cursor(0)[1] - 1
       local inlevel = vim.fn.indent(row + 1)
       if bufnr ~= lbufnr or winid ~= lwinid or inlevel == 2 then
         return
@@ -181,8 +192,9 @@ function M.indent(ns, lbufnr, lwinid)
 
       for i = 1, total, 2 do
         local hi = 'SagaIndent' .. row .. (i - 1)
-        api.nvim_buf_set_extmark(bufnr, ns, row, i - 1, {
-          virt_text = { { config.ui.lines[3], hi } },
+        local virt = (row == currow and inlevel == 6) and config.ui.lines[2] or config.ui.lines[3]
+        local vit = api.nvim_buf_set_extmark(bufnr, ns, row, i - 1, {
+          virt_text = { { virt, hi } },
           virt_text_pos = 'overlay',
           ephemeral = true,
         })

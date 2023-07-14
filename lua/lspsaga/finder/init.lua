@@ -206,7 +206,7 @@ function fd:event()
       if inlevel == 6 then
         buf_add_highlight(self.lbufnr, select_ns, 'String', curlnum - 1, 6, -1)
       end
-      box.indent_current(inlevel)
+      box.indent_current(inlevel, ns)
       local node = slist.find_node(self.list, curlnum)
       if not node or not node.value.bufnr then
         return
