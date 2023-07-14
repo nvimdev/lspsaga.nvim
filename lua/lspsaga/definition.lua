@@ -200,6 +200,9 @@ function def:peek_definition(method)
       )
       return
     end
+    if result.uri then
+      result = { result }
+    end
 
     local node = {
       bufnr = vim.uri_to_bufnr(result[1].targetUri or result[1].uri),
