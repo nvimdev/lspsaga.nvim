@@ -22,36 +22,40 @@ end
 local buf_changedtick = {}
 
 function symbol:buf_watcher(buf, client_id)
-  local function defer_request(changedtick)
+  local function defer_request(b, changedtick)
     vim.defer_fn(function()
-      if not self[buf] or not api.nvim_buf_is_valid(buf) then
+      if not self[b] or not api.nvim_buf_is_valid(b) then
         return
       end
-      self[buf].pending_request = true
-      self:do_request(buf, client_id, function()
-        if not api.nvim_buf_is_valid(buf) then
+      self[b].pending_request = true
+      self:do_request(b, client_id, function()
+        if not api.nvim_buf_is_valid(b) or not self[b] then
           return
         end
-        self[buf].pending_request = false
-        if changedtick < buf_changedtick[buf] then
-          changedtick = api.nvim_buf_get_changedtick(buf)
-          defer_request(changedtick)
-        else
-          self[buf].changedtick = changedtick
+        self[b].pending_request = false
+        if changedtick < self[b].changedtick then
+          changedtick = api.nvim_buf_get_changedtick(b)
+          defer_request(b, changedtick)
         end
-      end)
-    end, 1000)
+      end, changedtick)
+    end, 1500)
   end
 
   api.nvim_buf_attach(buf, false, {
     on_lines = function(_, b, changedtick)
-      if b ~= buf then
+      if not self[b] or not changedtick then
         return
       end
-      buf_changedtick[buf] = changedtick
-      if self[buf] and not self[buf].pending_request then
-        defer_request(changedtick)
+      self[b].changedtick = changedtick
+      if self[b] and not self[b].pending_request then
+        defer_request(b, changedtick)
       end
+    end,
+    on_changedtick = function(_, b, changedtick)
+      if not self[b] or not changedtick then
+        return
+      end
+      self[b].changedtick = changedtick
     end,
   })
 
@@ -63,7 +67,7 @@ function symbol:buf_watcher(buf, client_id)
   })
 end
 
-function symbol:do_request(buf, client_id, callback)
+function symbol:do_request(buf, client_id, callback, changedtick)
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
@@ -100,7 +104,12 @@ function symbol:do_request(buf, client_id, callback)
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
-      data = { symbols = result or {}, client_id = ctx.client_id, bufnr = ctx.bufnr },
+      data = {
+        symbols = result or {},
+        client_id = ctx.client_id,
+        bufnr = ctx.bufnr,
+        changedtick = changedtick,
+      },
     })
   end, buf)
 end
@@ -168,23 +177,17 @@ function symbol:register_module()
       end
 
       local client = lsp.get_client_by_id(args.data.client_id)
-      if not client then
-        return
-      end
-      if not client.supports_method('textDocument/documentSymbol') then
+      if not client or not client.supports_method('textDocument/documentSymbol') then
         return
       end
 
       local winbar
       if config.symbol_in_winbar.enable then
         winbar = require('lspsaga.symbol.winbar')
-        local curwin_conf = api.nvim_win_get_config(0)
-        if curwin_conf.relative == 0 then
-          winbar.file_bar(args.buf)
-        end
+        winbar.file_bar(args.buf)
       end
 
-      self:do_request(args.buf, args.data.client_id, function(result)
+      self:do_request(args.buf, args.data.client_id, function()
         if api.nvim_get_current_buf() ~= args.buf then
           return
         end
@@ -194,7 +197,7 @@ function symbol:register_module()
         end
 
         if config.implement.enable and client.supports_method('textDocument/implementation') then
-          require('lspsaga.implement').start(args.buf, args.data.client_id, result)
+          require('lspsaga.implement').start()
         end
       end)
     end,

@@ -175,6 +175,10 @@ end
 
 local function file_bar(buf)
   local winid = api.nvim_get_current_win()
+  local winconf = api.nvim_win_get_config(winid)
+  if #winconf.relative ~= 0 then
+    return
+  end
   if config.show_file then
     api.nvim_set_option_value('winbar', path_in_bar(buf), { scope = 'local', win = winid })
   else

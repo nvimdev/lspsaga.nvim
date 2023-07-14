@@ -157,7 +157,11 @@ local function render(client_id, bufnr, symbols)
         local scol = range.start.character
         local erow = range['end'].line
         local ecol = range['end'].character
-        local word = api.nvim_buf_get_text(bufnr, srow, scol, erow, ecol, {})[1]
+        local ok, res = pcall(api.nvim_buf_get_text, bufnr, srow, scol, erow, ecol, {})
+        if not ok then
+          return
+        end
+        local word = res[1]
         if not buffers_cache[bufnr][word] then
           buffers_cache[bufnr][word] = {
             range = item.range,
@@ -196,39 +200,33 @@ local function render(client_id, bufnr, symbols)
   end
 end
 
-local function start(buf, client_id, symbols)
-  if symbols then
-    render(client_id, buf, symbols)
-  end
+local function lang_list()
+  local t = { 'java', 'cs', 'typescript', 'go', 'swift', 'cpp' }
+  return vim.list_extend(t, config.lang)
+end
 
+local function start()
   api.nvim_create_autocmd('User', {
     pattern = 'SagaSymbolUpdate',
     callback = function(args)
+      if
+        api.nvim_get_current_buf() ~= args.data.bufnr
+        or not vim.tbl_contains(lang_list(), vim.bo[args.data.bufnr].filetype)
+      then
+        return
+      end
+
       if api.nvim_get_mode().mode ~= 'n' or api.nvim_get_current_buf() ~= args.data.bufnr then
         return
       end
 
       if #args.data.symbols > 0 then
-        render(client_id, buf, args.data.symbols)
+        render(args.data.client_id, args.data.bufnr, args.data.symbols)
       else
-        clean_data(vim.tbl_keys(buffers_cache[args.buf]), args.buf)
+        clean_data(vim.tbl_keys(buffers_cache[args.data.bufnr]), args.data.bufnr)
       end
     end,
     desc = '[Lspsaga] Implement show',
-  })
-
-  api.nvim_create_autocmd('InsertLeave', {
-    buffer = buf,
-    callback = function(args)
-      local res = symbol:get_buf_symbols(args.buf)
-      if res then
-        if #res.symbols > 0 then
-          render(client_id, buf, res.symbols)
-        else
-          clean_data(vim.tbl_keys(buffers_cache[args.buf]), args.buf)
-        end
-      end
-    end,
   })
 end
 

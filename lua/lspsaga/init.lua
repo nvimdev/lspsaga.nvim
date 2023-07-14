@@ -145,6 +145,7 @@ local default_config = {
   implement = {
     enable = false,
     sign = true,
+    lang = {},
     virtual_text = true,
     priority = 100,
   },
