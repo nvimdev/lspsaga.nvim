@@ -85,6 +85,9 @@ local function lb_autocmd()
     group = g,
     callback = function(opt)
       local client = lsp.get_client_by_id(opt.data.client_id)
+      if not client then
+        return
+      end
       if not client.supports_method('textDocument/codeAction') then
         return
       end
@@ -125,11 +128,7 @@ local function lb_autocmd()
   api.nvim_create_autocmd('LspDetach', {
     group = g,
     callback = function(args)
-      local group_name = name .. tostring(args.buf)
-      local ok = pcall(api.nvim_get_autocmds, { group = group_name })
-      if ok then
-        api.nvim_del_augroup_by_name(group_name)
-      end
+      pcall(api.nvim_del_augroup_by_name, 'SagaLightBulb' .. tostring(args.buf))
     end,
   })
 end

@@ -209,6 +209,7 @@ local function init_winbar(buf)
   })
 
   api.nvim_create_autocmd({ 'CursorMoved' }, {
+    group = api.nvim_create_augroup('SagaWinbar' .. buf, { clear = true }),
     buffer = buf,
     callback = function()
       local res = symbol:get_buf_symbols(buf)
