@@ -76,6 +76,10 @@ local function get_action_diff(main_buf, tuple)
     ctxlen = 0,
   })
 
+  if #diff == 0 then
+    return
+  end
+
   diff = vim.tbl_filter(function(item)
     return not item:find('@@%s')
   end, vim.split(diff, '\n'))
