@@ -134,7 +134,7 @@ function hover:open_floating_preview(content, option_fn)
     :wininfo()
 
   if tuncate_lnum > 0 then
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'Comment', tuncate_lnum - 1, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, 0, 'Type', tuncate_lnum - 1, 0, -1)
   end
 
   vim.treesitter.start(self.bufnr, 'markdown')
@@ -258,6 +258,9 @@ function hover:do_request(args)
     end
     local content = vim.split(value, '\n', { trimempty = true })
     local client = vim.lsp.get_client_by_id(ctx.client_id)
+    if not client then
+      return
+    end
     content[#content + 1] = '`From: ' .. client.name .. '`'
 
     if
