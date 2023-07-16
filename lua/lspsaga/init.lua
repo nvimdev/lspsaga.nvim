@@ -65,6 +65,7 @@ local default_config = {
   finder = {
     max_height = 0.5,
     left_width = 0.3,
+    right_width = 0.5,
     methods = {},
     default = 'ref+imp',
     layout = 'float',

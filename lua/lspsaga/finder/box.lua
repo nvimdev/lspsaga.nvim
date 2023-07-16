@@ -204,16 +204,6 @@ function M.indent(ns, lbufnr, lwinid)
   })
 end
 
-function M.ts_highlight(bufnr)
-  local lang = treesitter.language.get_lang(vim.bo[bufnr].filetype)
-  local ok = pcall(treesitter.get_parser, bufnr, lang)
-  if not ok then
-    vim.bo[bufnr].syntax = 'on'
-    return
-  end
-  treesitter.start(bufnr, lang)
-end
-
 function M.win_reuse(direction)
   local wins = api.nvim_tabpage_list_wins(0)
   if #wins == 1 then

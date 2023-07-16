@@ -46,7 +46,8 @@ local function border_map()
   }
 end
 
-function M.right(left_winid, title)
+function M.right(left_winid, opt)
+  opt = opt or {}
   local win_conf = api.nvim_win_get_config(left_winid)
   local original = vim.deepcopy(win_conf)
   if original.border then
@@ -59,7 +60,8 @@ function M.right(left_winid, title)
   local WIDTH = api.nvim_win_get_width(win_conf.win)
   local col = win_conf.col[false] + win_conf.width
   local row = win_conf.row[false]
-  win_conf.width = WIDTH - win_conf.width - 15
+  local available = WIDTH - win_conf.width
+  win_conf.width = not opt.width and available - 15 or math.floor(WIDTH * opt.width)
   win_conf.row = row
   win_conf.col = col + 2
   win_conf.title = nil
@@ -69,8 +71,8 @@ function M.right(left_winid, title)
     win_conf.border[7] = ''
   end
 
-  if title then
-    win_conf.title = title
+  if opt.title then
+    win_conf.title = opt.title
     win_conf.title_pos = 'center'
   end
   return win

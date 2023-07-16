@@ -32,6 +32,10 @@ local ns = api.nvim_create_namespace('SagaFinder')
 
 function fd:init_layout()
   local win_width = api.nvim_win_get_width(0)
+  if config.finder.right_width > 0.6 then
+    vim.notify('[lspsaga] finder right width must less than 0.7')
+    config.finder.right_width = 0.5
+  end
   self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
     :left(
       math.floor(vim.o.lines * config.finder.max_height),
@@ -44,7 +48,7 @@ function fd:init_layout()
       ['modifiable'] = true,
     })
     :winopt('wrap', false)
-    :right()
+    :right({ width = config.finder.right_width })
     :bufopt({
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
@@ -213,7 +217,7 @@ function fd:event()
       end
       api.nvim_win_set_buf(self.rwinid, node.value.bufnr)
       if node.value.wipe then
-        box.ts_highlight(node.value.bufnr)
+        vim.bo[node.value.bufnr].filetype = self.ft
       end
       api.nvim_set_option_value('winhl', 'Normal:SagaNormal,FloatBorder:SagaBorder', {
         scope = 'local',
@@ -459,6 +463,7 @@ function fd:new(args)
     return #util.get_client_by_method(method) > 0
   end, methods)
   local curbuf = api.nvim_get_current_buf()
+  self.ft = vim.bo[curbuf].filetype
   if #methods == 0 then
     vim.notify(
       ('[Lspsaga] all server of %s buffer does not these methods %s'):format(

@@ -45,7 +45,7 @@ local function outline_in_float()
       ['bufhidden'] = 'wipe',
     })
     :winopt('wrap', false)
-    :right('preview')
+    :right({ title = 'preview' })
     :bufopt({
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',

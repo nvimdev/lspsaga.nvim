@@ -63,9 +63,9 @@ function M:setlines(lines)
   return self
 end
 
-function M:right(title)
+function M:right(opt)
   local fn = self.layout == 'float' and float.right or normal.right
-  self.right_bufnr, self.right_winid = fn(self.left_winid, title)
+  self.right_bufnr, self.right_winid = fn(self.left_winid, opt)
   self.current = RIGHT
   return self
 end
