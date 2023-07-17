@@ -77,7 +77,7 @@ local feedkeys = function(keys, mode)
   api.nvim_feedkeys(api.nvim_replace_termcodes(keys, true, true, true), mode, true)
 end
 
-local function parse_arugment(args)
+local function parse_argument(args)
   local mode, project
   for _, arg in ipairs(args) do
     if arg:find('mode=') then
@@ -92,7 +92,7 @@ end
 function rename:lsp_rename(args)
   local cword = fn.expand('<cword>')
   self.pos = api.nvim_win_get_cursor(0)
-  local mode, project = parse_arugment(args)
+  local mode, project = parse_argument(args)
 
   local float_opt = {
     height = 1,
