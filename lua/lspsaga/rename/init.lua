@@ -79,7 +79,8 @@ end
 
 local function parse_argument(args)
   local mode, project
-  for _, arg in ipairs(args) do
+
+  for _, arg in ipairs(args or {}) do
     if arg:find('mode=') then
       mode = vim.split(arg, '=', { trimempty = true })
     elseif arg:find('%+%+project') then
