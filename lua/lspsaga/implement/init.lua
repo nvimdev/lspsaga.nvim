@@ -222,7 +222,7 @@ local function start()
 
       if #args.data.symbols > 0 then
         render(args.data.client_id, args.data.bufnr, args.data.symbols)
-      else
+      elseif buffers_cache[args.data.bufnr] then
         clean_data(vim.tbl_keys(buffers_cache[args.data.bufnr]), args.data.bufnr)
       end
     end,
