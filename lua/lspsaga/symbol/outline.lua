@@ -271,8 +271,8 @@ function ot:toggle_or_jump()
     api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
     return
   end
-  local pos =
-    { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
+  local range = node.value.selectionRange or node.value.location.range
+  local pos = { range.start.line + 1, range.start.character }
 
   local main_buf = self.main_buf
   if config.outline.layout == 'normal' and config.outline.close_after_jump then
@@ -366,7 +366,7 @@ function ot:preview(group)
         end
         return
       end
-      local range = node.value.range
+      local range = node.value.range or node.value.location.range
       local lines =
         api.nvim_buf_get_lines(self.main_buf, range.start.line, range['end'].line + 1, false)
       if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
