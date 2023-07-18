@@ -63,7 +63,7 @@ function def:close_all()
   api.nvim_del_augroup_by_name('SagaPeekdefinition')
 end
 
-function def:apply_maps(bufnr)
+function def:apply_maps(bufnr, current_buf)
   for action, map in pairs(config.definition.keys) do
     if action ~= 'close' then
       util.map_keys(bufnr, map, function()
@@ -79,7 +79,9 @@ function def:apply_maps(bufnr)
           return
         end
         self:close_all()
-        vim.cmd[action](fname)
+        if action ~= 'edit' and current_buf ~= fname then
+          vim.cmd[action](fname)
+        end
         local curbuf = api.nvim_get_current_buf()
         pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
         api.nvim_win_set_cursor(0, pos)
@@ -220,7 +222,7 @@ function def:peek_definition(method)
       node.winid,
       { node.selectionRange.start.line + 1, node.selectionRange.start.character }
     )
-    self:apply_maps(node.bufnr)
+    self:apply_maps(node.bufnr, current_buf)
     self.list[#self.list + 1] = node
   end)
 end
@@ -256,8 +258,9 @@ function def:goto_definition(method)
     if vim.bo.modified and current_buffer == jump_destination then
       vim.cmd('write!')
     end
-
-    api.nvim_command('edit ' .. jump_destination)
+    if current_buffer ~= jump_destination then
+      api.nvim_command('edit ' .. jump_destination)
+    end
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local curbuf = api.nvim_get_current_buf()
     local width = #api.nvim_get_current_line()
