@@ -15,7 +15,9 @@ local function safe_close(handle)
 end
 
 local function get_root_dir()
-  local clients = lsp.get_active_clients({ bufnr = 0 })
+---@diagnostic disable-next-line: deprecated
+  local get_clients = vim.version().minor >=10 and lsp.get_clients or lsp.get_active_clients
+  local clients = get_clients({ bufnr = 0 })
   for _, client in ipairs(clients) do
     if client.config.root_dir then
       return client.config.root_dir

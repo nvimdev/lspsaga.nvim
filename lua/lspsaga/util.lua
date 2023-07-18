@@ -49,7 +49,9 @@ end
 
 -- get client by methods
 function M.get_client_by_method(methods)
-  local clients = lsp.get_active_clients({ bufnr = 0 })
+  ---@diagnostic disable-next-line: deprecated
+  local get_clients = vim.version().minor >= 10 and lsp.get_clients or lsp.get_active_clients
+  local clients = get_clients({ bufnr = 0 })
   clients = vim.tbl_filter(function(client)
     return client.name ~= 'null-ls'
   end, clients)
