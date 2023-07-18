@@ -70,5 +70,8 @@ describe('lspsaga util', function()
     root = '/Users/test/workspace/vue-project'
     res = util.path_sub('/Users/test/workspace/vue-project/src/main.vue', root)
     assert.is_equal('src/main.vue', res)
+    root = '/Users/test/(test-dir)/%proj-rs/'
+    res = util.path_sub('/Users/test/(test-dir)/%proj-rs/src/main.rs', root)
+    assert.is_equal('src/main.rs', res)
   end)
 end)
