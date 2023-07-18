@@ -61,4 +61,10 @@ describe('lspsaga util', function()
     } } }
     assert.is_false(util.res_isempty(client_results))
   end)
+
+  it('util.path_sub', function()
+    local root = '/Users/test/.config/nvim/lua/'
+    local res = util.path_sub('/Users/test/.config/nvim/lua/plugins/test.lua', root)
+    assert.is_equal('plugins/test.lua', res)
+  end)
 end)

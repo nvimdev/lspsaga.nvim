@@ -25,7 +25,8 @@ end
 
 function M.path_sub(fname, root)
   root = (root and fname:sub(1, #root) == root) and root or vim.env.HOME
-  return fname:gsub(root .. M.path_sep, '')
+  root = root:sub(#root - #M.path_sep + 1) == M.path_sep and root or root .. M.path_sep
+  return fname:gsub(root, '')
 end
 
 --get icon hlgroup color
