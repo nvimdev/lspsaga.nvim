@@ -239,7 +239,12 @@ function fd:event()
       end
 
       api.nvim_win_call(self.rwinid, function()
-        fn.winrestview({ topline = range.start.line + 1 })
+        local height = api.nvim_win_get_height(self.rwinid)
+        local top = range.start.line + 1 - bit.rshift(height, 2)
+        if top <= 0 then
+          top = range.start.line
+        end
+        fn.winrestview({ topline = range.start.line + 1 - bit.rshift(height, 2) })
       end)
 
       buf_add_highlight(
