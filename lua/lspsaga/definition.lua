@@ -79,7 +79,7 @@ function def:apply_maps(bufnr, current_buf)
           return
         end
         self:close_all()
-        if action ~= 'edit' and current_buf ~= fname then
+        if action ~= 'edit' or current_buf ~= bufnr then
           vim.cmd[action](fname)
         end
         local curbuf = api.nvim_get_current_buf()
