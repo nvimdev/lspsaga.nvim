@@ -151,7 +151,9 @@ local function action_preview(main_winid, main_buf, tuple)
     vim.bo[preview_buf].modifiable = false
     local win_conf = api.nvim_win_get_config(preview_winid)
     win_conf.height = #diff
-    win_conf.width = util.get_max_content_length(diff)
+    local new_width = util.get_max_content_length(diff)
+    local main_width = api.nvim_win_get_width(main_winid)
+    win_conf.width = new_width < main_width and main_width or new_width
     api.nvim_win_set_config(preview_winid, win_conf)
   end
 
