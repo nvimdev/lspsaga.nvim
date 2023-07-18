@@ -63,7 +63,7 @@ function def:close_all()
   api.nvim_del_augroup_by_name('SagaPeekdefinition')
 end
 
-function def:apply_maps(bufnr, current_buf)
+function def:apply_maps(bufnr)
   for action, map in pairs(config.definition.keys) do
     if action ~= 'close' then
       util.map_keys(bufnr, map, function()
@@ -79,10 +79,10 @@ function def:apply_maps(bufnr, current_buf)
           return
         end
         self:close_all()
-        if action ~= 'edit' or current_buf ~= bufnr then
+        local curbuf = api.nvim_get_current_buf()
+        if action ~= 'edit' or curbuf ~= bufnr then
           vim.cmd[action](fname)
         end
-        local curbuf = api.nvim_get_current_buf()
         pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
         api.nvim_win_set_cursor(0, pos)
         beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
@@ -222,7 +222,7 @@ function def:peek_definition(method)
       node.winid,
       { node.selectionRange.start.line + 1, node.selectionRange.start.character }
     )
-    self:apply_maps(node.bufnr, current_buf)
+    self:apply_maps(node.bufnr)
     self.list[#self.list + 1] = node
   end)
 end
