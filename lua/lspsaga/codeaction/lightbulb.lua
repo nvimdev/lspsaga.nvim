@@ -107,13 +107,15 @@ local function lb_autocmd()
         end,
       })
 
-      api.nvim_create_autocmd('InsertEnter', {
-        group = group,
-        buffer = buf,
-        callback = function()
-          update_lightbulb(buf, nil)
-        end,
-      })
+      if not config.lightbulb.enable_in_insert then
+        api.nvim_create_autocmd('InsertEnter', {
+          group = group,
+          buffer = buf,
+          callback = function()
+            update_lightbulb(buf, nil)
+          end,
+        })
+      end
 
       api.nvim_create_autocmd('BufLeave', {
         group = group,

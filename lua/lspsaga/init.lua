@@ -56,6 +56,7 @@ local default_config = {
     debounce = 10,
     sign_priority = 40,
     virtual_text = true,
+    enable_in_insert = true,
   },
   scroll_preview = {
     scroll_down = '<C-f>',
