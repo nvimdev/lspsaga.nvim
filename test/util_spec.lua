@@ -66,5 +66,9 @@ describe('lspsaga util', function()
     local root = '/Users/test/.config/nvim/lua/'
     local res = util.path_sub('/Users/test/.config/nvim/lua/plugins/test.lua', root)
     assert.is_equal('plugins/test.lua', res)
+    --@see #1183
+    root = '/Users/test/workspace/vue-project'
+    res = util.path_sub('/Users/test/workspace/vue-project/src/main.vue', root)
+    assert.is_equal('src/main.vue', res)
   end)
 end)
