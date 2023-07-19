@@ -45,6 +45,7 @@ local default_config = {
     num_shortcut = true,
     show_server_name = false,
     extend_gitsigns = false,
+    max_height = 0.3,
     keys = {
       quit = 'q',
       exec = '<CR>',

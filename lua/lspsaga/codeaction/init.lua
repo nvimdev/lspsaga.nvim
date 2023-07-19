@@ -50,16 +50,24 @@ function act:action_callback(tuples, enriched_ctx)
     content[#content + 1] = action_title
   end
 
+  local max_height = math.floor(api.nvim_win_get_height(0) * config.code_action.max_height)
+
   local float_opt = {
-    height = #content,
+    height = math.min(#content, max_height),
     width = util.get_max_content_length(content),
   }
 
   if config.ui.title then
     float_opt.title = {
       { config.ui.code_action .. ' CodeActions', 'Title' },
+      { ' ' .. #content .. ' ', 'SagaCount' },
     }
   end
+
+  content = vim.tbl_map(function(item)
+    item = item:gsub('\r\n', '\\r\\n')
+    return item:gsub('\n', '\\n')
+  end, content)
 
   self.action_bufnr, self.action_winid = win
     :new_float(float_opt, true)
