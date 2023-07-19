@@ -26,6 +26,11 @@ local function clean_msg(msg)
 end
 
 function act:action_callback(tuples, enriched_ctx)
+  if #tuples == 0 then
+    vim.notify('No code actions available', vim.log.levels.INFO)
+    return
+  end
+
   local content = {}
 
   for index, client_with_actions in ipairs(tuples) do
@@ -197,11 +202,6 @@ function act:send_request(main_buf, options, callback)
           action_tuples[#action_tuples + 1] = { 'gitsigns', action }
         end
       end
-    end
-
-    if #action_tuples == 0 then
-      vim.notify('No code actions available', vim.log.levels.INFO)
-      return
     end
 
     if callback then

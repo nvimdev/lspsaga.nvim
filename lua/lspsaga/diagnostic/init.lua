@@ -273,6 +273,9 @@ function diag:render_diagnostic_window(entry, option)
       },
       gitsign = false,
     }, function(action_tuples, enriched_ctx)
+      if #action_tuples == 0 then
+        return
+      end
       self:code_action_cb(action_tuples, enriched_ctx)
     end)
   end
