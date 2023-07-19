@@ -255,10 +255,11 @@ function def:goto_definition(method)
     -- then write the changes first.
     -- this is needed because if the definition is in the current buffer the
     -- jump may not go to the right place.
-    if vim.bo.modified and current_buffer == jump_destination then
-      vim.cmd('write!')
-    end
-    if current_buffer ~= jump_destination then
+    if current_buffer == jump_destination then
+      if vim.bo.modified then
+        vim.cmd('write!')
+      end
+    else
       api.nvim_command('edit ' .. jump_destination)
     end
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
