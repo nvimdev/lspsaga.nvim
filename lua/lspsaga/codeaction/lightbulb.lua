@@ -4,6 +4,7 @@ local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local inrender_row = -1
+local inrender_buf = nil
 
 local function get_name()
   return 'SagaLightBulb'
@@ -18,6 +19,9 @@ if not defined then
 end
 
 local function update_lightbulb(bufnr, row)
+  if not bufnr then
+    return
+  end
   api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
   local name = get_name()
   pcall(fn.sign_unplace, name, { id = inrender_row, buffer = bufnr })
@@ -45,6 +49,7 @@ local function update_lightbulb(bufnr, row)
   end
 
   inrender_row = row + 1
+  inrender_buf = bufnr
 end
 
 local function render(bufnr)
@@ -71,7 +76,7 @@ local timer = uv.new_timer()
 
 local function update(buf)
   timer:stop()
-  update_lightbulb(buf, nil)
+  update_lightbulb(inrender_buf)
   timer:start(config.lightbulb.debounce, 0, function()
     timer:stop()
     vim.schedule(function()
