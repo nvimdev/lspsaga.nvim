@@ -64,7 +64,7 @@ function act:action_callback(tuples, enriched_ctx)
 
   if config.ui.title then
     float_opt.title = {
-      { config.ui.code_action .. ' CodeActions', 'Title' },
+      { config.ui.code_action .. ' Code Actions', 'Title' },
       { ' ' .. #content .. ' ', 'SagaCount' },
     }
   end
