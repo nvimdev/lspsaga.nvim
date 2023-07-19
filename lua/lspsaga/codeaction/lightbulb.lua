@@ -70,6 +70,8 @@ end
 local timer = uv.new_timer()
 
 local function update(buf)
+  timer:stop()
+  update_lightbulb(buf, nil)
   timer:start(config.lightbulb.debounce, 0, function()
     timer:stop()
     vim.schedule(function()
@@ -102,8 +104,8 @@ local function lb_autocmd()
       api.nvim_create_autocmd('CursorMoved', {
         group = group,
         buffer = buf,
-        callback = function()
-          update(buf)
+        callback = function(args)
+          update(args.buf)
         end,
       })
 
@@ -111,8 +113,8 @@ local function lb_autocmd()
         api.nvim_create_autocmd('InsertEnter', {
           group = group,
           buffer = buf,
-          callback = function()
-            update_lightbulb(buf, nil)
+          callback = function(args)
+            update_lightbulb(args.buf, nil)
           end,
         })
       end
@@ -120,8 +122,8 @@ local function lb_autocmd()
       api.nvim_create_autocmd('BufLeave', {
         group = group,
         buffer = buf,
-        callback = function()
-          update_lightbulb(buf, nil)
+        callback = function(args)
+          update_lightbulb(args.buf, nil)
         end,
       })
     end,
