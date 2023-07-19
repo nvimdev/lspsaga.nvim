@@ -79,8 +79,10 @@ function def:apply_maps(bufnr)
           return
         end
         self:close_all()
-        vim.cmd[action](fname)
         local curbuf = api.nvim_get_current_buf()
+        if action ~= 'edit' or curbuf ~= bufnr then
+          vim.cmd[action](fname)
+        end
         pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
         api.nvim_win_set_cursor(0, pos)
         beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
@@ -253,11 +255,13 @@ function def:goto_definition(method)
     -- then write the changes first.
     -- this is needed because if the definition is in the current buffer the
     -- jump may not go to the right place.
-    if vim.bo.modified and current_buffer == jump_destination then
-      vim.cmd('write!')
+    if current_buffer == jump_destination then
+      if vim.bo.modified then
+        vim.cmd('write!')
+      end
+    else
+      api.nvim_command('edit ' .. jump_destination)
     end
-
-    api.nvim_command('edit ' .. jump_destination)
     api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
     local curbuf = api.nvim_get_current_buf()
     local width = #api.nvim_get_current_line()
