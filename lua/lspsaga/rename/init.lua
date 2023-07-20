@@ -173,7 +173,7 @@ local function rename_handler(project, curname, new_name)
       return
     end
     local buffers = {}
-    if result.changes and #result.changes > 0 then
+    if result.changes and vim.tbl_count(result.changes) > 0 then
       for uri, edits in pairs(result.changes or {}) do
         local bufnr = vim.uri_to_bufnr(uri)
         lsp.util.apply_text_edits(edits, bufnr, client.offset_encoding)
