@@ -23,7 +23,7 @@ local buf_changedtick = {}
 
 function symbol:buf_watcher(buf, client_id)
   local function defer_request(b, changedtick)
-    if not self[b] or not api.nvim_buf_is_valid(b) or changedtick == self[b].chagnedtick then
+    if not self[b] or not api.nvim_buf_is_valid(b) or changedtick == self[b].changedtick then
       return
     end
     local client = lsp.get_client_by_id(client_id)
