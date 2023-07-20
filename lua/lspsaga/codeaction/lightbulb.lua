@@ -19,7 +19,7 @@ if not defined then
 end
 
 local function update_lightbulb(bufnr, row)
-  if not bufnr then
+  if not bufnr or not api.nvim_buf_is_valid(bufnr) then
     return
   end
   api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
