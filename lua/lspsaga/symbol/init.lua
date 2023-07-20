@@ -23,22 +23,29 @@ local buf_changedtick = {}
 
 function symbol:buf_watcher(buf, client_id)
   local function defer_request(b, changedtick)
+    if not self[b] or not api.nvim_buf_is_valid(b) or changedtick == self[b].chagnedtick then
+      return
+    end
+    local client = lsp.get_client_by_id(client_id)
+    if not client then
+      return
+    end
+    for _, id in ipairs(self[buf].request_queue or {}) do
+      ---@diagnostic disable-next-line: invisible
+      client.cancel_request(id)
+    end
+
     vim.defer_fn(function()
-      if not self[b] or not api.nvim_buf_is_valid(b) then
-        return
-      end
-      self[b].pending_request = true
       self:do_request(b, client_id, function()
         if not api.nvim_buf_is_valid(b) or not self[b] then
           return
         end
-        self[b].pending_request = false
         if changedtick < self[b].changedtick then
           changedtick = api.nvim_buf_get_changedtick(b)
           defer_request(b, changedtick)
         end
       end, changedtick)
-    end, 1500)
+    end, 3000)
   end
 
   api.nvim_buf_attach(buf, false, {
@@ -78,14 +85,18 @@ function symbol:do_request(buf, client_id, callback, changedtick)
   end
 
   if not self[buf] then
-    self[buf] = {}
+    self[buf] = {
+      request_queue = {},
+    }
     self:buf_watcher(buf, client.id)
   end
 
   self[buf].pending_request = true
 
+  local request_id
+
   ---@diagnostic disable-next-line: invisible
-  client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+  _, request_id = client.request('textDocument/documentSymbol', params, function(err, result, ctx)
     if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] then
       return
     end
@@ -112,6 +123,7 @@ function symbol:do_request(buf, client_id, callback, changedtick)
       },
     })
   end, buf)
+  table.insert(self[buf].request_queue, request_id)
 end
 
 function symbol:get_buf_symbols(buf)

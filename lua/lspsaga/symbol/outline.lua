@@ -342,6 +342,7 @@ function ot:refresh(group)
         not self.bufnr
         or not api.nvim_buf_is_valid(self.bufnr)
         or api.nvim_get_current_buf() ~= args.data.bufnr
+        or api.nvim_get_mode().mode ~= 'n'
       then
         return
       end
