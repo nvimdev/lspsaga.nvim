@@ -21,8 +21,6 @@ local function clean_buf_cache(buf)
   end
 end
 
-local buf_changedtick = {}
-
 function symbol:buf_watcher(bufnr, group)
   api.nvim_create_autocmd('LspNotify', {
     group = group,
