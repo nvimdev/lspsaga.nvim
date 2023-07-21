@@ -212,7 +212,8 @@ local function init_winbar(buf)
     group = api.nvim_create_augroup('SagaWinbar' .. buf, { clear = true }),
     buffer = buf,
     callback = function()
-      local res = symbol:get_buf_symbols(buf)
+      local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
+        or require('lspsaga.symbol.head'):get_buf_symbols(buf)
       if res and res.symbols then
         render_symbol_winbar(buf, res.symbols)
       end

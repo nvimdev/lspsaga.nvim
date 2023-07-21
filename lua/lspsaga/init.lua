@@ -167,7 +167,11 @@ function saga.setup(opts)
     require('lspsaga.codeaction.lightbulb').lb_autocmd()
   end
 
-  require('lspsaga.symbol'):register_module()
+  if vim.version().minor >= 10 then
+    require('lspsaga.symbol.head'):register_module()
+  else
+    require('lspsaga.symbol'):register_module()
+  end
 
   if saga.config.diagnostic.diagnostic_only_current then
     require('lspsaga.diagnostic.virt').diag_on_current()

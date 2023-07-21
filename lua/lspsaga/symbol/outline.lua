@@ -342,12 +342,13 @@ function ot:refresh(group)
         not self.bufnr
         or not api.nvim_buf_is_valid(self.bufnr)
         or api.nvim_get_current_buf() ~= args.data.bufnr
-        or api.nvim_get_mode().mode ~= 'n'
       then
         return
       end
       api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
-      self:parse(args.data.symbols)
+      vim.schedule(function()
+        self:parse(args.data.symbols)
+      end)
     end,
   })
 end
@@ -502,7 +503,9 @@ function ot:outline(buf)
   end
 
   self.main_buf = buf or api.nvim_get_current_buf()
-  local res = symbol:get_buf_symbols(self.main_buf)
+  local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
+    or require('lspsaga.symbol.head'):get_buf_symbols(buf)
+
   if not res or not res.symbols or #res.symbols == 0 then
     vim.notify(
       '[lspsaga] get symbols failed server may not initialed try again later',

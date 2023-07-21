@@ -1,3 +1,4 @@
+--this module using LspNotify just for neovim 0.10
 local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
@@ -22,61 +23,42 @@ end
 
 local buf_changedtick = {}
 
-function symbol:buf_watcher(buf, client_id)
-  local function defer_request(b, changedtick)
-    if not self[b] or not api.nvim_buf_is_valid(b) then
-      return
-    end
-    local client = lsp.get_client_by_id(client_id)
-    if not client then
-      return
-    end
-    for _, id in ipairs(self[buf].request_queue or {}) do
-      ---@diagnostic disable-next-line: invisible
-      client.cancel_request(id)
-    end
-    self[buf].request_queue = {}
-
-    vim.defer_fn(function()
-      self:do_request(b, client_id, function()
-        if not api.nvim_buf_is_valid(b) or not self[b] then
-          return
-        end
-        if changedtick < self[b].changedtick then
-          changedtick = api.nvim_buf_get_changedtick(b)
-          defer_request(b, changedtick)
-        end
-      end, changedtick)
-    end, 3000)
-  end
-
-  api.nvim_buf_attach(buf, false, {
-    on_lines = function(_, b, changedtick)
-      if not self[b] or not changedtick then
+function symbol:buf_watcher(bufnr, group)
+  api.nvim_create_autocmd('LspNotify', {
+    group = group,
+    buffer = bufnr,
+    callback = function(args)
+      if
+        args.data.method ~= 'textDocument/didChange'
+        or not self[args.buf]
+        or args.data.client_id ~= self[args.buf].client_id
+      then
         return
       end
-      self[b].changedtick = changedtick
-      if self[b] and not self[b].pending_request then
-        defer_request(b, changedtick)
-      end
-    end,
-    on_changedtick = function(_, b, changedtick)
-      if not self[b] or not changedtick then
+      local client = lsp.get_client_by_id(args.data.client_id)
+      if not client then
         return
       end
-      self[b].changedtick = changedtick
+
+      for _, id in ipairs(self[args.buf].request_queue) do
+        ---@diagnostic disable-next-line: invisible
+        client.cancel_request(id)
+      end
+      self[args.buf].request_queue = {}
+      self:do_request(args.buf, args.data.client_id)
     end,
   })
 
-  api.nvim_create_autocmd('BufDelete', {
-    buffer = buf,
+  api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, {
+    group = group,
+    buffer = bufnr,
     callback = function()
-      clean_buf_cache(buf)
+      clean_buf_cache(bufnr)
     end,
   })
 end
 
-function symbol:do_request(buf, client_id, callback, changedtick)
+function symbol:do_request(buf, client_id, callback)
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
@@ -89,22 +71,21 @@ function symbol:do_request(buf, client_id, callback, changedtick)
   if not self[buf] then
     self[buf] = {
       request_queue = {},
+      client_id = client_id,
     }
-    self:buf_watcher(buf, client.id)
   end
 
   self[buf].pending_request = true
 
   local request_id
-
   ---@diagnostic disable-next-line: invisible
   _, request_id = client.request('textDocument/documentSymbol', params, function(err, result, ctx)
     if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] or err then
       return
     end
-
     local idx = util.tbl_index(self[ctx.bufnr].request_queue, request_id)
     table.remove(self[ctx.bufnr].request_queue, idx)
+
     self[ctx.bufnr].pending_request = false
 
     if callback then
@@ -120,7 +101,6 @@ function symbol:do_request(buf, client_id, callback, changedtick)
         symbols = result or {},
         client_id = ctx.client_id,
         bufnr = ctx.bufnr,
-        changedtick = changedtick,
       },
     })
   end, buf)
@@ -199,6 +179,7 @@ function symbol:register_module()
         winbar = require('lspsaga.symbol.winbar')
         winbar.file_bar(args.buf)
       end
+      self:buf_watcher(args.buf, group)
 
       self:do_request(args.buf, args.data.client_id, function()
         if api.nvim_get_current_buf() ~= args.buf then
