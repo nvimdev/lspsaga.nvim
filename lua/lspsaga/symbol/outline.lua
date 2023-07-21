@@ -89,6 +89,9 @@ function ot:parse(symbols, bufnr, list)
   local row = 0
   bufnr = bufnr or self.bufnr
   list = list or self.list
+  if not vim.bo[bufnr].modifiable then
+    api.nvim_set_option_value('modifiable', true, { buf = bufnr })
+  end
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
