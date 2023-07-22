@@ -163,7 +163,7 @@ local function rename_handler(project, curname, new_name)
   lsp.handlers['textDocument/rename'] = function(err, result, ctx)
     if err then
       vim.notify(
-        '[Lspsaga] rename failed err in callback' .. table.concat(err),
+        '[lspsaga] rename failed err in callback' .. table.concat(err),
         vim.log.levels.ERROR
       )
       return

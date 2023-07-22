@@ -163,14 +163,14 @@ function def:clean_event()
         api.nvim_del_autocmd(args.id)
       end
     end,
-    desc = '[Lspsaga] peek definition clean data event',
+    desc = '[lspsaga] peek definition clean data event',
   })
 end
 
 function def:peek_definition(method)
   if self.pending_reqeust then
     vim.notify(
-      '[Lspsaga] There is already a peek_definition request, please wait for the response.',
+      '[lspsaga] a peek_definition request has already been sent, please wait.',
       vim.log.levels.WARN
     )
     return
@@ -199,7 +199,7 @@ function def:peek_definition(method)
     self.pending_request = false
     if not result or next(result) == nil then
       vim.notify(
-        '[Lspsaga] response of request method ' .. method_name .. ' is empty',
+        '[lspsaga] response of request method ' .. method_name .. ' is empty',
         vim.log.levels.WARN
       )
       return

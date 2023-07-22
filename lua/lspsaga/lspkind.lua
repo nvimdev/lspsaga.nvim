@@ -12,7 +12,7 @@ local function merge_custom(kind)
   for k, v in pairs(ui.kind or {}) do
     local index = find_index_by_type(k)
     if not index then
-      vim.notify('[lspsaga.nvim] could not find kind in default')
+      vim.notify('[lspsaga] failed finding kind in default')
       return
     end
     if type(v) == 'table' then
@@ -20,7 +20,7 @@ local function merge_custom(kind)
     elseif type(v) == 'string' then
       kind[index][3] = v
     else
-      vim.notify('[Lspsaga.nvim] value must be string or table')
+      vim.notify('[lspsaga] value must be of type string or table')
       return
     end
   end

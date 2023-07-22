@@ -511,7 +511,7 @@ function ot:outline(buf)
 
   if not res or not res.symbols or #res.symbols == 0 then
     vim.notify(
-      '[lspsaga] get symbols failed server may not initialed try again later',
+      '[lspsaga] failed finding symbols - server may not be initialized, try again later.',
       vim.log.levels.INFO
     )
     return
