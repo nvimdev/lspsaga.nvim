@@ -167,7 +167,7 @@ function saga.setup(opts)
     require('lspsaga.codeaction.lightbulb').lb_autocmd()
   end
 
-  if vim.version().minor >= 10 then
+  if vim.version().minor >= 10 and vim.fn.exists("##LspNotify") ~= 0 then
     require('lspsaga.symbol.head'):register_module()
   else
     require('lspsaga.symbol'):register_module()
