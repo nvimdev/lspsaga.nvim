@@ -171,7 +171,7 @@ function saga.setup(opts)
     require('lspsaga.symbol.head'):register_module()
   else
     if vim.version().minor >= 10 then
-        print("[lspsaga.nvim] you're running outdated nightly version, you'll need LspNotify autocmd event to enable `lspsaga.symbol.head`")
+        print("[lspsaga.nvim] you're running outdated nightly version, you'll need LspNotify autocmd event to enable improved symbol")
     end
     require('lspsaga.symbol'):register_module()
   end
