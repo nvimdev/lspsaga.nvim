@@ -205,7 +205,7 @@ function hover:do_request(args)
   local clients = util.get_client_by_method(method)
   if #clients == 0 then
     self.pending_request = false
-    vim.notify('[Lspsaga] all server of buffer not support hover request')
+    vim.notify('[lspsaga] hover is not supported by the servers of the current buffer')
     return
   end
   local count = 0
@@ -318,14 +318,14 @@ end
 function hover:render_hover_doc(args)
   if not check_parser() then
     vim.notify(
-      '[Lpsaga.nvim] Please install markdown and markdown_inline parser in nvim-treesitter',
+      '[lspsaga] please install markdown and markdown_inline parser in nvim-treesitter',
       vim.log.levels.WARN
     )
     return
   end
 
   if self.pending_request then
-    print('[Lspsaga] There is already a hover request, please wait for the response.')
+    print('[lspsaga] a hover request has already been sent, please wait.')
     return
   end
 

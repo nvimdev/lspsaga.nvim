@@ -144,12 +144,12 @@ end
 
 function M:new(args)
   if fn.executable('rg') == 0 then
-    vim.notify('[Lspsaga] does not find rg')
+    vim.notify('[lspsaga] failed finding rg')
     return
   end
 
   if #args < 2 then
-    vim.notify('[Lspsaga] missing search pattern or new name')
+    vim.notify('[lspsaga] missing search pattern or new name')
     return
   end
 
@@ -161,7 +161,7 @@ function M:new(args)
   local chunks = {}
   local root_dir = get_root_dir()
   if not root_dir then
-    vim.notify('[Lspsaga] buffer run in single file mode')
+    vim.notify('[lspsaga] buffer run in single file mode')
     return
   end
 

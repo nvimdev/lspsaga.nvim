@@ -111,7 +111,10 @@ end
 
 function ch:toggle_or_request()
   if self.pending_request then
-    vim.notify(('[Lspsaga] already have a request for %s'):format(self.method), vim.log.levels.WARN)
+    vim.notify(
+      ('[lspsaga] a request for %s has already been sent, please wait.'):format(self.method),
+      vim.log.levels.WARN
+    )
     return
   end
   local curlnum = api.nvim_win_get_cursor(0)[1]
@@ -389,13 +392,13 @@ end
 
 function ch:send_prepare_call()
   if self.pending_request then
-    vim.notify('there is already a request please wait.')
+    vim.notify('[lspsaga] a request has already been sent, please wait.')
     return
   end
   self.main_buf = api.nvim_get_current_buf()
   local clients = util.get_client_by_method(get_method(1))
   if #clients == 0 then
-    vim.notify('[Lspsaga] all clients of this buffer not support callhierarchy')
+    vim.notify('[lspsaga] callhierarchy is not supported by the clients of the current buffer')
     return
   end
   local client

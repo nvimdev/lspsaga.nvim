@@ -33,7 +33,7 @@ local ns = api.nvim_create_namespace('SagaFinder')
 function fd:init_layout()
   local win_width = api.nvim_win_get_width(0)
   if config.finder.right_width > 0.6 then
-    vim.notify('[lspsaga] finder right width must less than 0.7')
+    vim.notify('[lspsaga] finder right width must be less than 0.7')
     config.finder.right_width = 0.5
   end
   self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
@@ -102,7 +102,7 @@ function fd:handler(method, results, spin_close, done)
   if not results or util.res_isempty(results) then
     spin_close()
     if not config.finder.silent then
-      vim.notify(('[Lspsaga] no response of %s'):format(method), vim.log.levels.WARN)
+      vim.notify(('[lspsaga] no response of %s'):format(method), vim.log.levels.WARN)
     end
     return
   end
@@ -471,7 +471,7 @@ function fd:new(args)
   self.ft = vim.bo[curbuf].filetype
   if #methods == 0 then
     vim.notify(
-      ('[Lspsaga] all server of %s buffer does not these methods %s'):format(
+      ('[lspsaga] no servers of buffer %s makes these methods available %s'):format(
         curbuf,
         table.concat(args, ' ')
       ),

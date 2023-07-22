@@ -83,7 +83,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
 
   for index, client_with_actions in pairs(action_tuples) do
     if #client_with_actions ~= 2 then
-      vim.notify('There is something wrong in aciton_tuples')
+      vim.notify('[lspsaga] failed indexing client actions')
       return
     end
     if client_with_actions[2].title then

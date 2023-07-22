@@ -46,7 +46,7 @@ function M.filter(method, results)
   end
   local fn = config.finder.filter[method]
   if type(fn) ~= 'function' then
-    vim.notify('[Lspsaga] filter must be function', vim.log.levels.ERROR)
+    vim.notify('[lspsaga] filter must be a function', vim.log.levels.ERROR)
     return
   end
   local retval = {}
