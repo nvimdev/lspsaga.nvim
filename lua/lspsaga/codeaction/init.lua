@@ -81,11 +81,11 @@ function act:action_callback(tuples, enriched_ctx)
       ['filetype'] = 'saga_codeaction',
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
+      ['modifiable'] = false,
     })
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
-      ['modifiable'] = false,
     })
     :wininfo()
 
