@@ -161,11 +161,7 @@ end
 local function rename_handler(project, curname, new_name)
   ---@diagnostic disable-next-line: duplicate-set-field
   lsp.handlers['textDocument/rename'] = function(err, result, ctx)
-    if err then
-      vim.notify(
-        '[lspsaga] rename failed err in callback' .. table.concat(err),
-        vim.log.levels.ERROR
-      )
+    if err or not result then
       return
     end
     local client = lsp.get_client_by_id(ctx.client_id)
