@@ -96,13 +96,19 @@ local function create_preview_win(content, main_winid)
   local opt = {
     relative = win_conf.relative,
     win = win_conf.win,
-    width = win_conf.width,
     col = win_conf.col[false],
     anchor = win_conf.anchor,
     focusable = false,
   }
-  local winheight = api.nvim_win_get_height(win_conf.win)
+  local max_width = api.nvim_win_get_width(win_conf.win) - win_conf.col[false] - 8
+  local content_width = util.get_max_content_length(content)
+  if content_width > max_width then
+    opt.width = max_width
+  else
+    opt.width = content_width < win_conf.width and win_conf.width or content_width
+  end
 
+  local winheight = api.nvim_win_get_height(win_conf.win)
   if win_conf.anchor:find('^S') then
     opt.row = win_conf.row[false] - win_conf.height - 2
     max_height = win_conf.row[false] - win_conf.height
