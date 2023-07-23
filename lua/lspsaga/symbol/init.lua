@@ -108,7 +108,7 @@ function symbol:do_request(buf, client_id, callback, changedtick)
     self[ctx.bufnr].pending_request = false
 
     if callback then
-      callback(result)
+      callback(result, ctx)
     end
 
     self[ctx.bufnr].symbols = result
@@ -185,7 +185,7 @@ function symbol:register_module()
   api.nvim_create_autocmd('LspAttach', {
     group = group,
     callback = function(args)
-      if self[args.buf] or api.nvim_get_current_buf() ~= args.buf then
+      if self[args.buf] then
         return
       end
 
@@ -200,13 +200,9 @@ function symbol:register_module()
         winbar.file_bar(args.buf)
       end
 
-      self:do_request(args.buf, args.data.client_id, function()
-        if api.nvim_get_current_buf() ~= args.buf then
-          return
-        end
-
+      self:do_request(args.buf, args.data.client_id, function(_, ctx)
         if winbar then
-          winbar.init_winbar(args.buf)
+          winbar.init_winbar(ctx.bufnr)
         end
 
         if config.implement.enable and client.supports_method('textDocument/implementation') then

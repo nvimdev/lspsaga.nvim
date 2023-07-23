@@ -211,11 +211,11 @@ local function init_winbar(buf)
   api.nvim_create_autocmd({ 'CursorMoved' }, {
     group = api.nvim_create_augroup('SagaWinbar' .. buf, { clear = true }),
     buffer = buf,
-    callback = function()
-      local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
-        or require('lspsaga.symbol.head'):get_buf_symbols(buf)
+    callback = function(args)
+      local res = not util.nvim_ten() and symbol:get_buf_symbols(args.buf)
+        or require('lspsaga.symbol.head'):get_buf_symbols(args.buf)
       if res and res.symbols then
-        render_symbol_winbar(buf, res.symbols)
+        render_symbol_winbar(args.buf, res.symbols)
       end
     end,
     desc = 'Lspsaga symbols render and request',
