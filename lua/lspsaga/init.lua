@@ -73,6 +73,7 @@ local default_config = {
     layout = 'float',
     silent = false,
     filter = {},
+    sp_inexist = false,
     keys = {
       shuttle = '[w',
       toggle_or_open = 'o',

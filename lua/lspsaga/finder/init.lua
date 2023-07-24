@@ -462,6 +462,9 @@ end
 function fd:new(args)
   local meth, layout, inexist = box.parse_argument(args)
   self.inexist = inexist
+  if not self.inexist then
+    self.inexist = config.finder.sp_inexist
+  end
   self.layout = layout or config.finder.layout
   if #meth == 0 then
     meth = vim.split(config.finder.default, '+', { plain = true })
