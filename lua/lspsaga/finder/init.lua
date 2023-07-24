@@ -397,11 +397,15 @@ function fd:apply_maps()
         if not client then
           return
         end
+        local range = curnode.value.range
+          or curnode.value.targetSelectionRange
+          or curnode.value.selectionRange
+
         local pos = {
-          curnode.value.range.start.line + 1,
+          range.start.line + 1,
           lsp.util._get_line_byte_from_position(
             curnode.value.bufnr,
-            curnode.value.range.start,
+            range.start,
             client.offset_encoding
           ),
         }
