@@ -1,4 +1,6 @@
 local api, lsp = vim.api, vim.lsp
+---@diagnostic disable-next-line: deprecated
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
 local symbol = {}
@@ -23,6 +25,8 @@ end
 local buf_changedtick = {}
 
 function symbol:buf_watcher(buf, client_id)
+  local buf_request_state = {}
+
   local function defer_request(b, changedtick)
     if not self[b] or not api.nvim_buf_is_valid(b) then
       return
@@ -31,23 +35,29 @@ function symbol:buf_watcher(buf, client_id)
     if not client then
       return
     end
-    for _, id in ipairs(self[buf].request_queue or {}) do
-      ---@diagnostic disable-next-line: invisible
-      client.cancel_request(id)
+    if buf_request_state[b] then
+      buf_request_state[b]:stop()
+      buf_request_state[b]:close()
+      buf_request_state[b] = nil
     end
-    self[buf].request_queue = {}
+    buf_request_state[b] = uv.new_timer()
 
-    vim.defer_fn(function()
-      self:do_request(b, client_id, function()
-        if not api.nvim_buf_is_valid(b) or not self[b] then
-          return
-        end
-        if changedtick < self[b].changedtick then
-          changedtick = api.nvim_buf_get_changedtick(b)
-          defer_request(b, changedtick)
-        end
-      end, changedtick)
-    end, 3000)
+    buf_request_state[b]:start(1200, 0, function()
+      buf_request_state[b]:stop()
+      buf_request_state[b]:close()
+      buf_request_state[b] = nil
+      vim.schedule(function()
+        self:do_request(b, client_id, function()
+          if not api.nvim_buf_is_valid(b) or not self[b] then
+            return
+          end
+          if changedtick < self[b].changedtick then
+            changedtick = api.nvim_buf_get_changedtick(b)
+            defer_request(b, changedtick)
+          end
+        end, changedtick)
+      end)
+    end)
   end
 
   api.nvim_buf_attach(buf, false, {
@@ -70,8 +80,15 @@ function symbol:buf_watcher(buf, client_id)
 
   api.nvim_create_autocmd('BufDelete', {
     buffer = buf,
-    callback = function()
-      clean_buf_cache(buf)
+    callback = function(args)
+      clean_buf_cache(args.buf)
+      if buf_request_state[args.buf] then
+        if not buf_request_state[args.buf]:is_closing() then
+          buf_request_state[args.buf]:stop()
+          buf_request_state[args.buf]:close()
+        end
+        buf_request_state[args.buf] = nil
+      end
     end,
   })
 end
@@ -87,9 +104,7 @@ function symbol:do_request(buf, client_id, callback, changedtick)
   end
 
   if not self[buf] then
-    self[buf] = {
-      request_queue = {},
-    }
+    self[buf] = {}
     self:buf_watcher(buf, client.id)
   end
 
@@ -102,9 +117,6 @@ function symbol:do_request(buf, client_id, callback, changedtick)
     if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] or err then
       return
     end
-
-    local idx = util.tbl_index(self[ctx.bufnr].request_queue, request_id)
-    table.remove(self[ctx.bufnr].request_queue, idx)
     self[ctx.bufnr].pending_request = false
 
     if callback then
@@ -124,7 +136,7 @@ function symbol:do_request(buf, client_id, callback, changedtick)
       },
     })
   end, buf)
-  table.insert(self[buf].request_queue, request_id)
+  return request_id
 end
 
 function symbol:get_buf_symbols(buf)
