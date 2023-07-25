@@ -14,7 +14,6 @@ local ns = api.nvim_create_namespace('SagaOutline')
 local beacon = require('lspsaga.beacon').jump_beacon
 local slist = require('lspsaga.slist')
 local ly = require('lspsaga.layout')
-local beacon = require('lspsaga.beacon').jump_beacon
 local ctx = {}
 
 function ot.__newindex(t, k, v)
@@ -86,7 +85,7 @@ local function outline_normal_win()
     :wininfo()
 end
 
-function ot:parse(symbols, cword, curline)
+function ot:parse(symbols, curline)
   local row = 0
   if not vim.bo[self.bufnr].modifiable then
     api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
@@ -105,10 +104,14 @@ function ot:parse(symbols, cword, curline)
         node.winline = row
       end
 
-      local range = node.selectionRange or node.range or node.targetRange
-      if #pos == 0 and range.start.line == curline - 1 then
-        pos[#pos + 1] = row
-        pos[#pos + 1] = #indent
+      local range = node.range or node.selectionRange or node.targetRange
+      if curline then
+        if
+          range.start.line == curline - 1
+          or (curline - 1 >= range.start.line and curline - 1 <= range['end'].line)
+        then
+          pos = { row, #indent }
+        end
       end
 
       buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
@@ -521,7 +524,6 @@ function ot:outline(buf)
 
   self.main_buf = buf or api.nvim_get_current_buf()
   local curline = api.nvim_win_get_cursor(0)[1]
-  local cword = fn.expand('<cword>')
   local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
     or require('lspsaga.symbol.head'):get_buf_symbols(buf)
 
@@ -545,7 +547,7 @@ function ot:outline(buf)
   end
 
   self.list = slist.new()
-  self:parse(res.symbols, cword, curline)
+  self:parse(res.symbols, curline)
   self:keymap()
 end
 
