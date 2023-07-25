@@ -14,6 +14,7 @@ local ns = api.nvim_create_namespace('SagaOutline')
 local beacon = require('lspsaga.beacon').jump_beacon
 local slist = require('lspsaga.slist')
 local ly = require('lspsaga.layout')
+local beacon = require('lspsaga.beacon').jump_beacon
 local ctx = {}
 
 function ot.__newindex(t, k, v)
@@ -85,25 +86,31 @@ local function outline_normal_win()
     :wininfo()
 end
 
-function ot:parse(symbols, bufnr, list)
+function ot:parse(symbols, cword, curline)
   local row = 0
-  bufnr = bufnr or self.bufnr
-  list = list or self.list
-  if not vim.bo[bufnr].modifiable then
-    api.nvim_set_option_value('modifiable', true, { buf = bufnr })
+  if not vim.bo[self.bufnr].modifiable then
+    api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
   end
+  local pos = {}
 
   local function recursive_parse(data, level)
     for i, node in ipairs(data) do
       level = level or 0
       local indent = '    ' .. ('  '):rep(level)
       node.name = node.name == ' ' and '_' or node.name
-      buf_set_lines(bufnr, row, -1, false, { indent .. node.name })
+      buf_set_lines(self.bufnr, row, -1, false, { indent .. node.name })
+
       row = row + 1
       if level == 0 then
         node.winline = row
       end
-      buf_set_extmark(bufnr, ns, row - 1, #indent - 2, {
+
+      local range = node.selectionRange or node.range or node.targetRange
+      if #pos == 0 and node.name == cword and range.start.line == curline - 1 then
+        pos = { row, #indent }
+      end
+
+      buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
         virt_text = { { kind[node.kind][2], 'Saga' .. kind[node.kind][1] } },
         virt_text_pos = 'overlay',
       })
@@ -113,7 +120,7 @@ function ot:parse(symbols, bufnr, list)
           { row == 1 and config.ui.lines[5] or config.ui.lines[2], 'SagaVirtLine' },
           { config.ui.lines[4]:rep(2), 'SagaVirtLine' },
         }
-        buf_set_extmark(bufnr, ns, row - 1, 0, {
+        buf_set_extmark(self.bufnr, ns, row - 1, 0, {
           virt_text = virt,
           virt_text_pos = 'overlay',
         })
@@ -127,7 +134,7 @@ function ot:parse(symbols, bufnr, list)
           else
             virt = { { config.ui.lines[3], 'SagaVirtLine' } }
           end
-          buf_set_extmark(bufnr, ns, row - 1, j - 1, {
+          buf_set_extmark(self.bufnr, ns, row - 1, j - 1, {
             virt_text = virt,
             virt_text_pos = 'overlay',
           })
@@ -135,7 +142,7 @@ function ot:parse(symbols, bufnr, list)
       end
 
       if config.outline.detail then
-        buf_set_extmark(bufnr, ns, row - 1, 0, {
+        buf_set_extmark(self.bufnr, ns, row - 1, 0, {
           virt_text = { { node.detail or '', 'SagaDetail' } },
         })
       end
@@ -148,21 +155,27 @@ function ot:parse(symbols, bufnr, list)
       if node.children and #node.children > 0 then
         copy.expand = true
         copy.virtid = uv.hrtime()
-        buf_set_extmark(bufnr, ns, row - 1, #indent - 4, {
+        buf_set_extmark(self.bufnr, ns, row - 1, #indent - 4, {
           id = copy.virtid,
           virt_text = { { config.ui.collapse, 'SagaToggle' } },
           virt_text_pos = 'overlay',
         })
-        slist.tail_push(list, copy)
+        slist.tail_push(self.list, copy)
         recursive_parse(node.children, level + 1)
       else
-        slist.tail_push(list, copy)
+        slist.tail_push(self.list, copy)
       end
     end
   end
 
   recursive_parse(symbols)
-  api.nvim_set_option_value('modifiable', false, { buf = bufnr })
+  if #pos > 0 then
+    api.nvim_win_set_cursor(self.winid, pos)
+    if config.outline.layout == 'normal' then
+      beacon({ pos[1] - 1, pos[2] }, #api.nvim_get_current_line())
+    end
+  end
+  api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
 end
 
 function ot:collapse(node, curlnum)
@@ -506,6 +519,8 @@ function ot:outline(buf)
   end
 
   self.main_buf = buf or api.nvim_get_current_buf()
+  local curline = api.nvim_win_get_cursor(0)[1]
+  local cword = fn.expand('<cword>')
   local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
     or require('lspsaga.symbol.head'):get_buf_symbols(buf)
 
@@ -529,7 +544,7 @@ function ot:outline(buf)
   end
 
   self.list = slist.new()
-  self:parse(res.symbols)
+  self:parse(res.symbols, cword, curline)
   self:keymap()
 end
 
