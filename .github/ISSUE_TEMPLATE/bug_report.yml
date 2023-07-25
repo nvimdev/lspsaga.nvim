@@ -16,6 +16,7 @@ body:
       description: |
         - How to reproduce with a min config.
         - better to provide some example codes which can reproduce.
+        - If you don't provide example codes and a clear reproduce step issue will be closed
       placeholder: |
         use min.lua https://github.com/nvimdev/lspsaga.nvim/blob/main/test/minimal_test.lua for test
         nvim --clean -u min.lua language_file

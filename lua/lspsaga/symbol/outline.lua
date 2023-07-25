@@ -106,8 +106,9 @@ function ot:parse(symbols, cword, curline)
       end
 
       local range = node.selectionRange or node.range or node.targetRange
-      if #pos == 0 and node.name == cword and range.start.line == curline - 1 then
-        pos = { row, #indent }
+      if #pos == 0 and range.start.line == curline - 1 then
+        pos[#pos + 1] = row
+        pos[#pos + 1] = #indent
       end
 
       buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
