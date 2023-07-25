@@ -19,7 +19,7 @@ function M.left(height, width, bufnr, title)
   end
 
   local topline = fn.line('w0')
-  local room = fn.line('w$') - pos[1]
+  local room = api.nvim_win_get_height(0) - fn.winline()
   if room <= height + 4 then
     fn.winrestview({ topline = topline + (height + 4 - room) })
   end
