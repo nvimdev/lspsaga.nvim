@@ -26,7 +26,7 @@ function ch:clean()
       return
     end
     if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
-      api.nvim_buf_del_keymap(node.value.bufnr, 'n', config.finder.keys.close)
+      pcall(api.nvim_buf_del_keymap, node.value.bufnr, 'n', config.finder.keys.close)
     end
   end)
 
