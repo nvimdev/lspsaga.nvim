@@ -224,7 +224,8 @@ end
 
 local function get_bar()
   local curbuf = api.nvim_get_current_buf()
-  local res = symbol:get_buf_symbols(curbuf)
+  local res = not util.nvim_ten() and symbol:get_buf_symbols(curbuf)
+    or require('lspsaga.symbol.head'):get_buf_symbols(curbuf)
   if res and res.symbols then
     return render_symbol_winbar(curbuf, res.symbols)
   end
