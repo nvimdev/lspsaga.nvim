@@ -99,13 +99,6 @@ function fd:method_title(method, row)
 end
 
 function fd:handler(method, results, spin_close, done)
-  if not results or util.res_isempty(results) then
-    spin_close()
-    if not config.finder.silent then
-      vim.notify(('[lspsaga] no response of %s'):format(method), vim.log.levels.WARN)
-    end
-    return
-  end
   local rendered_fname = {}
 
   for client_id, item in pairs(results) do
@@ -502,17 +495,21 @@ function fd:new(args)
       lsp.buf_request_all(curbuf, method, params, function(results)
         count = count + 1
         results = box.filter(method, results)
-        retval[method] = results
-        if #vim.tbl_keys(retval) == #methods then
+        if results and not util.res_isempty(results) then
+          retval[method] = results
+        end
+        if count == #methods then
           coroutine.resume(co)
         end
       end)
     end
     coroutine.yield()
     count = 0
+    local total = #vim.tbl_keys(retval)
+
     for method, results in pairs(retval) do
       count = count + 1
-      self:handler(method, results, spin_close, count == #methods)
+      self:handler(method, results, spin_close, count == total)
     end
   end))
 end
