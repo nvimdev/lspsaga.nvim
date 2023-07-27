@@ -2,6 +2,8 @@
 local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
+---@diagnostic disable-next-line: deprecated
+local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local symbol = {}
 
 local cache = {}
@@ -21,7 +23,14 @@ local function clean_buf_cache(buf)
   end
 end
 
+local function timer_clear(t)
+  t:stop()
+  t:close()
+end
+
 function symbol:buf_watcher(bufnr, group)
+  local bufstate = {}
+
   api.nvim_create_autocmd('LspNotify', {
     group = group,
     buffer = bufnr,
@@ -37,13 +46,18 @@ function symbol:buf_watcher(bufnr, group)
       if not client then
         return
       end
-
-      for _, id in ipairs(self[args.buf].request_queue) do
-        ---@diagnostic disable-next-line: invisible
-        client.cancel_request(id)
+      if bufstate[args.buf] then
+        timer_clear(bufstate[args.buf])
+        bufstate[args.buf] = nil
       end
-      self[args.buf].request_queue = {}
-      self:do_request(args.buf, args.data.client_id)
+      bufstate[args.buf] = uv.new_timer()
+      bufstate[args.buf]:start(500, 0, function()
+        timer_clear(bufstate[args.buf])
+        bufstate[args.buf] = nil
+        vim.schedule(function()
+          self:do_request(args.buf, args.data.client_id)
+        end)
+      end)
     end,
   })
 
@@ -56,7 +70,7 @@ function symbol:buf_watcher(bufnr, group)
   })
 end
 
-function symbol:do_request(buf, client_id, callback)
+function symbol:do_request(buf, client_id)
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
@@ -68,30 +82,20 @@ function symbol:do_request(buf, client_id, callback)
 
   if not self[buf] then
     self[buf] = {
-      request_queue = {},
       client_id = client_id,
+      pending_request = true,
     }
   end
 
-  self[buf].pending_request = true
-
-  local request_id
-  ---@diagnostic disable-next-line: invisible
-  _, request_id = client.request('textDocument/documentSymbol', params, function(err, result, ctx)
-    if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] or err then
+  client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+    if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] then
       return
     end
-    local idx = util.tbl_index(self[ctx.bufnr].request_queue, request_id)
-    table.remove(self[ctx.bufnr].request_queue, idx)
-
     self[ctx.bufnr].pending_request = false
-
-    if callback then
-      callback(result, ctx)
+    if not result or #result == 0 or err then
+      return
     end
-
     self[ctx.bufnr].symbols = result
-
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
@@ -102,7 +106,6 @@ function symbol:do_request(buf, client_id, callback)
       },
     })
   end, buf)
-  table.insert(self[buf].request_queue, request_id)
 end
 
 function symbol:get_buf_symbols(buf)
@@ -172,22 +175,18 @@ function symbol:register_module()
         return
       end
 
+      self:do_request(args.buf, args.data.client_id)
+
       local winbar
       if config.symbol_in_winbar.enable then
         winbar = require('lspsaga.symbol.winbar')
-        winbar.file_bar(args.buf)
+        winbar.init_winbar(args.buf)
       end
       self:buf_watcher(args.buf, group)
 
-      self:do_request(args.buf, args.data.client_id, function(_, ctx)
-        if winbar then
-          winbar.init_winbar(ctx.bufnr)
-        end
-
-        if config.implement.enable and client.supports_method('textDocument/implementation') then
-          require('lspsaga.implement').start()
-        end
-      end)
+      if config.implement.enable and client.supports_method('textDocument/implementation') then
+        require('lspsaga.implement').start()
+      end
     end,
   })
 

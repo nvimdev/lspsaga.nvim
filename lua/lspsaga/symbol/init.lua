@@ -24,6 +24,11 @@ end
 
 local buf_changedtick = {}
 
+local function timer_clear(t)
+  t:stop()
+  t:close()
+end
+
 function symbol:buf_watcher(buf, client_id)
   local buf_request_state = {}
 
@@ -36,15 +41,13 @@ function symbol:buf_watcher(buf, client_id)
       return
     end
     if buf_request_state[b] then
-      buf_request_state[b]:stop()
-      buf_request_state[b]:close()
+      timer_clear(buf_request_state[b])
       buf_request_state[b] = nil
     end
     buf_request_state[b] = uv.new_timer()
 
-    buf_request_state[b]:start(1200, 0, function()
-      buf_request_state[b]:stop()
-      buf_request_state[b]:close()
+    buf_request_state[b]:start(1000, 0, function()
+      timer_clear(buf_request_state[b])
       buf_request_state[b] = nil
       vim.schedule(function()
         self:do_request(b, client_id, function()
@@ -93,7 +96,7 @@ function symbol:buf_watcher(buf, client_id)
   })
 end
 
-function symbol:do_request(buf, client_id, callback, changedtick)
+function symbol:do_request(buf, client_id)
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
@@ -110,21 +113,15 @@ function symbol:do_request(buf, client_id, callback, changedtick)
 
   self[buf].pending_request = true
 
-  local request_id
-
-  ---@diagnostic disable-next-line: invisible
-  _, request_id = client.request('textDocument/documentSymbol', params, function(err, result, ctx)
-    if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] or err then
+  client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+    if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] then
       return
     end
     self[ctx.bufnr].pending_request = false
-
-    if callback then
-      callback(result, ctx)
+    if not result or #result == 0 or err then
+      return
     end
-
     self[ctx.bufnr].symbols = result
-
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
       modeline = false,
@@ -132,11 +129,9 @@ function symbol:do_request(buf, client_id, callback, changedtick)
         symbols = result or {},
         client_id = ctx.client_id,
         bufnr = ctx.bufnr,
-        changedtick = changedtick,
       },
     })
   end, buf)
-  return request_id
 end
 
 function symbol:get_buf_symbols(buf)
@@ -205,22 +200,15 @@ function symbol:register_module()
       if not client or not client.supports_method('textDocument/documentSymbol') then
         return
       end
+      self:do_request(args.buf, args.data.client_id)
 
-      local winbar
       if config.symbol_in_winbar.enable then
-        winbar = require('lspsaga.symbol.winbar')
-        winbar.file_bar(args.buf)
+        require('lspsaga.symbol.winbar').init_winbar(args.buf)
       end
 
-      self:do_request(args.buf, args.data.client_id, function(_, ctx)
-        if winbar then
-          winbar.init_winbar(ctx.bufnr)
-        end
-
-        if config.implement.enable and client.supports_method('textDocument/implementation') then
-          require('lspsaga.implement').start()
-        end
-      end)
+      if config.implement.enable and client.supports_method('textDocument/implementation') then
+        require('lspsaga.implement').start()
+      end
     end,
   })
 

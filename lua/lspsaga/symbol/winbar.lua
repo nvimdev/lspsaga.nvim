@@ -191,6 +191,7 @@ local function file_bar(buf)
 end
 
 local function init_winbar(buf)
+  file_bar(buf)
   api.nvim_create_autocmd('User', {
     pattern = 'SagaSymbolUpdate',
     callback = function(opt)
@@ -233,6 +234,5 @@ end
 
 return {
   init_winbar = init_winbar,
-  file_bar = file_bar,
   get_bar = get_bar,
 }
