@@ -506,10 +506,13 @@ function fd:new(args)
     coroutine.yield()
     count = 0
     local total = #vim.tbl_keys(retval)
-
     for method, results in pairs(retval) do
       count = count + 1
       self:handler(method, results, spin_close, count == total)
+    end
+    if not self.lwinid then
+      spin_close()
+      vim.notify('[Lspsaga] finder no any results to show', vim.log.levels.WARN)
     end
   end))
 end
