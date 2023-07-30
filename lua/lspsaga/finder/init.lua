@@ -113,6 +113,10 @@ function fd:handler(method, results, spin_close, done)
       local uri = res.uri or res.targetUri
       if i == 1 then
         self:method_title(method, row)
+        api.nvim_buf_set_extmark(self.lbufnr, ns, row, 0, {
+          virt_text = { { ' ' .. vim.tbl_count(results) .. ' ', 'SagaCount' } },
+          virt_text_pos = 'eol',
+        })
         row = row + 1
       end
       local fname = vim.uri_to_fname(uri)

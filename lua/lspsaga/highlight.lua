@@ -18,7 +18,7 @@ local function hi_define()
     SagaFinderFname = { link = 'Function' },
     SagaDetail = { link = 'Comment' },
     SagaInCurrent = { link = 'KeyWord' },
-    SagaCount = { bg = 'gray', fg = '#cccccc' },
+    SagaCount = { bg = 'gray', fg = 'white', bold = true },
 
     -- code action
     ActionFix = { link = 'Keyword' },
