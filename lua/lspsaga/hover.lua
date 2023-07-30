@@ -316,6 +316,8 @@ local function check_parser()
 end
 
 function hover:render_hover_doc(args)
+  args = args or {}
+
   if not check_parser() then
     vim.notify(
       '[lspsaga] please install markdown and markdown_inline parser in nvim-treesitter',
