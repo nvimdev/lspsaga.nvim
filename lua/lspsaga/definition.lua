@@ -220,10 +220,15 @@ function def:peek_definition(method)
     end
     local root_dir = lsp.get_client_by_id(context.client_id).config.root_dir
     _, node.winid = self:create_win(node.bufnr, root_dir)
-    api.nvim_win_set_cursor(
-      node.winid,
-      { node.selectionRange.start.line + 1, node.selectionRange.start.character }
-    )
+    local client = lsp.get_client_by_id(context.client_id)
+    api.nvim_win_set_cursor(node.winid, {
+      node.selectionRange.start.line + 1,
+      lsp.util._get_line_byte_from_position(
+        node.bufnr,
+        node.selectionRange['end'],
+        client.offset_encoding
+      ),
+    })
     self:apply_maps(node.bufnr)
     self.list[#self.list + 1] = node
   end)
