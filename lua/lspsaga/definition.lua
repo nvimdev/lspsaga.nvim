@@ -269,7 +269,10 @@ function def:goto_definition(method)
     else
       api.nvim_command('edit ' .. jump_destination)
     end
-    api.nvim_win_set_cursor(0, { res.range.start.line + 1, res.range.start.character })
+    api.nvim_win_set_cursor(0, {
+      res.range.start.line + 1,
+      lsp.util._get_line_byte_from_position(0, res.range.start, client.offset_encoding),
+    })
     local curbuf = api.nvim_get_current_buf()
     local width = #api.nvim_get_current_line()
     local col =
