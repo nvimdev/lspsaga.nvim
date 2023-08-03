@@ -105,6 +105,9 @@ function ot:parse(symbols, curline)
       end
 
       local range = node.range or node.selectionRange or node.targetRange
+      if node.location then
+        range = node.location.range
+      end
       if curline then
         if
           range.start.line == curline - 1
