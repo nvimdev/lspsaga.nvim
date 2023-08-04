@@ -10,7 +10,7 @@ improve lsp experences in neovim
 
 <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 
-Usage see the doc website <https://dev.neovim.pro>
+Usage see the doc website <https://nvimdev.github.io>
 
 
 ==============================================================================
