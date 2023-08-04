@@ -225,7 +225,7 @@ function def:peek_definition(method)
       node.selectionRange.start.line + 1,
       lsp.util._get_line_byte_from_position(
         node.bufnr,
-        node.selectionRange['end'],
+        node.selectionRange.start,
         client.offset_encoding
       ),
     })
