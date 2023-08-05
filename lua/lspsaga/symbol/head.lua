@@ -92,13 +92,13 @@ function symbol:do_request(buf, client_id)
       return
     end
     self[ctx.bufnr].pending_request = false
-    if not result or #result == 0 or err then
+    if not result or err then
       return
     end
     self[ctx.bufnr].symbols = result
     api.nvim_exec_autocmds('User', {
       pattern = 'SagaSymbolUpdate',
-      modeline = false,
+      modeline = true,
       data = {
         symbols = result or {},
         client_id = ctx.client_id,
