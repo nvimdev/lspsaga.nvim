@@ -51,12 +51,7 @@ function M.filter(method, results)
   end
   local retval = {}
   for client_id, item in pairs(results) do
-    retval[client_id] = {}
-    for _, val in ipairs(item) do
-      if fn(val) then
-        retval[client_id][#retval[client_id] + 1] = val
-      end
-    end
+    retval[client_id] = fn(item)
   end
   return retval
 end
