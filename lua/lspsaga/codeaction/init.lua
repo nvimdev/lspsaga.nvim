@@ -336,7 +336,7 @@ function act:code_action(options)
 
   self.pending_request = true
   options = options or {}
-  if not options.context then
+  if config.code_action.only_in_cursor and not options.context then
     options.context = {
       diagnostics = require('lspsaga.diagnostic'):get_cursor_diagnostic(),
     }
