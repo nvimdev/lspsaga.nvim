@@ -191,6 +191,9 @@ local function file_bar(buf)
 end
 
 local function init_winbar(buf)
+  if vim.o.diff then
+    return
+  end
   file_bar(buf)
   api.nvim_create_autocmd('User', {
     pattern = 'SagaSymbolUpdate',
