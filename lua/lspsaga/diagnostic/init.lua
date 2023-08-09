@@ -268,8 +268,8 @@ function diag:render_diagnostic_window(entry, option)
     act:send_request(self.main_buf, {
       context = { diagnostics = self:get_cursor_diagnostic() },
       range = {
-        start = { entry.lnum + 1, entry.col },
-        ['end'] = { entry.lnum + 1, entry.col },
+        start = { entry.lnum + 1, (entry.col or 1) },
+        ['end'] = { entry.lnum + 1, (entry.col or 1) },
       },
       gitsign = false,
     }, function(action_tuples, enriched_ctx)
@@ -411,8 +411,8 @@ function diag:move_cursor(entry)
       end
     end
 
-    api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, entry.col })
-    local width = entry.end_col - entry.col
+    api.nvim_win_set_cursor(current_winid, { entry.lnum + 1, (entry.col or 1) })
+    local width = entry.end_col - (entry.col or 1)
     if width <= 0 then
       width = #api.nvim_get_current_line()
     end
