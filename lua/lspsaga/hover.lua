@@ -191,6 +191,13 @@ function hover:open_floating_preview(content, option_fn)
   util.map_keys(self.bufnr, config.hover.open_link, function()
     self:open_link()
   end)
+
+  api.nvim_create_autocmd('BufWipeout', {
+    buffer = self.bufnr,
+    callback = function()
+      pcall(util.delete_scroll_map, curbuf)
+    end,
+  })
 end
 
 local function ignore_error(args, can_through)
