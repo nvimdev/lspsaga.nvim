@@ -382,12 +382,8 @@ function diag:render_diagnostic_window(entry, option)
       once = true,
       callback = function(args)
         preview_win_close()
-        if self.before_winid then
-          api.nvim_win_close(self.before_winid, true)
-          self.before_winid = nil
-        elseif self.winid then
-          self:clean_data()
-        end
+        util.close_win(self.winid)
+        self:clean_data()
         api.nvim_del_autocmd(args.id)
       end,
     })
@@ -396,8 +392,8 @@ end
 
 function diag:move_cursor(entry)
   local current_winid = api.nvim_get_current_win()
-  if self.winid then
-    self.before_winid = self.winid
+  if self.winid and api.nvim_win_is_valid(self.winid) then
+    api.nvim_win_close(self.winid, true)
   end
 
   api.nvim_win_call(current_winid, function()
