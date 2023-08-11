@@ -377,7 +377,7 @@ function diag:render_diagnostic_window(entry, option)
 
   local close_autocmds = { 'CursorMoved', 'InsertEnter' }
   vim.defer_fn(function()
-    api.nvim_create_autocmd(close_autocmds, {
+    self.auid = api.nvim_create_autocmd(close_autocmds, {
       buffer = self.main_buf,
       once = true,
       callback = function(args)
@@ -394,6 +394,8 @@ function diag:move_cursor(entry)
   local current_winid = api.nvim_get_current_win()
   if self.winid and api.nvim_win_is_valid(self.winid) then
     api.nvim_win_close(self.winid, true)
+    preview_win_close()
+    pcall(api.nvim_del_autocmd, self.auid)
   end
 
   api.nvim_win_call(current_winid, function()
