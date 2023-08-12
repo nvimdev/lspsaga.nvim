@@ -271,6 +271,10 @@ function ch:peek_view()
       end
       local range = data.selectionRange
       api.nvim_win_set_buf(self.right_winid, curnode.value.bufnr)
+      api.nvim_set_option_value('winhl', 'Normal:SagaNormal,FloatBorder:SagaBorder', {
+        scope = 'local',
+        win = self.right_winid,
+      })
       curnode.value.rendered = true
       vim.bo[curnode.value.bufnr].filetype = vim.bo[self.main_buf].filetype
       api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, range.start.character + 1 })
