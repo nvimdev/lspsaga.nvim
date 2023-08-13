@@ -136,6 +136,7 @@ local default_config = {
   },
   callhierarchy = {
     layout = 'float',
+    left_width = 0.2,
     keys = {
       edit = 'e',
       vsplit = 's',
