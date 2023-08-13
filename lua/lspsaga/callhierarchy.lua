@@ -26,6 +26,7 @@ function ch:clean()
       return
     end
     if node.value.bufnr and api.nvim_buf_is_valid(node.value.bufnr) and node.value.rendered then
+      api.nvim_buf_clear_namespace(node.value.bufnr, ns, 0, -1)
       pcall(api.nvim_buf_del_keymap, node.value.bufnr, 'n', config.finder.keys.close)
     end
   end)
@@ -234,6 +235,9 @@ function ch:keymap()
         return
       end
       local client = lsp.get_client_by_id(curnode.value.client_id)
+      if not client then
+        return
+      end
       local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
       local fname = vim.uri_to_fname(data.uri)
       local start = data.selectionRange.start
@@ -277,7 +281,28 @@ function ch:peek_view()
       })
       curnode.value.rendered = true
       vim.bo[curnode.value.bufnr].filetype = vim.bo[self.main_buf].filetype
-      api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, range.start.character + 1 })
+      local client = vim.lsp.get_client_by_id(curnode.value.client_id)
+      if not client then
+        return
+      end
+      local col = lsp.util._get_line_byte_from_position(
+        curnode.value.bufnr,
+        range.start,
+        client.offset_encoding
+      )
+      api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
+      api.nvim_buf_add_highlight(
+        curnode.value.bufnr,
+        ns,
+        'SagaSearch',
+        range.start.line,
+        col,
+        lsp.util._get_line_byte_from_position(
+          curnode.value.bufnr,
+          range['end'],
+          client.offset_encoding
+        )
+      )
       util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.shuttle, function()
         window_shuttle(self.left_winid, self.right_winid)
       end)
@@ -354,7 +379,6 @@ function ch:call_hierarchy(item, client, timer, curlnum)
       curnode.value.expand = true
       self:set_toggle_icon(config.ui.collapse, curlnum - 1, inlevel - 4, curnode.value.virtid)
     end
-    local tmp = curnode
     vim.bo[self.left_bufnr].modifiable = true
 
     for _, val in ipairs(res) do

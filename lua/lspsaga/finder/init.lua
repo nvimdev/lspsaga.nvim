@@ -59,7 +59,7 @@ function fd:init_layout()
 end
 
 function fd:set_toggle_icon(icon, virtid, row, col)
-  api.nvim_buf_set_extmark(self.lbufnr, ns, row, col, {
+  buf_set_extmark(self.lbufnr, ns, row, col, {
     id = virtid,
     -- virt_text_win_col = col,
     virt_text = { { icon, 'SagaToggle' } },
@@ -113,7 +113,7 @@ function fd:handler(method, results, spin_close, done)
       local uri = res.uri or res.targetUri
       if i == 1 then
         self:method_title(method, row)
-        api.nvim_buf_set_extmark(self.lbufnr, ns, row, 0, {
+        buf_set_extmark(self.lbufnr, ns, row, 0, {
           virt_text = { { ' ' .. vim.tbl_count(item.result) .. ' ', 'SagaCount' } },
           virt_text_pos = 'eol',
         })
@@ -207,7 +207,7 @@ function fd:event()
       if inlevel == 6 then
         buf_add_highlight(self.lbufnr, select_ns, 'String', curlnum - 1, 6, -1)
       end
-      box.indent_current(inlevel, ns)
+      box.indent_current(inlevel)
       local node = slist.find_node(self.list, curlnum)
       if not node or not node.value.bufnr then
         return
@@ -220,14 +220,16 @@ function fd:event()
         scope = 'local',
         win = self.rwinid,
       })
-      local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
-      api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, range.start.character })
-      api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
-      local rwin_conf = api.nvim_win_get_config(self.rwinid)
       local client = vim.lsp.get_client_by_id(node.value.client_id)
       if not client then
         return
       end
+      local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
+      local col =
+        lsp.util._get_line_byte_from_position(node.value.bufnr, range.start, client.offset_encoding)
+      api.nvim_win_set_cursor(self.rwinid, { range.start.line + 1, col })
+      api.nvim_set_option_value('winbar', '', { scope = 'local', win = self.rwinid })
+      local rwin_conf = api.nvim_win_get_config(self.rwinid)
       if self.layout == 'float' and config.ui.title and config.ui.border ~= 'none' then
         rwin_conf.title =
           util.path_sub(api.nvim_buf_get_name(node.value.bufnr), client.config.root_dir)
@@ -249,7 +251,7 @@ function fd:event()
         ns,
         'SagaSearch',
         range.start.line,
-        lsp.util._get_line_byte_from_position(node.value.bufnr, range.start, client.offset_encoding),
+        col,
         lsp.util._get_line_byte_from_position(
           node.value.bufnr,
           range['end'],
