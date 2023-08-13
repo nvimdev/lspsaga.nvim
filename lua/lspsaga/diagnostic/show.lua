@@ -312,6 +312,7 @@ function sd:show(opt)
   end
 
   local layout = diag_conf.show_layout
+  opt.args = opt.args or {}
   if vim.tbl_contains(opt.args, '++float') then
     layout = 'float'
   elseif vim.tbl_contains(opt.args, '++normal') then
