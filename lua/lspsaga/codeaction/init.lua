@@ -87,6 +87,7 @@ function act:action_callback(tuples, enriched_ctx)
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
     })
+    :winhl('SagaNormal', 'SagaBorder')
     :wininfo()
 
   -- initial position in code action window
