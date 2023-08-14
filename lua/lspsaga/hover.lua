@@ -323,7 +323,7 @@ local function check_parser()
 end
 
 function hover:render_hover_doc(args)
-  util.close_win(require('diagnostic').winid)
+  util.close_win(require('lspsaga.diagnostic').winid)
 
   args = args or {}
 
