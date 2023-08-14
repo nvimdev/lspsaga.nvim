@@ -323,6 +323,8 @@ local function check_parser()
 end
 
 function hover:render_hover_doc(args)
+  util.close_win(require('diagnostic').winid)
+
   args = args or {}
 
   if not check_parser() then
