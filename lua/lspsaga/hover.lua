@@ -323,7 +323,14 @@ local function check_parser()
 end
 
 function hover:render_hover_doc(args)
+<<<<<<< HEAD
   util.close_win(require('lspsaga.diagnostic').winid)
+=======
+  local diag_winid = require('lspsaga.diagnostic').winid
+  if diag_winid and api.nvim_win_is_valid(diag_winid) then
+    require('lspsaga.diagnostic'):clean_data()
+  end
+>>>>>>> 793aea0 (fixup)
 
   args = args or {}
 
