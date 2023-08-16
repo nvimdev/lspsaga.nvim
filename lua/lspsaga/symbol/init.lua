@@ -97,6 +97,9 @@ function symbol:buf_watcher(buf, client_id)
 end
 
 function symbol:do_request(buf, client_id)
+  if not api.nvim_buf_is_valid(b) then
+    return
+  end
   local params = { textDocument = {
     uri = vim.uri_from_bufnr(buf),
   } }
