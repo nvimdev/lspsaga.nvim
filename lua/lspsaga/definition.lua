@@ -255,20 +255,11 @@ function def:goto_definition(method)
       return
     end
 
-    local jump_destination = vim.uri_to_fname(res.uri)
-    local current_buffer = api.nvim_buf_get_name(0)
-
-    -- if the current buffer is the jump destination and it has been modified
-    -- then write the changes first.
-    -- this is needed because if the definition is in the current buffer the
-    -- jump may not go to the right place.
-    if current_buffer == jump_destination then
-      if vim.bo.modified then
-        vim.cmd('write!')
-      end
-    else
-      api.nvim_command('edit ' .. jump_destination)
+    local target_bufnr = vim.uri_to_bufnr(res.uri)
+    if not api.nvim_buf_is_loaded(target_bufnr) then
+      vim.fn.bufload(target_bufnr)
     end
+    api.nvim_win_set_buf(0, target_bufnr)
     api.nvim_win_set_cursor(0, {
       res.range.start.line + 1,
       lsp.util._get_line_byte_from_position(0, res.range.start, client.offset_encoding),
