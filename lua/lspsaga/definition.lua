@@ -1,6 +1,5 @@
 local config = require('lspsaga').config
 local lsp, fn, api = vim.lsp, vim.fn, vim.api
-local log = require('lspsaga.logger')
 local util = require('lspsaga.util')
 local win = require('lspsaga.window')
 local buf_del_keymap = api.nvim_buf_del_keymap
@@ -254,6 +253,9 @@ function def:goto_definition(method)
     if vim.tbl_isempty(res) or not client then
       return
     end
+
+    --set jumplist
+    vim.cmd("normal! m'")
 
     local target_bufnr = vim.uri_to_bufnr(res.uri)
     if not api.nvim_buf_is_loaded(target_bufnr) then
