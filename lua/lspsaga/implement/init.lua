@@ -2,7 +2,6 @@ local api, fn = vim.api, vim.fn
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config.implement
-local symbol = require('lspsaga.symbol')
 local ui = require('lspsaga').config.ui
 local ns = api.nvim_create_namespace('SagaImp')
 local defined = false
@@ -106,26 +105,6 @@ local function range_compare(r1, r2)
     if r2['end'][k] ~= v then
       return true
     end
-  end
-end
-
-local function is_rename(data, range, word)
-  for before, item in pairs(data) do
-    if
-      item.range.start.line == range.start.line
-      and item.range.start.character == range.start.character
-      and word ~= before
-    then
-      return before
-    end
-  end
-end
-
-local function clean(buf)
-  for k, data in pairs(buffers_cache[buf] or {}) do
-    pcall(api.nvim_buf_del_extmark, buf, ns, data.virt_id)
-    pcall(fn.sign_unplace, name, { buffer = buf, id = data.sign_id })
-    buffers_cache[buf][k] = nil
   end
 end
 

@@ -361,7 +361,6 @@ function fd:toggle_or_open()
         { (' '):rep(tmp.value.inlevel) .. tmp.value.line }
       )
       self:set_highlight(tmp.value.inlevel, curlnum)
-      local islast = (not tmp.next or tmp.next.value.inlevel <= tmp.value.inlevel) and true or false
       if tmp.value.expand == false then
         self:set_toggle_icon(config.ui.collapse, tmp.value.virtid, curlnum, tmp.value.inlevel - 2)
         tmp.value.expand = true

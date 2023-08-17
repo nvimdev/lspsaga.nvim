@@ -1,5 +1,6 @@
 local api = vim.api
 local win = require('lspsaga.window')
+local config = require('lspsaga').config
 local term = {}
 
 local ctx = {}
@@ -21,8 +22,8 @@ function term:open_float_terminal(args)
   local cmd = (#args == 1 and args[1]) and args[1]
     or (require('lspsaga.util').iswin and 'cmd.exe' or os.getenv('SHELL'))
   -- calculate our floating window size
-  local win_height = math.ceil(vim.o.lines * 0.7)
-  local win_width = math.ceil(vim.o.columns * 0.7)
+  local win_height = math.ceil(vim.o.lines * config.floaterm.height)
+  local win_width = math.ceil(vim.o.columns * config.floaterm.width)
 
   -- and its starting position
   local row = math.ceil((vim.o.lines - win_height) * 0.4)
