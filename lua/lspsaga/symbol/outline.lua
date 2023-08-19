@@ -97,7 +97,7 @@ function ot:parse(symbols, curline)
       level = level or 0
       local indent = '    ' .. ('  '):rep(level)
       node.name = node.name == ' ' and '_' or node.name
-      buf_set_lines(self.bufnr, row, -1, false, { indent .. node.name })
+      buf_set_lines(self.bufnr, row, -1, false, { indent .. node.name:gsub('\n', '') })
 
       row = row + 1
       if level == 0 then
