@@ -46,6 +46,8 @@ local function border_map()
   }
 end
 
+--TODO: use whole screen would be great
+--when have split window the right width might be small
 function M.right(left_winid, opt)
   opt = opt or {}
   local win_conf = api.nvim_win_get_config(left_winid)
