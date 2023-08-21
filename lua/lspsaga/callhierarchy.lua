@@ -303,7 +303,11 @@ function ch:peek_view()
         client.offset_encoding
       )
 
-      api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
+      local right_bufnr = vim.api.nvim_win_get_buf(self.right_winid)
+      local total_lines = vim.api.nvim_buf_line_count(right_bufnr)
+      if range.start.line >= 0 and range.start.line < total_lines then
+        api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
+      end
       api.nvim_buf_add_highlight(
         curnode.value.bufnr,
         ns,
