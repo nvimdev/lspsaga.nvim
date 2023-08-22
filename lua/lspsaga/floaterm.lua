@@ -20,7 +20,7 @@ function term:open_float_terminal(args)
   end
 
   local cmd = (#args > 0 and args[1]) and args[1]
-  or (require('lspsaga.util').iswin and 'cmd.exe' or os.getenv('SHELL'))
+    or (require('lspsaga.util').iswin and 'cmd.exe' or os.getenv('SHELL'))
   local dir = (#args > 1 and args[2]) and args[2] or vim.fn.getcwd()
   -- calculate our floating window size
   local win_height = math.ceil(vim.o.lines * config.floaterm.height)

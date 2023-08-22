@@ -250,7 +250,7 @@ function ch:keymap()
       local restore = win:minimal_restore()
       vim.cmd(action)
       local uri = data.uri
-      if not string.match(uri, "^[^:]+://") then -- not uri
+      if not string.match(uri, '^[^:]+://') then -- not uri
         uri = vim.uri_from_fname(uri)
       end
       vim.lsp.util.jump_to_location({
@@ -372,10 +372,7 @@ function ch:call_hierarchy(item, client, timer_close, curlnum)
     end
 
     if not res or vim.tbl_isempty(res) then
-      vim.notify(
-      '[lspsaga] callhierarchy result is empty',
-      vim.log.levels.WARN
-      )
+      vim.notify('[lspsaga] callhierarchy result is empty', vim.log.levels.WARN)
       return
     end
 
