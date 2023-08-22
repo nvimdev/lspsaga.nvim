@@ -7,8 +7,8 @@ local subcommands = {
   peek_definition = function()
     require('lspsaga.definition'):peek_definition(1)
   end,
-  goto_definition = function()
-    require('lspsaga.definition'):goto_definition(1)
+  goto_definition = function(args)
+    require('lspsaga.definition'):goto_definition(1, args)
   end,
   peek_type_definition = function()
     require('lspsaga.definition'):peek_definition(2)

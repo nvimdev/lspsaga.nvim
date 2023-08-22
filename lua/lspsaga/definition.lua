@@ -234,7 +234,7 @@ function def:peek_definition(method)
 end
 
 -- override the default the defintion handler
-function def:goto_definition(method)
+function def:goto_definition(method, args)
   lsp.handlers[get_method(method)] = function(_, result, lsp_ctx, _)
     if not result or vim.tbl_isempty(result) then
       return
@@ -260,6 +260,9 @@ function def:goto_definition(method)
     local target_bufnr = vim.uri_to_bufnr(res.uri)
     if not api.nvim_buf_is_loaded(target_bufnr) then
       vim.fn.bufload(target_bufnr)
+    end
+    if args and #args > 0 then
+      vim.cmd[args[1]]()
     end
     api.nvim_win_set_buf(0, target_bufnr)
     api.nvim_win_set_cursor(0, {
