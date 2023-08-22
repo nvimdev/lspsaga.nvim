@@ -317,8 +317,8 @@ function ot:create_preview_win(lines)
   local winid = fn.bufwinid(self.main_buf)
   local origianl_win_height = api.nvim_win_get_height(winid)
   local original_win_width = api.nvim_win_get_width(winid)
-  local max_height = bit.rshift(origianl_win_height, 2)
-  local max_width = bit.rshift(original_win_width, 2)
+  local max_height = math.floor(origianl_win_height * 0.5)
+  local max_width = math.floor(original_win_width * 0.7)
 
   local float_opt = {
     relative = 'editor',
