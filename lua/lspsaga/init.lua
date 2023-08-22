@@ -94,6 +94,7 @@ local default_config = {
       vsplit = '<C-c>v',
       split = '<C-c>i',
       tabe = '<C-c>t',
+      tabenew = '<C-c>n',
       quit = 'q',
       close = '<C-c>k',
     },
