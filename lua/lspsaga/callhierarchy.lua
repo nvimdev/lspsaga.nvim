@@ -245,17 +245,23 @@ function ch:keymap()
         return
       end
       local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
-      local fname = vim.uri_to_fname(data.uri)
       local start = data.selectionRange.start
-      local pos = { start.line + 1 }
       self:clean()
       local restore = win:minimal_restore()
-      vim.cmd[action](fname)
+      vim.cmd(action)
+      local uri = data.uri
+      if not string.match(uri, '^[^:]+://') then -- not uri
+        uri = vim.uri_from_fname(uri)
+      end
+      vim.lsp.util.jump_to_location({
+        uri = uri,
+        range = {
+          start = start,
+          ['end'] = start,
+        },
+      }, client.offset_encoding)
       restore()
-      local curbuf = api.nvim_get_current_buf()
-      pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
-      api.nvim_win_set_cursor(0, pos)
-      beacon({ pos[1], 0 }, #api.nvim_get_current_line())
+      beacon({ start.line, 0 }, #api.nvim_get_current_line())
     end)
   end
 end
@@ -303,7 +309,11 @@ function ch:peek_view()
         client.offset_encoding
       )
 
-      api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
+      local right_bufnr = vim.api.nvim_win_get_buf(self.right_winid)
+      local total_lines = vim.api.nvim_buf_line_count(right_bufnr)
+      if range.start.line >= 0 and range.start.line < total_lines then
+        api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
+      end
       api.nvim_buf_add_highlight(
         curnode.value.bufnr,
         ns,
@@ -362,6 +372,7 @@ function ch:call_hierarchy(item, client, timer_close, curlnum)
     end
 
     if not res or vim.tbl_isempty(res) then
+      vim.notify('[lspsaga] callhierarchy result is empty', vim.log.levels.WARN)
       return
     end
 
