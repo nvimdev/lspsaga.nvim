@@ -194,13 +194,18 @@ function def:peek_definition(method)
   self.opt_restore = win:minimal_restore()
 
   self.pending_request = true
+  local count = #util.get_client_by_method(method_name)
+
   lsp.buf_request(current_buf, method_name, params, function(_, result, context)
+    count = count - 1
     self.pending_request = false
     if not result or next(result) == nil then
-      vim.notify(
-        '[lspsaga] response of request method ' .. method_name .. ' is empty',
-        vim.log.levels.WARN
-      )
+      if #self.list == 0 and count == 0 then
+        vim.notify(
+          '[lspsaga] response of request method ' .. method_name .. ' is empty',
+          vim.log.levels.WARN
+        )
+      end
       return
     end
     if result.uri then
@@ -220,6 +225,9 @@ function def:peek_definition(method)
     local root_dir = lsp.get_client_by_id(context.client_id).config.root_dir
     _, node.winid = self:create_win(node.bufnr, root_dir)
     local client = lsp.get_client_by_id(context.client_id)
+    if not client then
+      return
+    end
     api.nvim_win_set_cursor(node.winid, {
       node.selectionRange.start.line + 1,
       lsp.util._get_line_byte_from_position(

@@ -48,20 +48,18 @@ function M.tbl_index(tbl, val)
 end
 
 -- get client by methods
-function M.get_client_by_method(methods)
+function M.get_client_by_method(method)
+  if vim.version().minor >= 10 then
+    return lsp.get_clients({ bufnr = 0, method = method })
+  end
+
   ---@diagnostic disable-next-line: deprecated
-  local get_clients = vim.version().minor >= 10 and lsp.get_clients or lsp.get_active_clients
-  local clients = get_clients({ bufnr = 0 })
-  clients = vim.tbl_filter(function(client)
-    return client.name ~= 'null-ls'
-  end, clients)
+  local clients = lsp.get_active_clients({ bufnr = 0 })
   local supports = {}
 
   for _, client in ipairs(clients or {}) do
-    for _, method in ipairs(M.as_table(methods)) do
-      if client.supports_method(method) then
-        supports[#supports + 1] = client
-      end
+    if client.supports_method(method) then
+      supports[#supports + 1] = client
     end
   end
   return supports
