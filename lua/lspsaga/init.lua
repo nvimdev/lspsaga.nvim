@@ -75,6 +75,7 @@ local default_config = {
     silent = false,
     filter = {},
     sp_inexist = false,
+    ly_botright = false,
     keys = {
       shuttle = '[w',
       toggle_or_open = 'o',

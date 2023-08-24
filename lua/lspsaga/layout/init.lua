@@ -23,9 +23,9 @@ end
 local LEFT = 1
 local RIGHT = 2
 
-function M:left(height, width, bufnr, title)
+function M:left(height, width, bufnr, title, sp_global)
   local fn = self.layout == 'float' and float.left or normal.left
-  self.left_bufnr, self.left_winid = fn(height, width, bufnr, title)
+  self.left_bufnr, self.left_winid = fn(height, width, bufnr, title, sp_global)
   self.current = LEFT
   return self
 end

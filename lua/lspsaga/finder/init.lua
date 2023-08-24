@@ -39,7 +39,10 @@ function fd:init_layout()
   self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
     :left(
       math.floor(vim.o.lines * config.finder.max_height),
-      math.floor(win_width * config.finder.left_width)
+      math.floor(win_width * config.finder.left_width),
+      _,
+      _,
+      self.layout == 'normal' and config.finder.sp_global or nil
     )
     :bufopt({
       ['filetype'] = 'sagafinder',

@@ -155,10 +155,15 @@ function win:new_float(float_opt, enter, force)
   return setmetatable(win, obj)
 end
 
-function win:new_normal(direct, bufnr)
+function win:new_normal(direct, bufnr, sp_global)
   local user_val = vim.opt.splitbelow
+  sp_global = sp_global or false
   vim.opt.splitbelow = true
-  vim.cmd[direct]('new')
+  local c = ('%s new'):format(direct)
+  if sp_global then
+    c = 'botright ' .. c
+  end
+  vim.cmd(c)
   vim.opt.splitbelow = user_val
   self.bufnr = bufnr or api.nvim_create_buf(false, false)
   self.winid = api.nvim_get_current_win()

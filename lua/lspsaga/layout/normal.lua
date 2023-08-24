@@ -2,10 +2,10 @@ local api = vim.api
 local win = require('lspsaga.window')
 local M = {}
 
-function M.left(height, width, bufnr)
+function M.left(height, width, bufnr, _, sp_global)
   M.width = width
   return win
-    :new_normal('sp', bufnr)
+    :new_normal('sp', bufnr, sp_global)
     :bufopt({
       ['buftype'] = 'nofile',
     })
