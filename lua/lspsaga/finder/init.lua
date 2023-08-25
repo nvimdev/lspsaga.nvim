@@ -323,7 +323,9 @@ function fd:toggle_or_open()
       }
       self:clean()
       local restore = win:minimal_restore()
-      vim.cmd.edit(fname)
+      if node.value.bufnr ~= api.nvim_get_current_buf() then
+        vim.cmd.edit(fname)
+      end
       restore()
       api.nvim_win_set_cursor(0, pos)
       beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
