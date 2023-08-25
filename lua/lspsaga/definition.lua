@@ -70,9 +70,9 @@ function def:apply_maps(bufnr)
         local index = get_node_idx(self.list, api.nvim_get_current_win())
         local start = self.list[index].selectionRange.start
         local client = lsp.get_client_by_id(self.list[index].client_id)
-        local pos = {
-          start.line + 1,
-        }
+        if not client then
+          return
+        end
         if action == 'quit' then
           vim.cmd[action]()
           return
@@ -82,9 +82,19 @@ function def:apply_maps(bufnr)
         if action ~= 'edit' or curbuf ~= bufnr then
           vim.cmd[action](fname)
         end
-        pos[2] = lsp.util._get_line_byte_from_position(curbuf, start, client.offset_encoding)
-        api.nvim_win_set_cursor(0, pos)
-        beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
+        local ok = lsp.util.jump_to_location({
+          uri = vim.uri_from_fname(fname),
+          range = {
+            start = start,
+            ['end'] = start,
+          },
+        }, client.offset_encoding)
+        if not ok then
+          api.nvim_err_writeln('[Lspsaga] jump failed on definition')
+          return
+        end
+        local width = #api.nvim_get_current_line()
+        beacon({ start.line, vim.fn.col('.') }, width)
       end)
     else
       util.map_keys(bufnr, map, function()
