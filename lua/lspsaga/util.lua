@@ -24,7 +24,14 @@ function M.path_itera(buf)
 end
 
 function M.path_sub(fname, root)
-  root = (root and fname:sub(1, #root) == root) and root or vim.env.HOME
+  local pwd = uv.cwd()
+  if root and fname:sub(1, #root) == root then
+    root = root
+  elseif fname:find(pwd) then
+    root = pwd
+  else
+    root = vim.env.HOME
+  end
   root = root:sub(#root - #M.path_sep + 1) == M.path_sep and root or root .. M.path_sep
   return fname:gsub(vim.pesc(root), '')
 end
