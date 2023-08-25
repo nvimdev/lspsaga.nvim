@@ -40,8 +40,8 @@ function fd:init_layout()
     :left(
       math.floor(vim.o.lines * config.finder.max_height),
       math.floor(win_width * config.finder.left_width),
-      _,
-      _,
+      nil,
+      nil,
       self.layout == 'normal' and config.finder.sp_global or nil
     )
     :bufopt({

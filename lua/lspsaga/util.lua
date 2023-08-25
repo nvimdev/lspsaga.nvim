@@ -27,7 +27,7 @@ function M.path_sub(fname, root)
   local pwd = uv.cwd()
   if root and fname:sub(1, #root) == root then
     root = root
-  elseif fname:find(pwd) then
+  elseif fname:sub(1, #pwd) == pwd then
     root = pwd
   else
     root = vim.env.HOME
