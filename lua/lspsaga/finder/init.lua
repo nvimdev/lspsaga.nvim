@@ -393,7 +393,10 @@ function fd:apply_maps()
         if not curnode then
           return
         end
-        local fname = api.nvim_buf_get_name(curnode.value.bufnr)
+        local bufnr = curnode.value.bufnr
+        if not api.nvim_buf_is_valid(bufnr) then
+          bufnr = vim.uri_to_bufnr(curnode.value.uri)
+        end
         local client = lsp.get_client_by_id(curnode.value.client_id)
         if not client then
           return
@@ -415,14 +418,13 @@ function fd:apply_maps()
         local restore = win:minimal_restore()
         if inexist and (action == 'split' or action == 'vsplit') then
           local reuse = box.win_reuse(action)
-          if not reuse then
-            vim.cmd[action](fname)
-          else
-            api.nvim_win_set_buf(reuse, fn.bufadd(fname))
+          if reuse then
+            api.nvim_win_set_buf(reuse, bufnr)
             api.nvim_set_current_win(reuse)
           end
         else
-          vim.cmd[action](fname)
+          vim.cmd[action]()
+          api.nvim_win_set_buf(0, bufnr)
         end
         restore()
         api.nvim_win_set_cursor(0, pos)

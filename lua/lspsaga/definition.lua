@@ -273,15 +273,15 @@ function def:goto_definition(method, args)
       vim.cmd[args[1]]()
     end
     api.nvim_win_set_buf(0, target_bufnr)
-    api.nvim_win_set_cursor(0, {
-      res.range.start.line + 1,
-      lsp.util._get_line_byte_from_position(0, res.range.start, client.offset_encoding),
-    })
-    local curbuf = api.nvim_get_current_buf()
+    vim.lsp.util.jump_to_location({
+      uri = res.uri,
+      range = {
+        start = res.range.start,
+        ['end'] = res.range.start,
+      },
+    }, client.offset_encoding)
     local width = #api.nvim_get_current_line()
-    local col =
-      lsp.util._get_line_byte_from_position(curbuf, res.range.start, client.offset_encoding)
-    beacon({ res.range.start.line, col }, width)
+    beacon({ res.range.start.line, vim.fn.col('.') }, width)
   end
   if method == 1 then
     lsp.buf.definition()
