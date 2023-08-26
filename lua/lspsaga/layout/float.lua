@@ -46,8 +46,6 @@ local function border_map()
   }
 end
 
---TODO: use whole screen would be great
---when have split window the right width might be small
 function M.right(left_winid, opt)
   opt = opt or {}
   local win_conf = api.nvim_win_get_config(left_winid)
@@ -64,6 +62,11 @@ function M.right(left_winid, opt)
   local row = win_conf.row[false]
   local available = WIDTH - win_conf.width
   win_conf.width = not opt.width and available - 15 or math.floor(WIDTH * opt.width)
+  local dif = vim.o.columns - api.nvim_win_get_height(win_conf.win)
+  if fn.winnr('$') > 1 and dif > 0 then
+    win_conf.width = win_conf.width + (dif >= 15 and 15 or 0)
+  end
+
   win_conf.row = row
   win_conf.col = col + 2
   win_conf.title = nil
