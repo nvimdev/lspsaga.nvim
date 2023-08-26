@@ -307,29 +307,27 @@ function fd:toggle_or_open()
       return
     end
     if node.value.expand == nil then
+      local uri = node.value.uri or node.value.targetUri
       local client = lsp.get_client_by_id(node.value.client_id)
       if not client then
         return
       end
-      local uri = node.value.uri or node.value.targetUri
-      local fname = vim.uri_to_fname(uri)
       local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
+      local pos = {
+        range.start.line + 1,
+        lsp.util._get_line_byte_from_position(
+          node.value.bufnr,
+          range.start,
+          client.offset_encoding
+        ),
+      }
       self:clean()
       local restore = win:minimal_restore()
-      local bufnr = fn.bufadd(fname)
+      local bufnr = vim.uri_to_bufnr(uri)
       api.nvim_win_set_buf(0, bufnr)
       restore()
-      local ok = lsp.util.jump_to_location({
-        uri = uri,
-        range = {
-          start = range.start,
-          ['end'] = range.start,
-        },
-      }, client.offset_encoding)
-      if not ok then
-        api.nvim_err_writeln('jump failed')
-      end
-      beacon({ range.start.line, 0 }, #api.nvim_get_current_line())
+      api.nvim_win_set_cursor(0, pos)
+      beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
       return
     end
 
@@ -396,7 +394,7 @@ function fd:apply_maps()
         if not curnode then
           return
         end
-        local uri = curnode.value.uri or curnode.value.targetUri
+        local fname = api.nvim_buf_get_name(curnode.value.bufnr)
         local client = lsp.get_client_by_id(curnode.value.client_id)
         if not client then
           return
@@ -404,29 +402,32 @@ function fd:apply_maps()
         local range = curnode.value.range
           or curnode.value.targetSelectionRange
           or curnode.value.selectionRange
+
+        local pos = {
+          range.start.line + 1,
+          lsp.util._get_line_byte_from_position(
+            curnode.value.bufnr,
+            range.start,
+            client.offset_encoding
+          ),
+        }
         local inexist = self.inexist
         self:clean()
         local restore = win:minimal_restore()
-        local bufnr = vim.uri_to_bufnr(uri)
         if inexist and (action == 'split' or action == 'vsplit') then
           local reuse = box.win_reuse(action)
-          if reuse then
-            api.nvim_win_set_buf(reuse, bufnr)
+          if not reuse then
+            vim.cmd[action](fname)
+          else
+            api.nvim_win_set_buf(reuse, fn.bufadd(fname))
             api.nvim_set_current_win(reuse)
           end
         else
-          vim.cmd[action]()
-          api.nvim_win_set_buf(0, bufnr)
+          vim.cmd[action](fname)
         end
         restore()
-        lsp.util.jump_to_location({
-          uri = uri,
-          range = {
-            start = range.start,
-            ['end'] = range.start,
-          },
-        }, client.offset_encoding)
-        beacon({ range.start.line, 0 }, #api.nvim_get_current_line())
+        api.nvim_win_set_cursor(0, pos)
+        beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
         return
       end
 
