@@ -404,15 +404,6 @@ function fd:apply_maps()
         local range = curnode.value.range
           or curnode.value.targetSelectionRange
           or curnode.value.selectionRange
-
-        local pos = {
-          range.start.line + 1,
-          lsp.util._get_line_byte_from_position(
-            curnode.value.bufnr,
-            range.start,
-            client.offset_encoding
-          ),
-        }
         local inexist = self.inexist
         self:clean()
         local restore = win:minimal_restore()
@@ -428,8 +419,14 @@ function fd:apply_maps()
           api.nvim_win_set_buf(0, bufnr)
         end
         restore()
-        api.nvim_win_set_cursor(0, pos)
-        beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
+        lsp.util.jump_to_location({
+          uri = uri,
+          range = {
+            start = range.start,
+            ['end'] = range.start,
+          },
+        }, client.offset_encoding)
+        beacon({ range.start.line, 0 }, #api.nvim_get_current_line())
         return
       end
 
