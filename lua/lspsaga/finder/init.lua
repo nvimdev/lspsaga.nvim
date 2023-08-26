@@ -307,26 +307,29 @@ function fd:toggle_or_open()
       return
     end
     if node.value.expand == nil then
-      local fname = vim.uri_to_fname(node.value.uri or node.value.targetUri)
       local client = lsp.get_client_by_id(node.value.client_id)
       if not client then
         return
       end
+      local uri = node.value.uri or node.value.targetUri
+      local fname = vim.uri_to_fname(uri)
       local range = node.value.selectionRange or node.value.range or node.value.targetSelectionRange
-      local pos = {
-        range.start.line + 1,
-        lsp.util._get_line_byte_from_position(
-          node.value.bufnr,
-          range.start,
-          client.offset_encoding
-        ),
-      }
       self:clean()
       local restore = win:minimal_restore()
-      vim.cmd.edit(fname)
+      local bufnr = fn.bufadd(fname)
+      api.nvim_win_set_buf(0, bufnr)
       restore()
-      api.nvim_win_set_cursor(0, pos)
-      beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
+      local ok = lsp.util.jump_to_location({
+        uri = uri,
+        range = {
+          start = range.start,
+          ['end'] = range.start,
+        },
+      }, client.offset_encoding)
+      if not ok then
+        api.nvim_err_writeln('jump failed')
+      end
+      beacon({ range.start.line, 0 }, #api.nvim_get_current_line())
       return
     end
 
