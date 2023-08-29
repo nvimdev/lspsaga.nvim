@@ -115,6 +115,7 @@ local default_config = {
     enable = true,
     separator = ' › ',
     hide_keyword = false,
+    ignore_patterns = nil,
     show_file = true,
     folder_level = 1,
     color_mode = true,

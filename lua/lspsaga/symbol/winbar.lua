@@ -190,8 +190,17 @@ local function file_bar(buf)
   end
 end
 
+local function ignored(bufname)
+  for _, pattern in ipairs(util.as_table(config.ignore_patterns)) do
+    if bufname:find(pattern) then
+      return true
+    end
+  end
+  return false
+end
+
 local function init_winbar(buf)
-  if vim.o.diff then
+  if vim.o.diff or config.ignore_patterns and ignored(api.nvim_buf_get_name(buf)) then
     return
   end
   file_bar(buf)
