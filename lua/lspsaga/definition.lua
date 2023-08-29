@@ -206,6 +206,9 @@ function def:peek_definition(method)
   self.pending_request = true
   local count = #util.get_client_by_method(method_name)
 
+  --set jumplist
+  vim.cmd("normal! m'")
+
   lsp.buf_request(current_buf, method_name, params, function(_, result, context)
     count = count - 1
     self.pending_request = false
