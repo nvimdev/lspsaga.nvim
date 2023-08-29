@@ -264,7 +264,7 @@ function diag:render_diagnostic_window(entry, option)
     end
   end
 
-  if diag_conf.show_code_action then
+  if diag_conf.show_code_action and #util.get_client_by_method('textDocument/codeAction') > 0 then
     act:send_request(self.main_buf, {
       context = { diagnostics = self:get_cursor_diagnostic() },
       range = {
