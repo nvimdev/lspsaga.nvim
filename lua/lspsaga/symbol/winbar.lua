@@ -244,7 +244,23 @@ local function get_bar()
   end
 end
 
+local function toggle()
+  local curbuf = api.nvim_get_current_buf()
+  local ok, g = pcall(api.nvim_get_autocmds, {
+    group = 'SagaWinbar' .. curbuf,
+    event = { 'CursorMoved' },
+    buffer = curbuf,
+  })
+  if ok then
+    vim.opt_local.winbar = ''
+    api.nvim_del_augroup_by_id(g[1].group)
+    return
+  end
+  init_winbar(curbuf)
+end
+
 return {
   init_winbar = init_winbar,
   get_bar = get_bar,
+  toggle = toggle,
 }
