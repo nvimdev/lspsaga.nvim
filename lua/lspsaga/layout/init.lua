@@ -10,6 +10,8 @@ function M:arg_layout(args)
       layout = 'normal'
     elseif item:find('float') then
       layout = 'float'
+    elseif item:find('drowpdown') then
+      layout = 'dropdown'
     end
   end
   return layout
@@ -70,6 +72,14 @@ function M:right(opt)
   return self
 end
 
+function M:dropdown(height)
+  --up
+  self.right_winid = api.nvim_get_current_win()
+  --down
+  self.left_bufnr, self.left_winid = require('lspsaga.layout.normal').left(height, nil, _, true)
+  return self
+end
+
 function M:done(fn)
   vim.validate({
     fn = { fn, { 'f' }, true },
@@ -81,8 +91,10 @@ function M:done(fn)
 end
 
 function M:close()
-  for _, id in ipairs({ self.left_winid, self.right_winid }) do
-    if api.nvim_win_is_valid(id) then
+  for i, id in ipairs({ self.left_winid, self.right_winid }) do
+    if i == 1 and api.nvim_win_is_valid(id) then
+      api.nvim_win_close(id, true)
+    elseif i == 2 and self.layout ~= 'dropdown' and api.nvim_win_is_valid(id) then
       api.nvim_win_close(id, true)
     end
   end

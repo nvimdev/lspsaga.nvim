@@ -36,27 +36,32 @@ function fd:init_layout()
     vim.notify('[lspsaga] finder right width must be less than 0.7')
     config.finder.right_width = 0.5
   end
-  self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
-    :left(
-      math.floor(vim.o.lines * config.finder.max_height),
-      math.floor(win_width * config.finder.left_width),
-      nil,
-      nil,
-      self.layout == 'normal' and config.finder.sp_global or nil
-    )
-    :bufopt({
-      ['filetype'] = 'sagafinder',
-      ['buftype'] = 'nofile',
-      ['bufhidden'] = 'wipe',
-      ['modifiable'] = true,
-    })
-    :winopt('wrap', false)
-    :right({ width = config.finder.right_width })
-    :bufopt({
-      ['buftype'] = 'nofile',
-      ['bufhidden'] = 'wipe',
-    })
-    :done()
+  if self.layout == 'dropdown' then
+    self.lbufnr, self.lwinid, _, self.rwinid =
+      ly:new(self.layout):dropdown(math.floor(vim.o.lines * config.finder.max_height)):done()
+  else
+    self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
+      :left(
+        math.floor(vim.o.lines * config.finder.max_height),
+        math.floor(win_width * config.finder.left_width),
+        nil,
+        nil,
+        self.layout == 'normal' and config.finder.sp_global or nil
+      )
+      :bufopt({
+        ['filetype'] = 'sagafinder',
+        ['buftype'] = 'nofile',
+        ['bufhidden'] = 'wipe',
+        ['modifiable'] = true,
+      })
+      :winopt('wrap', false)
+      :right({ width = config.finder.right_width })
+      :bufopt({
+        ['buftype'] = 'nofile',
+        ['bufhidden'] = 'wipe',
+      })
+      :done()
+  end
   self:apply_maps()
   self:event()
 end
@@ -219,10 +224,12 @@ function fd:event()
       if node.value.wipe then
         vim.bo[node.value.bufnr].filetype = self.ft
       end
-      api.nvim_set_option_value('winhl', 'Normal:SagaNormal,FloatBorder:SagaBorder', {
-        scope = 'local',
-        win = self.rwinid,
-      })
+      if config.finder.layout ~= 'dropdown' then
+        api.nvim_set_option_value('winhl', 'Normal:SagaNormal,FloatBorder:SagaBorder', {
+          scope = 'local',
+          win = self.rwinid,
+        })
+      end
       local client = vim.lsp.get_client_by_id(node.value.client_id)
       if not client then
         return
