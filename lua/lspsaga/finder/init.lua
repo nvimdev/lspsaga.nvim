@@ -325,6 +325,7 @@ function fd:toggle_or_open()
       local restore = win:minimal_restore()
       local bufnr = vim.uri_to_bufnr(uri)
       api.nvim_win_set_buf(0, bufnr)
+      vim.bo[bufnr].buflisted = true
       restore()
       api.nvim_win_set_cursor(0, pos)
       beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
