@@ -94,6 +94,9 @@ function hover:open_floating_preview(content, option_fn)
     if line:find('^%-%-%-$') then
       line = util.gen_truncate_line(float_option.width)
     end
+    if line:find('\\') then
+      line = line:gsub('\\', '')
+    end
     if #line > 0 then
       new[#new + 1] = line
     end
