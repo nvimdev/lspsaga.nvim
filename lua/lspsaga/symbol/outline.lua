@@ -314,7 +314,7 @@ function ot:toggle_or_jump()
 end
 
 function ot:create_preview_win(lines)
-  local winid = fn.bufwinid(self.main_buf)
+  local winid = api.nvim_get_current_win()
   local origianl_win_height = api.nvim_win_get_height(winid)
   local original_win_width = api.nvim_win_get_width(winid)
   local max_height = math.floor(origianl_win_height * 0.5)
@@ -401,9 +401,10 @@ function ot:preview(group)
 
       api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
       local win_conf = api.nvim_win_get_config(self.preview_winid)
-      local row = fn.screenrow()
+      local row = fn.winline()
       win_conf.row = row - 1
       win_conf.height = math.min(#lines, bit.rshift(vim.o.lines, 1))
+      print(win_conf.height)
       api.nvim_win_set_config(self.preview_winid, win_conf)
     end,
   })
