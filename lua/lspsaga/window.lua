@@ -101,7 +101,7 @@ function obj:winopt(name, value)
 end
 
 function obj:winhl(normal, border)
-  api.nvim_set_option_value('winhl', 'Normal:' .. normal .. ',FloatBorder:' .. border, {
+  api.nvim_set_option_value('winhl', 'NormalFloat:' .. normal .. ',FloatBorder:' .. border, {
     scope = 'local',
     win = self.winid,
   })
