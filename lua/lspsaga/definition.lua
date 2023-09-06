@@ -107,7 +107,7 @@ end
 function def:delete_maps(bufnr)
   for _, map in pairs(config.definition.keys) do
     for _, key in ipairs(util.as_table(map)) do
-      buf_del_keymap(bufnr, 'n', key)
+      pcall(buf_del_keymap, bufnr, 'n', key)
     end
   end
 end

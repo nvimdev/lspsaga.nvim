@@ -234,6 +234,7 @@ function hover:do_request(args)
       if ignore_error(args, count == #clients) then
         vim.notify('No information available')
       end
+      vim.cmd.redraw()
       return
     end
 
