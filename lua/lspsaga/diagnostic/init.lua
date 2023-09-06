@@ -246,7 +246,8 @@ function diag:render_diagnostic_window(entry, option)
   local content = vim.split(entry.message, '\n', { trimempty = true })
 
   if diag_conf.extend_relatedInformation then
-    if entry.user_data.lsp.relatedInformation and #entry.user_data.lsp.relatedInformation > 0 then
+    local relatedInformation = vim.tbl_get(entry, 'user_data', 'lsp', 'relatedInformation')
+    if relatedInformation and #relatedInformation > 0 then
       vim.tbl_map(function(item)
         if item.location and item.location.range then
           local fname
