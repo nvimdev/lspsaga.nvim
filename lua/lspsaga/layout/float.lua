@@ -58,12 +58,14 @@ function M.right(left_winid, opt)
   end
 
   local WIDTH = api.nvim_win_get_width(win_conf.win)
-  win_conf.col = win_conf.col[false] + win_conf.width + 2
+  local col = win_conf.col[false] + win_conf.width + 2
   local row = win_conf.row[false]
-  win_conf.width = WIDTH == vim.o.columns and WIDTH - win_conf.col - 2
-    or (vim.o.columns - win_conf.col >= 80 and 80 or vim.o.columns - win_conf.col)
+  if opt.width then
+    win_conf.width = math.floor(WIDTH * opt.width)
+  end
 
   win_conf.row = row
+  win_conf.col = col
   win_conf.title = nil
   win_conf.title_pos = nil
   if win_conf.border then
