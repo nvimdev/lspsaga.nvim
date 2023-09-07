@@ -77,6 +77,8 @@ function sd:layout_normal()
       ['modifiable'] = false,
       ['filetype'] = 'sagadiagnostc',
       ['expandtab'] = false,
+      ['bufhidden'] = 'wipe',
+      ['buftype'] = 'nofile',
     })
     :winopt({
       ['number'] = false,
