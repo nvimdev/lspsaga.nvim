@@ -404,7 +404,6 @@ function ot:preview(group)
       local row = fn.winline()
       win_conf.row = row - 1
       win_conf.height = math.min(#lines, bit.rshift(vim.o.lines, 1))
-      print(win_conf.height)
       api.nvim_win_set_config(self.preview_winid, win_conf)
     end,
   })
