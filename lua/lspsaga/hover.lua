@@ -271,7 +271,9 @@ function hover:do_request(args)
     if not client then
       return
     end
-    content[#content + 1] = '`From: ' .. client.name .. '`'
+    if #clients ~= 1 then
+      content[#content + 1] = '`From: ' .. client.name .. '`'
+    end
 
     if
       self.bufnr
