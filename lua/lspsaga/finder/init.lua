@@ -500,7 +500,7 @@ function fd:new(args)
   self.list = slist.new()
   local params = lsp.util.make_position_params()
   params.context = {
-    includeDeclaration = false,
+    includeDeclaration = true,
   }
 
   local spin_close = box.spinner()
