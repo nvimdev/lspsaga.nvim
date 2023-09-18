@@ -167,7 +167,7 @@ function M:new(args)
   end
 
   handle, _ = uv.spawn('rg', {
-    args = { args[1], root_dir, '--json' },
+    args = { args[1], root_dir, '--json', unpack(args[3]) },
     stdio = { stdin, stdout, stderr },
   }, function(_, _)
     uv.read_stop(stdout)

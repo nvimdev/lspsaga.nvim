@@ -194,12 +194,21 @@ local function rename_handler(project, curname, new_name)
     end
 
     if project then
-      require('lspsaga.rename.project'):new({ curname, new_name })
+      local ignore = vim.tbl_map(function(bufnr)
+        return '!' .. vim.fn.fnamemodify(api.nvim_buf_get_name(bufnr), ':t')
+      end, buffers)
+      for i = 1, #ignore do
+        table.insert(ignore, i, '-g')
+      end
+
+      require('lspsaga.rename.project'):new({
+        curname,
+        new_name,
+        ignore,
+      })
     end
   end
 end
-
-local original = vim.lsp.util.apply_workspace_edit
 
 function rename:do_rename(project)
   local new_name = vim.trim(api.nvim_get_current_line())
