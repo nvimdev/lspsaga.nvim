@@ -127,7 +127,10 @@ function def:create_win(bufnr, root_dir)
     end
     return win
       :new_float(float_opt, true)
-      :winopt('winbar', '')
+      :winopt({
+        ['winbar'] = '',
+        ['signcolumn'] = 'no',
+      })
       :winhl('SagaNormal', 'SagaBorder')
       :wininfo()
   end
