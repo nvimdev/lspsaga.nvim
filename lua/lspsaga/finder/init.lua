@@ -31,6 +31,7 @@ end
 local ns = api.nvim_create_namespace('SagaFinder')
 
 function fd:init_layout()
+  self.callerwinid = api.nvim_get_current_win()
   local win_width = api.nvim_win_get_width(0)
   if config.finder.right_width > 0.6 then
     vim.notify('[lspsaga] finder right width must be less than 0.7')
@@ -328,13 +329,15 @@ function fd:toggle_or_open()
           client.offset_encoding
         ),
       }
+      local callerwinid = self.callerwinid
       self:clean()
       local restore = win:minimal_restore()
       local bufnr = vim.uri_to_bufnr(uri)
-      api.nvim_win_set_buf(0, bufnr)
+      api.nvim_win_set_buf(callerwinid, bufnr)
       vim.bo[bufnr].buflisted = true
       restore()
-      api.nvim_win_set_cursor(0, pos)
+      api.nvim_set_current_win(callerwinid)
+      api.nvim_win_set_cursor(callerwinid, pos)
       beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
       return
     end
