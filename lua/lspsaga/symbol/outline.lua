@@ -314,7 +314,7 @@ function ot:toggle_or_jump()
 end
 
 function ot:create_preview_win(lines)
-  local winid = api.nvim_get_current_win()
+  local winid = vim.fn.bufwinid(self.main_buf)
   local origianl_win_height = api.nvim_win_get_height(winid)
   local original_win_width = api.nvim_win_get_width(winid)
   local max_height = math.floor(origianl_win_height * 0.5)
