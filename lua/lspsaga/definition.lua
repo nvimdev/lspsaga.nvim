@@ -278,9 +278,6 @@ function def:goto_definition(method, args)
       return
     end
 
-    --set jumplist
-    vim.cmd("normal! m'")
-
     local target_bufnr = vim.uri_to_bufnr(res.uri)
     if not api.nvim_buf_is_loaded(target_bufnr) then
       vim.fn.bufload(target_bufnr)
