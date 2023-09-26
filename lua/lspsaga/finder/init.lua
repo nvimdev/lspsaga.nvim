@@ -525,10 +525,14 @@ function fd:new(args)
     end
     coroutine.yield()
     count = 0
-    local total = #vim.tbl_keys(retval)
-    for method, results in pairs(retval) do
+    local keys = vim.tbl_keys(retval)
+    table.sort(keys, function(a, b)
+      return util.tbl_index(methods, a) < util.tbl_index(methods, b)
+    end)
+
+    for _, m in pairs(keys) do
       count = count + 1
-      self:handler(method, results, spin_close, count == total)
+      self:handler(m, retval[m], spin_close, count == #keys)
     end
     if not self.lwinid then
       spin_close()
