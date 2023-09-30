@@ -129,6 +129,9 @@ function fd:handler(method, results, spin_close, done)
         row = row + 1
       end
       local fname = vim.uri_to_fname(uri)
+      if config.finder.fname_sub and type(config.finder.fname_sub) == 'function' then
+        fname = config.finder.fname_sub(fname)
+      end
       local client = lsp.get_client_by_id(client_id)
       if not client then
         return

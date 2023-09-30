@@ -74,6 +74,7 @@ local default_config = {
     layout = 'float',
     silent = false,
     filter = {},
+    fname_sub = nil,
     sp_inexist = false,
     sp_global = false,
     ly_botright = false,
