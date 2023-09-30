@@ -60,8 +60,12 @@ function M.right(left_winid, opt)
   local WIDTH = api.nvim_win_get_width(win_conf.win)
   local col = win_conf.col[false] + win_conf.width + 2
   local row = win_conf.row[false]
+  win_conf.width = WIDTH - col
   if opt.width then
-    win_conf.width = math.floor(WIDTH * opt.width)
+    local w = math.floor(WIDTH * opt.width)
+    if w < win_conf.width then
+      win_conf.width = w
+    end
   end
 
   win_conf.row = row
