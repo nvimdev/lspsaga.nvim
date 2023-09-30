@@ -77,11 +77,13 @@ function def:apply_maps(bufnr)
           vim.cmd[action]()
           return
         end
+        local restore = self.opt_restore
         self:close_all()
         local curbuf = api.nvim_get_current_buf()
         if action ~= 'edit' or curbuf ~= bufnr then
           vim.cmd[action](fname)
         end
+        restore()
         local ok = lsp.util.jump_to_location({
           uri = vim.uri_from_fname(fname),
           range = {
