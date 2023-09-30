@@ -50,7 +50,7 @@ function M.filter(method, results)
   end
   local retval = {}
   for client_id, item in pairs(results) do
-    retval[client_id] = fn(item)
+    retval[client_id] = { result = fn(item.result) }
   end
   return retval
 end
