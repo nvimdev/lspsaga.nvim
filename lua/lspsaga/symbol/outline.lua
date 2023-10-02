@@ -371,6 +371,7 @@ function ot:refresh(group)
       api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
       vim.schedule(function()
         self:parse(args.data.symbols)
+        self.main_buf = args.data.bufnr
       end)
     end,
   })
