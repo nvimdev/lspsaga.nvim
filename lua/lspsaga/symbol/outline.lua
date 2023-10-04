@@ -179,7 +179,9 @@ function ot:parse(symbols, curline)
   if #pos > 0 then
     api.nvim_win_set_cursor(self.winid, pos)
     if config.outline.layout == 'normal' then
-      beacon({ pos[1] - 1, pos[2] }, #api.nvim_get_current_line())
+      api.nvim_win_call(self.winid, function()
+        beacon({ pos[1] - 1, pos[2] }, #api.nvim_get_current_line())
+      end)
     end
   end
   api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
@@ -373,6 +375,23 @@ function ot:refresh(group)
         self:parse(args.data.symbols)
         self.main_buf = args.data.bufnr
       end)
+    end,
+  })
+
+  api.nvim_create_autocmd('BufEnter', {
+    group = group,
+    callback = function(args)
+      if args.buf == self.main_buf then
+        return
+      end
+      local res = not util.nvim_ten() and symbol:get_buf_symbols(args.buf)
+        or require('lspsaga.symbol.head'):get_buf_symbols(args.buf)
+
+      if not res or not res.symbols or #res.symbols == 0 then
+        return
+      end
+      local curline = api.nvim_win_get_cursor(0)[1]
+      self:parse(res.symbols, curline)
     end,
   })
 end
