@@ -15,6 +15,7 @@ local beacon = require('lspsaga.beacon').jump_beacon
 local slist = require('lspsaga.slist')
 local ly = require('lspsaga.layout')
 local ctx = {}
+local group = api.nvim_create_augroup('outline', { clear = true })
 
 function ot.__newindex(t, k, v)
   rawset(t, k, v)
@@ -26,6 +27,7 @@ local function clean_ctx()
   for k, _ in pairs(ctx) do
     ctx[k] = nil
   end
+  api.nvim_del_augroup_by_id(group)
 end
 
 local function outline_in_float()
@@ -247,7 +249,7 @@ function ot:collapse(node, curlnum)
   end
 
   if tmp then
-    slist.update_winline(tmp, row - curlnum + 1, curlnum)
+    slist.update_winline(tmp, row - curlnum + 1)
   end
 end
 
@@ -316,10 +318,9 @@ function ot:toggle_or_jump()
 end
 
 function ot:create_preview_win(lines)
-  local origianl_win_height = api.nvim_win_get_height(self.main_win)
-  local original_win_width = api.nvim_win_get_width(self.main_win)
-  local max_height = math.floor(origianl_win_height * 0.5)
-  local max_width = math.floor(original_win_width * 0.7)
+  local screen_col = fn.win_screenpos(self.winid)[2]
+  local max_height = vim.o.lines - fn.winline()
+  local max_width = math.floor(screen_col * 0.7)
 
   local float_opt = {
     relative = 'editor',
@@ -357,7 +358,7 @@ function ot:create_preview_win(lines)
     :wininfo()
 end
 
-function ot:refresh(group)
+function ot:refresh()
   api.nvim_create_autocmd('User', {
     group = group,
     pattern = 'SagaSymbolUpdate',
@@ -371,7 +372,6 @@ function ot:refresh(group)
       end
       api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
       vim.schedule(function()
-        self.main_win = api.nvim_get_current_win()
         self:parse(args.data.symbols)
         self.main_buf = args.data.bufnr
       end)
@@ -392,13 +392,12 @@ function ot:refresh(group)
       end
       local curline = api.nvim_win_get_cursor(0)[1]
       self.main_buf = args.buf
-      self.main_win = api.nvim_get_current_win()
       self:parse(res.symbols, curline)
     end,
   })
 end
 
-function ot:preview(group)
+function ot:preview()
   api.nvim_create_autocmd('CursorMoved', {
     group = group,
     buffer = self.bufnr,
@@ -424,6 +423,7 @@ function ot:preview(group)
       api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
       local win_conf = api.nvim_win_get_config(self.preview_winid)
       local row = fn.winline()
+      win_conf.width = math.ceil(fn.win_screenpos(self.winid)[2] * 0.7)
       win_conf.row = row - 1
       win_conf.height = math.min(#lines, bit.rshift(vim.o.lines, 1))
       api.nvim_win_set_config(self.preview_winid, win_conf)
@@ -442,7 +442,7 @@ function ot:preview(group)
   })
 end
 
-function ot:float_preview(group)
+function ot:float_preview()
   api.nvim_create_autocmd('CursorMoved', {
     group = group,
     buffer = self.bufnr,
@@ -462,7 +462,7 @@ function ot:float_preview(group)
   })
 end
 
-function ot:auto_close(group)
+function ot:auto_close()
   api.nvim_create_autocmd('WinEnter', {
     group = group,
     callback = function()
@@ -487,21 +487,17 @@ function ot:clean_after_close()
   })
 end
 
-function ot:normal_fn(group)
+function ot:normal_fn()
   self:clean_after_close()
-  self:refresh(group)
+  self:refresh()
 
   if config.outline.auto_preview then
-    self:preview(group)
+    self:preview()
   end
 
   if outline_conf.auto_close then
-    self:auto_close(group)
+    self:auto_close()
   end
-end
-
-function ot:float_fn(group)
-  self:float_preview(group)
 end
 
 function ot:keymap()
@@ -548,7 +544,6 @@ function ot:outline(buf)
   end
 
   self.main_buf = buf or api.nvim_get_current_buf()
-  self.main_win = api.nvim_get_current_win()
   local curline = api.nvim_win_get_cursor(0)[1]
   local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
     or require('lspsaga.symbol.head'):get_buf_symbols(buf)
@@ -560,15 +555,14 @@ function ot:outline(buf)
     )
     return
   end
-  local group = api.nvim_create_augroup('outline', { clear = true })
 
   if not self.winid or not api.nvim_win_is_valid(self.winid) then
     if config.outline.layout == 'normal' then
       self.bufnr, self.winid = outline_normal_win()
-      self:normal_fn(group)
+      self:normal_fn()
     else
       self.bufnr, self.winid, self.rbufnr, self.rwinid = outline_in_float()
-      self:float_fn(group)
+      self:float_preview()
     end
   end
 
