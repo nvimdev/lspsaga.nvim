@@ -316,9 +316,8 @@ function ot:toggle_or_jump()
 end
 
 function ot:create_preview_win(lines)
-  local winid = vim.fn.bufwinid(self.main_buf)
-  local origianl_win_height = api.nvim_win_get_height(winid)
-  local original_win_width = api.nvim_win_get_width(winid)
+  local origianl_win_height = api.nvim_win_get_height(self.main_win)
+  local original_win_width = api.nvim_win_get_width(self.main_win)
   local max_height = math.floor(origianl_win_height * 0.5)
   local max_width = math.floor(original_win_width * 0.7)
 
@@ -372,6 +371,7 @@ function ot:refresh(group)
       end
       api.nvim_set_option_value('modifiable', true, { buf = self.bufnr })
       vim.schedule(function()
+        self.main_win = api.nvim_get_current_win()
         self:parse(args.data.symbols)
         self.main_buf = args.data.bufnr
       end)
@@ -391,6 +391,8 @@ function ot:refresh(group)
         return
       end
       local curline = api.nvim_win_get_cursor(0)[1]
+      self.main_buf = args.buf
+      self.main_win = api.nvim_get_current_win()
       self:parse(res.symbols, curline)
     end,
   })
@@ -546,6 +548,7 @@ function ot:outline(buf)
   end
 
   self.main_buf = buf or api.nvim_get_current_buf()
+  self.main_win = api.nvim_get_current_win()
   local curline = api.nvim_win_get_cursor(0)[1]
   local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
     or require('lspsaga.symbol.head'):get_buf_symbols(buf)
