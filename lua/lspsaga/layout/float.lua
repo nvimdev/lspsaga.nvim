@@ -24,9 +24,10 @@ function M.left(height, width, bufnr, title)
     fn.winrestview({ topline = topline + (height + 4 - room) })
   end
 
-  local spaces = vim.o.columns - api.nvim_win_get_width(curwin)
-  if spaces > 0 then
-    float_opt.width = float_opt.width + math.floor(spaces * 0.4)
+  local WIDTH = api.nvim_win_get_width(curwin)
+  local spaces = vim.o.columns - WIDTH
+  if spaces > 0 and float_opt.width < 20 then
+    float_opt.width = WIDTH > 40 and 40 or math.floor(WIDTH * 0.8)
   end
 
   return win
@@ -59,18 +60,28 @@ function M.right(left_winid, opt)
   local wincol = fn.win_screenpos(win_conf.win)[2]
   local spaces = vim.o.columns - wincol - api.nvim_win_get_width(win_conf.win)
   local percent = opt.width or 0.7
+  local right = math.floor(api.nvim_win_get_width(win_conf.win) * percent)
+  local in_right = false
 
-  if spaces <= 0 then
-    win_conf.col = win_conf.col[false] - win_conf.width - 1
-    win_conf.width = math.floor((vim.o.columns - wincol) * percent)
-  else
-    win_conf.col = win_conf.col[false] + win_conf.width + 2
-    win_conf.width = math.floor(spaces * percent)
+  win_conf.width = nil
+  --50 is enough ? big or small ?
+  if right < 50 then
+    -- in split left has enough room
+    if spaces <= 0 then
+      win_conf.col = win_conf.col[false] - original.width + 4
+      win_conf.width = math.floor((vim.o.columns - wincol) * percent)
+    end
+  end
+
+  if not win_conf.width then
+    win_conf.col = win_conf.col[false] + original.width + 2
+    win_conf.width = right
+    in_right = true
   end
 
   if original.border then
     local map = border_map()
-    if spaces <= 0 then
+    if not in_right then
       original.border[1] = map[ui.border][2]
       original.border[7] = map[ui.border][1]
       win_conf.border[4] = ''
