@@ -75,7 +75,7 @@ function M.right(left_winid, opt)
 
   if not win_conf.width then
     win_conf.col = win_conf.col[false] + original.width + 2
-    win_conf.width = right
+    win_conf.width = spaces > 0 and math.floor(spaces * percent) or right
     in_right = true
   end
 
