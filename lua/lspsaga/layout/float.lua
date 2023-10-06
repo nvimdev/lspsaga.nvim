@@ -60,7 +60,8 @@ function M.right(left_winid, opt)
   local col = win_conf.col[false] + win_conf.width + 2
   local row = win_conf.row[false]
   local spaces = vim.o.columns - fn.win_screenpos(win_conf.win)[2] - win_conf.width
-  win_conf.width = math.floor(spaces * opt.width)
+  local percent = opt.width or 0.5
+  win_conf.width = math.floor(spaces * percent)
 
   win_conf.row = row
   win_conf.col = col
