@@ -69,7 +69,7 @@ function M.right(left_winid, opt)
     -- in split left has enough room
     if spaces <= 0 then
       win_conf.col = win_conf.col[false] - original.width + 4
-      win_conf.width = math.floor((vim.o.columns - wincol) * percent)
+      win_conf.width = math.floor((vim.o.columns - wincol + win_conf.col) * percent)
     end
   end
 
