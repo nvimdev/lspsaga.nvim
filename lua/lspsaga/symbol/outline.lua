@@ -33,6 +33,7 @@ end
 local function outline_in_float()
   local win_width = api.nvim_win_get_width(0)
   local curbuf = api.nvim_get_current_buf()
+  group = api.nvim_create_augroup('outline', { clear = true })
 
   return ly:new('float')
     :left(
@@ -61,6 +62,7 @@ local function outline_normal_win()
   vim.cmd(pos .. ' vnew')
   local winid, bufnr = api.nvim_get_current_win(), api.nvim_get_current_buf()
   api.nvim_win_set_width(winid, config.outline.win_width)
+  group = api.nvim_create_augroup('outline', { clear = true })
 
   return win
     :from_exist(bufnr, winid)
