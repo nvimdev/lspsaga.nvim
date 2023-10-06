@@ -57,16 +57,10 @@ function M.right(left_winid, opt)
     api.nvim_win_set_config(left_winid, original)
   end
 
-  local WIDTH = api.nvim_win_get_width(win_conf.win)
   local col = win_conf.col[false] + win_conf.width + 2
   local row = win_conf.row[false]
-  win_conf.width = WIDTH - col - 2
-  if opt.width then
-    local w = math.floor(WIDTH * opt.width)
-    if w < win_conf.width then
-      win_conf.width = w
-    end
-  end
+  local spaces = vim.o.columns - fn.win_screenpos(win_conf.win)[2] - win_conf.width
+  win_conf.width = math.floor(spaces * opt.width)
 
   win_conf.row = row
   win_conf.col = col
