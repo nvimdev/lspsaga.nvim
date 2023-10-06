@@ -200,6 +200,7 @@ function def:definition_request(method, handler_T, args)
 
   lsp.buf_request(current_buf, method, params, function(_, result, context)
     if not result or #result == 0 then
+      self.pending_request = false
       return
     end
 
