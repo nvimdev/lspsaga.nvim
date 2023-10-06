@@ -306,7 +306,7 @@ function ot:toggle_or_jump()
   local range = node.value.selectionRange or node.value.location.range
   local pos = { range.start.line + 1, range.start.character }
 
-  local main_buf = self.main_buf
+  local callerwinid = self.callerwinid
   if config.outline.layout == 'normal' and config.outline.close_after_jump then
     util.close_win({ self.winid, self.preview_winid })
     clean_ctx()
@@ -315,9 +315,8 @@ function ot:toggle_or_jump()
     clean_ctx()
   end
 
-  local wins = fn.win_findbuf(main_buf)
-  api.nvim_set_current_win(wins[#wins])
-  api.nvim_win_set_cursor(wins[#wins], pos)
+  api.nvim_set_current_win(callerwinid)
+  api.nvim_win_set_cursor(callerwinid, pos)
   local width = #api.nvim_get_current_line()
   beacon({ pos[1] - 1, 0 }, width)
 end
@@ -518,7 +517,7 @@ function ot:keymap()
     end
     local pos =
       { node.value.selectionRange.start.line + 1, node.value.selectionRange.start.character }
-    local main_buf = self.main_buf
+    local callerwinid = self.callerwinid
 
     if config.outline.layout == 'normal' and config.outline.close_after_jump then
       util.close_win({ self.winid, self.rwinid })
@@ -528,9 +527,8 @@ function ot:keymap()
       clean_ctx()
     end
 
-    local wins = fn.win_findbuf(main_buf)
-    api.nvim_set_current_win(wins[#wins])
-    api.nvim_win_set_cursor(wins[#wins], pos)
+    api.nvim_set_current_win(callerwinid)
+    api.nvim_win_set_cursor(callerwinid, pos)
     local width = #api.nvim_get_current_line()
     beacon({ pos[1] - 1, 0 }, width)
   end)
@@ -549,6 +547,7 @@ function ot:outline(buf)
   end
 
   self.main_buf = buf or api.nvim_get_current_buf()
+  self.callerwinid = api.nvim_get_current_win()
   local curline = api.nvim_win_get_cursor(0)[1]
   local res = not util.nvim_ten() and symbol:get_buf_symbols(buf)
     or require('lspsaga.symbol.head'):get_buf_symbols(buf)
