@@ -33,10 +33,6 @@ local ns = api.nvim_create_namespace('SagaFinder')
 function fd:init_layout()
   self.callerwinid = api.nvim_get_current_win()
   local win_width = api.nvim_win_get_width(0)
-  if config.finder.right_width > 0.6 then
-    vim.notify('[lspsaga] finder right width must be less than 0.7')
-    config.finder.right_width = 0.5
-  end
   if self.layout == 'dropdown' then
     self.lbufnr, self.lwinid, _, self.rwinid =
       ly:new(self.layout):dropdown(math.floor(vim.o.lines * config.finder.max_height)):done()

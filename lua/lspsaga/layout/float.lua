@@ -24,6 +24,11 @@ function M.left(height, width, bufnr, title)
     fn.winrestview({ topline = topline + (height + 4 - room) })
   end
 
+  local spaces = vim.o.columns - api.nvim_win_get_width(curwin)
+  if spaces > 0 then
+    float_opt.width = float_opt.width + math.floor(spaces * 0.4)
+  end
+
   return win
     :new_float(float_opt, true)
     :bufopt({
@@ -50,27 +55,37 @@ function M.right(left_winid, opt)
   opt = opt or {}
   local win_conf = api.nvim_win_get_config(left_winid)
   local original = vim.deepcopy(win_conf)
+  local row = win_conf.row[false]
+  local wincol = fn.win_screenpos(win_conf.win)[2]
+  local spaces = vim.o.columns - wincol - api.nvim_win_get_width(win_conf.win)
+  local percent = opt.width or 0.7
+
+  if spaces <= 0 then
+    win_conf.col = win_conf.col[false] - win_conf.width - 1
+    win_conf.width = math.floor((vim.o.columns - wincol) * percent)
+  else
+    win_conf.col = win_conf.col[false] + win_conf.width + 2
+    win_conf.width = math.floor(spaces * percent)
+  end
+
   if original.border then
     local map = border_map()
-    original.border[5] = map[ui.border][1]
-    original.border[3] = map[ui.border][2]
+    if spaces <= 0 then
+      original.border[1] = map[ui.border][2]
+      original.border[7] = map[ui.border][1]
+      win_conf.border[4] = ''
+    else
+      original.border[5] = map[ui.border][1]
+      original.border[3] = map[ui.border][2]
+      win_conf.border[8] = ''
+      win_conf.border[7] = ''
+    end
     api.nvim_win_set_config(left_winid, original)
   end
 
-  local col = win_conf.col[false] + win_conf.width + 2
-  local row = win_conf.row[false]
-  local spaces = vim.o.columns - fn.win_screenpos(win_conf.win)[2] - win_conf.width
-  local percent = opt.width or 0.5
-  win_conf.width = math.floor(spaces * percent)
-
   win_conf.row = row
-  win_conf.col = col
   win_conf.title = nil
   win_conf.title_pos = nil
-  if win_conf.border then
-    win_conf.border[8] = ''
-    win_conf.border[7] = ''
-  end
 
   if opt.title then
     win_conf.title = opt.title
