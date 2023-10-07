@@ -68,6 +68,9 @@ end
 function M:right(opt)
   local fn = self.layout == 'float' and float.right or normal.right
   self.right_bufnr, self.right_winid = fn(self.left_winid, opt)
+  if not self.right_winid then
+    print('[LSPSAGA] no enough room to show floating window')
+  end
   self.current = RIGHT
   return self
 end

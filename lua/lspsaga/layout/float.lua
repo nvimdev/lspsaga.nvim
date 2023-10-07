@@ -24,12 +24,6 @@ function M.left(height, width, bufnr, title)
     fn.winrestview({ topline = topline + (height + 4 - room) })
   end
 
-  local WIDTH = api.nvim_win_get_width(curwin)
-  local spaces = vim.o.columns - WIDTH
-  if spaces > 0 and float_opt.width < 20 then
-    float_opt.width = WIDTH > 40 and 40 or math.floor(WIDTH * 0.8)
-  end
-
   return win
     :new_float(float_opt, true)
     :bufopt({
@@ -58,25 +52,29 @@ function M.right(left_winid, opt)
   local original = vim.deepcopy(win_conf)
   local row = win_conf.row[false]
   local wincol = fn.win_screenpos(win_conf.win)[2]
-  local spaces = vim.o.columns - wincol - api.nvim_win_get_width(win_conf.win)
+  local right_spaces = vim.o.columns - wincol - original.width - original.col[false]
+  local left_spaces = wincol + original.col[false]
   local percent = opt.width or 0.7
-  local right = math.floor(api.nvim_win_get_width(win_conf.win) * percent)
-  local in_right = false
 
-  win_conf.width = nil
-  --50 is enough ? big or small ?
-  if right < 50 then
-    -- in split left has enough room
-    if spaces <= 0 then
-      win_conf.col = win_conf.col[false] - original.width + 4
-      win_conf.width = math.floor((vim.o.columns - wincol + win_conf.col) * percent)
-    end
+  local right = math.ceil(right_spaces * percent)
+  local left = math.ceil(left_spaces * percent)
+  local in_right = false
+  local WIDTH = api.nvim_win_get_width(original.win)
+  local extra = WIDTH < original.width and WIDTH - original.width or 0
+  if (vim.o.columns - WIDTH - wincol) > 0 and left > 45 then
+    extra = 0
   end
 
-  if not win_conf.width then
+  win_conf.width = nil
+  if right > 45 then
     win_conf.col = win_conf.col[false] + original.width + 2
-    win_conf.width = spaces > 0 and math.floor(spaces * percent) or right
+    win_conf.width = right
     in_right = true
+  elseif left > 45 then
+    win_conf.width = math.floor(left * percent)
+    win_conf.col = original.col[false] - win_conf.width + extra - 1
+  else
+    return nil
   end
 
   if original.border then

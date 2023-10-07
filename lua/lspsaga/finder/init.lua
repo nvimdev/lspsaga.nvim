@@ -32,7 +32,6 @@ local ns = api.nvim_create_namespace('SagaFinder')
 
 function fd:init_layout()
   self.callerwinid = api.nvim_get_current_win()
-  local win_width = api.nvim_win_get_width(0)
   if self.layout == 'dropdown' then
     self.lbufnr, self.lwinid, _, self.rwinid =
       ly:new(self.layout):dropdown(math.floor(vim.o.lines * config.finder.max_height)):done()
@@ -40,7 +39,7 @@ function fd:init_layout()
     self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
       :left(
         math.floor(vim.o.lines * config.finder.max_height),
-        math.floor(win_width * config.finder.left_width),
+        math.floor(config.finder.left_width),
         nil,
         nil,
         self.layout == 'normal' and config.finder.sp_global or nil
@@ -52,12 +51,15 @@ function fd:init_layout()
         ['modifiable'] = true,
       })
       :winopt('wrap', false)
-      :right({ width = config.finder.right_width })
+      :right()
       :bufopt({
         ['buftype'] = 'nofile',
         ['bufhidden'] = 'wipe',
       })
       :done()
+    if not self.lwinid then
+      return
+    end
   end
   self:apply_maps()
   self:event()
