@@ -32,6 +32,7 @@ local ns = api.nvim_create_namespace('SagaFinder')
 
 function fd:init_layout()
   self.callerwinid = api.nvim_get_current_win()
+  local WIDTH = api.nvim_win_get_width(self.callerwinid)
   if self.layout == 'dropdown' then
     self.lbufnr, self.lwinid, _, self.rwinid =
       ly:new(self.layout):dropdown(math.floor(vim.o.lines * config.finder.max_height)):done()
@@ -39,7 +40,7 @@ function fd:init_layout()
     self.lbufnr, self.lwinid, _, self.rwinid = ly:new(self.layout)
       :left(
         math.floor(vim.o.lines * config.finder.max_height),
-        math.floor(config.finder.left_width),
+        math.floor(WIDTH * config.finder.left_width),
         nil,
         nil,
         self.layout == 'normal' and config.finder.sp_global or nil

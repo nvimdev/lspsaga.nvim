@@ -100,7 +100,9 @@ function M.right(left_winid, opt)
   win_conf.title_pos = nil
 
   if opt.title then
-    win_conf.title = opt.title
+    win_conf.title = #opt.title > win_conf.width
+        and opt.title:sub(#opt.title - win_conf.width - 5, #opt.title)
+      or opt.title
     win_conf.title_pos = 'center'
   end
   return win
