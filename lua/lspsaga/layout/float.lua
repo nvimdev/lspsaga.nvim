@@ -73,8 +73,11 @@ function M.right(left_winid, opt)
   elseif left > 45 then
     win_conf.width = math.floor(left * percent)
     win_conf.col = original.col[false] - win_conf.width + extra - 1
-  else
-    return nil
+  -- back to right
+  elseif right > 20 then
+    win_conf.col = win_conf.col[false] + original.width + 2
+    win_conf.width = right
+    in_right = true
   end
 
   if original.border then
