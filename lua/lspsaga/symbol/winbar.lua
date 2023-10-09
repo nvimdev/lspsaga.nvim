@@ -75,6 +75,13 @@ local function stl_escape(str)
   return str:gsub('%%', '')
 end
 
+-- pylsp
+local function has_container(node, elements)
+  local bar = bar_prefix()
+  local type, icon = kind[5][1], kind[5][2]
+  elements[#elements + 1] = string.format('%s%s#%s%s', bar.prefix, type, icon, node.containerName)
+end
+
 local function insert_elements(buf, node, elements)
   if config.hide_keyword and symbol:node_is_keyword(buf, node) then
     return
@@ -86,19 +93,25 @@ local function insert_elements(buf, node, elements)
     node.name = stl_escape(node.name)
   end
 
+  if node.containerName then
+    has_container(node, elements)
+  end
+
   if config.color_mode then
-    local node_context = bar.prefix .. type .. '#' .. icon .. node.name
+    local node_context = string.format('%s%s#%s%s', bar.prefix, type, icon, node.name)
     elements[#elements + 1] = node_context
   else
-    local node_context = bar.prefix
-      .. type
-      .. '#'
-      .. icon
-      .. bar.prefix
-      .. 'Word'
-      .. '#'
-      .. node.name
-    elements[#elements + 1] = node_context
+    elements[#elements + 1] = string.format(
+      '%s%s#%s%sWord#%s',
+      bar.prefix,
+      type,
+      '#',
+      icon,
+      bar.prefix,
+      'Word',
+      '#',
+      node.name
+    )
   end
 end
 

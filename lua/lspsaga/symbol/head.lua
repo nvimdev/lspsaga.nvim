@@ -1,7 +1,6 @@
 --this module using LspNotify just for neovim 0.10
 local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
-local util = require('lspsaga.util')
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local symbol = {}

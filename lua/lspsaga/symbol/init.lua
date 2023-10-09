@@ -2,7 +2,6 @@ local api, lsp = vim.api, vim.lsp
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config
-local util = require('lspsaga.util')
 local symbol = {}
 
 local cache = {}
@@ -22,8 +21,6 @@ local function clean_buf_cache(buf)
   end
 end
 
-local buf_changedtick = {}
-
 local function timer_clear(t)
   t:stop()
   t:close()
@@ -32,7 +29,7 @@ end
 function symbol:buf_watcher(buf, client_id)
   local buf_request_state = {}
 
-  local function defer_request(b, changedtick)
+  local function defer_request(b)
     if not self[b] or not api.nvim_buf_is_valid(b) then
       return
     end
@@ -50,15 +47,7 @@ function symbol:buf_watcher(buf, client_id)
       timer_clear(buf_request_state[b])
       buf_request_state[b] = nil
       vim.schedule(function()
-        self:do_request(b, client_id, function()
-          if not api.nvim_buf_is_valid(b) or not self[b] then
-            return
-          end
-          if changedtick < self[b].changedtick then
-            changedtick = api.nvim_buf_get_changedtick(b)
-            defer_request(b, changedtick)
-          end
-        end, changedtick)
+        self:do_request(b, client_id)
       end)
     end)
   end
@@ -70,7 +59,7 @@ function symbol:buf_watcher(buf, client_id)
       end
       self[b].changedtick = changedtick
       if self[b] and not self[b].pending_request then
-        defer_request(b, changedtick)
+        defer_request(b)
       end
     end,
     on_changedtick = function(_, b, changedtick)
