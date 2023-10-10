@@ -178,7 +178,7 @@ function def:clean_event()
 end
 
 function def:definition_request(method, handler_T, args)
-  if self.pending_reqeust then
+  if self.pending_request then
     vim.notify(
       '[lspsaga] a peek_definition request has already been sent, please wait.',
       vim.log.levels.WARN
@@ -200,6 +200,7 @@ function def:definition_request(method, handler_T, args)
 
   lsp.buf_request(current_buf, method, params, function(_, result, context)
     if not result or #result == 0 then
+      self.pending_request = false
       return
     end
 
