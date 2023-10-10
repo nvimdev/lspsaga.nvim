@@ -192,6 +192,18 @@ function ot:parse(symbols, curline)
     end
   end
   api.nvim_set_option_value('modifiable', false, { buf = self.bufnr })
+  api.nvim_buf_attach(self.main_buf, false, {
+    on_detach = function()
+      local data = vim.version().minor > 10 and require('lspsaga.symbol.head')
+        or require('lspsaga.symbol')
+      if vim.tbl_count(data) == 0 and api.nvim_win_is_valid(self.winid) then
+        vim.defer_fn(function()
+          api.nvim_buf_delete(self.bufnr, { force = true })
+          pcall(api.nvim_win_close, self.winid, true)
+        end, 0)
+      end
+    end,
+  })
 end
 
 function ot:collapse(node, curlnum)
