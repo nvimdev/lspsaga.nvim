@@ -272,6 +272,7 @@ function def:goto_handler(result, context, args)
   if not result or vim.tbl_isempty(result) then
     return
   end
+  self.pending_request = false
   local res = {}
 
   if type(result[1]) == 'table' then
@@ -291,6 +292,7 @@ function def:goto_handler(result, context, args)
   if not api.nvim_buf_is_loaded(target_bufnr) then
     vim.fn.bufload(target_bufnr)
   end
+  vim.bo[target_bufnr].buflisted = true
   if args and #args > 0 then
     vim.cmd[args[1]]()
   end
