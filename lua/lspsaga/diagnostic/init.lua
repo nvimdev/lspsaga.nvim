@@ -415,7 +415,7 @@ function diag:move_cursor(entry)
     if width <= 0 then
       width = #api.nvim_get_current_line()
     end
-    jump_beacon({ entry.lnum, entry.col }, width)
+    jump_beacon({ entry.lnum, entry.col or entry.end_col }, width)
     -- Open folds under the cursor
     vim.cmd('normal! zv')
   end)
