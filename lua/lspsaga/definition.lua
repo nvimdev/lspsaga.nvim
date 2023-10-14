@@ -204,15 +204,15 @@ function def:definition_request(method, handler_T, args)
       return
     end
 
-    --set jumplist
-    -- vim.cmd("normal! m'")
-    -- --
-    -- -- -- push a tag stack
-    -- local pos = api.nvim_win_get_cursor(0)
-    -- local current_word = fn.expand('<cword>')
-    -- local from = { current_buf, pos[1], pos[2] + 1, 0 }
-    -- local items = { { tagname = current_word, from = from } }
-    -- fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
+    -- set jumplist
+    vim.cmd("normal! m'")
+    --
+    -- -- push a tag stack
+    local pos = api.nvim_win_get_cursor(0)
+    local current_word = fn.expand('<cword>')
+    local from = { current_buf, pos[1], pos[2] + 1, 0 }
+    local items = { { tagname = current_word, from = from } }
+    fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
     if handler_T == IS_PEEK then
       return self:peek_handler(result, context, count)
