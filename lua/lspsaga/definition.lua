@@ -199,8 +199,15 @@ function def:definition_request(method, handler_T, args)
   local count = #util.get_client_by_method(method)
 
   lsp.buf_request(current_buf, method, params, function(_, result, context)
-    if not result or #result == 0 then
-      self.pending_request = false
+    self.pending_request = false
+    count = count - 1
+    if not result or vim.tbl_count(result) == 0 then
+      if #self.list == 0 and count == 0 then
+        vim.notify(
+          '[lspsaga] response of request method ' .. context.method .. ' is empty',
+          vim.log.levels.WARN
+        )
+      end
       return
     end
 
@@ -214,34 +221,29 @@ function def:definition_request(method, handler_T, args)
     local items = { { tagname = current_word, from = from } }
     fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
+    local res
+    if not vim.tbl_islist(result) then
+      res = result
+    elseif result[1] then
+      res = result[1]
+    else
+      return
+    end
+
     if handler_T == IS_PEEK then
-      return self:peek_handler(result, context, count)
+      return self:peek_handler(res, context)
     end
     if handler_T == IS_GOTO then
-      return self:goto_handler(result, context, args)
+      return self:goto_handler(res, context, args)
     end
   end)
 end
 
-function def:peek_handler(result, context, count)
-  count = count - 1
-  self.pending_request = false
-  if not result or next(result) == nil then
-    if #self.list == 0 and count == 0 then
-      vim.notify(
-        '[lspsaga] response of request method ' .. context.method .. ' is empty',
-        vim.log.levels.WARN
-      )
-    end
-    return
-  end
-  if result.uri then
-    result = { result }
-  end
-
+function def:peek_handler(result, context)
+  print(vim.inspect(result))
   local node = {
-    bufnr = vim.uri_to_bufnr(result[1].targetUri or result[1].uri),
-    selectionRange = result[1].targetSelectionRange or result[1].range,
+    bufnr = vim.uri_to_bufnr(result.targetUri or result.uri),
+    selectionRange = result.targetSelectionRange or result.range,
     client_id = context.client_id,
   }
   if not api.nvim_buf_is_loaded(node.bufnr) then
@@ -269,26 +271,13 @@ end
 
 -- override the default the defintion handler
 function def:goto_handler(result, context, args)
-  if not result or vim.tbl_isempty(result) then
-    return
-  end
-  self.pending_request = false
-  local res = {}
-
-  if type(result[1]) == 'table' then
-    res.uri = result[1].uri or result[1].targetUri
-    res.range = result[1].range or result[1].targetSelectionRange
-  else
-    res.uri = result.uri or result.targetUri
-    res.range = result.range or result.targetSelectionRange
-  end
   local client = lsp.get_client_by_id(context.client_id)
-
-  if vim.tbl_isempty(res) or not client then
+  if not client then
     return
   end
+  local range = result.range or result.targetSelectionRange
 
-  local target_bufnr = vim.uri_to_bufnr(res.uri)
+  local target_bufnr = vim.uri_to_bufnr(result.uri or result.targetUri)
   if not api.nvim_buf_is_loaded(target_bufnr) then
     vim.fn.bufload(target_bufnr)
   end
@@ -299,11 +288,11 @@ function def:goto_handler(result, context, args)
   api.nvim_win_set_buf(0, target_bufnr)
 
   api.nvim_win_set_cursor(0, {
-    res.range.start.line + 1,
-    lsp.util._get_line_byte_from_position(target_bufnr, res.range.start, client.offset_encoding),
+    range.start.line + 1,
+    lsp.util._get_line_byte_from_position(target_bufnr, range.start, client.offset_encoding),
   })
   local width = #api.nvim_get_current_line()
-  beacon({ res.range.start.line, vim.fn.col('.') }, width)
+  beacon({ range.start.line, vim.fn.col('.') }, width)
 end
 
 function def:init(method, jump_T, args)
