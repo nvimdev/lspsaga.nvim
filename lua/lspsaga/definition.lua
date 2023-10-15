@@ -199,7 +199,7 @@ function def:definition_request(method, handler_T, args)
   local count = #util.get_client_by_method(method)
 
   lsp.buf_request(current_buf, method, params, function(_, result, context)
-    if not result or #result == 0 then
+    if not result or (vim.tbl_islist(result) and #result == 0) then
       self.pending_request = false
       return
     end
