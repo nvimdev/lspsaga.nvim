@@ -152,10 +152,6 @@ function def:clean_event()
         return
       end
       local bufnr = self.list[index].bufnr
-
-      if self.list[index].restore then
-        self.opt_restore()
-      end
       local prev = self.list[index - 1] and self.list[index - 1] or nil
       table.remove(self.list, index)
       if prev then
@@ -194,7 +190,9 @@ function def:definition_request(method, handler_T, args)
   local current_buf = api.nvim_get_current_buf()
 
   local params = lsp.util.make_position_params()
-  self.opt_restore = win:minimal_restore()
+  if not self.opt_restore then
+    self.opt_restore = win:minimal_restore()
+  end
   self.pending_request = true
   local count = #util.get_client_by_method(method)
 
@@ -240,7 +238,6 @@ function def:definition_request(method, handler_T, args)
 end
 
 function def:peek_handler(result, context)
-  print(vim.inspect(result))
   local node = {
     bufnr = vim.uri_to_bufnr(result.targetUri or result.uri),
     selectionRange = result.targetSelectionRange or result.range,
