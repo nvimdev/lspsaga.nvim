@@ -73,6 +73,7 @@ function def:apply_maps(bufnr)
         local index = get_node_idx(self.list, api.nvim_get_current_win())
         local start = self.list[index].selectionRange.start
         local client = lsp.get_client_by_id(self.list[index].client_id)
+        local pos = api.nvim_win_get_cursor(self.list[index].winid)
         if not client then
           return
         end
@@ -87,12 +88,15 @@ function def:apply_maps(bufnr)
           vim.cmd[action](fname)
         end
         restore()
-        api.nvim_win_set_cursor(0, {
-          start.line + 1,
-          lsp.util._get_line_byte_from_position(0, start, client.offset_encoding),
-        })
+        if not config.definition.save_pos then
+          pos = {
+            start.line + 1,
+            lsp.util._get_line_byte_from_position(0, start, client.offset_encoding),
+          }
+        end
+        api.nvim_win_set_cursor(0, pos)
         local width = #api.nvim_get_current_line()
-        beacon({ start.line, vim.fn.col('.') }, width)
+        beacon({ pos[1] - 1, vim.fn.col('.') }, width)
       end)
     else
       util.map_keys(bufnr, map, function()
