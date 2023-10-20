@@ -504,7 +504,7 @@ function fd:new(args)
 
   self.list = slist.new()
   local params = lsp.util.make_position_params()
-  if not vim.tbl_contanis(methods, 'textDocument/definition') then
+  if not vim.tbl_contains(methods, 'textDocument/definition') then
     params.context = {
       includeDeclaration = true,
     }
