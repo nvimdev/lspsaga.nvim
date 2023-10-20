@@ -504,9 +504,11 @@ function fd:new(args)
 
   self.list = slist.new()
   local params = lsp.util.make_position_params()
-  params.context = {
-    includeDeclaration = true,
-  }
+  if not vim.tbl_contans(methods, 'textDocument/definition') then
+    params.context = {
+      includeDeclaration = true,
+    }
+  end
 
   local spin_close = box.spinner()
   local count = 0
