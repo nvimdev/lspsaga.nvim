@@ -122,11 +122,11 @@ end
 
 local function render(chunks, new_name)
   local result = decode(chunks)
-  local bufnr, winid = create_win()
   local line = 1
   if vim.tbl_isempty(result) then
     return
   end
+  local bufnr, winid = create_win()
 
   for fname, item in pairs(result) do
     fname = util.path_sub(fname, get_root_dir())
