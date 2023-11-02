@@ -337,6 +337,9 @@ end
 
 function ot:create_preview_win(lines)
   local screen_col = fn.win_screenpos(self.winid)[2]
+  if config.outline.win_position == 'left' then
+    screen_col = api.nvim_win_get_width(self.winid)
+  end
   local max_height = vim.o.lines - fn.winline()
   local max_width = math.floor(screen_col * 0.7)
 
@@ -359,8 +362,9 @@ function ot:create_preview_win(lines)
   else
     float_opt.anchor = 'NW'
     float_opt.col = outline_conf.win_width + 1
-    float_opt.row = row
+    float_opt.row = row - 1
   end
+
   self.preview_bufnr, self.preview_winid = win
     :new_float(float_opt, false, true)
     :setlines(lines)
