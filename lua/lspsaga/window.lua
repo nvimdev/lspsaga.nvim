@@ -115,6 +115,9 @@ end
 function obj:setlines(lines, row, erow)
   row = row or 0
   erow = erow or -1
+  lines = vim.tbl_map(function(line)
+    return line:gsub('[\n\r]+', '')
+  end, lines)
   api.nvim_buf_set_lines(self.bufnr, row, erow, false, lines)
   return self
 end
