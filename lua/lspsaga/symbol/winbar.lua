@@ -105,11 +105,8 @@ local function insert_elements(buf, node, elements)
       '%s%s#%s%sWord#%s',
       bar.prefix,
       type,
-      '#',
       icon,
       bar.prefix,
-      'Word',
-      '#',
       node.name
     )
   end
