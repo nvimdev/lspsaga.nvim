@@ -49,6 +49,11 @@ local function hi_define()
     SagaImpIcon = { link = 'PreProc' },
     --Winbar
     SagaWinbarSep = { link = 'Operator' },
+    SagaWinbaFileName = { link = 'SagaFileName' },
+    SagaWinbarFolderName = { link = 'SagaFolderName' },
+    SagaWinbarFolder = { link = 'SagaFolder' },
+
+    -- deprecated
     SagaFileName = { link = 'Comment' },
     SagaFolderName = { link = 'Comment' },
   }

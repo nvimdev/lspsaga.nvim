@@ -7,7 +7,7 @@ local kind = require('lspsaga.lspkind').kind
 
 local function bar_prefix()
   return {
-    prefix = '%#Saga',
+    prefix = '%#SagaWinbar',
     sep = '%#SagaWinbarSep#' .. config.separator .. '%*',
   }
 end
