@@ -6,6 +6,7 @@ local default_config = {
   ui = {
     border = 'rounded',
     devicon = true,
+    foldericon = true,
     title = true,
     expand = '⊞',
     collapse = '⊟',
