@@ -7,7 +7,7 @@ local kind = require('lspsaga.lspkind').kind
 
 local function bar_prefix()
   return {
-    prefix = '%#Saga',
+    prefix = '%#SagaWinbar',
     sep = '%#SagaWinbarSep#' .. config.separator .. '%*',
   }
 end
@@ -21,12 +21,15 @@ local function path_in_bar(buf)
 
   local bar = bar_prefix()
   local items = {}
-  local folder = kind[302][2] .. '%*'
+  local folder
+  if ui.foldericon then
+    folder = kind[302][2]
+  end
 
   for item in util.path_itera(buf) do
     item = #items == 0
         and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
-      or bar.prefix .. 'Folder#' .. folder .. bar.prefix .. 'FolderName#' .. item .. '%*'
+      or bar.prefix .. 'Folder#' .. (folder and folder or '') .. '%*' .. bar.prefix .. 'FolderName#' .. item .. '%*'
     items[#items + 1] = item
 
     if #items > config.folder_level then
@@ -105,11 +108,8 @@ local function insert_elements(buf, node, elements)
       '%s%s#%s%sWord#%s',
       bar.prefix,
       type,
-      '#',
       icon,
       bar.prefix,
-      'Word',
-      '#',
       node.name
     )
   end
