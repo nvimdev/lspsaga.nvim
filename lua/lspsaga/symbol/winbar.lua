@@ -29,7 +29,14 @@ local function path_in_bar(buf)
   for item in util.path_itera(buf) do
     item = #items == 0
         and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
-      or bar.prefix .. 'Folder#' .. (folder and folder or '') .. '%*' .. bar.prefix .. 'FolderName#' .. item .. '%*'
+      or bar.prefix
+        .. 'Folder#'
+        .. (folder and folder or '')
+        .. '%*'
+        .. bar.prefix
+        .. 'FolderName#'
+        .. item
+        .. '%*'
     items[#items + 1] = item
 
     if #items > config.folder_level then
@@ -104,14 +111,8 @@ local function insert_elements(buf, node, elements)
     local node_context = string.format('%s%s#%s%s', bar.prefix, type, icon, node.name)
     elements[#elements + 1] = node_context
   else
-    elements[#elements + 1] = string.format(
-      '%s%s#%s%sWord#%s',
-      bar.prefix,
-      type,
-      icon,
-      bar.prefix,
-      node.name
-    )
+    elements[#elements + 1] =
+      string.format('%s%s#%s%sWord#%s', bar.prefix, type, icon, bar.prefix, node.name)
   end
 end
 
