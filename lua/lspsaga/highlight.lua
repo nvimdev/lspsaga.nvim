@@ -49,7 +49,7 @@ local function hi_define()
     SagaImpIcon = { link = 'PreProc' },
     --Winbar
     SagaWinbarSep = { link = 'Operator' },
-    SagaWinbaFileName = { link = 'SagaFileName' },
+    SagaWinbarFileName = { link = 'SagaFileName' },
     SagaWinbarFolderName = { link = 'SagaFolderName' },
     SagaWinbarFolder = { link = 'SagaFolder' },
 

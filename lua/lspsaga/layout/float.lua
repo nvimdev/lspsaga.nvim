@@ -81,14 +81,21 @@ function M.right(left_winid, opt)
   end
 
   if original.border then
-    local map = border_map()
+    local map
+    if type(ui.border) == 'string' then
+      map = border_map()[ui.border]
+    elseif type(ui.border_sep) == 'table' then
+      map = ui.border_sep
+    else
+      map = border_map()['solid']
+    end
     if not in_right then
-      original.border[1] = map[ui.border][2]
-      original.border[7] = map[ui.border][1]
+      original.border[1] = map[2]
+      original.border[7] = map[1]
       win_conf.border[4] = ''
     else
-      original.border[5] = map[ui.border][1]
-      original.border[3] = map[ui.border][2]
+      original.border[5] = map[1]
+      original.border[3] = map[2]
       win_conf.border[8] = ''
       win_conf.border[7] = ''
     end
