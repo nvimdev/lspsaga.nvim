@@ -227,6 +227,10 @@ local function init_winbar(buf)
         or curbuf ~= opt.data.bufnr
         or #opt.data.symbols == 0
       then
+        local curwin = api.nvim_get_current_win()
+        if not config.show_file and vim.wo[curwin].winbar ~= '' then
+          vim.wo[curwin].winbar = ''
+        end
         return
       end
 
@@ -241,7 +245,7 @@ local function init_winbar(buf)
     callback = function(args)
       local res = not util.nvim_ten() and symbol:get_buf_symbols(args.buf)
         or require('lspsaga.symbol.head'):get_buf_symbols(args.buf)
-      if res and res.symbols then
+      if res and res.symbols and not vim.tbl_isempty(res.symbols) then
         render_symbol_winbar(args.buf, res.symbols)
       end
     end,
