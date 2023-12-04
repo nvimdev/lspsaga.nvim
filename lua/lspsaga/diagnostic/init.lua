@@ -52,6 +52,9 @@ function diag:get_diagnostic(opt)
   if opt.cursor then
     local res = {}
     for _, v in pairs(entrys) do
+      if v.col == nil then
+        v.col = col
+      end
       if v.col <= col and (v.end_col and v.end_col > col or true) then
         res[#res + 1] = v
       end
