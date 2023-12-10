@@ -27,6 +27,9 @@ local function path_in_bar(buf)
   end
 
   for item in util.path_itera(buf) do
+    if string.find(item, '%%') then
+      item = item:gsub('%%', '%%%%')
+    end
     item = #items == 0
         and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
       or bar.prefix
