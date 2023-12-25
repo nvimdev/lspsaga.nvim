@@ -591,6 +591,13 @@ function ot:outline(buf)
   self.list = slist.new()
   self:parse(res.symbols, curline)
   self:keymap()
+  -- clean autocmd
+  api.nvim_create_autocmd('BufWipeout', {
+    buffer = self.bufnr,
+    callback = function()
+      clean_ctx()
+    end,
+  })
 end
 
 return setmetatable(ctx, ot)
