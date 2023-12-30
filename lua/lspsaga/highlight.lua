@@ -19,6 +19,7 @@ local function hi_define()
     SagaDetail = { link = 'Comment' },
     SagaInCurrent = { link = 'KeyWord' },
     SagaCount = { bg = 'gray', fg = 'white', bold = true },
+    SagaSep = { link = 'Comment' },
 
     -- code action
     ActionFix = { link = 'Keyword' },
