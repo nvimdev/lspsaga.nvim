@@ -33,6 +33,7 @@ local default_config = {
     max_show_height = 0.6,
     text_hl_follow = true,
     border_follow = true,
+    wrap_long_lines = true,
     extend_relatedInformation = false,
     diagnostic_only_current = false,
     keys = {

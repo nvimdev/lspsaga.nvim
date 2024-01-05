@@ -84,6 +84,7 @@ function sd:layout_normal()
       ['number'] = false,
       ['relativenumber'] = false,
       ['stc'] = '',
+      ['wrap'] = diag_conf.wrap_long_lines
     })
     :wininfo()
   api.nvim_win_set_height(self.winid, 10)
@@ -151,6 +152,7 @@ function sd:layout_float(opt)
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
+      ['wrap'] = diag_conf.wrap_long_lines
     })
     :winhl('DiagnosticShowNormal', 'DiagnosticShowBorder')
     :wininfo()
