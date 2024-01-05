@@ -75,7 +75,7 @@ function sd:layout_normal()
     :new_normal('sp', self.bufnr)
     :bufopt({
       ['modifiable'] = false,
-      ['filetype'] = 'sagadiagnostc',
+      ['filetype'] = 'sagadiagnostic',
       ['expandtab'] = false,
       ['bufhidden'] = 'wipe',
       ['buftype'] = 'nofile',
