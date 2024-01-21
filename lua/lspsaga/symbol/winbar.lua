@@ -118,6 +118,10 @@ end
 
 --@private
 local function find_in_node(buf, tbl, line, elements)
+  if config.max_nodes and #elements >= config.max_nodes then
+    return
+  end
+
   local mid = binary_search(tbl, line)
   if not mid then
     return
