@@ -124,6 +124,8 @@ local default_config = {
     folder_level = 1,
     color_mode = true,
     dely = 300,
+    show_nodes = true,
+    max_nodes = nil,
   },
   outline = {
     win_position = 'right',
