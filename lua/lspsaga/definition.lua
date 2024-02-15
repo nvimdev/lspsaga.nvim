@@ -139,8 +139,8 @@ function def:create_win(bufnr, root_dir)
   local win_conf = api.nvim_win_get_config(self.list[#self.list].winid)
   win_conf.bufnr = bufnr
   win_conf.title = fname
-  win_conf.row = win_conf.row[false] + 1
-  win_conf.col = win_conf.col[false] + 1
+  win_conf.row = vim.version().minor >= 10 and win_conf.row or win_conf.row[false] + 1
+  win_conf.col = vim.version().minor >= 10 and win_conf.col or win_conf.col[false] + 1
   win_conf.height = win_conf.height - 1
   win_conf.width = win_conf.width - 2
   return win:new_float(win_conf, true, true):wininfo()
