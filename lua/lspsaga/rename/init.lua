@@ -49,7 +49,7 @@ function rename:find_reference()
   local bufnr = api.nvim_get_current_buf()
   local params = lsp.util.make_position_params()
   params.context = { includeDeclaration = true }
-  local clients = util.get_client_by_method('textDocment/references')
+  local clients = util.get_client_by_method('textDocument/references')
   if #clients == 0 then
     return
   end
