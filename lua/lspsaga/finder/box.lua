@@ -50,7 +50,19 @@ function M.filter(method, results)
   end
   local retval = {}
   for client_id, item in pairs(results) do
-    retval[client_id] = { result = fn(item.result) }
+    -- NOTE: by the example, fn(client_id, result) is supp to return a bool
+    -- and if the results tbl = { { result = { {...}, {...}, ... } } }
+    -- likely want to allow user to filter using the members of the result table
+    -- rather than all the results
+    for _, result_member in ipairs(item.result) do
+      if fn(client_id, result_member) == true then
+        if retval[client_id] == nil then
+          retval[client_id] = { result = { result_member } }
+        else
+          table.insert(retval[client_id].result, result_member)
+        end
+      end
+    end
   end
   return retval
 end
