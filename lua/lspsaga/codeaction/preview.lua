@@ -92,15 +92,26 @@ local preview_buf, preview_winid
 ---default is under the given window
 local function create_preview_win(content, main_winid)
   local win_conf = api.nvim_win_get_config(main_winid)
+
+  -- In versions of NVIM before v0.10.0 `api.nvim_win_get_config` will return a table for .col and .row
+  -- see https://github.com/neovim/neovim/issues/24430
+  if (type(win_conf.col) == "table") then
+    win_conf.col = win_conf.col[false]
+  end
+
+  if (type(win_conf.row) == "table") then
+    win_conf.row = win_conf.row[false]
+  end
+
   local max_height
   local opt = {
     relative = win_conf.relative,
     win = win_conf.win,
-    col = win_conf.col[false],
+    col = win_conf.col,
     anchor = win_conf.anchor,
     focusable = false,
   }
-  local max_width = api.nvim_win_get_width(win_conf.win) - win_conf.col[false] - 8
+  local max_width = api.nvim_win_get_width(win_conf.win) - win_conf.col - 8
   local content_width = util.get_max_content_length(content)
   if content_width > max_width then
     opt.width = max_width
@@ -110,10 +121,10 @@ local function create_preview_win(content, main_winid)
 
   local winheight = api.nvim_win_get_height(win_conf.win)
   if win_conf.anchor:find('^S') then
-    opt.row = win_conf.row[false] - win_conf.height - 2
-    max_height = win_conf.row[false] - win_conf.height
+    opt.row = win_conf.row - win_conf.height - 2
+    max_height = win_conf.row - win_conf.height
   elseif win_conf.anchor:find('^N') then
-    opt.row = win_conf.row[false] + win_conf.height + 2
+    opt.row = win_conf.row + win_conf.height + 2
     max_height = winheight - opt.row
   end
 
