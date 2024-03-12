@@ -1,7 +1,7 @@
 local api, fn = vim.api, vim.fn
 local win = require('lspsaga.window')
 local ui = require('lspsaga').config.ui
-local is_ten = vim.version().minor >= 10
+local is_ten = require('lspsaga.util').is_ten
 local M = {}
 
 function M.left(height, width, bufnr, title)

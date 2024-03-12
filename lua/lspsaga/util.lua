@@ -5,6 +5,7 @@ local M = {}
 
 M.iswin = uv.os_uname().sysname:match('Windows')
 M.ismac = uv.os_uname().sysname == 'Darwin'
+M.is_ten = vim.version().minor >= 10
 
 M.path_sep = M.iswin and '\\' or '/'
 
