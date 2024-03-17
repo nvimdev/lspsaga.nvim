@@ -112,10 +112,10 @@ local function create_preview_win(content, main_winid)
 
   local winheight = api.nvim_win_get_height(win_conf.win)
   if win_conf.anchor:find('^S') then
-    opt.row = util.is_ten and win_conf.row or win_conf.row[false] - win_conf.height - 2
+    opt.row = util.is_ten and win_conf.row - 3 or win_conf.row[false] - win_conf.height - 2
     max_height = util.is_ten and win_conf.row or win_conf.row[false] - win_conf.height
   elseif win_conf.anchor:find('^N') then
-    opt.row = util.is_ten and win_conf.row or win_conf.row[false] + win_conf.height + 2
+    opt.row = util.is_ten and win_conf.row + 3 or win_conf.row[false] + win_conf.height + 2
     max_height = winheight - opt.row
   end
 
