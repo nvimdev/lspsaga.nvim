@@ -118,6 +118,10 @@ end
 
 --@private
 local function find_in_node(buf, tbl, line, elements)
+  if config.max_nodes and #elements >= config.max_nodes then
+    return
+  end
+
   local mid = binary_search(tbl, line)
   if not mid then
     return
@@ -149,8 +153,9 @@ local function render_symbol_winbar(buf, symbols)
   local winbar_str = config.show_file and path_in_bar(buf) or ''
 
   local winbar_elements = {}
-
-  find_in_node(buf, symbols, current_line - 1, winbar_elements)
+  if config.show_nodes then
+    find_in_node(buf, symbols, current_line - 1, winbar_elements)
+  end
 
   local lens, over_idx = 0, 0
   local max_width = math.floor(api.nvim_win_get_width(cur_win) * 0.9)
