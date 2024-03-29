@@ -93,6 +93,8 @@ function act:action_callback(tuples, enriched_ctx)
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
 
+  vim.opt.winhl:append('CursorLine:SagaCursorLine')
+
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.action_bufnr,
     callback = function()
