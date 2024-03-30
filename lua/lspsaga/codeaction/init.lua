@@ -87,6 +87,7 @@ function act:action_callback(tuples, enriched_ctx)
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
       ['cursorline'] = config.code_action.cursorline,
+      ['cursorlineopt'] = 'both',
     })
     :winhl('SagaNormal', 'SagaBorder')
     :wininfo()
