@@ -206,4 +206,14 @@ function M.nvim_ten()
   return vim.version().minor >= 10
 end
 
+---sub c/ cpp header file path when in macos
+---@return string
+function M.sub_mac_c_header(fname)
+  local pos = fname:find('./usr/include')
+  if not pos then
+    return fname
+  end
+  return fname:sub(pos + 1)
+end
+
 return M
