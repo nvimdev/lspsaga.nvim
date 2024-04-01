@@ -341,7 +341,7 @@ local function get_diagnostic_entrys(opt)
     local scopes = { 'cursor', 'line', 'buffer' }
     for _, scope in ipairs(scopes) do
       local result = diag:get_diagnostic({ [scope] = true })
-      if not (next(result) == nil) then
+      if #result > 0 then
         opt[scope] = true -- not sure if it's a good idea to modify the opt table here
         return result
       end
