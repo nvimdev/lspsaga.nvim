@@ -96,11 +96,13 @@ local function create_preview_win(content, main_winid)
   local opt = {
     relative = win_conf.relative,
     win = win_conf.win,
-    col = win_conf.col[false],
+    col = util.is_ten and win_conf.col or win_conf.col[false],
     anchor = win_conf.anchor,
     focusable = false,
   }
-  local max_width = api.nvim_win_get_width(win_conf.win) - win_conf.col[false] - 8
+  local max_width = api.nvim_win_get_width(win_conf.win)
+    - (util.is_ten and win_conf.col or win_conf.col[false])
+    - 8
   local content_width = util.get_max_content_length(content)
   if content_width > max_width then
     opt.width = max_width
@@ -109,11 +111,12 @@ local function create_preview_win(content, main_winid)
   end
 
   local winheight = api.nvim_win_get_height(win_conf.win)
+  local win_margin = config.ui.border == 'none' and 0 or 2
   if win_conf.anchor:find('^S') then
-    opt.row = win_conf.row[false] - win_conf.height - 2
-    max_height = win_conf.row[false] - win_conf.height
+    opt.row = util.is_ten and win_conf.row - 3 or win_conf.row[false] - win_conf.height - win_margin
+    max_height = util.is_ten and win_conf.row or win_conf.row[false] - win_conf.height
   elseif win_conf.anchor:find('^N') then
-    opt.row = win_conf.row[false] + win_conf.height + 2
+    opt.row = util.is_ten and win_conf.row + 3 or win_conf.row[false] + win_conf.height + win_margin
     max_height = winheight - opt.row
   end
 

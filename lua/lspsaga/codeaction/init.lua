@@ -86,6 +86,8 @@ function act:action_callback(tuples, enriched_ctx)
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
+      ['cursorline'] = config.code_action.cursorline,
+      ['cursorlineopt'] = 'both',
     })
     :winhl('SagaNormal', 'SagaBorder')
     :wininfo()
@@ -100,6 +102,7 @@ function act:action_callback(tuples, enriched_ctx)
     end,
   })
 
+  vim.opt.winhl:append('CursorLine:CodeActionCursorLine')
   for i = 1, #content, 1 do
     local row = i - 1
     local col = content[i]:find('%]')

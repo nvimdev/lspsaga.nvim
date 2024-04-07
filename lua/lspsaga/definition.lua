@@ -117,6 +117,9 @@ end
 function def:create_win(bufnr, root_dir)
   local fname = api.nvim_buf_get_name(bufnr)
   fname = util.path_sub(fname, root_dir)
+  if util.ismac and (vim.bo[bufnr].filetype == 'c' or vim.bo[bufnr].filetype == 'cpp') then
+    fname = util.sub_mac_c_header(fname)
+  end
   if not self.list or vim.tbl_isempty(self.list) then
     local float_opt = {
       width = math.floor(api.nvim_win_get_width(0) * config.definition.width),
@@ -139,8 +142,8 @@ function def:create_win(bufnr, root_dir)
   local win_conf = api.nvim_win_get_config(self.list[#self.list].winid)
   win_conf.bufnr = bufnr
   win_conf.title = fname
-  win_conf.row = win_conf.row[false] + 1
-  win_conf.col = win_conf.col[false] + 1
+  win_conf.row = vim.version().minor >= 10 and win_conf.row or win_conf.row[false] + 1
+  win_conf.col = vim.version().minor >= 10 and win_conf.col or win_conf.col[false] + 1
   win_conf.height = win_conf.height - 1
   win_conf.width = win_conf.width - 2
   return win:new_float(win_conf, true, true):wininfo()

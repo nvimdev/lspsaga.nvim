@@ -28,7 +28,7 @@ local function path_in_bar(buf)
 
   for item in util.path_itera(buf) do
     item = #items == 0
-        and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item .. '%*'
+        and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item
       or bar.prefix
         .. 'Folder#'
         .. (folder and folder or '')
