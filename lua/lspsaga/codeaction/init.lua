@@ -32,6 +32,8 @@ function act:action_callback(tuples, enriched_ctx)
   end
 
   local content = {}
+  local servers = {}
+  local max_len = 0
 
   for index, client_with_actions in ipairs(tuples) do
     local action_title = ''
@@ -42,17 +44,33 @@ function act:action_callback(tuples, enriched_ctx)
     if client_with_actions[2].title then
       action_title = '[' .. index .. '] ' .. clean_msg(client_with_actions[2].title)
     end
+
     if config.code_action.show_server_name == true then
       if type(client_with_actions[1]) == 'string' then
-        action_title = action_title .. '  (' .. client_with_actions[1] .. ')'
+        table.insert(servers, client_with_actions[1])
       else
-        action_title = action_title
-          .. '  ('
-          .. lsp.get_client_by_id(client_with_actions[1]).name
-          .. ')'
+        table.insert(servers, lsp.get_client_by_id(client_with_actions[1]).name)
+      end
+
+      if #action_title > max_len then
+        max_len = #action_title
       end
     end
+
     content[#content + 1] = action_title
+  end
+
+  if config.code_action.show_server_name == true then
+    for i, server in ipairs(servers) do
+      local diff_len = max_len - #content[i] + 3
+
+      local padding = ''
+      for _ = 1, diff_len do
+        padding = padding .. ' '
+      end
+
+      content[i] = content[i] .. padding .. '(' .. server .. ')'
+    end
   end
 
   local max_height = math.floor(api.nvim_win_get_height(0) * config.code_action.max_height)
@@ -106,6 +124,8 @@ function act:action_callback(tuples, enriched_ctx)
   for i = 1, #content, 1 do
     local row = i - 1
     local col = content[i]:find('%]')
+    local server_start = content[i]:find('%(', max_len) - 1
+    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionServer', row, server_start, -1)
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
   end
