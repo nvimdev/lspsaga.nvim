@@ -124,7 +124,7 @@ function act:action_callback(tuples, enriched_ctx)
   for i = 1, #content, 1 do
     local row = i - 1
     local col = content[i]:find('%]')
-    local server_start = content[i]:find('%(', max_len) - 1
+    local server_start = (content[i]:find('%(', max_len) or 1) - 1
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionServer', row, server_start, -1)
     api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
     api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
