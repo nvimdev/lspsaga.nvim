@@ -122,9 +122,10 @@ function rename:lsp_rename(args)
 
   if mode == 'i' then
     vim.cmd.startinsert()
+    vim.cmd([[normal! $]])
   elseif mode == 's' or config.rename.in_select then
-    vim.cmd([[normal! V]])
-    feedkeys('<C-g>', 'n')
+    vim.cmd.startinsert()
+    vim.cmd([[normal! $]])
   end
 
   local quit_id, close_unfocus
