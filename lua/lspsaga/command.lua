@@ -55,6 +55,12 @@ local subcommands = {
   outgoing_calls = function(args)
     require('lspsaga.callhierarchy'):send_method(3, args)
   end,
+  supertypes = function(args)
+    require('lspsaga.typehierarchy'):send_method(2, args)
+  end,
+  subtypes = function(args)
+    require('lspsaga.typehierarchy'):send_method(3, args)
+  end,
   term_toggle = function(args)
     require('lspsaga.floaterm'):open_float_terminal(args)
   end,
