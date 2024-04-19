@@ -456,11 +456,12 @@ function ch:send_prepare_call()
   if #clients == 1 then
     client = clients[1]
   else
-    local client_name = vim.tbl_map(function(item)
-      return item.name
-    end, clients)
+    local client_items = { 'Select client: ' }
+    for i, cli in ipairs(clients) do
+      table.insert(client_items, string.format('%d. %s', i, cli.name))
+    end
 
-    local choice = vim.fn.inputlist('select client:', unpack(client_name))
+    local choice = vim.fn.inputlist(client_items)
     if choice == 0 or choice > #clients then
       api.nvim_err_writeln('[Lspsaga] wrong choice for select client')
       return
