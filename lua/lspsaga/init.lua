@@ -156,6 +156,20 @@ local default_config = {
       toggle_or_req = 'u',
     },
   },
+  typehierarchy = {
+    layout = 'float',
+    left_width = 0.2,
+    keys = {
+      edit = 'e',
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      close = '<C-c>k',
+      quit = 'q',
+      shuttle = '[w',
+      toggle_or_req = 'u',
+    },
+  },
   implement = {
     enable = false,
     sign = true,
