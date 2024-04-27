@@ -75,7 +75,7 @@ end
 
 function M.feedkeys(key)
   local k = api.nvim_replace_termcodes(key, true, false, true)
-  api.nvim_feedkeys(k, 'x', false)
+  api.nvim_feedkeys(k, 'nx', false)
 end
 
 function M.scroll_in_float(bufnr, winid)
