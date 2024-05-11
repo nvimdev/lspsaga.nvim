@@ -6,6 +6,11 @@ local treesitter = vim.treesitter
 local hover = {}
 
 function hover:clean()
+  if self.cancel then
+    self.cancel()
+    self.cancel = nil
+  end
+
   self.bufnr = nil
   self.winid = nil
 end
@@ -214,17 +219,13 @@ function hover:do_request(args)
   local method = 'textDocument/hover'
   local clients = util.get_client_by_method(method)
   if #clients == 0 then
-    self.pending_request = false
     vim.notify('[lspsaga] hover is not supported by the servers of the current buffer')
     return
   end
   local count = 0
 
-  lsp.buf_request(api.nvim_get_current_buf(), method, params, function(_, result, ctx)
+  _, self.cancel = lsp.buf_request(0, method, params, function(_, result, ctx)
     count = count + 1
-    if count == #clients then
-      self.pending_request = false
-    end
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
@@ -346,11 +347,6 @@ function hover:render_hover_doc(args)
     return
   end
 
-  if self.pending_request then
-    print('[lspsaga] a hover request has already been sent, please wait.')
-    return
-  end
-
   if self.winid and api.nvim_win_is_valid(self.winid) then
     if not vim.tbl_contains(args, '++keep') then
       api.nvim_set_current_win(self.winid)
@@ -363,7 +359,7 @@ function hover:render_hover_doc(args)
     end
   end
 
-  self.pending_request = true
+  self:clean()
   self:do_request(args)
 end
 
