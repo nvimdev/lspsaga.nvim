@@ -293,7 +293,7 @@ function sd:show(opt)
     curnode.expand = true
     for i, entry in ipairs(curnode.diags) do
       local virt_start = i == #curnode.diags and ui.lines[1] or ui.lines[2]
-      local mes = msg_fmt(entry)
+
       if i == 1 then
         ---@diagnostic disable-next-line: param-type-mismatch
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
@@ -310,8 +310,26 @@ function sd:show(opt)
         count = count + 1
         curnode.lnum = count
       end
-      self:write_line(mes, entry.severity, virt_start, count)
-      count = count + 1
+
+      local messages = vim.split(entry.message, '\n')
+      for j, message in ipairs(messages) do
+        local mes = ''
+        if j == 1 then
+          mes = msg_fmt({
+            message = message,
+            lnum = entry.lnum,
+            col = entry.col,
+            bufnr = entry.bufnr,
+            source = entry.source,
+            code = entry.code,
+          })
+        else
+          mes = ' ' .. message
+        end
+
+        self:write_line(mes, entry.severity, virt_start, count)
+        count = count + 1
+      end
     end
     curnode = curnode.next
   end
