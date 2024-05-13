@@ -92,7 +92,6 @@ local preview_buf, preview_winid
 ---default is under the given window
 local function create_preview_win(content, main_winid)
   local win_conf = api.nvim_win_get_config(main_winid)
-  local max_height
   local opt = {
     relative = win_conf.relative,
     win = win_conf.win,
@@ -100,15 +99,8 @@ local function create_preview_win(content, main_winid)
     anchor = win_conf.anchor,
     focusable = false,
   }
-  local max_width = api.nvim_win_get_width(win_conf.win)
-    - (util.is_ten and win_conf.col or win_conf.col[false])
-    - 8
   local content_width = util.get_max_content_length(content)
-  if content_width > max_width then
-    opt.width = max_width
-  else
-    opt.width = content_width < win_conf.width and win_conf.width or content_width
-  end
+  opt.width = math.min(api.nvim_win_get_width(win_conf.win), content_width)
   local winheight = api.nvim_win_get_height(win_conf.win)
   local margin = config.ui.border == 'none' and 0 or 2
   local north = win_conf.anchor:sub(1, 1) == 'N'
@@ -118,23 +110,24 @@ local function create_preview_win(content, main_winid)
     or winheight - row - margin
   local new_win_height = #content + margin
   -- action is NW under cursor and top is enough to show preview
+  local east_or_west = win_conf.anchor:sub(2, 2)
   if north then
     if valid_top_height > new_win_height then
-      opt.anchor = 'SW'
+      opt.anchor = 'S' .. east_or_west
       opt.row = row
       opt.height = math.min(valid_top_height, #content)
     elseif valid_bot_height > new_win_height then
-      opt.anchor = 'NW'
+      opt.anchor = 'N' .. east_or_west
       opt.row = row + win_conf.height + margin
       opt.height = math.min(valid_bot_height, #content)
     end
   else
     if valid_bot_height > new_win_height then
-      opt.anchor = 'NW'
+      opt.anchor = 'N' .. east_or_west
       opt.row = row
       opt.height = math.min(valid_bot_height, #content)
     else
-      opt.anchor = 'SW'
+      opt.anchor = 'S' .. east_or_west
       opt.row = row - win_conf.height - margin
       opt.height = math.min(valid_top_height, #content)
     end
@@ -144,7 +137,6 @@ local function create_preview_win(content, main_winid)
     opt.title = { { 'Action Preview', 'ActionPreviewTitle' } }
     opt.title_pos = 'center'
   end
-  print(vim.inspect(opt))
 
   preview_buf, preview_winid = win
     :new_float(opt, false, true)
