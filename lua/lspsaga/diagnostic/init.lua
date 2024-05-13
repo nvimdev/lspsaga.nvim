@@ -122,7 +122,9 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
     end
     self.number_count = #action_tuples
   end
-
+  api.nvim_win_set_cursor(self.winid, { start_line + 2, 0 })
+  api.nvim_buf_add_highlight(self.bufnr, ns, 'SagaSelect', start_line + 1, 6, -1)
+  action_preview(self.winid, self.main_buf, action_tuples[1])
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.bufnr,
     callback = function()
@@ -139,6 +141,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
     api.nvim_win_call(self.winid, function()
       local curlnum = api.nvim_win_get_cursor(self.winid)[1]
       local lines = api.nvim_buf_line_count(self.bufnr)
+      api.nvim_buf_clear_namespace(self.bufnr, ns, 0, -1)
       local sline = start_line + 2
       local col = 6
       if curlnum < sline then
@@ -147,7 +150,6 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
         curlnum = curlnum + direction > lines and sline or curlnum + direction
       end
       api.nvim_win_set_cursor(self.winid, { curlnum, col })
-      api.nvim_buf_clear_namespace(self.bufnr, ns, sline, -1)
       if curlnum >= sline then
         api.nvim_buf_add_highlight(self.bufnr, ns, 'SagaSelect', curlnum - 1, 6, -1)
       end
