@@ -370,6 +370,7 @@ function diag:render_diagnostic_window(entry, option)
           api.nvim_win_close(self.winid, true)
           clean_ctx()
         end
+        preview_win_close()
       end, 0)
     end,
   })
