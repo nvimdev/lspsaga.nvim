@@ -100,7 +100,12 @@ local function create_preview_win(content, main_winid)
     focusable = false,
   }
   local content_width = util.get_max_content_length(content)
-  opt.width = math.min(api.nvim_win_get_width(win_conf.win), content_width)
+  local max_win_width = api.nvim_win_get_width(win_conf.win)
+  if content_width < win_conf.width then
+    opt.width = win_conf.width
+  else
+    opt.width = math.min(max_win_width, content_width)
+  end
   local winheight = api.nvim_win_get_height(win_conf.win)
   local margin = config.ui.border == 'none' and 0 or 2
   local north = win_conf.anchor:sub(1, 1) == 'N'
