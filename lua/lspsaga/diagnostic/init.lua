@@ -93,11 +93,11 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
     end
   end
   local increase = util.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
-
   local start_line = api.nvim_buf_line_count(self.bufnr) + 1
+  local limit_height = math.floor(api.nvim_win_get_height(0) / 3)
   win
     :from_exist(self.bufnr, self.winid)
-    :winsetconf({ height = win_conf.height + increase + #contents })
+    :winsetconf({ height = math.min(win_conf.height + increase + #contents, limit_height) })
     :bufopt('modifiable', true)
     :setlines(contents, -1, -1)
     :bufopt('modifiable', false)
