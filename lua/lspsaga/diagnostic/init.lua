@@ -320,7 +320,6 @@ function diag:render_diagnostic_window(entry, option)
       ['buftype'] = 'nofile',
     })
     :winopt({
-      ['wrap'] = true,
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
       ['showbreak'] = 'NONE',
