@@ -291,14 +291,12 @@ function diag:render_diagnostic_window(entry, option)
     virt[#virt + 1] = { ' ' .. entry.code, 'Comment' }
   end
 
-  local max_width = math.floor(vim.o.columns * diag_conf.max_width)
+  local max_width = math.floor(vim.o.columns * 0.8)
   local max_len = util.get_max_content_length(content)
     + (entry.source and #entry.source or 0)
     + (entry.code and #tostring(entry.code) or 0)
     + 2
-
-  local increase = util.win_height_increase(content, diag_conf.max_width)
-
+  local increase = util.win_height_increase(content, 0.8)
   local float_opt = {
     relative = 'cursor',
     width = math.min(max_width, max_len),
