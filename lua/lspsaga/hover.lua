@@ -3,6 +3,7 @@ local config = require('lspsaga').config
 local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 local treesitter = vim.treesitter
+local islist = util.is_ten and vim.islist or vim.tbl_islist
 local hover = {}
 
 function hover:clean()
@@ -250,7 +251,7 @@ function hover:do_request(args)
       else
         value = result.contents.value
       end
-    elseif vim.tbl_islist(result.contents) then -- MarkedString[]
+    elseif islist(result.contents) then -- MarkedString[]
       if vim.tbl_isempty(result.contents) and ignore_error(args) then
         vim.notify('No information available')
         return
