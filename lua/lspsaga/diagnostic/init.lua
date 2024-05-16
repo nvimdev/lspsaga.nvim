@@ -62,14 +62,6 @@ function diag:get_diagnostic(opt)
   return vim.diagnostic.get()
 end
 
-local function clean_msg(msg)
-  local pattern = '%(.+%)%S$'
-  if msg:find(pattern) then
-    return msg:gsub(pattern, '')
-  end
-  return msg
-end
-
 function diag:code_action_cb(action_tuples, enriched_ctx)
   if not self.bufnr or not api.nvim_buf_is_loaded(self.bufnr) then
     return
@@ -87,8 +79,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx)
       return
     end
     if client_with_actions[2].title then
-      local title = clean_msg(client_with_actions[2].title)
-      local action_title = '[[' .. index .. ']] ' .. title
+      local action_title = '**' .. index .. '** ' .. client_with_actions[2].title
       contents[#contents + 1] = action_title
     end
   end

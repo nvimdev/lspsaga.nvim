@@ -4,7 +4,10 @@ local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 
 local function get_action_diff(main_buf, tuple)
-  local act = require('lspsaga.codeaction.init')
+  if not tuple then
+    return
+  end
+  local act = require('lspsaga.codeaction')
   local action = tuple[2]
   if not action then
     return
