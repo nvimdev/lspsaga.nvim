@@ -31,7 +31,7 @@ end
 
 local function get_num()
   local line = api.nvim_get_current_line()
-  return line:match('%[(%d+)%]')
+  return line:match('%*%*(%d+)%*%*')
 end
 
 ---get the line or cursor diagnostics
