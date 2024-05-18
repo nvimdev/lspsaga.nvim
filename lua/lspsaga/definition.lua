@@ -4,6 +4,7 @@ local util = require('lspsaga.util')
 local win = require('lspsaga.window')
 local buf_del_keymap = api.nvim_buf_del_keymap
 local beacon = require('lspsaga.beacon').jump_beacon
+local islist = util.is_ten and vim.islist or vim.tbl_islist
 local def = {}
 def.__index = def
 
@@ -227,7 +228,7 @@ function def:definition_request(method, handler_T, args)
     fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
     local res
-    if not vim.tbl_islist(result) then
+    if not islist(result) then
       res = result
     elseif result[1] then
       res = result[1]

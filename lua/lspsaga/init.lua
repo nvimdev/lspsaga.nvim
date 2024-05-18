@@ -23,7 +23,6 @@ local default_config = {
     open_cmd = '!chrome',
   },
   diagnostic = {
-    show_code_action = true,
     show_layout = 'float',
     show_normal_height = 10,
     jump_num_shortcut = true,
@@ -143,6 +142,20 @@ local default_config = {
     },
   },
   callhierarchy = {
+    layout = 'float',
+    left_width = 0.2,
+    keys = {
+      edit = 'e',
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      close = '<C-c>k',
+      quit = 'q',
+      shuttle = '[w',
+      toggle_or_req = 'u',
+    },
+  },
+  typehierarchy = {
     layout = 'float',
     left_width = 0.2,
     keys = {

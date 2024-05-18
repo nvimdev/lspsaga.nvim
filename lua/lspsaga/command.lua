@@ -38,10 +38,10 @@ local subcommands = {
     require('lspsaga.diagnostic.show'):show_diagnostics({ cursor = true, args = args })
   end,
   diagnostic_jump_next = function()
-    require('lspsaga.diagnostic'):goto_next()
+    require('lspsaga.diagnostic'):goto_pos(1)
   end,
   diagnostic_jump_prev = function()
-    require('lspsaga.diagnostic'):goto_prev()
+    require('lspsaga.diagnostic'):goto_pos(-1)
   end,
   code_action = function()
     require('lspsaga.codeaction'):code_action()
@@ -54,6 +54,12 @@ local subcommands = {
   end,
   outgoing_calls = function(args)
     require('lspsaga.callhierarchy'):send_method(3, args)
+  end,
+  supertypes = function(args)
+    require('lspsaga.typehierarchy'):send_method(2, args)
+  end,
+  subtypes = function(args)
+    require('lspsaga.typehierarchy'):send_method(3, args)
   end,
   term_toggle = function(args)
     require('lspsaga.floaterm'):open_float_terminal(args)

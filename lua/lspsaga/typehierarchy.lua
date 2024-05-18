@@ -9,7 +9,7 @@ local kind = require('lspsaga.lspkind').kind
 local ly = require('lspsaga.layout')
 local win = require('lspsaga.window')
 local beacon = require('lspsaga.beacon').jump_beacon
-local ns = api.nvim_create_namespace('SagaCallhierarchy')
+local ns = api.nvim_create_namespace('SagaTypehierarchy')
 
 local ch = {}
 ch.__index = ch
@@ -40,23 +40,23 @@ end
 
 local function get_method(type)
   local method = {
-    'textDocument/prepareCallHierarchy',
-    'callHierarchy/incomingCalls',
-    'callHierarchy/outgoingCalls',
+    'textDocument/prepareTypeHierarchy',
+    'typeHierarchy/supertypes',
+    'typeHierarchy/subtypes',
   }
   return method[type]
 end
 
 ---@private
-local function pick_call_hierarchy_item(call_hierarchy_items)
-  if not call_hierarchy_items then
+local function pick_type_hierarchy_item(type_hierarchy_items)
+  if not type_hierarchy_items then
     return
   end
-  if #call_hierarchy_items == 1 then
-    return call_hierarchy_items[1]
+  if #type_hierarchy_items == 1 then
+    return type_hierarchy_items[1]
   end
   local items = {}
-  for i, item in pairs(call_hierarchy_items) do
+  for i, item in pairs(type_hierarchy_items) do
     local entry = item.detail or item.name
     table.insert(items, string.format('%d. %s', i, entry))
   end
@@ -133,8 +133,8 @@ function ch:toggle_or_request()
   local next = curnode.next
   if not next or next.value.inlevel <= curnode.value.inlevel then
     local timer_close = self:spinner(curnode)
-    local item = self.method == get_method(2) and curnode.value.from or curnode.value.to
-    self:call_hierarchy(item, client, timer_close, curlnum)
+    local item = curnode.value.item
+    self:type_hierarchy(item, client, timer_close, curlnum)
     return
   end
   local level = curnode.value.inlevel
@@ -175,7 +175,7 @@ function ch:toggle_or_request()
     local count = 0
     vim.bo[self.left_bufnr].modifiable = true
     while tmp do
-      local data = self.method == get_method(2) and tmp.value.from or tmp.value.to
+      local data = tmp.value.item
       local indent = (' '):rep(tmp.value.inlevel)
       buf_set_lines(self.left_bufnr, curlnum, curlnum, false, { indent .. data.name })
       self:set_toggle_icon(config.ui.expand, curlnum, #indent - 4, tmp.value.virtid)
@@ -214,27 +214,27 @@ local function window_shuttle(winid, right_winid)
 end
 
 function ch:keymap()
-  util.map_keys(self.left_bufnr, config.callhierarchy.keys.close, function()
+  util.map_keys(self.left_bufnr, config.typehierarchy.keys.close, function()
     util.close_win({ self.left_winid, self.right_winid })
     self:clean()
   end)
 
-  util.map_keys(self.left_bufnr, config.callhierarchy.keys.quit, function()
+  util.map_keys(self.left_bufnr, config.typehierarchy.keys.quit, function()
     util.close_win({ self.left_winid, self.right_winid })
     self:clean()
   end)
 
-  util.map_keys(self.left_bufnr, config.callhierarchy.keys.toggle_or_req, function()
+  util.map_keys(self.left_bufnr, config.typehierarchy.keys.toggle_or_req, function()
     self:toggle_or_request()
   end)
 
-  util.map_keys(self.left_bufnr, config.callhierarchy.keys.shuttle, function()
+  util.map_keys(self.left_bufnr, config.typehierarchy.keys.shuttle, function()
     window_shuttle(self.left_winid, self.right_winid)
   end)
 
   local tbl = { 'edit', 'vsplit', 'split', 'tabe' }
   for _, action in ipairs(tbl) do
-    util.map_keys(self.left_bufnr, config.callhierarchy.keys[action], function()
+    util.map_keys(self.left_bufnr, config.typehierarchy.keys[action], function()
       local curlnum = api.nvim_win_get_cursor(0)[1]
       local curnode = slist.find_node(self.list, curlnum)
       if not curnode then
@@ -244,7 +244,7 @@ function ch:keymap()
       if not client then
         return
       end
-      local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
+      local data = curnode.value.item
       local start = data.selectionRange.start
       self:clean()
       local restore = win:minimal_restore()
@@ -285,7 +285,7 @@ function ch:peek_view()
       if not curnode then
         return
       end
-      local data = self.method == get_method(2) and curnode.value.from or curnode.value.to
+      local data = curnode.value.item
       curnode.value.bufnr = vim.uri_to_bufnr(data.uri)
       if not api.nvim_buf_is_loaded(curnode.value.bufnr) then
         fn.bufload(curnode.value.bufnr)
@@ -326,16 +326,16 @@ function ch:peek_view()
           client.offset_encoding
         )
       )
-      util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.shuttle, function()
+      util.map_keys(curnode.value.bufnr, config.typehierarchy.keys.shuttle, function()
         window_shuttle(self.left_winid, self.right_winid)
       end)
 
-      util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.close, function()
+      util.map_keys(curnode.value.bufnr, config.typehierarchy.keys.close, function()
         ly:close()
         self:clean()
       end)
     end,
-    desc = '[Lspsaga] callhierarchy peek preview',
+    desc = '[Lspsaga] typehierarchy peek preview',
   })
 end
 
@@ -359,7 +359,7 @@ function ch:render_virtline(row, inlevel)
   end
 end
 
-function ch:call_hierarchy(item, client, timer_close, curlnum)
+function ch:type_hierarchy(item, client, timer_close, curlnum)
   self.pending_request = true
   client.request(self.method, { item = item }, function(_, res)
     self.pending_request = false
@@ -372,7 +372,7 @@ function ch:call_hierarchy(item, client, timer_close, curlnum)
     end
 
     if not res or vim.tbl_isempty(res) then
-      vim.notify('[lspsaga] callhierarchy result is empty', vim.log.levels.WARN)
+      vim.notify('[lspsaga] typehierarchy result is empty', vim.log.levels.WARN)
       return
     end
 
@@ -380,9 +380,9 @@ function ch:call_hierarchy(item, client, timer_close, curlnum)
       local height = bit.rshift(vim.o.lines, 1) - 4
       local win_width = api.nvim_win_get_width(0)
       self.left_bufnr, self.left_winid, self.right_bufnr, self.right_winid = ly:new(self.layout)
-        :left(height, math.floor(win_width * config.callhierarchy.left_width))
+        :left(height, math.floor(win_width * config.typehierarchy.left_width))
         :bufopt({
-          ['filetype'] = 'sagacallhierarchy',
+          ['filetype'] = 'sagatypehierarchy',
           ['buftype'] = 'nofile',
           ['bufhidden'] = 'wipe',
         })
@@ -404,8 +404,9 @@ function ch:call_hierarchy(item, client, timer_close, curlnum)
     end
     vim.bo[self.left_bufnr].modifiable = true
 
-    for _, val in ipairs(res) do
-      local data = self.method == get_method(2) and val.from or val.to
+    for _, data in ipairs(res) do
+      local val = {}
+      val.item = data
       val.client_id = client.id
       val.inlevel = #indent
       buf_set_lines(
@@ -441,7 +442,7 @@ function ch:call_hierarchy(item, client, timer_close, curlnum)
   end)
 end
 
-function ch:send_prepare_call()
+function ch:send_prepare_type()
   if self.pending_request then
     vim.notify('[lspsaga] a request has already been sent, please wait.')
     return
@@ -449,7 +450,7 @@ function ch:send_prepare_call()
   self.main_buf = api.nvim_get_current_buf()
   local clients = util.get_client_by_method(get_method(1))
   if #clients == 0 then
-    vim.notify('[lspsaga] callhierarchy is not supported by the clients of the current buffer')
+    vim.notify('[lspsaga] typehierarchy is not supported by the clients of the current buffer')
     return
   end
   local client
@@ -475,20 +476,20 @@ function ch:send_prepare_call()
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end
-    local item = pick_call_hierarchy_item(result)
-    self:call_hierarchy(item, client)
+    local item = pick_type_hierarchy_item(result)
+    self:type_hierarchy(item, client)
   end, self.main_buf)
 end
 
 function ch:send_method(t, args)
   self.method = get_method(t)
-  self.layout = config.callhierarchy.layout
+  self.layout = config.typehierarchy.layout
   if vim.tbl_contains(args, '++normal') then
     self.layout = 'normal'
   elseif vim.tbl_contains(args, '++float') then
     self.layout = 'float'
   end
-  self:send_prepare_call()
+  self:send_prepare_type()
 end
 
 return setmetatable({}, ch)
