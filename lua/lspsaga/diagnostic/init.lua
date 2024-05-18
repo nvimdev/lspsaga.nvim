@@ -62,7 +62,6 @@ function diag:get_diagnostic(opt)
 end
 
 function diag:code_action_cb(action_tuples, enriched_ctx)
-  vim.bo[self.float_bufnr].modifiable = true
   self.main_buf = api.nvim_get_current_buf()
   local win_conf = api.nvim_win_get_config(self.float_winid)
   local contents = {
@@ -292,7 +291,9 @@ function diag:goto_pos(pos)
       if #action_tuples == 0 or not self:valid_win_buf() then
         return
       end
+      vim.bo[self.float_bufnr].modifiable = true
       self:code_action_cb(action_tuples, enriched_ctx)
+      vim.bo[self.float_bufnr].modifiable = false
     end)
   end)
 end
