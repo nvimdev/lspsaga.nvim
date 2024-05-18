@@ -62,7 +62,6 @@ function diag:get_diagnostic(opt)
 end
 
 function diag:code_action_cb(action_tuples, enriched_ctx)
-  self.main_buf = api.nvim_get_current_buf()
   local win_conf = api.nvim_win_get_config(self.float_winid)
   local contents = {
     util.gen_truncate_line(win_conf.width),
@@ -280,7 +279,8 @@ function diag:goto_pos(pos)
     if #util.get_client_by_method('textDocument/codeAction') == 0 then
       return
     end
-    act:send_request(self.main_buf, {
+    local curbuf = api.nvim_get_current_buf()
+    act:send_request(curbuf, {
       context = { diagnostics = self:get_cursor_diagnostic() },
       range = {
         start = { entry.lnum + 1, (entry.col or 1) },
@@ -292,6 +292,7 @@ function diag:goto_pos(pos)
         return
       end
       vim.bo[self.float_bufnr].modifiable = true
+      self.main_buf = curbuf
       self:code_action_cb(action_tuples, enriched_ctx)
       vim.bo[self.float_bufnr].modifiable = false
     end)
