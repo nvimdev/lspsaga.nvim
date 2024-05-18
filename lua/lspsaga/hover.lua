@@ -321,33 +321,13 @@ function hover:do_request(args)
   end)
 end
 
-local function check_parser()
-  local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
-  local has_parser = true
-  for _, p in ipairs(parsers) do
-    if #api.nvim_get_runtime_file(p, true) == 0 then
-      has_parser = false
-      break
-    end
-  end
-  return has_parser
-end
-
 function hover:render_hover_doc(args)
   local diag_winid = require('lspsaga.diagnostic').winid
   if diag_winid and api.nvim_win_is_valid(diag_winid) then
     require('lspsaga.diagnostic'):clean_data()
   end
   args = args or {}
-
-  if not check_parser() then
-    vim.notify(
-      '[lspsaga] please install markdown and markdown_inline parser in nvim-treesitter',
-      vim.log.levels.WARN
-    )
-    return
-  end
-
+  util.valid_markdown_parser()
   if self.winid and api.nvim_win_is_valid(self.winid) then
     if not vim.tbl_contains(args, '++keep') then
       api.nvim_set_current_win(self.winid)

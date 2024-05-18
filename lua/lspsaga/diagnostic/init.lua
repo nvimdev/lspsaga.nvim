@@ -259,6 +259,7 @@ function diag:goto_pos(pos)
   (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)({
     float = { border = 'rounded' },
   })
+  util.valid_markdown_parser()
   require('lspsaga.beacon').jump_beacon({ entry.lnum, entry.col }, #api.nvim_get_current_line())
   vim.schedule(function()
     if not self:valid_win_buf() then

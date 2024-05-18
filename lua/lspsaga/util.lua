@@ -216,4 +216,14 @@ function M.sub_mac_c_header(fname)
   return fname:sub(pos + 1)
 end
 
+function M.valid_markdown_parser()
+  local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
+  for _, p in ipairs(parsers) do
+    if #api.nvim_get_runtime_file(p, true) == 0 then
+      vim.notify_once('[Lspsaga] for better experience instal markdown relate tresitter parser')
+      return
+    end
+  end
+end
+
 return M
