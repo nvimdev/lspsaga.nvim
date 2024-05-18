@@ -23,7 +23,6 @@ local default_config = {
     open_cmd = '!chrome',
   },
   diagnostic = {
-    show_code_action = true,
     show_layout = 'float',
     show_normal_height = 10,
     jump_num_shortcut = true,
