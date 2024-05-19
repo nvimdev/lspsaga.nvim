@@ -83,7 +83,6 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
   api.nvim_win_set_config(self.float_winid, win_conf)
   local contents = {
     util.gen_truncate_line(win_conf.width),
-    config.ui.actionfix .. 'Actions',
   }
 
   for index, client_with_actions in pairs(action_tuples) do
@@ -105,17 +104,8 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
     :bufopt('modifiable', true)
     :setlines(contents, -1, -1)
     :bufopt('modifiable', false)
-
   api.nvim_buf_add_highlight(self.float_bufnr, 0, 'Comment', start_line - 1, 0, -1)
-  api.nvim_buf_add_highlight(self.float_bufnr, 0, 'ActionFix', start_line, 0, #config.ui.actionfix)
-  api.nvim_buf_add_highlight(self.float_bufnr, 0, 'SagaTitle', start_line, #config.ui.actionfix, -1)
-
-  for i = 3, #contents do
-    local row = start_line + i - 2
-    api.nvim_buf_add_highlight(self.float_bufnr, 0, 'CodeActionText', row, 6, -1)
-  end
   local curbuf = api.nvim_get_current_buf()
-
   if diag_conf.jump_num_shortcut then
     for num, _ in ipairs(action_tuples or {}) do
       util.map_keys(curbuf, tostring(num), function()
@@ -127,8 +117,8 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
     end
     self.number_count = #action_tuples
   end
-  api.nvim_win_set_cursor(self.float_winid, { start_line + 2, 0 })
-  api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line + 1, 6, -1)
+  api.nvim_win_set_cursor(self.float_winid, { start_line + 1, 0 })
+  api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line, 6, -1)
   action_preview(self.float_winid, curbuf, action_tuples[1])
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.float_bufnr,
@@ -147,7 +137,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
       local curlnum = api.nvim_win_get_cursor(self.float_winid)[1]
       local lines = api.nvim_buf_line_count(self.float_bufnr)
       api.nvim_buf_clear_namespace(self.float_bufnr, ns, 0, -1)
-      local sline = start_line + 2
+      local sline = start_line + 1
       local col = 6
       if curlnum < sline then
         curlnum = sline
@@ -266,7 +256,11 @@ function diag:goto_pos(pos, opts)
     return
   end
   (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)({
-    float = { border = config.ui.border, header = '' },
+    float = {
+      border = config.ui.border,
+      header = '',
+      prefix = { '• ', 'Title' },
+    },
   })
   util.valid_markdown_parser()
   require('lspsaga.beacon').jump_beacon({ entry.lnum, entry.col }, #api.nvim_get_current_line())
