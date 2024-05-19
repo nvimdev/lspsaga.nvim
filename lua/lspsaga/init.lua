@@ -11,7 +11,6 @@ local default_config = {
     expand = '⊞',
     collapse = '⊟',
     code_action = '💡',
-    actionfix = ' ',
     lines = { '┗', '┣', '┃', '━', '┏' },
     kind = nil,
     button = { '', '' },

@@ -22,7 +22,6 @@ local function hi_define()
     SagaSep = { link = 'Comment' },
 
     -- code action
-    ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
     ActionPreviewTitle = { link = 'Title' },
