@@ -248,11 +248,11 @@ function diag:valid_win_buf()
   return false
 end
 
-local FORWARD = 1
+local FORWARD, BACKWARD = 1, -1
 
-function diag:goto_pos(pos)
+function diag:goto_pos(pos, opts)
   local is_forward = pos == FORWARD
-  local entry = (is_forward and vim.diagnostic.get_next or vim.diagnostic.get_prev)()
+  local entry = (is_forward and vim.diagnostic.get_next or vim.diagnostic.get_prev)(opts)
   if not entry then
     return
   end
@@ -298,6 +298,14 @@ function diag:goto_pos(pos)
       vim.bo[self.float_bufnr].modifiable = false
     end)
   end)
+end
+
+function diag:goto_next(opts)
+  self:goto_pos(FORWARD, opts)
+end
+
+function diag:goto_prev(opts)
+  self:goto_pos(BACKWARD, opts)
 end
 
 return setmetatable(ctx, diag)

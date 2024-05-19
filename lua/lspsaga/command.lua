@@ -38,10 +38,10 @@ local subcommands = {
     require('lspsaga.diagnostic.show'):show_diagnostics({ cursor = true, args = args })
   end,
   diagnostic_jump_next = function()
-    require('lspsaga.diagnostic'):goto_pos(1)
+    require('lspsaga.diagnostic'):goto_next()
   end,
   diagnostic_jump_prev = function()
-    require('lspsaga.diagnostic'):goto_pos(-1)
+    require('lspsaga.diagnostic'):goto_prev()
   end,
   code_action = function()
     require('lspsaga.codeaction'):code_action()
