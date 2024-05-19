@@ -140,12 +140,6 @@ local function create_preview_win(content, main_winid)
       opt.height = math.min(valid_top_height, #content)
     end
   end
-
-  if config.ui.title then
-    opt.title = { { 'Action Preview', 'ActionPreviewTitle' } }
-    opt.title_pos = 'center'
-  end
-
   preview_buf, preview_winid = win
     :new_float(opt, false, true)
     :setlines(content)

@@ -32,6 +32,22 @@ local function get_num()
   return line:match('%*%*(%d+)%*%*')
 end
 
+local function gen_float_title(counts)
+  local t = {}
+  for i, v in ipairs(counts) do
+    if v > 0 then
+      local hi = 'Diagnostic' .. vim.diagnostic.severity[i]
+      t[#t + 1] = { config.ui.button[1], hi }
+      t[#t + 1] = {
+        (vim.diagnostic.severity[i]:sub(1, 1) .. ':%s'):format(v),
+        hi .. 'Reverse',
+      }
+      t[#t + 1] = { config.ui.button[2], hi }
+    end
+  end
+  return t
+end
+
 ---get the line or cursor diagnostics
 ---@param opt table
 function diag:get_diagnostic(opt)
@@ -61,8 +77,10 @@ function diag:get_diagnostic(opt)
   return vim.diagnostic.get()
 end
 
-function diag:code_action_cb(action_tuples, enriched_ctx)
+function diag:code_action_cb(action_tuples, enriched_ctx, counts)
   local win_conf = api.nvim_win_get_config(self.float_winid)
+  win_conf.title = gen_float_title(counts)
+  api.nvim_win_set_config(self.float_winid, win_conf)
   local contents = {
     util.gen_truncate_line(win_conf.width),
     config.ui.actionfix .. 'Actions',
@@ -166,7 +184,9 @@ end
 function diag:get_cursor_diagnostic()
   local diags = diag:get_diagnostic({ cursor = true })
   local res = {}
+  local counts = { 0, 0, 0, 0 }
   for _, entry in ipairs(diags) do
+    counts[entry.severity] = counts[entry.severity] + 1
     res[#res + 1] = {
       code = entry.code or nil,
       message = entry.message,
@@ -190,7 +210,7 @@ function diag:get_cursor_diagnostic()
     }
   end
 
-  return res
+  return res, counts
 end
 
 function diag:do_code_action(action_tuples, enriched_ctx)
@@ -216,17 +236,6 @@ function diag:clean_data()
     end
   end
   clean_ctx()
-end
-
-function diag:get_diag_counts(entrys)
-  --E W I W
-  local counts = { 0, 0, 0, 0 }
-
-  for _, item in ipairs(entrys) do
-    counts[item.severity] = counts[item.severity] + 1
-  end
-
-  return counts
 end
 
 local original_open_float = vim.diagnostic.open_float
@@ -257,7 +266,7 @@ function diag:goto_pos(pos, opts)
     return
   end
   (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)({
-    float = { border = 'rounded' },
+    float = { border = config.ui.border, header = '' },
   })
   util.valid_markdown_parser()
   require('lspsaga.beacon').jump_beacon({ entry.lnum, entry.col }, #api.nvim_get_current_line())
@@ -281,8 +290,9 @@ function diag:goto_pos(pos, opts)
       return
     end
     local curbuf = api.nvim_get_current_buf()
+    local diagnostics, counts = self:get_cursor_diagnostic()
     act:send_request(curbuf, {
-      context = { diagnostics = self:get_cursor_diagnostic() },
+      context = { diagnostics = diagnostics },
       range = {
         start = { entry.lnum + 1, (entry.col or 1) },
         ['end'] = { entry.lnum + 1, (entry.col or 1) },
@@ -294,7 +304,7 @@ function diag:goto_pos(pos, opts)
       end
       vim.bo[self.float_bufnr].modifiable = true
       self.main_buf = curbuf
-      self:code_action_cb(action_tuples, enriched_ctx)
+      self:code_action_cb(action_tuples, enriched_ctx, counts)
       vim.bo[self.float_bufnr].modifiable = false
     end)
   end)

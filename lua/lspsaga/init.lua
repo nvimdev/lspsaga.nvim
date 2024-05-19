@@ -14,6 +14,7 @@ local default_config = {
     actionfix = ' ',
     lines = { '┗', '┣', '┃', '━', '┏' },
     kind = nil,
+    button = { '', '' },
     imp_sign = '󰳛 ',
   },
   hover = {

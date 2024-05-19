@@ -69,6 +69,14 @@ local function init_highlight()
   for _, item in pairs(kind) do
     api.nvim_set_hl(0, 'Saga' .. item[1], { link = item[3], default = true })
   end
+
+  for _, v in ipairs(vim.diagnostic.severity) do
+    local color = api.nvim_get_hl(0, { name = 'Diagnostic' .. v })
+    api.nvim_set_hl(0, 'Diagnostic' .. v .. 'Reverse', {
+      bg = color.fg,
+      fg = 'Black',
+    })
+  end
 end
 
 return {
