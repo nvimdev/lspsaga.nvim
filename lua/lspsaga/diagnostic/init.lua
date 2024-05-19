@@ -255,13 +255,13 @@ function diag:goto_pos(pos, opts)
   if not entry then
     return
   end
-  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)({
+  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend("keep", {
     float = {
       border = config.ui.border,
       header = '',
       prefix = { '• ', 'Title' },
     },
-  })
+  }, opts or {}))
   util.valid_markdown_parser()
   require('lspsaga.beacon').jump_beacon({ entry.lnum, entry.col }, #api.nvim_get_current_line())
   vim.schedule(function()
