@@ -77,14 +77,10 @@ function diag:get_diagnostic(opt)
   return vim.diagnostic.get()
 end
 
-function diag:code_action_cb(action_tuples, enriched_ctx, counts)
-  local win_conf = api.nvim_win_get_config(self.float_winid)
-  win_conf.title = gen_float_title(counts)
-  api.nvim_win_set_config(self.float_winid, win_conf)
+function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
   local contents = {
     util.gen_truncate_line(win_conf.width),
   }
-
   for index, client_with_actions in pairs(action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('[lspsaga] failed indexing client actions')
@@ -255,7 +251,7 @@ function diag:goto_pos(pos, opts)
   if not entry then
     return
   end
-  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend("keep", {
+  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend('keep', {
     float = {
       border = config.ui.border,
       header = '',
@@ -285,6 +281,9 @@ function diag:goto_pos(pos, opts)
     end
     local curbuf = api.nvim_get_current_buf()
     local diagnostics, counts = self:get_cursor_diagnostic()
+    local win_conf = api.nvim_win_get_config(self.float_winid)
+    win_conf.title = gen_float_title(counts)
+    api.nvim_win_set_config(self.float_winid, win_conf)
     act:send_request(curbuf, {
       context = { diagnostics = diagnostics },
       range = {
@@ -298,7 +297,7 @@ function diag:goto_pos(pos, opts)
       end
       vim.bo[self.float_bufnr].modifiable = true
       self.main_buf = curbuf
-      self:code_action_cb(action_tuples, enriched_ctx, counts)
+      self:code_action_cb(action_tuples, enriched_ctx, win_conf)
       vim.bo[self.float_bufnr].modifiable = false
     end)
   end)
