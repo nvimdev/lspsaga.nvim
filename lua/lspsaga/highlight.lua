@@ -79,6 +79,13 @@ local function init_highlight()
       fg = 'Black',
     })
   end
+
+  local hint_conf = api.nvim_get_hl(0, { name = 'DiagnosticHint' })
+  if hint_conf.link then
+    hint_conf = api.nvim_get_hl(0, { name = hint_conf.link })
+  end
+  api.nvim_set_hl(0, 'SagaButton', { fg = hint_conf.fg })
+  api.nvim_set_hl(0, 'SagaActionTitle', { fg = 'Black', bg = hint_conf.fg })
 end
 
 return {

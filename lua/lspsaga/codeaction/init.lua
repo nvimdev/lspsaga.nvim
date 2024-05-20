@@ -2,6 +2,7 @@ local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local win = require('lspsaga.window')
 local preview = require('lspsaga.codeaction.preview')
+local ns = api.nvim_create_namespace('saga_action')
 local util = require('lspsaga.util')
 
 local act = {}
@@ -40,7 +41,7 @@ function act:action_callback(tuples, enriched_ctx)
       return
     end
     if client_with_actions[2].title then
-      action_title = '[' .. index .. '] ' .. clean_msg(client_with_actions[2].title)
+      action_title = '**' .. index .. '** ' .. clean_msg(client_with_actions[2].title)
     end
     if config.code_action.show_server_name == true then
       if type(client_with_actions[1]) == 'string' then
@@ -64,8 +65,10 @@ function act:action_callback(tuples, enriched_ctx)
 
   if config.ui.title then
     float_opt.title = {
-      { config.ui.code_action .. ' Code Actions', 'Title' },
-      { ' ' .. #content .. ' ', 'SagaCount' },
+      { config.ui.button[1], 'SagaButton' },
+      { config.ui.code_action .. 'Actions: ', 'SagaActionTitle' },
+      { tostring(#content), 'SagaActionTitle' },
+      { config.ui.button[2], 'SagaButton' },
     }
   end
 
@@ -78,36 +81,28 @@ function act:action_callback(tuples, enriched_ctx)
     :new_float(float_opt, true)
     :setlines(content)
     :bufopt({
-      ['filetype'] = 'saga_codeaction',
       ['buftype'] = 'nofile',
       ['bufhidden'] = 'wipe',
       ['modifiable'] = false,
+      ['filetype'] = 'markdown',
     })
     :winopt({
       ['conceallevel'] = 2,
       ['concealcursor'] = 'niv',
-      ['cursorline'] = config.code_action.cursorline,
-      ['cursorlineopt'] = 'both',
     })
     :winhl('SagaNormal', 'SagaBorder')
     :wininfo()
-
   -- initial position in code action window
   api.nvim_win_set_cursor(self.action_winid, { 1, 1 })
-
+  api.nvim_win_set_hl_ns(self.action_winid, ns)
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.action_bufnr,
     callback = function()
       self:set_cursor(tuples)
     end,
   })
-
-  vim.opt.winhl:append('CursorLine:CodeActionCursorLine')
   for i = 1, #content, 1 do
-    local row = i - 1
-    local col = content[i]:find('%]')
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', row, 0, -1)
-    api.nvim_buf_add_highlight(self.action_bufnr, 0, 'CodeActionNumber', row, 0, col)
+    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', i - 1, 0, -1)
   end
 
   self:apply_action_keys(tuples, enriched_ctx)
@@ -217,7 +212,7 @@ end
 local function get_num()
   local num
   local cur_text = api.nvim_get_current_line()
-  num = cur_text:match('%[(%d+)%]%s+%S')
+  num = cur_text:match('%*%*(%d+)%*%*')
   if num then
     num = tonumber(num)
   end
@@ -225,15 +220,15 @@ local function get_num()
 end
 
 function act:set_cursor(action_tuples)
+  api.nvim_buf_clear_namespace(self.action_bufnr, ns, 0, -1)
   local col = 1
   local current_line = api.nvim_win_get_cursor(self.action_winid)[1]
-
   if current_line == #action_tuples + 1 then
     api.nvim_win_set_cursor(self.action_winid, { 1, col })
   else
     api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
-
+  api.nvim_buf_add_highlight(self.action_bufnr, ns, 'SagaSelect', current_line - 1, 0, -1)
   local num = get_num()
   if not num or not action_tuples[num] then
     return

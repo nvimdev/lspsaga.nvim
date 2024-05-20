@@ -2,7 +2,6 @@ local api, lsp = vim.api, vim.lsp
 local config = require('lspsaga').config
 local win = require('lspsaga.window')
 local util = require('lspsaga.util')
-local act = require('lspsaga.codeaction')
 
 local function get_action_diff(main_buf, tuple)
   if not tuple or not tuple[2] then
@@ -10,6 +9,7 @@ local function get_action_diff(main_buf, tuple)
   end
   local id, action = unpack(tuple)
   local client = lsp.get_client_by_id(id)
+  local act = require('lspsaga.codeaction')
   if not action.edit and client and act:support_resolve(client) then
     action = act:get_resolve_action(client, action, main_buf)
     if not action then
