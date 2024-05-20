@@ -209,16 +209,6 @@ function act:send_request(main_buf, options, callback)
   end)
 end
 
-local function get_num()
-  local num
-  local cur_text = api.nvim_get_current_line()
-  num = cur_text:match('%*%*(%d+)%*%*')
-  if num then
-    num = tonumber(num)
-  end
-  return num
-end
-
 function act:set_cursor(action_tuples)
   api.nvim_buf_clear_namespace(self.action_bufnr, ns, 0, -1)
   local col = 1
@@ -229,7 +219,7 @@ function act:set_cursor(action_tuples)
     api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
   api.nvim_buf_add_highlight(self.action_bufnr, ns, 'SagaSelect', current_line - 1, 0, -1)
-  local num = get_num()
+  local num = util.get_bold_num()
   if not num or not action_tuples[num] then
     return
   end
@@ -293,7 +283,7 @@ end
 
 function act:apply_action_keys(action_tuples, enriched_ctx)
   map_keys('n', config.code_action.keys.exec, function()
-    local num = get_num()
+    local num = util.get_bold_num()
     if not num then
       return
     end

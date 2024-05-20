@@ -27,11 +27,6 @@ local function clean_ctx()
   end
 end
 
-local function get_num()
-  local line = api.nvim_get_current_line()
-  return line:match('%*%*(%d+)%*%*')
-end
-
 local function gen_float_title(counts)
   local t = {}
   for i, v in ipairs(counts) do
@@ -120,8 +115,11 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
     buffer = self.float_bufnr,
     callback = function()
       local curline = api.nvim_win_get_cursor(self.float_winid)[1]
-      if curline > 4 then
-        local tuple = action_tuples[tonumber(get_num())]
+      if curline >= start_line + 1 then
+        api.nvim_buf_clear_namespace(self.float_bufnr, ns, 0, -1)
+        local num = util.get_bold_num()
+        local tuple = action_tuples[num]
+        api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', curline - 1, 6, -1)
         action_preview(self.float_winid, self.main_buf, tuple)
       end
     end,
@@ -145,7 +143,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
         api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', curlnum - 1, 6, -1)
       end
 
-      local tuple = action_tuples[tonumber(get_num())]
+      local tuple = action_tuples[util.get_bold_num()]
       if tuple then
         action_preview(self.float_winid, self.main_buf, tuple)
       end
@@ -200,11 +198,10 @@ function diag:get_cursor_diagnostic()
 end
 
 function diag:do_code_action(action_tuples, enriched_ctx)
-  local num = get_num()
+  local num = util.get_bold_num()
   if not num then
     return
   end
-
   if action_tuples[num] then
     act:do_code_action(num, action_tuples[num], enriched_ctx)
     self:close_win()
