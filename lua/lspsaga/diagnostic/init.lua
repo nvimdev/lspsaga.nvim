@@ -73,9 +73,7 @@ function diag:get_diagnostic(opt)
 end
 
 function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
-  local contents = {
-    util.gen_truncate_line(win_conf.width),
-  }
+  local contents = {}
   for index, client_with_actions in pairs(action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('[lspsaga] failed indexing client actions')
@@ -86,6 +84,13 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
       contents[#contents + 1] = action_title
     end
   end
+  local max_content_len = util.get_max_content_length(contents)
+  local orig_win_width = api.nvim_win_get_width(win_conf.win)
+  if max_content_len > win_conf.width and max_content_len < orig_win_width then
+    win_conf.width = (max_content_len - win_conf.width) + win_conf.width
+  end
+  api.nvim_win_set_config(self.float_winid, win_conf)
+  table.insert(contents, 1, util.gen_truncate_line(win_conf.width))
   local increase = util.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
   local start_line = api.nvim_buf_line_count(self.float_bufnr) + 1
   local limit_height = math.floor(api.nvim_win_get_height(0) / 3)
