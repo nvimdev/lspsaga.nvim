@@ -142,6 +142,7 @@ local function create_preview_win(content, main_winid)
       ['bufhidden'] = 'wipe',
       ['buftype'] = 'nofile',
       ['modifiable'] = false,
+      ['buflisted'] = false,
     })
     :winhl('ActionPreviewNormal', 'ActionPreviewBorder')
     :wininfo()
