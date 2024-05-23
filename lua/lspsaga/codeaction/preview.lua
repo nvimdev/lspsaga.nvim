@@ -68,6 +68,7 @@ local function get_action_diff(main_buf, tuple)
   end, lines)
 
   api.nvim_buf_delete(tmp_buf, { force = true })
+  ---@diagnostic disable-next-line: missing-fields
   local diff = vim.diff(table.concat(lines), table.concat(data), {
     algorithm = 'minimal',
     ctxlen = 0,
@@ -79,6 +80,7 @@ local function get_action_diff(main_buf, tuple)
 
   diff = vim.tbl_filter(function(item)
     return not item:find('@@%s')
+    ---@diagnostic disable-next-line: param-type-mismatch
   end, vim.split(diff, '\n'))
   return diff
 end
@@ -104,7 +106,7 @@ local function create_preview_win(content, main_winid)
     opt.width = math.min(max_win_width, content_width)
   end
   local winheight = api.nvim_win_get_height(win_conf.win)
-  local margin = config.ui.border == 'none' and 0 or 2
+  local margin = config.ui.border == 'none' and 2 or 4
   local north = win_conf.anchor:sub(1, 1) == 'N'
   local row = util.is_ten and win_conf.row or win_conf.row[false]
   local valid_top_height = north and row or row - win_conf.height - margin
@@ -113,18 +115,19 @@ local function create_preview_win(content, main_winid)
   local new_win_height = #content + margin
   -- action is NW under cursor and top is enough to show preview
   local east_or_west = win_conf.anchor:sub(2, 2)
+  new_win_height = math.min(new_win_height, math.max(valid_bot_height, valid_top_height))
   if north then
-    if valid_top_height > new_win_height then
+    if valid_top_height >= new_win_height then
       opt.anchor = 'S' .. east_or_west
       opt.row = row
       opt.height = math.min(valid_top_height, #content)
-    elseif valid_bot_height > new_win_height then
+    elseif valid_bot_height >= new_win_height then
       opt.anchor = 'N' .. east_or_west
       opt.row = row + win_conf.height + margin
       opt.height = math.min(valid_bot_height, #content)
     end
   else
-    if valid_bot_height > new_win_height then
+    if valid_bot_height >= new_win_height then
       opt.anchor = 'N' .. east_or_west
       opt.row = row
       opt.height = math.min(valid_bot_height, #content)
@@ -134,6 +137,7 @@ local function create_preview_win(content, main_winid)
       opt.height = math.min(valid_top_height, #content)
     end
   end
+  print(vim.inspect(opt))
   preview_buf, preview_winid = win
     :new_float(opt, false, true)
     :setlines(content)
