@@ -113,9 +113,11 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
     end
     self.number_count = #action_tuples
   end
-  api.nvim_win_set_cursor(self.float_winid, { start_line + 1, 0 })
-  api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line, 6, -1)
-  action_preview(self.float_winid, curbuf, action_tuples[1])
+  if diag_conf.auto_preview then
+    api.nvim_win_set_cursor(self.float_winid, { start_line + 1, 0 })
+    api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line, 6, -1)
+    action_preview(self.float_winid, curbuf, action_tuples[1])
+  end
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.float_bufnr,
     callback = function()
