@@ -258,6 +258,13 @@ function diag:goto_pos(pos, opts)
   (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend('keep', {
     float = {
       border = config.ui.border,
+      format = function(diagnostic)
+        if not vim.bo[api.nvim_get_current_buf()].filetype == 'rust' then
+          return diagnostic.message
+        end
+        return diagnostic.message:find('\n`') and diagnostic.message:gsub('\n`', '`')
+          or diagnostic.message
+      end,
       header = '',
       prefix = { '• ', 'Title' },
     },
