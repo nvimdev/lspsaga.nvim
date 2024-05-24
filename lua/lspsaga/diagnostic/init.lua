@@ -262,7 +262,7 @@ function diag:goto_pos(pos, opts)
         if not vim.bo[api.nvim_get_current_buf()].filetype == 'rust' then
           return diagnostic.message
         end
-        return diagnostic.message:find('\n`') and diagnostic.message:gsub('\n`', '`')
+        return diagnostic.message:find('\n`$') and diagnostic.message:gsub('\n`$', '`')
           or diagnostic.message
       end,
       header = '',
