@@ -160,6 +160,12 @@ function hover:open_floating_preview(content, option_fn)
   )
 
   util.scroll_in_float(curbuf, self.winid)
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = self.bufnr,
+    callback = function()
+      util.delete_scroll_map(curbuf)
+    end,
+  })
 
   util.map_keys(self.bufnr, 'q', function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
