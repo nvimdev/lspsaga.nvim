@@ -4,17 +4,12 @@ local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 
 local function get_action_diff(main_buf, tuple)
-  if not tuple then
+  if not tuple or not tuple[2] then
     return
   end
-  local act = require('lspsaga.codeaction')
-  local action = tuple[2]
-  if not action then
-    return
-  end
-
-  local id = tuple[1]
+  local id, action = unpack(tuple)
   local client = lsp.get_client_by_id(id)
+  local act = require('lspsaga.codeaction')
   if not action.edit and client and act:support_resolve(client) then
     action = act:get_resolve_action(client, action, main_buf)
     if not action then
@@ -22,7 +17,6 @@ local function get_action_diff(main_buf, tuple)
     end
     tuple[2] = action
   end
-
   if not action.edit then
     return
   end
@@ -74,6 +68,7 @@ local function get_action_diff(main_buf, tuple)
   end, lines)
 
   api.nvim_buf_delete(tmp_buf, { force = true })
+  ---@diagnostic disable-next-line: missing-fields
   local diff = vim.diff(table.concat(lines), table.concat(data), {
     algorithm = 'minimal',
     ctxlen = 0,
@@ -85,6 +80,7 @@ local function get_action_diff(main_buf, tuple)
 
   diff = vim.tbl_filter(function(item)
     return not item:find('@@%s')
+    ---@diagnostic disable-next-line: param-type-mismatch
   end, vim.split(diff, '\n'))
   return diff
 end
@@ -113,24 +109,25 @@ local function create_preview_win(content, main_winid)
   local margin = config.ui.border == 'none' and 0 or 2
   local north = win_conf.anchor:sub(1, 1) == 'N'
   local row = util.is_ten and win_conf.row or win_conf.row[false]
-  local valid_top_height = north and row or row - win_conf.height - margin
+  local valid_top_height = north and row - 1 or row - win_conf.height - margin - 1
   local valid_bot_height = north and winheight - row - win_conf.height - margin
     or winheight - row - margin
   local new_win_height = #content + margin
   -- action is NW under cursor and top is enough to show preview
   local east_or_west = win_conf.anchor:sub(2, 2)
+  new_win_height = math.min(new_win_height, math.max(valid_bot_height, valid_top_height))
   if north then
-    if valid_top_height > new_win_height then
+    if valid_top_height >= new_win_height then
       opt.anchor = 'S' .. east_or_west
       opt.row = row
       opt.height = math.min(valid_top_height, #content)
-    elseif valid_bot_height > new_win_height then
+    elseif valid_bot_height >= new_win_height then
       opt.anchor = 'N' .. east_or_west
       opt.row = row + win_conf.height + margin
-      opt.height = math.min(valid_bot_height, #content)
+      opt.height = math.min(valid_bot_height, #content) - 2
     end
   else
-    if valid_bot_height > new_win_height then
+    if valid_bot_height >= new_win_height then
       opt.anchor = 'N' .. east_or_west
       opt.row = row
       opt.height = math.min(valid_bot_height, #content)
@@ -148,6 +145,7 @@ local function create_preview_win(content, main_winid)
       ['bufhidden'] = 'wipe',
       ['buftype'] = 'nofile',
       ['modifiable'] = false,
+      ['buflisted'] = false,
     })
     :winhl('ActionPreviewNormal', 'ActionPreviewBorder')
     :wininfo()
@@ -172,7 +170,7 @@ local function action_preview(main_winid, main_buf, tuple)
     api.nvim_buf_set_lines(preview_buf, 0, -1, false, diff)
     vim.bo[preview_buf].modifiable = false
     local win_conf = api.nvim_win_get_config(preview_winid)
-    win_conf.height = #diff
+    win_conf.height = math.min(win_conf.height, #diff)
     local new_width = util.get_max_content_length(diff)
     local main_width = api.nvim_win_get_width(main_winid)
     win_conf.width = new_width < main_width and main_width or new_width

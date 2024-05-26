@@ -27,11 +27,6 @@ local function clean_ctx()
   end
 end
 
-local function get_num()
-  local line = api.nvim_get_current_line()
-  return line:match('%*%*(%d+)%*%*')
-end
-
 local function gen_float_title(counts)
   local t = {}
   for i, v in ipairs(counts) do
@@ -77,14 +72,8 @@ function diag:get_diagnostic(opt)
   return vim.diagnostic.get()
 end
 
-function diag:code_action_cb(action_tuples, enriched_ctx, counts)
-  local win_conf = api.nvim_win_get_config(self.float_winid)
-  win_conf.title = gen_float_title(counts)
-  api.nvim_win_set_config(self.float_winid, win_conf)
-  local contents = {
-    util.gen_truncate_line(win_conf.width),
-  }
-
+function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
+  local contents = {}
   for index, client_with_actions in pairs(action_tuples) do
     if #client_with_actions ~= 2 then
       vim.notify('[lspsaga] failed indexing client actions')
@@ -95,6 +84,13 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
       contents[#contents + 1] = action_title
     end
   end
+  local max_content_len = util.get_max_content_length(contents)
+  local orig_win_width = api.nvim_win_get_width(win_conf.win)
+  if max_content_len > win_conf.width and max_content_len < orig_win_width then
+    win_conf.width = (max_content_len - win_conf.width) + win_conf.width
+  end
+  api.nvim_win_set_config(self.float_winid, win_conf)
+  table.insert(contents, 1, util.gen_truncate_line(win_conf.width))
   local increase = util.win_height_increase(contents, math.abs(win_conf.width / vim.o.columns))
   local start_line = api.nvim_buf_line_count(self.float_bufnr) + 1
   local limit_height = math.floor(api.nvim_win_get_height(0) / 3)
@@ -117,15 +113,20 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
     end
     self.number_count = #action_tuples
   end
-  api.nvim_win_set_cursor(self.float_winid, { start_line + 1, 0 })
-  api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line, 6, -1)
-  action_preview(self.float_winid, curbuf, action_tuples[1])
+  if diag_conf.auto_preview then
+    api.nvim_win_set_cursor(self.float_winid, { start_line + 1, 0 })
+    api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line, 6, -1)
+    action_preview(self.float_winid, curbuf, action_tuples[1])
+  end
   api.nvim_create_autocmd('CursorMoved', {
     buffer = self.float_bufnr,
     callback = function()
       local curline = api.nvim_win_get_cursor(self.float_winid)[1]
-      if curline > 4 then
-        local tuple = action_tuples[tonumber(get_num())]
+      if curline >= start_line + 1 then
+        api.nvim_buf_clear_namespace(self.float_bufnr, ns, 0, -1)
+        local num = util.get_bold_num()
+        local tuple = action_tuples[num]
+        api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', curline - 1, 6, -1)
         action_preview(self.float_winid, self.main_buf, tuple)
       end
     end,
@@ -149,7 +150,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, counts)
         api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', curlnum - 1, 6, -1)
       end
 
-      local tuple = action_tuples[tonumber(get_num())]
+      local tuple = action_tuples[util.get_bold_num()]
       if tuple then
         action_preview(self.float_winid, self.main_buf, tuple)
       end
@@ -204,11 +205,10 @@ function diag:get_cursor_diagnostic()
 end
 
 function diag:do_code_action(action_tuples, enriched_ctx)
-  local num = get_num()
+  local num = util.get_bold_num()
   if not num then
     return
   end
-
   if action_tuples[num] then
     act:do_code_action(num, action_tuples[num], enriched_ctx)
     self:close_win()
@@ -255,9 +255,16 @@ function diag:goto_pos(pos, opts)
   if not entry then
     return
   end
-  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend("keep", {
+  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend('keep', {
     float = {
       border = config.ui.border,
+      format = function(diagnostic)
+        if not vim.bo[api.nvim_get_current_buf()].filetype == 'rust' then
+          return diagnostic.message
+        end
+        return diagnostic.message:find('\n`$') and diagnostic.message:gsub('\n`$', '`')
+          or diagnostic.message
+      end,
       header = '',
       prefix = { '• ', 'Title' },
     },
@@ -285,6 +292,9 @@ function diag:goto_pos(pos, opts)
     end
     local curbuf = api.nvim_get_current_buf()
     local diagnostics, counts = self:get_cursor_diagnostic()
+    local win_conf = api.nvim_win_get_config(self.float_winid)
+    win_conf.title = gen_float_title(counts)
+    api.nvim_win_set_config(self.float_winid, win_conf)
     act:send_request(curbuf, {
       context = { diagnostics = diagnostics },
       range = {
@@ -298,7 +308,7 @@ function diag:goto_pos(pos, opts)
       end
       vim.bo[self.float_bufnr].modifiable = true
       self.main_buf = curbuf
-      self:code_action_cb(action_tuples, enriched_ctx, counts)
+      self:code_action_cb(action_tuples, enriched_ctx, win_conf)
       vim.bo[self.float_bufnr].modifiable = false
     end)
   end)
