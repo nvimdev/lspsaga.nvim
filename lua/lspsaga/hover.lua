@@ -328,10 +328,6 @@ function hover:do_request(args)
 end
 
 function hover:render_hover_doc(args)
-  local diag_winid = require('lspsaga.diagnostic').winid
-  if diag_winid and api.nvim_win_is_valid(diag_winid) then
-    require('lspsaga.diagnostic'):clean_data()
-  end
   args = args or {}
   util.valid_markdown_parser()
   if self.winid and api.nvim_win_is_valid(self.winid) then
