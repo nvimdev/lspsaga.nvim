@@ -335,7 +335,6 @@ function hover:render_hover_doc(args)
       api.nvim_set_current_win(self.winid)
       return
     else
-      util.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.winid, true)
       self:clean()
       return
