@@ -158,7 +158,6 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
   end
 
   util.map_keys(self.float_bufnr, diag_conf.keys.exec_action, function()
-    self:close_win()
     self:do_code_action(action_tuples, enriched_ctx)
   end)
 
@@ -210,8 +209,9 @@ function diag:do_code_action(action_tuples, enriched_ctx)
     return
   end
   if action_tuples[num] then
-    act:do_code_action(num, action_tuples[num], enriched_ctx)
-    self:close_win()
+    local action = action_tuples[num][2]
+    local client = lsp.get_client_by_id(action_tuples[num][1])
+    act:do_code_action(action, client, enriched_ctx)
   end
   self:clean_data()
 end
