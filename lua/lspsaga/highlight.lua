@@ -77,6 +77,7 @@ local function init_highlight()
     api.nvim_set_hl(0, 'Diagnostic' .. v .. 'Reverse', {
       bg = color.fg,
       fg = 'Black',
+      default = true,
     })
   end
 
