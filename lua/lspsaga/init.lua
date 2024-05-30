@@ -96,13 +96,13 @@ local default_config = {
     height = 0.5,
     save_pos = false,
     keys = {
-      edit = '<C-c>o',
-      vsplit = '<C-c>v',
-      split = '<C-c>i',
-      tabe = '<C-c>t',
+      edit = '<C-o>',
+      vsplit = '<C-v>',
+      split = '<C-x>',
+      tabe = '<C-t>',
       tabnew = '<C-c>n',
       quit = 'q',
-      close = '<C-c>k',
+      close = '<C-c>',
     },
   },
   rename = {
