@@ -29,8 +29,10 @@ end
 
 local function gen_float_title(counts)
   local t = {}
+  local found = 0
   for i, v in ipairs(counts) do
     if v > 0 then
+      found = found + 1
       local hi = 'Diagnostic' .. vim.diagnostic.severity[i]
       t[#t + 1] = { config.ui.button[1], hi }
       t[#t + 1] = {
@@ -40,7 +42,7 @@ local function gen_float_title(counts)
       t[#t + 1] = { config.ui.button[2], hi }
     end
   end
-  return t
+  return found > 1 and t or nil
 end
 
 ---get the line or cursor diagnostics
