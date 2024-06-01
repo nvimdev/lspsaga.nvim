@@ -102,7 +102,7 @@ local default_config = {
       tabe = '<C-t>',
       tabnew = '<C-c>n',
       quit = 'q',
-      close = '<C-c>',
+      close = '<ESC>',
     },
   },
   rename = {
