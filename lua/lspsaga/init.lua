@@ -124,7 +124,7 @@ local default_config = {
     show_file = true,
     folder_level = 1,
     color_mode = true,
-    dely = 300,
+    delay = 300,
   },
   outline = {
     win_position = 'right',
