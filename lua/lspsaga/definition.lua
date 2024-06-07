@@ -121,6 +121,10 @@ function def:create_win(bufnr, root_dir)
   if util.ismac and (vim.bo[bufnr].filetype == 'c' or vim.bo[bufnr].filetype == 'cpp') then
     fname = util.sub_mac_c_header(fname)
   end
+  if vim.bo[bufnr].filetype == 'rust' then
+    fname = util.sub_rust_toolchains(fname)
+  end
+
   if not self.list or vim.tbl_isempty(self.list) then
     local float_opt = {
       width = math.floor(api.nvim_win_get_width(0) * config.definition.width),

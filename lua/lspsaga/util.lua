@@ -235,4 +235,12 @@ function M.get_bold_num()
   return num
 end
 
+function M.sub_rust_toolchains(fname)
+  local rustup_home = os.getenv('RUSTUP_HOME') or vim.fs.joinpath(vim.env.HOME, '.rustup')
+  local toolchains = vim.fs.joinpath(rustup_home, 'toolchains')
+  local parts = vim.split(fname, M.path_sep, { trimempty = true })
+  local count = #vim.split(toolchains, M.path_sep, { trimempty = true })
+  return vim.fs.joinpath(unpack(parts, count + 1))
+end
+
 return M
