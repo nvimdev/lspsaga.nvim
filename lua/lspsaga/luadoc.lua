@@ -17,13 +17,11 @@
 ---@field public beacon? LspsagaConfig.Beacon Beacon
 ---@field public floaterm? LspsagaConfig.Term Floating terminal
 
-
 ---@class LspsagaConfig.Definition
 ---@field width? number defines float window width
 ---@field height? number defines float window height
 ---@field save_pos? boolean Saves cursor position
 ---@field keys? LspsagaConfig.Definition.Keys
-
 
 ---@class LspsagaConfig.Rename
 ---@field in_select? boolean
@@ -31,7 +29,6 @@
 ---@field project_max_width? number
 ---@field project_max_height? number
 ---@field keys? LspsagaConfig.Rename.Keys
-
 
 ---@class LspsagaConfig.Crumbs
 ---@field enable? boolean Enable breadcrumbs
@@ -42,7 +39,6 @@
 ---@field folder_level? integer Show how many folder layers before the file name
 ---@field color_mode? boolean mean the symbol name and icon have same color. Otherwise, symbol name is light-white
 ---@field delay? integer Dynamic render delay
-
 
 ---@class LspsagaConfig.Outline
 ---@field win_position? "left" | "right" window position
@@ -56,12 +52,10 @@
 ---@field left_width? number Width of left panel
 ---@field keys? LspsagaConfig.Outline.Keys
 
-
 ---@class LspsagaConfig.Hierarchy
 ---@field layout? LayoutOption
 ---@field left_width? number Width of left panel
 ---@field keys? LspsagaConfig.Hierarchy.Keys
-
 
 ---@class LspsagaConfig.Implement
 ---@field enable? boolean Enable implementation plugin
@@ -70,11 +64,9 @@
 ---@field virtual_text? boolean show virtual text at the end of line
 ---@field priority? integer sign priority
 
-
 ---@class LspsagaConfig.Term
 ---@field height? number Floating terminal height
 ---@field width? number Floating terminal width
-
 
 ---@class LspsagaConfig.Ui
 ---@field border? BorderType Border type, see `:help nvim_open_win`
@@ -89,13 +81,11 @@
 ---@field button? [string, string] Button icon { '', '' }
 ---@field imp_sign? string Implement icon
 
-
 ---@class LspsagaConfig.Hover
 ---@field max_width? number Defines float window width
 ---@field max_height? number Defines float window height
 ---@field open_link? string Key for opening links
 ---@field open_cmd? string Cmd for opening links
-
 
 ---@class LspsagaConfig.Diagnostic
 ---@field show_layout? LayoutOption Config layout of diagnostic window not jump window
@@ -106,13 +96,10 @@
 ---@field max_height? number Diagnostic jump window max height
 ---@field max_show_width? number Show window max width when layout is float
 ---@field max_show_height? number Show window max height when layout is float
----@field text_hl_follow? boolean Diagnostic jump window text highlight follow diagnostic type
----@field border_follow? boolean Diagnostic jump window border highlight follow diagnostic type
 ---@field wrap_long_lines? boolean Wrap long lines
 ---@field extend_relatedInformation? boolean When have relatedInformation, diagnostic message is extended to show it
 ---@field diagnostic_only_current? boolean Only show diagnostic virtual text on the current line
 ---@field keys? LspsagaConfig.Diagnostic.Keys
-
 
 ---@class LspsagaConfig.CodeAction
 ---@field num_shortcut? boolean Enable number shortcuts to execute code action quickly
@@ -123,7 +110,6 @@
 ---@field cursorline? boolean code action window highlight cursor line
 ---@field keys? LspsagaConfig.CodeAction.Keys
 
-
 ---@class LspsagaConfig.Lightbulb
 ---@field enable? boolean enable lightbulb
 ---@field sign? boolean show sign in status column
@@ -131,7 +117,6 @@
 ---@field sign_priority? integer sign priority
 ---@field virtual_text? boolean show virtual text at the end of line
 ---@field enable_in_insert? boolean enable virtual text in insert mode
-
 
 ---@class LspsagaConfig.Finder
 ---@field max_height? number max_height of the finder window (float layout)
@@ -147,16 +132,13 @@
 ---@field ly_botright? boolean
 ---@field keys? LspsagaConfig.Finder.Keys
 
-
 ---@class LspsagaConfig.Beacon
 ---@field enable? boolean Enable beacon
 ---@field frequency? integer
 
-
 ---@class LspsagaConfig.Scroll.Keys
 ---@field scroll_down? SagaKeys
 ---@field scroll_up? SagaKeys
-
 
 ---@class LspsagaConfig.Diagnostic.Keys
 ---@field exec_action? SagaKeys execute action (in jump window)
@@ -164,11 +146,9 @@
 ---@field toggle_or_jump? SagaKeys toggle or jump to position when in `diagnostic_show` window
 ---@field quit_in_show? SagaKeys quit key for the `diagnostic_show` window
 
-
 ---@class LspsagaConfig.CodeAction.Keys
 ---@field quit? SagaKeys quit the float window
 ---@field exec? SagaKeys execute action
-
 
 ---@class LspsagaConfig.Finder.Keys
 ---@field shuttle? SagaKeys shuttle between the finder layout window
@@ -180,7 +160,6 @@
 ---@field quit? SagaKeys quit the finder; only works in layout left window
 ---@field close? SagaKeys close the finder
 
-
 ---@class LspsagaConfig.Hierarchy.Keys
 ---@field edit? SagaKeys
 ---@field vsplit? SagaKeys open in vsplit
@@ -191,12 +170,10 @@
 ---@field close? SagaKeys close the hierarchy
 ---@field toggle_or_req? SagaKeys toggle or do request
 
-
 ---@class LspsagaConfig.Outline.Keys
 ---@field toggle_or_jump? SagaKeys toggle or jump
 ---@field quit? SagaKeys quit
 ---@field jump? SagaKeys jump to pos even on expand/collapse node
-
 
 ---@class LspsagaConfig.Definition.Keys
 ---@field edit? SagaKeys
@@ -206,17 +183,14 @@
 ---@field quit? SagaKeys quit the definition
 ---@field close? SagaKeys close the definition
 
-
 ---@class LspsagaConfig.Rename.Keys
 ---@field quit? SagaKeys quit rename window or `project_replace` window
 ---@field exec? SagaKeys execute rename in `rename` window or execute replace in `project_replace` window
 ---@field select? SagaKeys select or cancel select item in `project_replace` float window
 
-
 ---@alias LayoutOption "float" | "normal"
 ---@alias BorderType "none" | "single" | "double" | "rounded" | "solid" | "shadow" | string[]
 ---@alias SagaKeys string | string[]
-
 
 ---@class LspMethods
 ---@field [string] string Keys are alias of LSP methods. Values are LSP methods, which you want to show in finder.
