@@ -100,6 +100,12 @@ local function lb_autocmd()
       if not client.supports_method('textDocument/codeAction') then
         return
       end
+      if vim.tbl_contains(config.lightbulb.ignore.clients, client.name) then
+        return
+      end
+      if vim.tbl_contains(config.lightbulb.ignore.ft, vim.bo.filetype) then
+        return
+      end
 
       local buf = opt.buf
       local group_name = name .. tostring(buf)
