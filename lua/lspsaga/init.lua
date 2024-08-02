@@ -15,6 +15,7 @@ local default_config = {
     kind = nil,
     button = { '', '' },
     imp_sign = '󰳛 ',
+    use_nerd = true,
   },
   hover = {
     max_width = 0.9,

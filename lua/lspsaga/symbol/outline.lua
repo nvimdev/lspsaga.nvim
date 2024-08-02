@@ -2,7 +2,7 @@ local ot = {}
 local api, fn = vim.api, vim.fn
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
-local kind = require('lspsaga.lspkind').kind
+local get_kind_icon = require('lspsaga.lspkind').get_kind_icon
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
@@ -124,8 +124,9 @@ function ot:parse(symbols, curline)
         end
       end
 
+      local hl, icon = unpack(get_kind_icon(node.kind))
       buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
-        virt_text = { { kind[node.kind][2], 'Saga' .. kind[node.kind][1] } },
+        virt_text = { { icon, 'Saga' .. hl } },
         virt_text_pos = 'overlay',
       })
       local inlevel = 4 + 2 * level
@@ -214,7 +215,7 @@ function ot:collapse(node, curlnum)
   local tmp = node.next
 
   while tmp do
-    local icon = kind[tmp.value.kind][2]
+    local hl, icon = unpack(get_kind_icon(tmp.value.kind))
     local level = tmp.value.inlevel
     buf_set_lines(
       self.bufnr,
@@ -229,7 +230,7 @@ function ot:collapse(node, curlnum)
       tmp.value.expand = true
     end
     buf_set_extmark(self.bufnr, ns, row, level - 2, {
-      virt_text = { { icon, 'Saga' .. kind[tmp.value.kind][1] } },
+      virt_text = { { icon, 'Saga' .. hl } },
       virt_text_pos = 'overlay',
     })
     local has_child = tmp.next and tmp.next.value.inlevel > level

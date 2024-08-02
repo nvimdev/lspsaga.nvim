@@ -56,7 +56,7 @@ local function render(bufnr)
   local row = api.nvim_win_get_cursor(0)[1] - 1
   local params = lsp.util.make_range_params()
   params.context = {
-    diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr),
+    diagnostics = vim.diagnostic.get(bufnr, { lnum = row + 1 }),
   }
 
   lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(_, result, _)
@@ -72,7 +72,7 @@ local function render(bufnr)
   end)
 end
 
-local timer = uv.new_timer()
+local timer = assert(uv.new_timer())
 
 local function update(buf)
   timer:stop()
