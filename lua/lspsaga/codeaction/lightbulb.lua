@@ -75,12 +75,13 @@ local function tags_vim_to_lsp(diagnostic)
   end
   return tags
 end
+
 local function diagnostic_vim_to_lsp(diagnostics)
   ---@param diagnostic vim.Diagnostic
   ---@return lsp.Diagnostic
   return vim.tbl_map(function(diagnostic)
     local user_data = diagnostic.user_data or {}
-    if user_data.lsp then
+    if user_data.lsp and not vim.tbl_isempty(user_data.lsp) then
       return user_data.lsp
     end
     return {
