@@ -87,11 +87,11 @@ local function diagnostic_vim_to_lsp(diagnostics)
     return {
       range = {
         start = {
-          line = diagnostic.lnum,
+          line = diagnostic.lnum + 1,
           character = diagnostic.col,
         },
         ['end'] = {
-          line = diagnostic.end_lnum,
+          line = diagnostic.end_lnum + 1,
           character = diagnostic.end_col,
         },
       },
@@ -108,7 +108,7 @@ local function render(bufnr)
   local row = api.nvim_win_get_cursor(0)[1] - 1
   local params = lsp.util.make_range_params()
   params.context = {
-    diagnostics = diagnostic_vim_to_lsp(vim.diagnostic.get(bufnr, { lnum = row + 1 })),
+    diagnostics = diagnostic_vim_to_lsp(vim.diagnostic.get(bufnr, { lnum = row })),
   }
 
   lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(_, result, _)
