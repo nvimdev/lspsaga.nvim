@@ -23,7 +23,7 @@ local function path_in_bar(buf)
   local items = {}
   local folder
   if ui.foldericon then
-    folder = get_kind_icon(302)[2]
+    folder = ui.winbar_prefix .. get_kind_icon(302)[2]
   end
 
   for item in util.path_itera(buf) do
@@ -34,7 +34,7 @@ local function path_in_bar(buf)
         and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item
       or bar.prefix
         .. 'Folder#'
-        .. (folder and folder or '')
+        .. (folder and folder or ui.winbar_prefix)
         .. '%*'
         .. bar.prefix
         .. 'FolderName#'
