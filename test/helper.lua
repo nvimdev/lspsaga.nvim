@@ -57,10 +57,17 @@ local function lspconfig_dep()
   lspconfig.lua_ls.setup({})
 end
 
+local function extract_winbar_value(input, arg)
+  local pattern = '%%#' .. arg .. '#([^%%#]+)'
+  local winbar_value = string.match(input, pattern)
+  return winbar_value or ''
+end
+
 return {
   test_dir = test_dir,
   feedkey = feedkey,
   treesitter_dep = treesitter_dep,
   lspconfig_dep = lspconfig_dep,
   join_paths = join_paths,
+  extract_winbar_value = extract_winbar_value,
 }

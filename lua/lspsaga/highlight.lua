@@ -4,6 +4,7 @@ local kind = require('lspsaga.lspkind').kind
 local function hi_define()
   return {
     -- general
+    SagaPrefix = { link = 'Prefix' },
     SagaTitle = { link = 'Title' },
     SagaBorder = { link = 'FloatBorder' },
     SagaNormal = { link = 'NormalFloat' },
