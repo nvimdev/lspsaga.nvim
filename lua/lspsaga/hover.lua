@@ -231,7 +231,7 @@ function hover:do_request(args)
   end
   local count = 0
 
-  _, self.cancel = lsp.buf_request(0, method, params, function(_, result, ctx)
+  _, self.cancel = lsp.buf_request(0, method, params, function(_, result, ctx, _)
     count = count + 1
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
