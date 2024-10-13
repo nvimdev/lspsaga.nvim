@@ -140,6 +140,8 @@ function def:create_win(bufnr, root_dir)
       :winopt({
         ['winbar'] = '',
         ['signcolumn'] = 'no',
+        ['number'] = config.definition.number,
+        ['relativenumber'] = config.definition.relativenumber,
       })
       :winhl('SagaNormal', 'SagaBorder')
       :wininfo()
@@ -151,7 +153,13 @@ function def:create_win(bufnr, root_dir)
   win_conf.col = vim.version().minor >= 10 and win_conf.col or win_conf.col[false] + 1
   win_conf.height = win_conf.height - 1
   win_conf.width = win_conf.width - 2
-  return win:new_float(win_conf, true, true):wininfo()
+  return win
+    :new_float(win_conf, true, true)
+    :winopt({
+      ['number'] = config.definition.number,
+      ['relativenumber'] = config.definition.relativenumber,
+    })
+    :wininfo()
 end
 
 function def:clean_event()
