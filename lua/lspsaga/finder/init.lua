@@ -257,6 +257,14 @@ function fd:event()
           top = range.start.line
         end
         fn.winrestview({ topline = range.start.line + 1 - bit.rshift(height, 2) })
+        api.nvim_set_option_value('number', config.finder.number, {
+          scope = 'local',
+          win = self.rwinid,
+        })
+        api.nvim_set_option_value('relativenumber', config.finder.relativenumber, {
+          scope = 'local',
+          win = self.rwinid,
+        })
       end)
 
       buf_add_highlight(
