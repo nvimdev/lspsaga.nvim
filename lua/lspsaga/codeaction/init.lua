@@ -169,16 +169,18 @@ function act:send_request(main_buf, options, callback)
   end
   local params
   local mode = api.nvim_get_mode().mode
+  local client = vim.lsp.get_clients({ bufnr = main_buf })[1]
+  local offset_encoding = client and client.offset_encoding or 'utf-16'
   if options.range then
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
     local end_ = assert(options.range['end'], 'range must have a `end` property')
-    params = lsp.util.make_given_range_params(start, end_)
+    params = lsp.util.make_given_range_params(start, end_, offset_encoding)
   elseif mode == 'v' or mode == 'V' then
     local range = range_from_selection(0, mode)
     params = lsp.util.make_given_range_params(range.start, range['end'])
   else
-    params = lsp.util.make_range_params()
+    params = lsp.util.make_range_params(0, offset_encoding)
   end
 
   params.context = context
