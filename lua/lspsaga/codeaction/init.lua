@@ -175,7 +175,7 @@ function act:send_request(main_buf, options, callback)
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
     local end_ = assert(options.range['end'], 'range must have a `end` property')
-    params = lsp.util.make_given_range_params(start, end_, offset_encoding)
+    params = lsp.util.make_given_range_params(start, end_, nil, offset_encoding)
   elseif mode == 'v' or mode == 'V' then
     local range = range_from_selection(0, mode)
     params = lsp.util.make_given_range_params(range.start, range['end'])
