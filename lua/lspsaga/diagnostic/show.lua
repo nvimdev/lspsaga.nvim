@@ -36,10 +36,16 @@ end
 
 ---single linked list
 local function generate_list(entrys)
-  -- Sort diagnostics by severity (ascending: Error -> Warning -> Info -> Hint)
-  table.sort(entrys, function(a, b)
-    return a.severity < b.severity
-  end)
+  -- Safely check if severity_sort is enabled
+  local diagnostic_config = vim.diagnostic.config and vim.diagnostic.config()
+  local severity_sort_enabled = diagnostic_config and diagnostic_config.severity_sort
+
+  if severity_sort_enabled then
+    -- Sort diagnostics by severity (ascending: Error -> Warning -> Info -> Hint)
+    table.sort(entrys, function(a, b)
+      return a.severity < b.severity
+    end)
+  end
 
   local list = new_node()
 
