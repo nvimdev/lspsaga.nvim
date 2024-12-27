@@ -41,8 +41,17 @@ local function generate_list(entrys)
   local severity_sort_enabled = diagnostic_config and diagnostic_config.severity_sort
 
   if severity_sort_enabled then
-    -- Sort diagnostics by severity (ascending: Error -> Warning -> Info -> Hint)
+    -- Sort diagnostics by severity, then by line number, then by column number
     table.sort(entrys, function(a, b)
+      if a.severity == b.severity then
+        if a.lnum == b.lnum then
+          -- Sort by column if severity and line are equal
+          return a.col < b.col
+        end
+        -- Sort by line number if severities are equal
+        return a.lnum < b.lnum
+      end
+      -- Otherwise, sort by severity (ascending: Error -> Warning -> Info -> Hint)
       return a.severity < b.severity
     end)
   end
