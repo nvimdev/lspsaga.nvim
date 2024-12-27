@@ -36,6 +36,11 @@ end
 
 ---single linked list
 local function generate_list(entrys)
+  -- Sort diagnostics by severity (ascending: Error -> Warning -> Info -> Hint)
+  table.sort(entrys, function(a, b)
+    return a.severity < b.severity
+  end)
+
   local list = new_node()
 
   local curnode
