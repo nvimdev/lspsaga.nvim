@@ -86,6 +86,7 @@
 ---@field max_height? number Defines float window height
 ---@field open_link? string Key for opening links
 ---@field open_cmd? string Cmd for opening links
+---@field jump_on_first_press? boolean Jump directly into the hover window on the first press instead of the default two presses.
 
 ---@class LspsagaConfig.Diagnostic
 ---@field show_layout? LayoutOption Config layout of diagnostic window not jump window
