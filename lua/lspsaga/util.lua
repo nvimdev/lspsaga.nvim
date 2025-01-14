@@ -232,7 +232,11 @@ end
 ---@param fallback string
 ---@return string 'utf-8'|'utf-16'|'utf-32'
 function M.get_offset_encoding(filter, fallback)
-  vim.validate('filter', filter, 'table', true)
+  if vim.fn.has('nvim-0.11') == 1 then
+    vim.validate('filter', filter, 'table', true)
+  else
+    vim.validate({ filter = { filter, 'table' } })
+  end
   filter = filter or {}
   fallback = fallback or 'utf-16'
 
