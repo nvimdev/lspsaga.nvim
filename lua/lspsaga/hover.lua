@@ -249,7 +249,7 @@ function hover:do_request(args)
       else
         value = result.contents.value
       end
-    elseif vim.tbl_islist(result.contents) then -- MarkedString[]
+    elseif vim.islist(result.contents) then -- MarkedString[]
       if vim.tbl_isempty(result.contents) and ignore_error(args) then
         vim.notify('No information available')
         return

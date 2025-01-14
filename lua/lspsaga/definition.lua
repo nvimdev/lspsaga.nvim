@@ -227,7 +227,7 @@ function def:definition_request(method, handler_T, args)
     fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
     local res
-    if not vim.tbl_islist(result) then
+    if not vim.islist(result) then
       res = result
     elseif result[1] then
       res = result[1]
