@@ -2,6 +2,7 @@ local api, lsp, fn = vim.api, vim.lsp, vim.fn
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config
+local util = require('lspsaga.util')
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
 local inrender_row = -1
 local inrender_buf = nil
@@ -54,7 +55,7 @@ end
 
 local function render(bufnr)
   local row = api.nvim_win_get_cursor(0)[1] - 1
-  local params = lsp.util.make_range_params()
+  local params = lsp.util.make_range_params(0, util.get_offset_encoding({ bufnr = bufnr }))
   params.context = {
     diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr),
   }

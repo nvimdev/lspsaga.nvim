@@ -173,17 +173,18 @@ function act:send_request(main_buf, options, callback)
     context.diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr)
   end
   local params
+  local offset_encoding = util.get_offset_encoding({ bufnr = main_buf })
   local mode = api.nvim_get_mode().mode
   if options.range then
     assert(type(options.range) == 'table', 'code_action range must be a table')
     local start = assert(options.range.start, 'range must have a `start` property')
     local end_ = assert(options.range['end'], 'range must have a `end` property')
-    params = lsp.util.make_given_range_params(start, end_)
+    params = lsp.util.make_given_range_params(start, end_, main_buf, offset_encoding)
   elseif mode == 'v' or mode == 'V' then
     local range = range_from_selection(0, mode)
-    params = lsp.util.make_given_range_params(range.start, range['end'])
+    params = lsp.util.make_given_range_params(range.start, range['end'], main_buf, offset_encoding)
   else
-    params = lsp.util.make_range_params()
+    params = lsp.util.make_range_params(0, offset_encoding)
   end
 
   params.context = context

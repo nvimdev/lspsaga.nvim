@@ -216,4 +216,44 @@ function M.sub_mac_c_header(fname)
   return fname:sub(pos + 1)
 end
 
+
+--- Key value pairs used to filter the approach
+--- Use client directly
+--- @class lspsaga.util.get_offset_encoding.Filter
+--- @inlinedoc
+--- @field client? table
+---
+--- Try to use the first client that matches bufnr
+--- @field bufnr? integer
+---
+--- Try to use the given method to retrieve the client
+--- @field method? string
+---
+---@param filter table
+---@param fallback string
+---@return string 'utf-8'|'utf-16'|'utf-32'
+function M.get_offset_encoding(filter, fallback)
+  vim.validate('filter', filter, 'table', true)
+  filter = filter or {}
+  fallback = fallback or 'utf-16'
+
+  if filter.client then
+    if filter.client and filter.client.offset_encoding then
+      return filter.client.offset_encoding
+    end
+  elseif filter.bufnr then
+    local clients = lsp.get_clients({ bufnr = filter.bufnr })
+    if #clients > 0 and clients[1].offset_encoding then
+      return clients[1].offset_encoding
+    end
+  elseif filter.method then
+    local clients = M.get_client_by_method(filter.method)[1].offset_encoding
+    if #clients > 0 and clients[1].offset_encoding then
+      return clients[1].offset_encoding
+    end
+  end
+
+  return fallback
+end
+
 return M

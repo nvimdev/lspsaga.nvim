@@ -503,7 +503,7 @@ function fd:new(args)
   end
 
   self.list = slist.new()
-  local params = lsp.util.make_position_params()
+  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ bufnr = curbuf }))
   params.context = {
     includeDeclaration = true,
   }
