@@ -4,6 +4,7 @@ saga.saga_augroup = api.nvim_create_augroup('Lspsaga', { clear = true })
 
 local default_config = {
   ui = {
+    winbar_prefix = '',
     border = 'rounded',
     devicon = true,
     foldericon = true,
@@ -11,10 +12,11 @@ local default_config = {
     expand = '⊞',
     collapse = '⊟',
     code_action = '💡',
-    actionfix = ' ',
     lines = { '┗', '┣', '┃', '━', '┏' },
     kind = nil,
+    button = { '', '' },
     imp_sign = '󰳛 ',
+    use_nerd = true,
   },
   hover = {
     max_width = 0.9,
@@ -23,16 +25,14 @@ local default_config = {
     open_cmd = '!chrome',
   },
   diagnostic = {
-    show_code_action = true,
     show_layout = 'float',
     show_normal_height = 10,
     jump_num_shortcut = true,
+    auto_preview = false,
     max_width = 0.8,
     max_height = 0.6,
     max_show_width = 0.9,
     max_show_height = 0.6,
-    text_hl_follow = true,
-    border_follow = true,
     wrap_long_lines = true,
     extend_relatedInformation = false,
     diagnostic_only_current = false,
@@ -62,6 +62,10 @@ local default_config = {
     sign_priority = 40,
     virtual_text = true,
     enable_in_insert = true,
+    ignore = {
+      clients = {},
+      ft = {},
+    },
   },
   scroll_preview = {
     scroll_down = '<C-f>',
@@ -80,6 +84,8 @@ local default_config = {
     sp_inexist = false,
     sp_global = false,
     ly_botright = false,
+    number = vim.o.number,
+    relativenumber = vim.o.relativenumber,
     keys = {
       shuttle = '[w',
       toggle_or_open = 'o',
@@ -95,14 +101,16 @@ local default_config = {
     width = 0.6,
     height = 0.5,
     save_pos = false,
+    number = vim.o.number,
+    relativenumber = vim.o.relativenumber,
     keys = {
-      edit = '<C-c>o',
-      vsplit = '<C-c>v',
-      split = '<C-c>i',
-      tabe = '<C-c>t',
+      edit = '<C-o>',
+      vsplit = '<C-v>',
+      split = '<C-x>',
+      tabe = '<C-t>',
       tabnew = '<C-c>n',
       quit = 'q',
-      close = '<C-c>k',
+      close = '<ESC>',
     },
   },
   rename = {
@@ -124,7 +132,7 @@ local default_config = {
     show_file = true,
     folder_level = 1,
     color_mode = true,
-    dely = 300,
+    delay = 300,
   },
   outline = {
     win_position = 'right',
@@ -143,6 +151,20 @@ local default_config = {
     },
   },
   callhierarchy = {
+    layout = 'float',
+    left_width = 0.2,
+    keys = {
+      edit = 'e',
+      vsplit = 's',
+      split = 'i',
+      tabe = 't',
+      close = '<C-c>k',
+      quit = 'q',
+      shuttle = '[w',
+      toggle_or_req = 'u',
+    },
+  },
+  typehierarchy = {
     layout = 'float',
     left_width = 0.2,
     keys = {

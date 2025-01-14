@@ -4,6 +4,7 @@ local util = require('lspsaga.util')
 local win = require('lspsaga.window')
 local buf_del_keymap = api.nvim_buf_del_keymap
 local beacon = require('lspsaga.beacon').jump_beacon
+local islist = util.is_ten and vim.islist or vim.tbl_islist
 local def = {}
 def.__index = def
 
@@ -120,6 +121,10 @@ function def:create_win(bufnr, root_dir)
   if util.ismac and (vim.bo[bufnr].filetype == 'c' or vim.bo[bufnr].filetype == 'cpp') then
     fname = util.sub_mac_c_header(fname)
   end
+  if vim.bo[bufnr].filetype == 'rust' then
+    fname = util.sub_rust_toolchains(fname)
+  end
+
   if not self.list or vim.tbl_isempty(self.list) then
     local float_opt = {
       width = math.floor(api.nvim_win_get_width(0) * config.definition.width),
@@ -135,6 +140,8 @@ function def:create_win(bufnr, root_dir)
       :winopt({
         ['winbar'] = '',
         ['signcolumn'] = 'no',
+        ['number'] = config.definition.number,
+        ['relativenumber'] = config.definition.relativenumber,
       })
       :winhl('SagaNormal', 'SagaBorder')
       :wininfo()
@@ -146,7 +153,13 @@ function def:create_win(bufnr, root_dir)
   win_conf.col = vim.version().minor >= 10 and win_conf.col or win_conf.col[false] + 1
   win_conf.height = win_conf.height - 1
   win_conf.width = win_conf.width - 2
-  return win:new_float(win_conf, true, true):wininfo()
+  return win
+    :new_float(win_conf, true, true)
+    :winopt({
+      ['number'] = config.definition.number,
+      ['relativenumber'] = config.definition.relativenumber,
+    })
+    :wininfo()
 end
 
 function def:clean_event()
@@ -227,7 +240,7 @@ function def:definition_request(method, handler_T, args)
     fn.settagstack(api.nvim_get_current_win(), { items = items }, 't')
 
     local res
-    if not vim.islist(result) then
+    if not islist(result) then
       res = result
     elseif result[1] then
       res = result[1]

@@ -2,7 +2,7 @@ local ot = {}
 local api, fn = vim.api, vim.fn
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
-local kind = require('lspsaga.lspkind').kind
+local get_kind_icon = require('lspsaga.lspkind').get_kind_icon
 local config = require('lspsaga').config
 local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
@@ -124,8 +124,9 @@ function ot:parse(symbols, curline)
         end
       end
 
+      local hl, icon = unpack(get_kind_icon(node.kind))
       buf_set_extmark(self.bufnr, ns, row - 1, #indent - 2, {
-        virt_text = { { kind[node.kind][2], 'Saga' .. kind[node.kind][1] } },
+        virt_text = { { icon, 'Saga' .. hl } },
         virt_text_pos = 'overlay',
       })
       local inlevel = 4 + 2 * level
@@ -214,7 +215,7 @@ function ot:collapse(node, curlnum)
   local tmp = node.next
 
   while tmp do
-    local icon = kind[tmp.value.kind][2]
+    local hl, icon = unpack(get_kind_icon(tmp.value.kind))
     local level = tmp.value.inlevel
     buf_set_lines(
       self.bufnr,
@@ -229,7 +230,7 @@ function ot:collapse(node, curlnum)
       tmp.value.expand = true
     end
     buf_set_extmark(self.bufnr, ns, row, level - 2, {
-      virt_text = { { icon, 'Saga' .. kind[tmp.value.kind][1] } },
+      virt_text = { { icon, 'Saga' .. hl } },
       virt_text_pos = 'overlay',
     })
     local has_child = tmp.next and tmp.next.value.inlevel > level
@@ -335,19 +336,24 @@ function ot:toggle_or_jump()
   beacon({ pos[1] - 1, 0 }, width)
 end
 
-function ot:create_preview_win(lines)
-  local screen_col = fn.win_screenpos(self.winid)[2]
-  if config.outline.win_position == 'left' then
-    screen_col = api.nvim_win_get_width(self.winid)
-  end
+function ot:calc_preview_win_spec(lines)
   local max_height = vim.o.lines - fn.winline()
-  local max_width = math.floor(screen_col * 0.7)
+  local max_width = math.floor(vim.o.columns * 0.7)
+
+  return {
+    height = math.min(max_height, #lines),
+    width = math.min(max_width, util.get_max_content_length(lines)),
+  }
+end
+
+function ot:create_preview_win(lines)
+  local win_spec = self:calc_preview_win_spec(lines)
 
   local float_opt = {
     relative = 'editor',
     style = 'minimal',
-    height = math.min(max_height, #lines),
-    width = math.min(max_width, util.get_max_content_length(lines)),
+    height = win_spec.height,
+    width = win_spec.width,
     focusable = false,
     noautocmd = true,
   }
@@ -378,6 +384,21 @@ function ot:create_preview_win(lines)
       ['sidescrolloff'] = 5,
     })
     :wininfo()
+end
+
+function ot:update_preview_win(lines)
+  local win_spec = self:calc_preview_win_spec(lines)
+
+  local win_config = api.nvim_win_get_config(self.preview_winid)
+
+  win
+    :from_exist(self.preview_bufnr, self.preview_winid)
+    :setlines(lines)
+    :winsetconf(vim.tbl_extend('force', win_config, {
+      row = fn.winline(),
+      height = win_spec.height,
+      width = win_spec.width,
+    }))
 end
 
 function ot:refresh()
@@ -439,16 +460,9 @@ function ot:preview()
         api.nvim_buf_get_lines(self.main_buf, range.start.line, range['end'].line + 1, false)
       if not self.preview_winid or not api.nvim_win_is_valid(self.preview_winid) then
         self:create_preview_win(lines)
-        return
+      else
+        self:update_preview_win(lines)
       end
-
-      api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
-      local win_conf = api.nvim_win_get_config(self.preview_winid)
-      local row = fn.winline()
-      win_conf.width = math.ceil(fn.win_screenpos(self.winid)[2] * 0.7)
-      win_conf.row = row - 1
-      win_conf.height = math.min(#lines, bit.rshift(vim.o.lines, 1))
-      api.nvim_win_set_config(self.preview_winid, win_conf)
     end,
   })
 

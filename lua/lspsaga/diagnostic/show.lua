@@ -297,7 +297,6 @@ function sd:show(opt)
       if i == 1 then
         ---@diagnostic disable-next-line: param-type-mismatch
         local fname = fn.fnamemodify(api.nvim_buf_get_name(tonumber(entry.bufnr)), ':t')
-        -- local counts = diag:get_diag_counts(curnode.diags)
         local text = '  ' .. fname
         nvim_buf_set_lines(self.bufnr, count, -1, false, { text })
         nvim_buf_set_extmark(self.bufnr, ns, count, 0, {

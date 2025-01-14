@@ -22,7 +22,6 @@ local function hi_define()
     SagaSep = { link = 'Comment' },
 
     -- code action
-    ActionFix = { link = 'Keyword' },
     ActionPreviewNormal = { link = 'SagaNormal' },
     ActionPreviewBorder = { link = 'SagaBorder' },
     ActionPreviewTitle = { link = 'Title' },
@@ -69,6 +68,25 @@ local function init_highlight()
   for _, item in pairs(kind) do
     api.nvim_set_hl(0, 'Saga' .. item[1], { link = item[3], default = true })
   end
+
+  for _, v in ipairs(vim.diagnostic.severity) do
+    local color = api.nvim_get_hl(0, { name = 'Diagnostic' .. v })
+    if color.link then
+      color = api.nvim_get_hl(0, { name = color.link })
+    end
+    api.nvim_set_hl(0, 'Diagnostic' .. v .. 'Reverse', {
+      bg = color.fg,
+      fg = 'Black',
+      default = true,
+    })
+  end
+
+  local hint_conf = api.nvim_get_hl(0, { name = 'DiagnosticHint' })
+  if hint_conf.link then
+    hint_conf = api.nvim_get_hl(0, { name = hint_conf.link })
+  end
+  api.nvim_set_hl(0, 'SagaButton', { fg = hint_conf.fg })
+  api.nvim_set_hl(0, 'SagaActionTitle', { fg = 'Black', bg = hint_conf.fg })
 end
 
 return {

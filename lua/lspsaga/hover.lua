@@ -3,9 +3,15 @@ local config = require('lspsaga').config
 local win = require('lspsaga.window')
 local util = require('lspsaga.util')
 local treesitter = vim.treesitter
+local islist = util.is_ten and vim.islist or vim.tbl_islist
 local hover = {}
 
 function hover:clean()
+  if self.cancel then
+    self.cancel()
+    self.cancel = nil
+  end
+
   self.bufnr = nil
   self.winid = nil
 end
@@ -154,6 +160,12 @@ function hover:open_floating_preview(content, option_fn)
   )
 
   util.scroll_in_float(curbuf, self.winid)
+  api.nvim_create_autocmd('WinClosed', {
+    buffer = self.bufnr,
+    callback = function()
+      util.delete_scroll_map(curbuf)
+    end,
+  })
 
   util.map_keys(self.bufnr, 'q', function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
@@ -213,18 +225,14 @@ function hover:do_request(args)
   local method = 'textDocument/hover'
   local clients = util.get_client_by_method(method)
   if #clients == 0 then
-    self.pending_request = false
     vim.notify('[lspsaga] hover is not supported by the servers of the current buffer')
     return
   end
   local count = 0
 
   local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = clients[1] }))
-  lsp.buf_request(api.nvim_get_current_buf(), method, params, function(_, result, ctx)
+  _, self.cancel = lsp.buf_request(0, method, params, function(_, result, ctx, _)
     count = count + 1
-    if count == #clients then
-      self.pending_request = false
-    end
 
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
@@ -249,7 +257,7 @@ function hover:do_request(args)
       else
         value = result.contents.value
       end
-    elseif vim.islist(result.contents) then -- MarkedString[]
+    elseif islist(result.contents) then -- MarkedString[]
       if vim.tbl_isempty(result.contents) and ignore_error(args) then
         vim.notify('No information available')
         return
@@ -319,51 +327,21 @@ function hover:do_request(args)
   end)
 end
 
-local function check_parser()
-  local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
-  local has_parser = true
-  for _, p in ipairs(parsers) do
-    if #api.nvim_get_runtime_file(p, true) == 0 then
-      has_parser = false
-      break
-    end
-  end
-  return has_parser
-end
-
 function hover:render_hover_doc(args)
-  local diag_winid = require('lspsaga.diagnostic').winid
-  if diag_winid and api.nvim_win_is_valid(diag_winid) then
-    require('lspsaga.diagnostic'):clean_data()
-  end
   args = args or {}
-
-  if not check_parser() then
-    vim.notify(
-      '[lspsaga] please install markdown and markdown_inline parser in nvim-treesitter',
-      vim.log.levels.WARN
-    )
-    return
-  end
-
-  if self.pending_request then
-    print('[lspsaga] a hover request has already been sent, please wait.')
-    return
-  end
-
+  util.valid_markdown_parser()
   if self.winid and api.nvim_win_is_valid(self.winid) then
     if not vim.tbl_contains(args, '++keep') then
       api.nvim_set_current_win(self.winid)
       return
     else
-      util.delete_scroll_map(api.nvim_get_current_buf())
       api.nvim_win_close(self.winid, true)
       self:clean()
       return
     end
   end
 
-  self.pending_request = true
+  self:clean()
   self:do_request(args)
 end
 

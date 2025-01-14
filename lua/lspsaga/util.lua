@@ -75,7 +75,7 @@ end
 
 function M.feedkeys(key)
   local k = api.nvim_replace_termcodes(key, true, false, true)
-  api.nvim_feedkeys(k, 'x', false)
+  api.nvim_feedkeys(k, 'nx', false)
 end
 
 function M.scroll_in_float(bufnr, winid)
@@ -216,7 +216,6 @@ function M.sub_mac_c_header(fname)
   return fname:sub(pos + 1)
 end
 
-
 --- Key value pairs used to filter the approach
 --- Use client directly
 --- @class lspsaga.util.get_offset_encoding.Filter
@@ -254,6 +253,33 @@ function M.get_offset_encoding(filter, fallback)
   end
 
   return fallback
+end
+
+function M.valid_markdown_parser()
+  local parsers = { 'parser/markdown.so', 'parser/markdown_inline.so' }
+  for _, p in ipairs(parsers) do
+    if #api.nvim_get_runtime_file(p, true) == 0 then
+      vim.notify_once('[Lspsaga] for better experience instal markdown relate tresitter parser')
+      return
+    end
+  end
+end
+
+function M.get_bold_num()
+  local line = api.nvim_get_current_line()
+  local num = line:match('%*%*(%d+)%*%*')
+  if num then
+    num = tonumber(num)
+  end
+  return num
+end
+
+function M.sub_rust_toolchains(fname)
+  local rustup_home = os.getenv('RUSTUP_HOME') or vim.fs.joinpath(vim.env.HOME, '.rustup')
+  local toolchains = vim.fs.joinpath(rustup_home, 'toolchains')
+  local parts = vim.split(fname, M.path_sep, { trimempty = true })
+  local count = #vim.split(toolchains, M.path_sep, { trimempty = true })
+  return vim.fs.joinpath(unpack(parts, count + 1))
 end
 
 return M

@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*          For Nvim 0.8.0          Last change: 2024 March 31
+*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2024 December 21
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*

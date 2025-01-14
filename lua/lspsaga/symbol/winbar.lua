@@ -3,7 +3,7 @@ local config = require('lspsaga').config.symbol_in_winbar
 local ui = require('lspsaga').config.ui
 local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
-local kind = require('lspsaga.lspkind').kind
+local get_kind_icon = require('lspsaga.lspkind').get_kind_icon
 
 local function bar_prefix()
   return {
@@ -23,15 +23,18 @@ local function path_in_bar(buf)
   local items = {}
   local folder
   if ui.foldericon then
-    folder = kind[302][2]
+    folder = ui.winbar_prefix .. get_kind_icon(302)[2]
   end
 
   for item in util.path_itera(buf) do
+    if string.find(item, '%%') then
+      item = item:gsub('%%', '%%%%')
+    end
     item = #items == 0
         and '%#' .. (hl or 'SagaFileIcon') .. '#' .. (icon and icon .. ' ' or '') .. '%*' .. bar.prefix .. 'FileName#' .. item
       or bar.prefix
         .. 'Folder#'
-        .. (folder and folder or '')
+        .. (folder and folder or ui.winbar_prefix)
         .. '%*'
         .. bar.prefix
         .. 'FolderName#'
@@ -88,7 +91,7 @@ end
 -- pylsp
 local function has_container(node, elements)
   local bar = bar_prefix()
-  local type, icon = kind[5][1], kind[5][2]
+  local type, icon = unpack(get_kind_icon(5))
   elements[#elements + 1] = string.format('%s%s#%s%s', bar.prefix, type, icon, node.containerName)
 end
 
@@ -96,8 +99,7 @@ local function insert_elements(buf, node, elements)
   if config.hide_keyword and symbol:node_is_keyword(buf, node) then
     return
   end
-  local type = kind[node.kind][1]
-  local icon = kind[node.kind][2]
+  local type, icon = unpack(get_kind_icon(node.kind))
   local bar = bar_prefix()
   if node.name:find('%%') then
     node.name = stl_escape(node.name)
