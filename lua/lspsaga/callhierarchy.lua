@@ -470,7 +470,7 @@ function ch:send_prepare_call()
   end
   self.list = slist.new()
 
-  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = client}))
+  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = client }))
   client.request(get_method(1), params, function(_, result, ctx)
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
