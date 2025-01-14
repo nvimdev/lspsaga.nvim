@@ -57,7 +57,7 @@ local function render(bufnr)
   local row = api.nvim_win_get_cursor(0)[1] - 1
   local params = lsp.util.make_range_params(0, util.get_offset_encoding({ bufnr = bufnr }))
   params.context = {
-    diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr),
+    diagnostics = vim.diagnostic.get(bufnr),
   }
 
   lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(_, result, _)
