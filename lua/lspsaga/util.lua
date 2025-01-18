@@ -269,6 +269,24 @@ function M.valid_markdown_parser()
   end
 end
 
+
+---@param location integer[] [row, col]
+---@param range { end : { character : number, line : number }, start : { character : number, line : number } }
+---@return boolean
+function M.is_in_range(location, range)
+  local row = location[1]
+  local col = location[2]
+  local start_row = range.start.line + 1
+  local end_row = range['end'].line + 1
+  local end_col = range['end'].character
+  local start_col = range.start.character
+
+  if row >= start_row and row <= end_row and col >= start_col and col <= end_col then
+    return true
+  end
+  return false
+end
+
 function M.get_bold_num()
   local line = api.nvim_get_current_line()
   local num = line:match('%*%*(%d+)%*%*')
@@ -276,6 +294,7 @@ function M.get_bold_num()
     num = tonumber(num)
   end
   return num
+
 end
 
 function M.sub_rust_toolchains(fname)
