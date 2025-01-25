@@ -209,7 +209,7 @@ function def:definition_request(method, handler_T, args)
 
   local current_buf = api.nvim_get_current_buf()
 
-  local params = lsp.util.make_position_params()
+  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ bufnr = current_buf }))
   if not self.opt_restore then
     self.opt_restore = win:minimal_restore()
   end

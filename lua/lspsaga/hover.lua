@@ -222,7 +222,6 @@ local function ignore_error(args, can_through)
 end
 
 function hover:do_request(args)
-  local params = lsp.util.make_position_params()
   local method = 'textDocument/hover'
   local clients = util.get_client_by_method(method)
   if #clients == 0 then
@@ -231,6 +230,7 @@ function hover:do_request(args)
   end
   local count = 0
 
+  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = clients[1] }))
   _, self.cancel = lsp.buf_request(0, method, params, function(_, result, ctx, _)
     count = count + 1
 
