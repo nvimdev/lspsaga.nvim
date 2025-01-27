@@ -34,10 +34,8 @@ local function new_node()
   }
 end
 
----single linked list
-local function generate_list(entrys)
+local function create_linked_list(entrys)
   local list = new_node()
-
   local curnode
   for _, item in ipairs(entrys) do
     if #list.diags == 0 then
@@ -51,6 +49,37 @@ local function generate_list(entrys)
     curnode.diags[#curnode.diags + 1] = item
   end
   return list
+end
+
+local function sort_entries(entrys)
+  table.sort(entrys, function(a, b)
+    if a.severity ~= b.severity then
+      return a.severity < b.severity
+    elseif a.lnum ~= b.lnum then
+      return a.lnum < b.lnum
+    else
+      return a.col < b.col
+    end
+  end)
+end
+
+---single linked list
+local function generate_list(entrys, callback)
+  local diagnostic_config = vim.diagnostic.config and vim.diagnostic.config()
+  local severity_sort_enabled = diagnostic_config and diagnostic_config.severity_sort
+
+  if severity_sort_enabled then
+    vim.defer_fn(function()
+      sort_entries(entrys)
+      local list = create_linked_list(entrys)
+      if callback then
+        callback(list)
+      end
+    end, 0)
+    return nil
+  else
+    return create_linked_list(entrys)
+  end
 end
 
 local function find_node(list, lnum)
@@ -363,8 +392,11 @@ function sd:show_diagnostics(opt)
   if next(entrys) == nil then
     return
   end
-  opt.entrys_list = generate_list(entrys)
-  self:show(opt)
+
+  generate_list(entrys, function(sorted_list)
+    opt.entrys_list = sorted_list
+    self:show(opt)
+  end)
 end
 
 return setmetatable(ctx, sd)
