@@ -90,6 +90,7 @@ local preview_buf, preview_winid
 ---create a preview window according given window
 ---default is under the given window
 local function create_preview_win(content, main_winid)
+  -- Get the configuration of the main window
   local win_conf = api.nvim_win_get_config(main_winid)
   local opt = {
     relative = win_conf.relative,
@@ -98,45 +99,75 @@ local function create_preview_win(content, main_winid)
     anchor = win_conf.anchor,
     focusable = false,
   }
+
+  -- Determine content width and apply constraints
   local content_width = util.get_max_content_length(content)
   local max_win_width = api.nvim_win_get_width(win_conf.win)
-  if content_width < win_conf.width then
-    opt.width = win_conf.width
-  else
-    opt.width = math.min(max_win_width, content_width)
-  end
+  opt.width = math.min(max_win_width, math.max(content_width, win_conf.width))
+
+  -- Get dimensions of the main window
   local winheight = api.nvim_win_get_height(win_conf.win)
   local margin = config.ui.border == 'none' and 0 or 2
   local north = win_conf.anchor:sub(1, 1) == 'N'
   local row = util.is_ten and win_conf.row or win_conf.row[false]
-  local valid_top_height = north and row - 1 or row - win_conf.height - margin - 1
-  local valid_bot_height = north and winheight - row - win_conf.height - margin
-    or winheight - row - margin
+
+  -- Calculate available space above (valid_top_height) and below (valid_bot_height)
+  local valid_top_height = math.max(0, row - margin)
+  local valid_bot_height = north and (winheight - row - win_conf.height - margin)
+    or (winheight - row - margin)
+
+  -- Determine the preview window height
   local new_win_height = #content + margin
-  -- action is NW under cursor and top is enough to show preview
-  local east_or_west = win_conf.anchor:sub(2, 2)
   new_win_height = math.min(new_win_height, math.max(valid_bot_height, valid_top_height))
+
+  -- Adjust anchor and position based on available space
+  local east_or_west = win_conf.anchor:sub(2, 2)
+
   if north then
     if valid_top_height >= new_win_height then
       opt.anchor = 'S' .. east_or_west
       opt.row = row
-      opt.height = math.min(valid_top_height, #content)
+      opt.height = new_win_height
     elseif valid_bot_height >= new_win_height then
       opt.anchor = 'N' .. east_or_west
       opt.row = row + win_conf.height + margin
-      opt.height = math.min(valid_bot_height, #content) - 2
+      opt.height = new_win_height
+    else
+      -- Fallback: Fit within whichever space is larger
+      if valid_top_height > valid_bot_height then
+        opt.anchor = 'S' .. east_or_west
+        opt.row = row
+        opt.height = valid_top_height
+      else
+        opt.anchor = 'N' .. east_or_west
+        opt.row = row + win_conf.height + margin
+        opt.height = valid_bot_height
+      end
     end
   else
     if valid_bot_height >= new_win_height then
       opt.anchor = 'N' .. east_or_west
       opt.row = row
-      opt.height = math.min(valid_bot_height, #content)
-    else
+      opt.height = new_win_height
+    elseif valid_top_height >= new_win_height then
       opt.anchor = 'S' .. east_or_west
       opt.row = row - win_conf.height - margin
-      opt.height = math.min(valid_top_height, #content)
+      opt.height = new_win_height
+    else
+      -- Fallback: Fit within whichever space is larger
+      if valid_bot_height > valid_top_height then
+        opt.anchor = 'N' .. east_or_west
+        opt.row = row
+        opt.height = valid_bot_height
+      else
+        opt.anchor = 'S' .. east_or_west
+        opt.row = row - win_conf.height - margin
+        opt.height = valid_top_height
+      end
     end
   end
+
+  -- Create the preview window with calculated options and set content/buffer options.
   preview_buf, preview_winid = win
     :new_float(opt, false, true)
     :setlines(content)
