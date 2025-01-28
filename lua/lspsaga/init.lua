@@ -23,6 +23,7 @@ local default_config = {
     max_height = 0.8,
     open_link = 'gx',
     open_cmd = '!chrome',
+    jump_on_first_press = false,
   },
   diagnostic = {
     show_layout = 'float',

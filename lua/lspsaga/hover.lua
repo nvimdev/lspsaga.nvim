@@ -213,6 +213,10 @@ function hover:open_floating_preview(content, option_fn)
       pcall(util.delete_scroll_map, curbuf)
     end,
   })
+
+  if config.hover.jump_on_first_press then
+    api.nvim_set_current_win(self.winid)
+  end
 end
 
 local function ignore_error(args, can_through)
