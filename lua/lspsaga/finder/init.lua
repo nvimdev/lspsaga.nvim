@@ -438,16 +438,31 @@ function fd:apply_maps()
         if inexist and (action == 'split' or action == 'vsplit') then
           local reuse = box.win_reuse(action)
           if not reuse then
-            vim.cmd[action](fname)
+            if (config.finder.actions or {})[action] then
+              config.finder.actions[action](fname)
+            else
+              vim.cmd[action](fname)
+            end
           else
             api.nvim_win_set_buf(reuse, fn.bufadd(fname))
             api.nvim_set_current_win(reuse)
           end
         else
-          vim.cmd[action](fname)
+          if (config.finder.actions or {})[action] then
+            config.finder.actions[action](fname)
+          else
+            vim.cmd[action](fname)
+          end
         end
         restore()
-        api.nvim_win_set_cursor(0, pos)
+        xpcall(
+          function ()
+            api.nvim_win_set_cursor(0, pos)
+          end,
+          function (err)
+            print(err.message)
+          end
+        )
         beacon({ pos[1] - 1, 0 }, #api.nvim_get_current_line())
         return
       end
