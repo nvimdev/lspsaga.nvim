@@ -1,4 +1,4 @@
-*lspsaga.nvim.txt*         For Nvim 0.8.0         Last change: 2025 January 28
+*lspsaga.nvim.txt*         For Nvim 0.8.0        Last change: 2025 February 26
 
 ==============================================================================
 Table of Contents                             *lspsaga.nvim-table-of-contents*
@@ -7,7 +7,7 @@ Table of Contents                             *lspsaga.nvim-table-of-contents*
 2. License                                              |lspsaga.nvim-license|
 3. Links                                                  |lspsaga.nvim-links|
 
-improve lsp experences in neovim
+Improve lsp experiences in neovim
 
 <https://matrix.to/#/#lspsaga-nvim:matrix.org>
 
