@@ -76,9 +76,11 @@ local function generate_list(entrys, callback)
         callback(list)
       end
     end, 0)
-    return nil
   else
-    return create_linked_list(entrys)
+    local list = create_linked_list(entrys)
+    if callback then
+      callback(list)
+    end
   end
 end
 
