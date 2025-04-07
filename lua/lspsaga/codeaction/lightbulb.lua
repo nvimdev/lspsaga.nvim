@@ -171,7 +171,7 @@ local function lb_autocmd()
         group = group,
         buffer = buf,
         callback = function(args)
-          update(args.buf)
+
         end,
       })
 
