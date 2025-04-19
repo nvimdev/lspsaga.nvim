@@ -190,9 +190,18 @@ function fd:handler(method, results, spin_close, done)
   end
 
   if done then
+    local popup_curosor_line = slist.find_node_by(self.list, function(node)
+      local value = node.value
+      local range, bufnr = value.range, value.bufnr
+      local location = api.nvim_win_get_cursor(self.callerwinid)
+      local caller_bufnr = api.nvim_win_get_buf(self.callerwinid)
+
+      return range ~= nil and util.is_in_range(location, range) and caller_bufnr == bufnr
+    end).value.winline
+
     vim.bo[self.lbufnr].modifiable = false
     spin_close()
-    api.nvim_win_set_cursor(self.lwinid, { 3, 6 })
+    api.nvim_win_set_cursor(self.lwinid, { popup_curosor_line, 6 })
     box.indent(ns, self.lbufnr, self.lwinid)
     api.nvim_create_autocmd('BufEnter', {
       callback = function(args)

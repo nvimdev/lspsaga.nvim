@@ -74,4 +74,19 @@ describe('lspsaga util', function()
     res = util.path_sub('/Users/test/(test-dir)/%proj-rs/src/main.rs', root)
     assert.is_equal('src/main.rs', res)
   end)
+
+  it('util.is_in_range', function()
+    local range = {
+      ['end'] = {
+        character = 9,
+        line = 117,
+      },
+      start = {
+        character = 6,
+        line = 117,
+      },
+    }
+    local location = { 118, 6 }
+    is_true(util.is_in_range(location, range))
+  end)
 end)
