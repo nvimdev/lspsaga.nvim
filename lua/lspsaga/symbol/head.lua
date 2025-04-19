@@ -162,6 +162,17 @@ end
 
 function symbol:register_module()
   local group = api.nvim_create_augroup('LspsagaSymbols', { clear = true })
+  api.nvim_create_autocmd('FileType', {
+    group = group,
+    callback = function(args)
+      local winbar
+      if config.symbol_in_winbar.enable then
+        winbar = require('lspsaga.symbol.winbar')
+        winbar.init_winbar(args.buf)
+      end
+      self:buf_watcher(args.buf, group)
+    end,
+  })
   api.nvim_create_autocmd('LspAttach', {
     group = group,
     callback = function(args)
@@ -176,20 +187,13 @@ function symbol:register_module()
 
       self:do_request(args.buf, args.data.client_id)
 
-      local winbar
-      if config.symbol_in_winbar.enable then
-        winbar = require('lspsaga.symbol.winbar')
-        winbar.init_winbar(args.buf)
-      end
-      self:buf_watcher(args.buf, group)
-
       if config.implement.enable and client.supports_method('textDocument/implementation') then
         require('lspsaga.implement').start()
       end
     end,
   })
 
-  api.nvim_create_autocmd('LspDetach', {
+  api.nvim_create_autocmd({ 'LspDetach', 'BufDelete', 'BufWipeout' }, {
     group = group,
     callback = function(args)
       if self[args.buf] then
