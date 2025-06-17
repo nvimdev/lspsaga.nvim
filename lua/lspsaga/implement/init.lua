@@ -37,7 +37,7 @@ local function try_render(client_id, bufnr, pos, data)
     return
   end
   ---@diagnostic disable-next-line: invisible
-  client.request('textDocument/implementation', params, function(err, result)
+  client:request('textDocument/implementation', params, function(err, result)
     if err or api.nvim_get_current_buf() ~= bufnr then
       return
     end
