@@ -106,7 +106,7 @@ function symbol:do_request(buf, client_id)
 
   self[buf].pending_request = true
 
-  client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+  client:request('textDocument/documentSymbol', params, function(err, result, ctx)
     if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] then
       return
     end
@@ -190,7 +190,7 @@ function symbol:register_module()
       end
 
       local client = lsp.get_client_by_id(args.data.client_id)
-      if not client or not client.supports_method('textDocument/documentSymbol') then
+      if not client or not client:supports_method('textDocument/documentSymbol') then
         return
       end
       self:do_request(args.buf, args.data.client_id)
@@ -199,7 +199,7 @@ function symbol:register_module()
         require('lspsaga.symbol.winbar').init_winbar(args.buf)
       end
 
-      if config.implement.enable and client.supports_method('textDocument/implementation') then
+      if config.implement.enable and client:supports_method('textDocument/implementation') then
         require('lspsaga.implement').start()
       end
     end,
