@@ -384,13 +384,31 @@ function sd:show(opt)
   end)
 end
 
+local function get_diagnostic_entrys(opt)
+  if opt.fallback then
+    local scopes = { 'cursor', 'line', 'buffer' }
+    for _, scope in ipairs(scopes) do
+      local result = diag:get_diagnostic({ [scope] = true })
+      if #result > 0 then
+        opt[scope] = true -- not sure if it's a good idea to modify the opt table here
+        return result
+      end
+    end
+
+    return diag:get_diagnostic({})
+  else
+    return diag:get_diagnostic(opt)
+  end
+end
+
 function sd:show_diagnostics(opt)
   local has_jump_win = require('lspsaga.diagnostic').winid
   if has_jump_win and api.nvim_win_is_valid(has_jump_win) then
     return
   end
 
-  local entrys = diag:get_diagnostic(opt)
+  local entrys = get_diagnostic_entrys(opt)
+
   if next(entrys) == nil then
     return
   end
