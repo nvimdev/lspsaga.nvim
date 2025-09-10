@@ -73,6 +73,33 @@ function M.get_client_by_method(method)
   return supports
 end
 
+--- generate LSP RPC method `textDocument/references` parameters by configuration.
+---@param method string LSP RPC method name
+---@param params table parameters for LSP RPC method
+---@param config table|boolean configuration for config.finder.ref_opt
+---@return table
+function M.gen_param_by_config(method, params, config)
+  if type(config) == 'table' and method == 'textDocument/references' then
+    local bufnr = vim.api.nvim_get_current_buf()
+    local clients = lsp.get_clients({ bufnr = bufnr })
+
+    for _, client in ipairs(clients or {}) do
+      -- Replace characters dash('-') to underscore('_') for LSP client name,
+      -- which is useful for some LSP client like `rust-analyzer`.
+      local client_name = string.gsub(client.name, '-', '_')
+      local v = vim.tbl_get(config, client_name)
+      if v ~= nil then
+        params.context = {
+          includeDeclaration = v,
+        }
+        return { method, params }
+      end
+    end
+  end
+
+  return { method, params }
+end
+
 function M.feedkeys(key)
   local k = api.nvim_replace_termcodes(key, true, false, true)
   api.nvim_feedkeys(k, 'nx', false)
