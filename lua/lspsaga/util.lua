@@ -128,7 +128,7 @@ end
 function M.close_win(winid)
   for _, id in ipairs(M.as_table(winid)) do
     if api.nvim_win_is_valid(id) then
-      api.nvim_win_close(id, true)
+      pcall(api.nvim_win_close, id, true)
     end
   end
 end

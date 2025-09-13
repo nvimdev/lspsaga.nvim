@@ -449,7 +449,7 @@ function ot:preview()
       local node = slist.find_node(self.list, curlnum)
       if not node then
         if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-          api.nvim_win_close(self.preview_winid, true)
+          pcall(api.nvim_win_close, self.preview_winid, true)
           self.preview_winid = nil
           self.preview_bufnr = nil
         end
@@ -470,7 +470,7 @@ function ot:preview()
     buffer = self.bufnr,
     callback = function()
       if self.preview_winid and api.nvim_win_is_valid(self.preview_winid) then
-        api.nvim_win_close(self.preview_winid, true)
+        pcall(api.nvim_win_close, self.preview_winid, true)
         self.preview_winid = nil
         self.preview_bufnr = nil
       end

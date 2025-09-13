@@ -2,11 +2,13 @@ local api, fn, lsp = vim.api, vim.fn, vim.lsp
 local config = require('lspsaga').config
 local win = require('lspsaga.window')
 local util = require('lspsaga.util')
+local ns = api.nvim_create_namespace('saga_spinner')
 local treesitter = vim.treesitter
-local islist = util.is_ten and vim.islist or vim.tbl_islist
+local islist = vim.islist
 local hover = {}
 
 function hover:clean()
+  api.nvim_buf_clear_namespace(self.bufnr, ns, 0, -1)
   if self.cancel then
     self.cancel()
     self.cancel = nil
@@ -143,7 +145,7 @@ function hover:open_floating_preview(content, option_fn)
     :wininfo()
 
   if tuncate_lnum > 0 then
-    api.nvim_buf_add_highlight(self.bufnr, 0, 'Type', tuncate_lnum - 1, 0, -1)
+    vim.hl.range(self.bufnr, ns, 'Type', { tuncate_lnum - 1, 0 }, { tuncate_lnum - 1, -1 })
   end
 
   vim.treesitter.start(self.bufnr, 'markdown')
@@ -169,7 +171,7 @@ function hover:open_floating_preview(content, option_fn)
 
   util.map_keys(self.bufnr, 'q', function()
     if self.winid and api.nvim_win_is_valid(self.winid) then
-      api.nvim_win_close(self.winid, true)
+      pcall(api.nvim_win_close, self.winid, true)
       self:clean()
     end
   end)
@@ -184,7 +186,7 @@ function hover:open_floating_preview(content, option_fn)
         end
 
         if self.winid and api.nvim_win_is_valid(self.winid) then
-          api.nvim_win_close(self.winid, true)
+          pcall(api.nvim_win_close, self.winid, true)
         end
         self:clean()
         api.nvim_del_autocmd(opt.id)
@@ -195,7 +197,7 @@ function hover:open_floating_preview(content, option_fn)
     api.nvim_create_autocmd('BufEnter', {
       callback = function(opt)
         if opt.buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
-          api.nvim_win_close(self.winid, true)
+          pcall(api.nvim_win_close, self.winid, true)
           pcall(api.nvim_del_autocmd, opt.id)
           self:clean()
         end
@@ -335,7 +337,7 @@ function hover:render_hover_doc(args)
       api.nvim_set_current_win(self.winid)
       return
     else
-      api.nvim_win_close(self.winid, true)
+      pcall(api.nvim_win_close, self.winid, true)
       self:clean()
       return
     end

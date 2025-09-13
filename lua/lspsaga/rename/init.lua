@@ -22,7 +22,7 @@ function rename:close_rename_win()
     vim.cmd([[stopinsert]])
   end
   if self.winid and api.nvim_win_is_valid(self.winid) then
-    api.nvim_win_close(self.winid, true)
+    pcall(api.nvim_win_close, self.winid, true)
   end
   api.nvim_win_set_cursor(0, { self.pos[1], self.pos[2] })
 
@@ -53,8 +53,10 @@ function rename:find_reference()
   end
 
   local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = clients[1] }))
+
+  ---@cast params lsp.ReferenceParams
   params.context = { includeDeclaration = true }
-  clients[1].request('textDocument/references', params, function(_, result)
+  clients[1]:request('textDocument/references', params, function(_, result)
     if not result then
       return
     end
@@ -66,7 +68,7 @@ function rename:find_reference()
         local start_char = v.range.start.character
         local end_char = v.range['end'].character
         if buf == bufnr then
-          api.nvim_buf_add_highlight(bufnr, ns, 'RenameMatch', line, start_char, end_char)
+          vim.hl.range(bufnr, ns, 'RenameMatch', { line, start_char }, { line, end_char })
         end
       end
     end
@@ -147,7 +149,7 @@ function rename:lsp_rename(args)
     group = group,
     buffer = self.bufnr,
     callback = function()
-      api.nvim_win_close(0, true)
+      pcall(api.nvim_win_close, 0, true)
       if close_unfocus then
         api.nvim_del_autocmd(close_unfocus)
         close_unfocus = nil

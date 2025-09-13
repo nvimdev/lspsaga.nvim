@@ -8,7 +8,7 @@ local ctx = {}
 function term:open_float_terminal(args)
   local cur_buf = api.nvim_get_current_buf()
   if not vim.tbl_isempty(ctx) and ctx.term_bufnr == cur_buf then
-    api.nvim_win_close(ctx.term_winid, true)
+    pcall(api.nvim_win_close, ctx.term_winid, true)
     ctx.term_winid = nil
     if ctx.cur_win and ctx.pos then
       api.nvim_set_current_win(ctx.cur_win)
@@ -59,10 +59,10 @@ function term:open_float_terminal(args)
     local termopen_opts = {
       on_exit = function()
         if ctx.term_winid and api.nvim_win_is_valid(ctx.term_winid) then
-          api.nvim_win_close(ctx.term_winid, true)
+          pcall(api.nvim_win_close, ctx.term_winid, true)
         end
         if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
-          api.nvim_win_close(ctx.shadow_winid, true)
+          pcall(api.nvim_win_close, ctx.shadow_winid, true)
         end
         ctx = {}
       end,
@@ -79,7 +79,7 @@ function term:open_float_terminal(args)
     buffer = ctx.term_bufnr,
     callback = function()
       if ctx.shadow_winid and api.nvim_win_is_valid(ctx.shadow_winid) then
-        api.nvim_win_close(ctx.shadow_winid, true)
+        pcall(api.nvim_win_close, ctx.shadow_winid, true)
         ctx.shadow_winid = nil
       end
     end,

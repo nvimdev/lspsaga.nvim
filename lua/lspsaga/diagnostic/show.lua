@@ -8,7 +8,6 @@ local ui = config.ui
 local diag_conf = config.diagnostic
 local ns = api.nvim_create_namespace('SagaDiagnostic')
 local nvim_buf_set_extmark = api.nvim_buf_set_extmark
-local nvim_buf_add_highlight = api.nvim_buf_add_highlight
 local nvim_buf_set_lines = api.nvim_buf_set_lines
 local ctx = {}
 local sd = {}
@@ -165,7 +164,7 @@ function sd:layout_float(opt)
         end
         local cur_buf = api.nvim_get_current_buf()
         if cur_buf ~= self.bufnr and self.winid and api.nvim_win_is_valid(self.winid) then
-          api.nvim_win_close(self.winid, true)
+          pcall(api.nvim_win_close, self.winid, true)
           clean_ctx()
           pcall(api.nvim_del_autocmd, args.id)
         end
@@ -196,7 +195,7 @@ function sd:layout_float(opt)
         return
       end
       if api.nvim_win_is_valid(curwin) then
-        api.nvim_win_close(curwin, true)
+        pcall(api.nvim_win_close, curwin, true)
         clean_ctx()
       end
     end)
@@ -208,7 +207,7 @@ function sd:layout_float(opt)
       once = true,
       callback = function(args)
         if self.winid and api.nvim_win_is_valid(self.winid) then
-          api.nvim_win_close(self.winid, true)
+          pcall(api.nvim_win_close, self.winid, true)
         end
         api.nvim_del_autocmd(args.id)
         clean_ctx()
@@ -227,13 +226,12 @@ function sd:write_line(message, severity, virt_line, srow, erow)
   end
 
   nvim_buf_set_lines(self.bufnr, srow, erow, false, { indent .. message })
-  nvim_buf_add_highlight(
+  vim.hl.range(
     self.bufnr,
-    0,
+    ns,
     'Diagnostic' .. vim.diagnostic.severity[severity],
-    srow,
-    0,
-    -1
+    { srow, 0 },
+    { srow, -1 }
   )
   nvim_buf_set_extmark(self.bufnr, ns, srow, 0, {
     virt_text = {
@@ -269,9 +267,13 @@ function sd:toggle_or_jump(entrys_list)
     if not info then
       return
     end
-    api.nvim_win_close(self.winid, true)
+    pcall(api.nvim_win_close, self.winid, true)
     local ln, col, bn = unpack(vim.split(info, ':'))
-    local wins = fn.win_findbuf(tonumber(bn))
+    local nbn = tonumber(bn)
+    if not nbn then
+      return
+    end
+    local wins = fn.win_findbuf(nbn)
     if #wins == 0 then
       ---@diagnostic disable-next-line: param-type-mismatch
       api.nvim_win_set_buf(0, tonumber(bn))

@@ -73,7 +73,11 @@ function ch:spinner(node)
   end
   local spinner = { '⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷' }
   local frame = 1
-  local timer = uv.new_timer()
+  local timer, err = uv.new_timer()
+  if not timer then
+    vim.notify(("[lspsaga] can't display spinner."):format(err), vim.log.levels.WARN)
+    return
+  end
 
   local col = node.value.winline == 1 and 0 or node.value.inlevel - 4
   if self.left_bufnr and api.nvim_buf_is_loaded(self.left_bufnr) then
@@ -253,13 +257,13 @@ function ch:keymap()
       if not string.match(uri, '^[^:]+://') then -- not uri
         uri = vim.uri_from_fname(uri)
       end
-      vim.lsp.util.jump_to_location({
+      lsp.util.show_document({
         uri = uri,
         range = {
           start = start,
           ['end'] = start,
         },
-      }, client.offset_encoding)
+      }, client.offset_encoding, { focus = true })
       restore()
       beacon({ start.line, 0 }, #api.nvim_get_current_line())
     end)
@@ -314,18 +318,14 @@ function ch:peek_view()
       if range.start.line >= 0 and range.start.line < total_lines then
         api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
       end
-      api.nvim_buf_add_highlight(
-        curnode.value.bufnr,
-        ns,
-        'SagaSearch',
+      vim.hl.range(curnode.value.bufnr, ns, 'SagaSearch', { range.start.line, col }, {
         range.start.line,
-        col,
         lsp.util._get_line_byte_from_position(
           curnode.value.bufnr,
           range['end'],
           client.offset_encoding
-        )
-      )
+        ),
+      })
       util.map_keys(curnode.value.bufnr, config.callhierarchy.keys.shuttle, function()
         window_shuttle(self.left_winid, self.right_winid)
       end)
@@ -463,7 +463,7 @@ function ch:send_prepare_call()
 
     local choice = vim.fn.inputlist(client_items)
     if choice == 0 or choice > #clients then
-      api.nvim_err_writeln('[Lspsaga] wrong choice for select client')
+      api.nvim_echo({ { '[Lspsaga] wrong choice for select client' } }, true, { err = true })
       return
     end
     client = clients[choice]

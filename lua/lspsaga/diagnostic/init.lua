@@ -102,7 +102,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
     :bufopt('modifiable', true)
     :setlines(contents, -1, -1)
     :bufopt('modifiable', false)
-  api.nvim_buf_add_highlight(self.float_bufnr, 0, 'Comment', start_line - 1, 0, -1)
+  vim.hl.range(self.float_bufnr, ns, 'Comment', { start_line - 1, 0 }, { start_line - 1, -1 })
   local curbuf = api.nvim_get_current_buf()
   if diag_conf.jump_num_shortcut then
     for num, _ in ipairs(action_tuples or {}) do
@@ -117,7 +117,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
   end
   if diag_conf.auto_preview then
     api.nvim_win_set_cursor(self.float_winid, { start_line + 1, 0 })
-    api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', start_line, 6, -1)
+    vim.hl.range(self.float_bufnr, ns, 'SagaSelect', { start_line, 6 }, { start_line, -1 })
     action_preview(self.float_winid, curbuf, action_tuples[1])
   end
   api.nvim_create_autocmd('CursorMoved', {
@@ -128,7 +128,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
         api.nvim_buf_clear_namespace(self.float_bufnr, ns, 0, -1)
         local num = util.get_bold_num()
         local tuple = action_tuples[num]
-        api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', curline - 1, 6, -1)
+        vim.hl.range(self.float_bufnr, ns, 'SagaSelect', { curline - 1, 6 }, { curline - 1, -1 })
         action_preview(self.float_winid, self.main_buf, tuple)
       end
     end,
@@ -149,7 +149,7 @@ function diag:code_action_cb(action_tuples, enriched_ctx, win_conf)
       end
       api.nvim_win_set_cursor(self.float_winid, { curlnum, col })
       if curlnum >= sline then
-        api.nvim_buf_add_highlight(self.float_bufnr, ns, 'SagaSelect', curlnum - 1, 6, -1)
+        vim.hl.range(self.float_bufnr, ns, 'SagaSelect', { curlnum - 1, 6 }, { curlnum - 1, -1 })
       end
 
       local tuple = action_tuples[util.get_bold_num()]
@@ -182,10 +182,9 @@ function diag:get_cursor_diagnostic()
     res[#res + 1] = {
       code = entry.code or nil,
       message = entry.message,
-      codeDescription = entry.codeDescription
-        or vim.tbl_get(entry, 'user_data', 'lsp', 'codeDescription'),
+      codeDescription = vim.tbl_get(entry, 'user_data', 'lsp', 'codeDescription'),
       data = vim.tbl_get(entry, 'user_data', 'lsp', 'data'),
-      tags = entry.tags or nil,
+      tags = vim.tbl_get(entry, 'user_data', 'lsp', 'tags'),
       relatedInformation = vim.tbl_get(entry, 'user_data', 'lsp.relatedInformation'),
       source = entry.source or nil,
       severity = entry.severity or nil,
@@ -257,7 +256,10 @@ function diag:goto_pos(pos, opts)
   if not entry then
     return
   end
-  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend('keep', {
+  (is_forward and vim.diagnostic.jump({ count = 1, float = true }) or vim.diagnostic.jump({
+    count = -1,
+    float = true,
+  }))(vim.tbl_extend('keep', {
     float = {
       border = config.ui.border,
       format = function(diagnostic)

@@ -67,8 +67,14 @@ function M.filter(method, results)
   return retval
 end
 
+local ns_spinner = api.nvim_create_namespace('saga_spinner')
 function M.spinner()
-  local timer = uv.new_timer()
+  local timer, err = uv.new_timer()
+  if not timer then
+    vim.notify(("[lspsaga] can't display spinner."):format(err), vim.log.levels.WARN)
+    return
+  end
+
   local bufnr, winid = win
     :new_float({
       width = 10,
@@ -102,7 +108,7 @@ function M.spinner()
         return
       end
       api.nvim_buf_set_lines(bufnr, 0, -1, false, { spinner[frame] })
-      api.nvim_buf_add_highlight(bufnr, 0, 'SagaSpinner', 0, 0, -1)
+      vim.hl.range(bufnr, ns_spinner, 'SagaSpinner', { 0, 0 }, { 0, -1 })
       frame = frame + 1 > #spinner and 1 or frame + 1
     end)
   end)
@@ -110,16 +116,20 @@ function M.spinner()
   return function()
     if timer:is_active() and not timer:is_closing() then
       timer:stop()
-      timer:close()
-      api.nvim_win_close(winid, true)
+      timer:close(function()
+        vim.schedule(function()
+          api.nvim_buf_clear_namespace(bufnr, ns_spinner, 0, -1)
+          pcall(api.nvim_win_close, winid, true)
+        end)
+      end)
     end
   end
 end
 
 local function to_normal_bg()
-  local data = api.nvim_get_hl_by_name('SagaNormal', true)
-  if data.background then
-    return { fg = data.background }
+  local data = api.nvim_get_hl(0, { name = 'SagaNormal' })
+  if data.bg then
+    return { fg = data.bg }
   end
   return { link = 'SagaVirtLine' }
 end

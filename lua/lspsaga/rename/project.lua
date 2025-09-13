@@ -80,16 +80,16 @@ local function apply_map(bufnr, winid, data, new_name)
 
     if not item.selected then
       item.selected = true
-      api.nvim_buf_add_highlight(bufnr, ns, 'SagaSelect', curlnum - 1, 0, -1)
+      vim.hl.range(bufnr, ns, 'SagaSelect', { curlnum - 1, 0 }, { curlnum - 1, -1 })
       return
     end
     item.selected = false
     api.nvim_buf_clear_namespace(bufnr, ns, curlnum - 1, curlnum)
-    api.nvim_buf_add_highlight(bufnr, ns, 'Comment', curlnum - 1, 0, -1)
+    vim.hl.range(bufnr, ns, 'Comment', { curlnum - 1, 0 }, { curlnum - 1, -1 })
   end)
 
   util.map_keys(bufnr, config.rename.keys.quit, function()
-    api.nvim_win_close(winid, true)
+    pcall(api.nvim_win_close, winid, true)
   end)
 
   util.map_keys(bufnr, config.rename.keys.exec, function()
@@ -116,7 +116,7 @@ local function apply_map(bufnr, winid, data, new_name)
         end
       end
     end
-    api.nvim_win_close(winid, true)
+    pcall(api.nvim_win_close, winid, true)
   end)
 end
 
@@ -131,13 +131,13 @@ local function render(chunks, new_name)
   for fname, item in pairs(result) do
     fname = util.path_sub(fname, get_root_dir())
     api.nvim_buf_set_lines(bufnr, line - 1, line - 1, false, { fname })
-    api.nvim_buf_add_highlight(bufnr, ns, 'SagaFinderFname', line - 1, 0, -1)
+    vim.hl.range(bufnr, ns, 'SagaFinderFname', { line - 1, 0 }, { line - 1, -1 })
     line = line + 1
     vim.tbl_map(function(val)
       local ln = val.data.line_number
       local text = 'ln:' .. ln .. (' '):rep(5 - #tostring(ln)) .. vim.trim(val.data.lines.text)
       api.nvim_buf_set_lines(bufnr, line - 1, -1, false, { (' '):rep(2) .. text })
-      api.nvim_buf_add_highlight(bufnr, ns, 'Comment', line - 1, 0, -1)
+      vim.hl.range(bufnr, ns, 'Comment', { line - 1, 0 }, { line - 1, -1 })
       val.winline = line
       line = line + 1
     end, item)

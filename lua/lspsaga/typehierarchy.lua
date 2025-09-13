@@ -314,17 +314,19 @@ function ch:peek_view()
       if range.start.line >= 0 and range.start.line < total_lines then
         api.nvim_win_set_cursor(self.right_winid, { range.start.line + 1, col })
       end
-      api.nvim_buf_add_highlight(
+      vim.hl.range(
         curnode.value.bufnr,
         ns,
         'SagaSearch',
-        range.start.line,
-        col,
-        lsp.util._get_line_byte_from_position(
-          curnode.value.bufnr,
-          range['end'],
-          client.offset_encoding
-        )
+        { range.start.line, col },
+        {
+          range.start.line,
+          lsp.util._get_line_byte_from_position(
+            curnode.value.bufnr,
+            range['end'],
+            client.offset_encoding
+          ),
+        }
       )
       util.map_keys(curnode.value.bufnr, config.typehierarchy.keys.shuttle, function()
         window_shuttle(self.left_winid, self.right_winid)

@@ -102,7 +102,7 @@ function act:action_callback(tuples, enriched_ctx)
     end,
   })
   for i = 1, #content, 1 do
-    api.nvim_buf_add_highlight(self.action_bufnr, -1, 'CodeActionText', i - 1, 0, -1)
+    vim.hl.range(self.action_bufnr, ns, 'CodeActionText', { i - 1, 0 }, { i - 1, -1 })
   end
 
   self:apply_action_keys(tuples, enriched_ctx)
@@ -167,6 +167,7 @@ function act:send_request(main_buf, options, callback)
     local bufnr = api.nvim_get_current_buf()
     context.diagnostics = lsp.diagnostic.get_line_diagnostics(bufnr)
   end
+  ---@type lsp.CodeActionParams
   local params
   local mode = api.nvim_get_mode().mode
   local offset_encoding = util.get_offset_encoding({ bufnr = main_buf })
@@ -182,6 +183,7 @@ function act:send_request(main_buf, options, callback)
     params = lsp.util.make_range_params(0, offset_encoding)
   end
 
+  ---@cast params lsp.CodeActionParams
   params.context = context
   local enriched_ctx = { bufnr = main_buf, method = 'textDocument/codeAction', params = params }
 
@@ -219,7 +221,13 @@ function act:set_cursor(action_tuples)
   else
     api.nvim_win_set_cursor(self.action_winid, { current_line, col })
   end
-  api.nvim_buf_add_highlight(self.action_bufnr, ns, 'SagaSelect', current_line - 1, 0, -1)
+  vim.hl.range(
+    self.action_bufnr,
+    ns,
+    'SagaSelect',
+    { current_line - 1, 0 },
+    { current_line - 1, -1 }
+  )
   local num = util.get_bold_num()
   if not num or not action_tuples[num] then
     return
