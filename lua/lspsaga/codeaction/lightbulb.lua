@@ -150,7 +150,7 @@ local function lb_autocmd()
       if not client then
         return
       end
-      if not client.supports_method('textDocument/codeAction') then
+      if not client:supports_method('textDocument/codeAction') then
         return
       end
       if vim.tbl_contains(config.lightbulb.ignore.clients, client.name) then

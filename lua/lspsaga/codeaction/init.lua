@@ -254,7 +254,7 @@ function act:support_resolve(client)
   if vim.version().minor >= 10 then
     local reg = client.dynamic_capabilities:get('textDocument/codeAction', { bufnr = ctx.bufnr })
     return vim.tbl_get(reg or {}, 'registerOptions', 'resolveProvider')
-      or client.supports_method('codeAction/resolve')
+      or client:supports_method('codeAction/resolve')
   end
   return vim.tbl_get(client.server_capabilities, 'codeActionProvider', 'resolveProvider')
 end
