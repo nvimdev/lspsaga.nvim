@@ -86,7 +86,7 @@ function symbol:do_request(buf, client_id)
     }
   end
 
-  client.request('textDocument/documentSymbol', params, function(err, result, ctx)
+  client:request('textDocument/documentSymbol', params, function(err, result, ctx)
     if not api.nvim_buf_is_loaded(ctx.bufnr) or not self[ctx.bufnr] then
       return
     end

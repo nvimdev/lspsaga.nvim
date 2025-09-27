@@ -361,7 +361,7 @@ end
 
 function ch:call_hierarchy(item, client, timer_close, curlnum)
   self.pending_request = true
-  client.request(self.method, { item = item }, function(_, res)
+  client:request(self.method, { item = item }, function(_, res)
     self.pending_request = false
     curlnum = curlnum or 0
     local inlevel = curlnum == 0 and 2 or fn.indent(curlnum)
@@ -471,7 +471,7 @@ function ch:send_prepare_call()
   self.list = slist.new()
 
   local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = client }))
-  client.request(get_method(1), params, function(_, result, ctx)
+  client:request(get_method(1), params, function(_, result, ctx)
     if api.nvim_get_current_buf() ~= ctx.bufnr then
       return
     end

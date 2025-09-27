@@ -54,7 +54,7 @@ function rename:find_reference()
 
   local params = lsp.util.make_position_params(0, util.get_offset_encoding({ client = clients[1] }))
   params.context = { includeDeclaration = true }
-  clients[1].request('textDocument/references', params, function(_, result)
+  clients[1]:request('textDocument/references', params, function(_, result)
     if not result then
       return
     end
