@@ -66,7 +66,7 @@ function M.get_client_by_method(method)
   local supports = {}
 
   for _, client in ipairs(clients or {}) do
-    if client.supports_method(method) then
+    if client:supports_method(method) then
       supports[#supports + 1] = client
     end
   end
