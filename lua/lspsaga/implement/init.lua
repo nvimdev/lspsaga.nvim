@@ -3,6 +3,7 @@ local api, fn = vim.api, vim.fn
 local uv = vim.version().minor >= 10 and vim.uv or vim.loop
 local config = require('lspsaga').config.implement
 local ui = require('lspsaga').config.ui
+local util = require('lspsaga.util')
 local ns = api.nvim_create_namespace('SagaImp')
 local defined = false
 local name = 'SagaImpIcon'
@@ -37,7 +38,7 @@ local function try_render(client_id, bufnr, pos, data)
     return
   end
   ---@diagnostic disable-next-line: invisible
-  client:request('textDocument/implementation', params, function(err, result)
+  util.client_request(client, 'textDocument/implementation', params, function(err, result)
     if err or api.nvim_get_current_buf() ~= bufnr then
       return
     end
