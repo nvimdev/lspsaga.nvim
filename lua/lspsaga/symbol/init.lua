@@ -91,9 +91,11 @@ function symbol:do_request(buf, client_id)
     return
   end
 
-  local params = { textDocument = {
-    uri = vim.uri_from_bufnr(buf),
-  } }
+  local params = {
+    textDocument = {
+      uri = vim.uri_from_bufnr(buf),
+    },
+  }
 
   local client = vim.lsp.get_client_by_id(client_id)
   if not client then
@@ -200,7 +202,10 @@ function symbol:register_module()
         require('lspsaga.symbol.winbar').init_winbar(args.buf)
       end
 
-      if config.implement.enable and util.client_supports_method(client, 'textDocument/implementation') then
+      if
+        config.implement.enable
+        and util.client_supports_method(client, 'textDocument/implementation')
+      then
         require('lspsaga.implement').start()
       end
     end,
