@@ -6,11 +6,32 @@ local M = {}
 M.iswin = uv.os_uname().sysname:match('Windows')
 M.ismac = uv.os_uname().sysname == 'Darwin'
 M.is_ten = vim.version().minor >= 10
+M.is_eleven = vim.version().minor >= 11
 
 M.path_sep = M.iswin and '\\' or '/'
 
 function M.path_join(...)
   return table.concat({ ... }, M.path_sep)
+end
+
+-- 0.11+ warns on dot calls; 0.10- breaks on colon calls.
+local function client_method_wrapper(client, name, ...)
+  if M.is_eleven then
+    return client[name](client, ...)
+  end
+  return client[name](...)
+end
+
+function M.client_request(client, ...)
+  return client_method_wrapper(client, 'request', ...)
+end
+
+function M.client_request_sync(client, ...)
+  return client_method_wrapper(client, 'request_sync', ...)
+end
+
+function M.client_supports_method(client, ...)
+  return client_method_wrapper(client, 'supports_method', ...)
 end
 
 function M.path_itera(buf)
@@ -66,7 +87,7 @@ function M.get_client_by_method(method)
   local supports = {}
 
   for _, client in ipairs(clients or {}) do
-    if client.supports_method(method) then
+    if M.client_supports_method(client, method) then
       supports[#supports + 1] = client
     end
   end
