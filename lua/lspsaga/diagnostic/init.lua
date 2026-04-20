@@ -253,24 +253,26 @@ local FORWARD, BACKWARD = 1, -1
 
 function diag:goto_pos(pos, opts)
   local is_forward = pos == FORWARD
-  local entry = (is_forward and vim.diagnostic.get_next or vim.diagnostic.get_prev)(opts)
+  local entry = vim.diagnostic.jump(vim.tbl_extend('keep', {
+    count = is_forward and 1 or -1,
+    on_jump = function()
+      vim.diagnostic.open_float({
+        border = config.ui.border,
+        format = function(d)
+          if not vim.bo[api.nvim_get_current_buf()].filetype == 'rust' then
+            return d.message
+          end
+          return d.message:find('\\n`$') and d.message:gsub('\\n`$', '`') or d.message
+        end,
+        header = '',
+        prefix = { '• ', 'Title' },
+      })
+    end,
+  }, opts or {}))
+
   if not entry then
     return
   end
-  (is_forward and vim.diagnostic.goto_next or vim.diagnostic.goto_prev)(vim.tbl_extend('keep', {
-    float = {
-      border = config.ui.border,
-      format = function(diagnostic)
-        if not vim.bo[api.nvim_get_current_buf()].filetype == 'rust' then
-          return diagnostic.message
-        end
-        return diagnostic.message:find('\n`$') and diagnostic.message:gsub('\n`$', '`')
-          or diagnostic.message
-      end,
-      header = '',
-      prefix = { '• ', 'Title' },
-    },
-  }, opts or {}))
   util.valid_markdown_parser()
   require('lspsaga.beacon').jump_beacon({ entry.lnum, entry.col }, #api.nvim_get_current_line())
   vim.schedule(function()
