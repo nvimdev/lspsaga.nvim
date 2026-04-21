@@ -128,9 +128,7 @@ function M.gen_truncate_line(width)
 end
 
 function M.get_max_content_length(contents)
-  vim.validate({
-    contents = { contents, 't' },
-  })
+  vim.validate('contents', contents, 'table')
   local cells = {}
   for _, v in pairs(contents) do
     if v:find('\n.') then
