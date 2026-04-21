@@ -55,31 +55,33 @@ local function path_in_bar(buf)
 end
 
 --@private
-local function binary_search(tbl, line)
+local function pos_before(line, col, pos)
+  return line < pos.line or (line == pos.line and col < pos.character)
+end
+
+--@private
+local function pos_after(line, col, pos)
+  return line > pos.line or (line == pos.line and col > pos.character)
+end
+
+--@private
+local function binary_search(tbl, line, col)
   local left = 1
   local right = #tbl
-  local mid = 0
 
-  while true do
-    mid = bit.rshift(left + right, 1)
-    if not tbl[mid] then
-      return
-    end
-
+  while left <= right do
+    local mid = bit.rshift(left + right, 1)
     local range = tbl[mid].range or tbl[mid].location.range
     if not range then
       return
     end
 
-    if line >= range.start.line and line <= range['end'].line then
-      return mid
-    elseif line < range.start.line then
+    if pos_before(line, col, range.start) then
       right = mid - 1
-    else
+    elseif pos_after(line, col, range['end']) then
       left = mid + 1
-    end
-    if left > right then
-      return
+    else
+      return mid
     end
   end
 end
@@ -119,8 +121,8 @@ local function insert_elements(buf, node, elements)
 end
 
 --@private
-local function find_in_node(buf, tbl, line, elements)
-  local mid = binary_search(tbl, line)
+local function find_in_node(buf, tbl, line, col, elements)
+  local mid = binary_search(tbl, line, col)
   if not mid then
     return
   end
@@ -130,7 +132,7 @@ local function find_in_node(buf, tbl, line, elements)
   insert_elements(buf, tbl[mid], elements)
 
   if node.children ~= nil and next(node.children) ~= nil then
-    find_in_node(buf, node.children, line, elements)
+    find_in_node(buf, node.children, line, col, elements)
   end
 end
 
@@ -147,12 +149,13 @@ local function render_symbol_winbar(buf, symbols)
     return
   end
 
-  local current_line = api.nvim_win_get_cursor(cur_win)[1]
+  local cursor = api.nvim_win_get_cursor(cur_win)
+  local current_line, current_col = cursor[1], cursor[2]
   local winbar_str = config.show_file and path_in_bar(buf) or ''
 
   local winbar_elements = {}
 
-  find_in_node(buf, symbols, current_line - 1, winbar_elements)
+  find_in_node(buf, symbols, current_line - 1, current_col, winbar_elements)
 
   local lens, over_idx = 0, 0
   local max_width = math.floor(api.nvim_win_get_width(cur_win) * 0.9)
