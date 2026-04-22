@@ -489,16 +489,25 @@ function fd:new(args)
     self.inexist = config.finder.sp_inexist
   end
   self.layout = layout or config.finder.layout
+
+  local curbuf = api.nvim_get_current_buf()
+  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ bufnr = curbuf }))
+  params.context = {
+    includeDeclaration = true,
+  }
+  if type(config.finder.ref_opt) == 'boolean' then
+    params.context = {
+      includeDeclaration = config.finder.ref_opt,
+    }
+  end
+
   if #meth == 0 then
     meth = vim.split(config.finder.default, '+', { plain = true })
   end
   local methods = box.get_methods(meth)
-
   methods = vim.tbl_filter(function(method)
     return #util.get_client_by_method(method) > 0
   end, methods)
-  local curbuf = api.nvim_get_current_buf()
-  self.ft = vim.bo[curbuf].filetype
   if #methods == 0 then
     vim.notify(
       ('[lspsaga] no servers of buffer %s makes these methods available %s'):format(
@@ -510,23 +519,24 @@ function fd:new(args)
     return
   end
 
+  local methods_with_params = vim.tbl_map(function(method)
+    return util.gen_param_by_config(method, params, config.finder.ref_opt)
+  end, methods)
+
+  self.ft = vim.bo[curbuf].filetype
   self.list = slist.new()
-  local params = lsp.util.make_position_params(0, util.get_offset_encoding({ bufnr = curbuf }))
-  params.context = {
-    includeDeclaration = true,
-  }
 
   local spin_close = box.spinner()
   local count = 0
   coroutine.resume(coroutine.create(function()
     local retval = {}
     local co = coroutine.running()
-    for _, method in ipairs(methods) do
-      lsp.buf_request_all(curbuf, method, params, function(results)
+    for _, item in ipairs(methods_with_params) do
+      lsp.buf_request_all(curbuf, item[1], item[2], function(results)
         count = count + 1
-        results = box.filter(method, results)
+        results = box.filter(item[1], results)
         if results and not util.res_isempty(results) then
-          retval[method] = results
+          retval[item[1]] = results
         end
         if count == #methods then
           coroutine.resume(co)
