@@ -70,6 +70,9 @@ local subcommands = {
   winbar_toggle = function()
     require('lspsaga.symbol.winbar').toggle()
   end,
+  go_to_parent = function()
+    require('lspsaga.symbol.winbar').go_to_parent()
+  end,
 }
 
 function command.command_list()
