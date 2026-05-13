@@ -196,13 +196,21 @@ function fd:handler(method, results, spin_close, done)
     box.indent(ns, self.lbufnr, self.lwinid)
     api.nvim_create_autocmd('BufEnter', {
       callback = function(args)
-        if args.buf ~= self.lbufnr or args.buf ~= self.rbufnr then
-          self:clean()
-          api.nvim_del_autocmd(args.id)
-        end
+        self:close_on_bufenter(args)
       end,
     })
   end
+end
+
+function fd:close_on_bufenter(args)
+  if args.buf == self.lbufnr or args.buf == self.rbufnr then
+    return
+  end
+
+  api.nvim_del_autocmd(args.id)
+  vim.schedule(function()
+    self:clean()
+  end)
 end
 
 function fd:event()
