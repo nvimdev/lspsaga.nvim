@@ -266,6 +266,7 @@ function diag:goto_pos(pos, opts)
         end,
         header = '',
         prefix = { '• ', 'Title' },
+        focus = false,
       })
     end,
   }, opts or {}))
