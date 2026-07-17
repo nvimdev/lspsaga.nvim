@@ -1,3 +1,23 @@
+---@class Node
+---@field value NodeValue
+---@field next Node
+---@field prev Node
+
+---@class NodeValue
+---@field range? Range
+---@field bufnr? number
+---@field client_id number
+---@field inlevel number
+---@field line string
+---@field uri string
+---@field winline number
+
+---@class Range
+---@field start Position
+---@field end Position
+
+---@alias Position  {character:number, line:number}
+
 ---single linked list module
 local M = {}
 
@@ -19,6 +39,22 @@ function M.tail_push(list, node)
     tmp = tmp.next
   end
   tmp.next = { value = node }
+end
+
+--- Finds a node in the linked list that matches the given predicate function.
+---@param list Node  -- The linked list to search.
+---@param predicate fun(node: Node): boolean  -- The predicate function to match the node.
+---@return Node | nil  -- The found node or nil if not found.
+function M.find_node_by(list, predicate)
+  local current = list
+  while current do
+    if predicate(current) then
+      return current
+    end
+    current = current.next
+  end
+
+  return nil
 end
 
 function M.find_node(list, curlnum)
