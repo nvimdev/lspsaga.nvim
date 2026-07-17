@@ -4,6 +4,7 @@ local ui = require('lspsaga').config.ui
 local util = require('lspsaga.util')
 local symbol = require('lspsaga.symbol')
 local get_kind_icon = require('lspsaga.lspkind').get_kind_icon
+local winbar_nodes = {}
 
 local function bar_prefix()
   return {
@@ -116,6 +117,10 @@ local function insert_elements(buf, node, elements)
     elements[#elements + 1] =
       string.format('%s%s#%s%sWord#%s', bar.prefix, type, icon, bar.prefix, node.name)
   end
+
+  winbar_nodes[#winbar_nodes + 1] = {
+    start = node.range.start,
+  }
 end
 
 --@private
@@ -151,6 +156,7 @@ local function render_symbol_winbar(buf, symbols)
   local winbar_str = config.show_file and path_in_bar(buf) or ''
 
   local winbar_elements = {}
+  winbar_nodes = {}
 
   find_in_node(buf, symbols, current_line - 1, winbar_elements)
 
@@ -279,8 +285,17 @@ local function toggle()
   init_winbar(curbuf)
 end
 
+local function go_to_parent()
+  if #winbar_nodes < 2 then
+    return
+  end
+  local parent_node = winbar_nodes[#winbar_nodes - 1]
+  vim.cmd(('normal! %dG%d|'):format(parent_node.start.line + 1, parent_node.start.character))
+end
+
 return {
   init_winbar = init_winbar,
   get_bar = get_bar,
   toggle = toggle,
+  go_to_parent = go_to_parent,
 }
