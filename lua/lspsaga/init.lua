@@ -97,6 +97,7 @@ local default_config = {
       quit = 'q',
       close = '<C-c>k',
     },
+    actions = {},
   },
   definition = {
     width = 0.6,
